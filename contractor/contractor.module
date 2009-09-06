@@ -1,0 +1,622 @@
+
+<?php
+function contractor_menu(){
+	/*
+ $items['contractor/ajaxlga']=array(
+ 	'page callback' => '',
+    'access arguments' => array('contractor register'),
+    'type' => MENU_CALLBACK,
+	);
+	*/
+	 $items['veritas/contractor'] = array(
+    'title' => 'Contractor',
+	 'description'=>'Contract',
+	'page callback'=>'contractor_page',
+ // 'access callback'=>'_contractor_access',
+  'access arguments'=>array('access'),
+ 'type'=>MENU_NORMAL_ITEM,
+
+	 'weight'=>1,
+ );
+ $items['contractor/tender/validate']=array(
+ 'page callback'=>'contractor_tender_validate',
+ 'access callback'=>'contractor_verify_access',
+ 'access arguments'=>array('authenticated user'),
+ 'type'=>MENU_CALLBACK
+ );
+ 
+ 	 $items['veritas/contractor/tender'] = array(
+    'title' => 'Contractor',
+	 'description'=>'Contract',
+	'page callback'=>'drupal_get_form',
+ 	 'page arguments'=>array('contractor_tender_login_form'),
+ // 'access callback'=>'_contractor_access',
+  'access arguments'=>array('access'),
+ 'type'=>MENU_CALLBACK,
+
+	 'weight'=>1,
+ );
+ 
+  	 $items['veritas/contractor/tender/view'] = array(
+    'title' => 'Contractor',
+	 'description'=>'Contract',
+	'page callback'=>'contractor_tender_view',
+  'access arguments'=>array('contractor submit contract'),
+ 'type'=>MENU_CALLBACK,
+
+	 'weight'=>1,
+ );
+  	 $items['contractor/tenderfee'] = array(
+	'page callback'=>'contractor_tenderfee',
+  'access arguments'=>array('contractor submit contract'),
+ 'type'=>MENU_CALLBACK,);
+ 
+ 
+
+ $items['contractor/ajaxlga']=array(
+ 	'page callback' => '_contractor_add_lga',
+    'access arguments' => array('contractor register'),
+    'type' => MENU_CALLBACK,
+	);
+ $items['contractor/ajaxtype']=array(
+ 	'page callback' => '_contractor_add_type',
+    'access arguments' => array('contractor register'),
+    'type' => MENU_CALLBACK,
+	);
+	
+  $items['veritas/contractor/new']=array(
+  'title'=>'New  Registration',
+  'type'=>MENU_NORMAL_ITEM,
+ // 'access callback'=>'',
+  'access arguments'=>array('contractor register'),
+  'page callback'=>'contractor_get_reg1',
+  'file'=>'reg.inc',
+  'weight'=>1
+  );
+  $items['contractor/fees']=array(
+  'page callback' => '_contractor_fee',
+    'access arguments' => array('contractor register'),
+    'type' => MENU_CALLBACK,
+  
+  );
+  
+  $items['veritas/contractor/preqf']=array(
+  'title'=>'Prequalification Form',
+  'type'=>MENU_NORMAL_ITEM,
+//  'access callback'=>'_contractor_access',
+  'access arguments'=>array('contractor submit contract'),
+  'page callback'=>'drupal_get_form','page arguments'=>array('contractor_preq_form'),
+  'file'=>'preq.inc',
+  );
+  		
+  $items['veritas/contractor/lotpayform']=array(
+  'title'=>'Upload Tender Document',
+  'type'=>MENU_NORMAL_ITEM,
+//  'access callback'=>'_contractor_access',
+  'access arguments'=>array('contractor submit contract'),
+  'page callback'=>'drupal_get_form','page arguments'=>array('contractor_lotpay_form'),
+  'file'=>'preq.inc',
+  );
+  
+	
+
+return $items;
+}
+function contractor_verify_access($d){
+	global $user;
+	return true;
+}
+function contractor_tender_validate(){
+	global $user;
+	if(!$user->name||$user->name!=variable_get('veritas_tender_adminuser','')){
+		drupal_goto('veritas/error');
+		exit;
+	}
+	$d=arg(3);
+	if(!$d)
+	drupal_goto('veritas/error');
+	
+$r=	db_query("select * from contractor_lots inner join lot using(lot_id) inner join contractor using(contractor_id) where hstr='%s'",$d);	
+$f=db_fetch_object($r);
+if(!$f->id){
+	return "Tender not found for this link";
+}
+		$nid=variable_get('veritas_tender_node','');
+$link=url("node/$nid",array('absolute'=>true));
+$link2=url("veritas/contractor/lotpayform",array('absolute'=>true));
+$apl=<<<str
+To $f->companyname
+Dear Sirs/Madams
+We have approved your prequalification bid and you can now download the tender documents and upload them after paying the tender fees.
+Details: Tender $f->name $f->description  Tender Fee Payable: NGN $f->tender_fee
+Tender Download Page Link:  $link
+Completed Tender Upload at : $link2
+You need to log in before you can use the above links.
+Director of works
+str;
+$u=user_load(array('uid'=>$f->contractor_id));
+$message=drupal_mail('veritas','approved',$u->mail,language_default(),array(),null,false); 
+$message[body]=$apl;
+$message[subject]='Tender Approval';
+$message[headers]=array_merge($message[headers],array( 'MIME-Version'  => '1.0',
+    'Content-Type'  => 'text/plain; charset=UTF-8'));
+drupal_mail_send($message);
+
+db_query("update contractor_lots set approved=1 where id=%d",$f->id);
+return "Tender Approved for Contractor <br/>Company Name: $f->companyname ,<br/>Tender: $f->name $f->description .";
+}
+
+function contractor_tender_view(){
+		if($_SESSION[veritas_tender])
+	{
+		$nid=variable_get('veritas_tender_node','');
+		if(!$nid){
+			drupal_goto('veritas/error');
+		}
+else drupal_goto('node/'.$nid);
+	}
+	else {
+drupal_goto('veritas/contractor/tender');		
+		}
+}
+function contractor_page(){
+
+	return t('Contractor Page');
+}
+function contractor_perm(){
+	return array('contractor register','contractor submit contract','access');
+}
+function _contractor_access($arg=''){
+	return true;
+}
+function contractor_get_preq1(){
+	return drupal_get_form('contractor_preq_form');
+}
+function _contractor_add_type(){
+	
+	$type=(int)$_POST[type];
+	db_query("select * from contractor_type where ");
+	
+}
+
+function _contractor_add_lga() {
+$x=arg(2);
+if($x=='state'){
+$state=(int)$_POST[state];
+$name='lga';
+}
+else if($x=='astate'){
+	$state=(int)$_POST[astate];
+	$name='alga';
+}else
+exit;
+$f=array();
+$r=db_query("select * from lga where lga_rel=%d",$state);
+while($s=db_fetch_object($r)){
+	$f[$s->lga_id]=$s->lga_name;
+}
+  // all you have to worry about is the new form field that will be inserted via #ahah
+  
+	
+	$form = array(
+    '#type' => 'select',
+    '#title' => 'LGA',
+    '#options' => $f,
+   
+  );
+///  drupal_alter_form();
+  // ahah_render is where the magic happens. 
+  // 'the value of this field will show up as $form_value['user_problem'] 
+  $output = _contractor_ahah_render($form, $name);
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+}
+/*
+  This function is largely based on the poll module, its been simplified for reuse.
+  $fields is the specific form elements you want to attach via ahah,
+  $name is the form fields array key... e.g. the name for $form['title'] is "title"
+*/ 
+function contractor_tender_login_form($state=''){
+///	$form['#action']=url('user');
+  $form['name']=array('#type'=>'textfield','#size'=>15,'#title'=>'username');
+  $form['name']['#description'] = t('Enter your @s username.', array('@s' => variable_get('site_name', 'Drupal')));
+  $form['pass'] = array('#type' => 'password',
+    '#title' => t('Tender ID'),
+    '#description' => t('Enter the tenderID.'),
+    '#required' => TRUE,
+  '#size'=>15,
+    '#attributes' => array('tabindex' => '2'),
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => t('Log in'), '#weight' => 2, '#attributes' => array('tabindex' => '3'));
+//$form['#validate']=array('_contractor_login_validate');
+	
+///	$form['id']='tender_login_form';
+	return $form;
+}
+
+function contractor_tender_login_form_validate($form,$form_state){
+	global $user;
+	$u=$form_state[values][name];
+	$p=$form_state[values][pass];
+$f=	db_query("select * from transaction where username='%s' and password_2='%s' and trans_type='cfee'",$u,$p);
+$f=db_fetch_object($f);
+
+if($f->user_type_id){
+	
+	$user=user_load(array('uid'=>$f->user_type_id));
+	
+if($user->uid){
+	$_SESSION[veritas_tender]=1;
+	drupal_goto('veritas/contractor/tender/view');
+	return;
+}
+return "Invalid TenderID/username";
+}
+return "Invalid TenderID/username";
+
+}	
+function _contractor_fee(){
+	$x=(int)$_POST['value'];
+			$f=db_query("select * from contractor_fee where contractor_fee_id=%d",$x);
+	$f=db_fetch_object($f);
+	if(!$f->contractor_fee_id){
+		$out='<table style="width: 200px;"><caption><b>Fees Payable</b></caption><tr><td><b>Application Fees</b></td><td>NGN 1500</td></tr><tr><td><b>Registration Fees</b></td><td></td></tr><tr><td><b>Renewal Fees</b></td><td></td></tr></table>' ;
+	}else{
+		$out='<table style="width: 200px;"><caption><b>Fees Payable</b></caption><tr><td><b>Application Fees</b></td><td>NGN '.$f->application_fee.'</td></tr><tr><td><b>Registration Fees</b></td><td>NGN '.$f->registration_fee.'</td></tr><tr><td><b>Renewal Fees</b></td><td>NGN '.$f->renewal_fee.'</td></tr></table>' ;
+	}
+		echo drupal_to_js(array('status'=>true ,'data'=>$out));
+	exit;
+}
+function _contractor_ahah_render($fields, $name) {
+	
+  drupal_alter('form', $fields, array(), 'student_reg_form');
+	
+  $form_state = array('submitted' => FALSE,'#values'=>$_POST);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  $form = form_get_cache($form_build_id, $form_state);
+  $form[$name] = $fields;
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+  // Rebuild the form.
+  $form = form_builder('contractor_reg_form', $form, $form_state);
+
+  // Render the new output.
+  $new_form = $form[$name];
+  return drupal_render($new_form); 
+}
+function  contractor_nodeapi(&$node, $op){
+global $user;	
+if($user->uid==1)
+return;
+	$nid=variable_get('veritas_tender_node','');
+		if($nid&&$nid==$node->nid){
+$lock=true;
+		}
+		else
+	return;	
+if(array_search('Officers',$user->roles)){
+	return;	
+}
+if(!array_search('Contractor',$user->roles)){
+drupal_set_message('You need to be a contractor to enter this page');
+drupal_goto('veritas/error');
+}
+/*
+if(!$_SESSION[veritas_tender]&&$user->uid!=1){
+	drupal_set_message('You are not authorized to view tender documents');
+	drupal_goto('veritas/contractor/tender');
+}*/
+if($op=='insert'){
+	
+}
+
+if($op=='load'){
+	$r=db_query("select description,filename,filepath from {upload} u inner join {files} f on(u.fid=f.fid) where nid=$node->nid");
+	$head=array('Lot Name',' File Link');
+	$rs=array();
+	$rc=db_query("select * from contractor_lots inner join lot using (lot_id)  where  contractor_id=%d and approved=1",$user->uid);
+	while($fc=db_fetch_object($rc)){
+		$lots[]=$fc->lot_name;
+	}
+	if(!count($lots)){
+		drupal_set_message('You don\'t have any approved tender');
+		drupal_goto('veritas/error');
+		exit; 
+	}
+///	echo "select * from contractor_lots inner join lot using (lot_id)  where  contractor_id=%d";
+	
+///	$lots=array('A','B','C');//'D','E','F','G','H','I','J','K','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z');
+	while($f=db_fetch_object($r)){
+///		$filepath=preg_replace('/.*\//','',$f->filepath);
+		$link=url("system/files/".$f->filepath);
+		$rs[str_replace(array('tender','.zip'),array('',''),$f->description)]="<a href='$link'>".$f->description.'</a>';
+	}
+	$rows=array();
+	for($i=0;$i<count($lots);$i++){
+$rows[]=array($lots[$i],$rs[$lots[$i]]);
+	}
+
+$table=theme('table',$head,$rows,array('width'=>'50%','align'=>'center'),'File Downloads');
+$node->body=str_replace("{tendertable}",$table,$node->body);		
+
+		
+	}
+	///if($node->)
+}
+function contractor_user($op,$edit,$account){
+	if($op=='logout')
+	$_SESSION[veritas_tender]=0;
+	
+}
+function contractor_file_download($file){
+	global $user;
+	
+$base= preg_replace('/.*\//','',$file);
+$base= $base[6]; //preg_replace('/_.*/','',$base);
+//echo "base $base file $file";
+//$base='tenderA.zip';	
+//$base=str_replace(array('tender','.zip'),'',$base);
+$s=db_query("select * from contractor_lots inner join lot using(lot_id) where lot_name='%s' and contractor_id=%d ",$base,$user->uid);
+//echo "select * from contractor_lots inner join lot using(lot_id) where lot_name='%s' and contractor_id=%d b,$base u,$user->uid";
+$a=db_fetch_object($s);
+if(!$a->id){
+	//echo "no lot";
+drupal_goto('veritas/error');
+	exit;
+}
+
+$s=db_query("select * from {files} where filepath='%s'",$file);
+$f=db_fetch_object($s);
+if(!$f->fid){
+//	echo "no file in $file";
+//	exit;
+	drupal_goto('veritas/error');
+exit;	
+}
+$headers = array('Content-Type: ' . $f->filemime,'Content-Disposition: attachment; filename="tender'.$base.'.zip"');
+file_transfer($file,$headers);
+	exit;
+}
+
+function contractor_lotpay_form(&$obj){
+	global $user;
+///$form[p]=array('#title'=>'Tender Payment Form','#type'=>'fieldset');
+$r=db_query("select * from contractor_lots inner join lot using (lot_id) where   contractor_id=%d and paid=0 and approved=1 order by lot_name",$user->uid);
+while($f=db_fetch_object($r)){
+	$lots[$f->id]=$f->description;
+}
+	if(empty($obj[storage][step]))
+	$obj[storage][step]=1;
+
+if($obj[storage][step]==1){
+$form=array('#title'=>'Tender payment form');
+$form[lot]=array('#title'=>'Select your Tender','#multiple'=>true,'#options'=>$lots,'#size'=>5,'#type'=>'select','#ahah'=>array('event'=>'change','wrapper'=>'edit-fee','path'=>'contractor/tenderfee','method'=>'html'));
+$form[a]=array(
+'#value'=>'<div id="edit-fee"></div>');	
+//$form[fset]=array('#type'=>'fieldset','#title'=>'Your Credit Card Detail');
+
+	$form[fees][cpin]=array('#type'=>'textfield','#size'=>45,'#title'=>'TELLER NUMBER','#prefix'=>'<table border="1" align="center"><tr><td><table colspan="2" cellspan="2" align="center"><caption>BANK PAYMENT INFORMATION</caption><tr><td>','#suffix'=>'</td></tr>','#required'=>true );
+	$form[fees][cc]=array('#type'=>'textfield','#size'=>45,'#title'=>'NAME','#prefix'=>'<tr><td>','#suffix'=>'</td></tr></table></td></tr></table>','#required'=>true);
+
+
+//$form[fset][cc]=array('#type'=>'textfield','#size'=>'25','#prefix'=>'<table colspan="2" cellspan="2"><tr><td><b>Card Number:</b></td><td>','#suffix'=>'</td></tr>');
+//$form[fset][cpin]=array('#type'=>'textfield','#size'=>'5','#prefix'=>'<tr><td><b>Card Pin:</b></td><td>','#suffix'=>'</td></tr>');
+//$form[fset][edate]=array('#type'=>'ccdt','#prefix'=>'<tr><td><b>Expiry Date</td><td>','#suffix'=>'</td></tr></table>');
+$form['next']=array('#id'=>'edit-next','#type'=>'submit','#value'=>'Select Lot and Confirm','#suffix'=>'</td></tr></table>');
+
+}
+else if($obj[storage][step]==2){
+	
+$form['#attributes'] = array('enctype' => "multipart/form-data"); 
+$lot=$obj[storage][values][1][lot];
+//echo "lot $lot";
+$form[lots]=array('#type'=>'fieldset','#value'=>'You can also upload tender documents for which you have paid before but not uploaded.');
+foreach($lot as $v){
+$r=db_query("select * from lot inner join contractor_lots using(lot_id) where id=%d and paid=1 and fid=0 and contractor_id=%d",$li,$user->uid);
+$f=db_fetch_object($r);
+	
+	$form[lots]["lotfile$v"]=array('#type'=>'file','#title'=>$f->description);
+}
+$form['previous']=array('#id'=>'edit-previous','#type'=>'submit','#value'=>'Back','#prefix'=>'<tr><td>&nbsp;</tr></td><tr><td>','#suffix'=>'</td><td>');
+$form['next']=array('#id'=>'edit-next','#type'=>'submit','#value'=>'Upload','#suffix'=>'</td></tr></table>');
+	
+}
+$form['#multistep']=true;
+$form['#redirect']=false;
+return $form;
+}
+function contractor_lotpay_form_validate($form,&$state){
+global $user;
+	if ($state['clicked_button']['#id']=='edit-previous') {
+     $nextstep=   $state['storage']['step']-1;
+     return;
+    } elseif ($state['clicked_button']['#id']=='edit-next') {
+      $nextstep=  $state['storage']['step']+1;
+    }
+    if($nextstep==2){
+    	
+	$lot=$state[values][lot];
+///	$amt=variable_get('veritas_lot_upload_cost',10000);
+//	$amt=23;
+	global $user;
+	if(!count($lot)){
+		form_set_error('lot','Please select your lot');
+		return;
+	}
+	$amts=array();
+	foreach($lot as $li){
+	$amts[$li]=(float)veritas_tender_fees($li);	
+	$amt=veritas_tender_fees($lot);
+	$r=db_query("select * from contractor_lots where id=%d and contractor_id=%d and approved=1",$li,$user->uid);
+	$f=db_fetch_object($r);
+	if(!$f->id){
+form_set_error('lot','Invalid lot');
+		return;
+		
+	}
+	if($f->paid){
+		drupal_set_message("You have already paid for the lot,please proceed to upload");
+//		form_set_error('lot','You already paid for this lot');
+		return;
+	}
+	}
+
+	$state[storage][transid]=$transid=uniqid("w");
+//	$state[storage][lot]=$lot;
+	$descr="Tender Upload Fees";
+$val1=$state['values'];
+$em= sprintf("%02d",$val1[edate][em]);
+$ey= $val1[edate][ey];
+
+if(!$val1[cc]||!$val1[cpin]){
+	form_set_error('','Invalid payment Details');
+	return;
+}
+
+$s=	veritas_pay_cc($val1[cc],$val1[cpin],$em,$ey,$amt,$descr,$transid,$user->name,$user->mail,'tfee',$lot);
+if($s>0){
+	form_set_error('',"Invalid payment information. ");	
+	return;
+}
+else if($s<0){
+	form_set_error('','Transaction processing error. please try later or contact admin');
+	return;
+	
+}
+foreach($lot as $li)
+db_query("update contractor_lots set paid=1,trans='%s',amt={$amts[$li]} where id=%d and approved=1",$transid,$li);
+db_query("update transaction set user_type_id=%d where receipt_no='%s'",$user->uid,$transid);
+    	
+
+ if(variable_get('veritas_logo','')){
+ $logourl=url('',array('absolute'=>true)).variable_get('veritas_logo','');
+ $img="<img src='$logourl' alt='Veritas Logo'>";
+ }else
+ $img='';
+$r=db_query("select * from transaction where receipt_no='%s'",$transid);
+$f=db_fetch_object($r);
+veritas_mail_receipt($f,$email,$name,$img);
+
+    	
+    }
+    else if($nextstep==3) {
+    	
+    	
+   	$lot=$state[storage][values][1][lot];
+   	foreach($lot as $li){
+	$f=veritas_check_upload('lotfile'.$li,array(),'',false);
+    if($f){
+	form_set_error('lotfile'.$li,'Sorry file cannot be uploaded. Please try again ');
+	return;
+	}
+   	}//lot
+	
+	    	
+    	
+    	
+    	
+    }
+    
+	
+}
+
+function contractor_lotpay_form_submit($form,&$state){
+		global $user;
+$state[storage][values][$state[storage][step]]=$state[values];
+ 	if ($state['clicked_button']['#id']=='edit-previous') {
+        $state['storage']['step']--;
+        return;
+    } elseif ($state['clicked_button']['#id']=='edit-next') {
+        $state['storage']['step']++;
+    }
+  $step=$state[storage][step];
+  if($step==3){
+  	$lot=$state[storage][values][1][lot];
+  	foreach($lot as $li){
+	$f=file_save_upload('lotfile'.$li,array(),'',false);
+	if(!$f){
+	drupal_set_message('Some Tender document # cannot be uploaded ');
+	return;
+	}
+	file_set_status($f,FILE_STATUS_PERMANENT);	
+	db_query("update contractor_lots set fid=%d where id=%d",$f->fid,$li);
+  }
+//  $f=db_query("select * from  lot where lot_id=%d",);
+drupal_set_message("Your tender document was uploaded");
+$rc=db_query("select * from contractor where contractor_id=%d",$user->uid);
+$fc=db_fetch_object($rc);
+$apl=<<<str
+To
+$fc->companyname
+Dear Sirs/Madams
+Your tender bid has been submitted and is currently under review. 
+Veritas University will contact you when with its decision in due course.
+Director Of Works
+str;
+$u=user_load(array('name'=>variable_get('veritas_tender_adminuser','')));
+$message=drupal_mail('veritas','approved',$user->mail,language_default(),array(),$u->mail,false); 
+$message[body]=$apl;
+$message[subject]='Tender Document Submission';
+$message[headers]=array_merge($message[headers],array( 'MIME-Version'  => '1.0',
+    'Content-Type'  => 'text/plain; charset=UTF-8'));
+drupal_mail_send($message);
+
+
+$tid=$state[storage][transid];
+$r=db_query("select * from transaction where receipt_no='%s'",$tid);
+$f=db_fetch_object($r);
+
+
+
+
+
+drupal_goto("veritas/receipt/".$f->transaction_id);	
+return;
+	
+  }
+	
+}
+function contractor_tender_documents(){
+?>
+
+
+
+<?
+
+
+}
+function contractor_tenderfee(){
+	$lot=$_POST[lot];
+	$d=count($lot);
+	if(!$d)
+	$o=0;
+	$o=  veritas_tender_fees($lot);//  number_format($d*variable_get("veritas_lot_upload_cost",0),2);
+echo drupal_to_js(array('status'=>true,'data'=>"<b>Amount Payable</b>:NGN $o"));	
+exit;
+}
+function veritas_tender_fees($lot){
+	$tot=0;
+	if(is_array($lot)){
+		foreach($lot as $li){
+$r=db_query("select * from  contractor_lots inner join lot using(lot_id) where id=%d",$li);
+		$f=db_fetch_object($r);
+		$tot+=$f->tender_fee;
+		}
+	}
+		else{
+$r=db_query("select * from  contractor_lots inner join lot using(lot_id) where id=%d",$lot);
+		$f=db_fetch_object($r);
+		$tot=$f->tender_fee;
+			
+			
+		}
+	return $tot;
+}
+
+?>

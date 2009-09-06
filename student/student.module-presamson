@@ -1,0 +1,900 @@
+<?
+function student_menu(){
+	$items['student/new']=array(
+	'title'=>'JAMB/UME STUDENT REGISTRATION FORM',
+ 	'page callback' => 'drupal_get_form',
+	'page arguments'=>array('student_reg_form'),
+    'access arguments' => array('student register'),
+    'type' => MENU_NORMAL_ITEM,
+	);
+	
+	$items['student/ajaxlga']=array(
+ 	'page callback' => '_student_add_lga',
+    'access arguments' => array('student register'),
+    'type' => MENU_CALLBACK,
+	);
+	$items['student/religions']=array(
+ 	'page callback' => '_student_get_subrel',
+    'access arguments' => array('student register'),
+    'type' => MENU_CALLBACK,
+	);
+	
+	$items['student/ajaxdep']=array(
+ 	'page callback' => '_student_add_dep',
+    'access arguments' => array('student register'),
+    'type' => MENU_CALLBACK,
+	);
+	
+	$items['student/ajaxcourse']=array(
+ 	'page callback' => '_student_add_course',
+    'access arguments' => array('student register'),
+    'type' => MENU_CALLBACK,
+	);
+	
+  return $items;
+}
+function student_perm(){
+	return array('student register');
+}
+function student_reg_form(&$obj){
+	if(!$obj[storage][step])
+	$obj[storage][step]=1;
+	$st=$obj[storage][step];
+	if($st==1)
+	return _student_reg_form1($obj);
+	else if($st==2)
+	return _student_reg_form2($obj);
+	else if($st==3)
+	return _student_reg_form3($obj);
+	else if($st==4)
+	return _student_reg_form4($obj);
+	else if($st==5)
+	return _student_reg_form5($obj);
+	
+}
+function _student_reg_form1(&$obj){
+
+	$form[q]=array('#type'=>'checkbox','#title'=>'Yes I have already paid the required amount before 24 hours','#description'=>'Please confirm you have already paid through bank at least before 24 hours from now.and have the TELLER NUMBER and NAME . <BR/>You will be required to enter this information later and the paid amount must match with the amount payable now. In case you are not able to provide the required information the form won\'t be accepted');
+	$form['#title']=t('Personal Information');
+	$form[jam]=array('#title'=>'JAMB NO','#type'=>'textfield','#size'=>20,'#required'=>true);
+	$form[mode]=array('#type'=>'select','#options'=>array('UME'=>'UME','DE'=>'DE','MEX'=>'MEX'),'#title'=>'Mode Of Entry');
+	$form[mods]=array('#title'=>'Mode Of Study','#type'=>'select','#options'=>array('Full_Time'=>'Full Time','Part_Time'=>'Part Time','Weekend'=>'Weekend','Evening'=>'Evening','Sandwich'=>'Sandwich','Ocassional'=>'Ocassional','Correspondence'=>'Correspondence','Distance_Learning'=>'Distance_Learning'));
+	
+	$form['title']=array('#type'=>'select','#options'=>_veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,'#required'=>true,'#title'=>'Title');
+	$form['lname']=array('#title'=>'Surname','#type'=>'textfield','#size'=>20,'#required'=>true);
+	$form['fname']=array('#title'=>'First Name','#type'=>'textfield','#size'=>20,'#required'=>true);
+	$form['mname']=array('#title'=>'Middle Name','#type'=>'textfield','#size'=>20);
+	$form['sex']=array('#type'=>'radios','#title'=>"Gender",'#options'=>array('male'=>'Male','female'=>'Female'),'#required'=>true);
+	$form['dob']=array('#type'=>'date','#title'=>'Date Of Birth');
+	$form['mar']=array('#type'=>'radios','#options'=>array('married'=>'Married','single'=>'Single'),'#title'=>'MARITAL STATUS','#required'=>true);
+	$form['nat']=array('#type'=>'select','#default_value'=>156/*nigeria*/,'#options'=>_veritas_country(),'#title'=>'Nationality');
+
+	$rels= _student_religion();
+	$form['state']=array('#type'=>'select','#options'=>veritas_states(),'#title'=>'State Of Origin(Only for nigeria)','#ahah'=>array('event'=>'change','wrapper'=>'ilga','path'=>'student/ajaxlga/state','method'=>'html'));
+	$form['lga']=array('#type'=>'select','#default_value'=>0,'#options'=>veritas_lga() ,'#title'=>'LGA','#prefix'=>'<div id="ilga">','#suffix'=>'</div>','#attributes'=>array('disabled'=>'disabled','class'=>'form-select'));
+	$form['rel']=array('#title'=>'Religion','#type'=>'select','#options'=>$rels,'#ahah'=>array('event'=>'change','wrapper'=>'edit-subr','path'=>'student/religions','method'=>'html'));
+	$form['subrel']=array('#value'=>'<div id="edit-subr"></div>');
+	//	$form['subrel']=array('#title'=>'Denomination','#option'=>_student_sub(),'#atteibute'=>array('disabled'=>'disabled'));
+	
+	$form[hob]=array('#type'=>'textfield','#title'=>'HOBBIES','#size'=>40);
+	
+	$form[address]=array('#type'=>'fieldset','#title'=>'Address & Contact Info','#collapsed'=>false,'#collapsible'=>true);
+	$form['address'][email]=array('#type'=>'textfield','#title'=>'Email','#size'=>45,'#required'=>true,'#description'=>'Your login details will be sent here');
+	$form['address'][city]=array('#type'=>'textfield','#title'=>'City','#size'=>15,'#required'=>true);
+	$form[address]['astate']=array('#type'=>'select','#options'=>veritas_states(),'#title'=>'State','#ahah'=>array('event'=>'change','wrapper'=>'ailga','path'=>'student/ajaxlga/astate','method'=>'html'),'#required'=>true);
+	$form[address]['alga']=array('#type'=>'select','#options'=>veritas_lga(),'#title'=>'LGA','#prefix'=>'<div id="ailga">','#suffix'=>'</div>','#attributes'=>array('class'=>'form-select','disabled'=>'disabled'));
+	$form[address][address1]=array('#type'=>'textfield','#size'=>60,'#required'=>true,'#title'=>'Address 1');
+//	$form[address][address2]=array('#type'=>'textfield','#size'=>25 ,'#title'=>'Address 2');
+	$form[address][tel1]=array('#type'=>'textfield','#size'=>25,'#required'=>true,'#title'=>'Telephone');
+	$form[address][tel2]=array('#type'=>'textfield','#size'=>25,'#title'=>'Mobile');
+	
+	$form[kin]=array('#type'=>'fieldset','#title'=>'Relationship Information');
+	$form[kin][kname]=array('#type'=>'textfield','#size'=>45,'#title'=>'KIN NAME','#required'=>true);
+	$form[kin][kadd]=array('#type'=>'textarea','#rows'=>3,'#cols'=>10,'#title'=>'Address','#required'=>true);
+	$form[kin][kcity]=array('#type'=>'textfield','#size'=>20,'#title'=>'City','#required'=>true);
+	$form[kin][kstate]=array('#type'=>'select','#options'=>veritas_states(),'#required'=>true,'#title'=>'STATE');
+	$form[kin][ktel]=array('#type'=>'textfield','#size'=>25,'#title'=>'Telephone');
+	$form[kin][krel]=array('#type'=>'select','#options'=>_student_rel(),'#title'=>'Relationship','#required'=>true);
+	///if(is_array($obj[storage][values][1]))
+	//_assign_keys($form,$obj[storage][values][1]);
+	$form[submit]=array('#id'=>'edit-next','#value'=>'Next','#type'=>'submit');
+	$form['#multistep']=true;
+	$form['#redirect']=false;
+	
+	return $form;
+}
+function _student_reg_form2($state){
+	$curl=url('student/ajaxcourse',array('absolute'=>true));
+	drupal_add_js(array('student'=>array('courseurl'=>$curl)),'setting');
+	drupal_add_js('
+	var student={};
+	student.getcourse=function(p,x){
+	p=p.options[p.options.selectedIndex].value;
+	if(p==""){
+	return;
+	}
+$.post(Drupal.settings.student.courseurl,{dep: p,div: x},
+function (data){
+e=Drupal.parseJson(data);
+if(e.status){
+$("#"+x).html(e.data);
+
+}
+}
+);	//post
+}
+	
+	','inline','header');	
+	
+	$form['markx']=array('#value'=>'<b>JAMB DETAILS<b/>');
+	$form['fc']=array('#type'=>'fieldset','#title'=>'FIRST CHOICE');
+	$form[fc][col1]=array('#type'=>'select','#default_value'=>0,'#options'=>_student_col(),'#title'=>'College','#ahah'=>array('wrapper'=>'div-id-dp1','method'=>'html','event'=>'change','path'=>'student/ajaxdep/col1'));
+	$form[fc][dep1]=array('#type'=>'select','#default_value'=>0,'#options'=>_student_dep(),'#attributes'=>array("onchange"=>'student.getcourse(this,"div-id-co1")'),'#title'=>'Department','#prefix'=>'<div id="div-id-dp1">','#suffix'=>'</div>','#attributes'=>array('disabled'=>'disabled'));
+	$form[fc][course1]=array('#type'=>'select','#default_value'=>0,'#options'=>_student_prg(),'#title'=>'Course','#prefix'=>'<div id="div-id-co1">','#suffix'=>'</div>','#attributes'=>array('disabled'=>'disabled'));
+	$form['fc1']=array('#type'=>'fieldset','#title'=>'SECOND CHOICE');
+	$form[fc1][col2]=array('#type'=>'select','#default_value'=>0,'#options'=>_student_col(),'#title'=>'College','#ahah'=>array('wrapper'=>'div-id-dp2','method'=>'html','event'=>'change','path'=>'student/ajaxdep/col2'));
+	$form[fc1][dep2]=array('#type'=>'select','#default_value'=>0,'#options'=>_student_dep(),'#title'=>'Department','#prefix'=>'<div id="div-id-dp2">','#suffix'=>'</div>','#ahah'=>array('wrapper'=>'div-id-co2','method'=>'html','event'=>'change','path'=>'student/ajaxcourse/dep2'),'#attributes'=>array('disabled'=>'disabled'));
+	$form[fc1][course2]=array('#type'=>'select','#default_value'=>0,'#options'=>_student_prg(),'#title'=>'Course','#prefix'=>'<div id="div-id-co2">','#suffix'=>'</div>','#attributes'=>array('disabled'=>'disabled'));
+	$form[sub]=array('#type'=>'fieldset','#title'=>'SUBJECTS FOR UNIVERSITIES MATRICULATION EXAMINATION');
+	
+	
+	$form[sub][s1]=array('#type'=>'item','#title'=>'SUBJECT 1','#value'=>'English(Compulsory)');
+	$form[sub][s2]=array('#type'=>'select','#options'=>_student_sub(),'#title'=>'SUBJECT 2');
+	$form[sub][s3]=array('#type'=>'select','#options'=>_student_sub(),'#title'=>'SUBJECT 3');
+	$form[sub][s4]=array('#type'=>'select','#options'=>_student_sub(),'#title'=>'SUBJECT 4');
+	
+	$form[etown]=array('#type'=>'textfield','#title'=>'EXAMINATION TOWN','#size'=>24,'#required'=>true);
+	
+//	if(is_array($obj[storage][values][2]))
+//	_assign_keys($form,$state[storage][values][2]);
+	
+	$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit');
+	$form['jambsubn']=array('#id'=>'edit-next','#value'=>'Next','#type'=>'submit');
+	
+	return $form;
+}
+function _student_reg_form3($state){
+	$form[mark]=array('#value'=>'<b>ACADEMIC AND EXAMINATIONS INFORMATION</b>');
+	$form['inst']=array('#type'=>'fieldset','#title'=>'1. INSTITUTIONS ATTENDED');
+	$form[inst][in1]=array('#type'=>'textfield','#title'=>'INSTITUTION NAME','#required'=>true);
+	$form[inst][dst1]=array('#type'=>'ccdt','#name'=>'dst1','#title'=>'DATE STARTED','#ccdt_attribute'=>array(2001,2008),'#prefix'=>'<table><tr><td>','#suffix'=>'</td>');
+	$form[inst][den1]=array('#type'=>'ccdt','#name'=>'den1','#title'=>'DATE ENDED','#ccdt_attribute'=>array(2001,2008),'#prefix'=>'<td>','#suffix'=>'</td></tr></table>');
+	$form[inst][q1]=array('#type'=>'textfield','#title'=>'QUALIFICATION OBTAINED','#required'=>true);
+	$form[inst][mhr1]=array('#value'=>'<hr/>');
+	$form[inst][in2]=array('#type'=>'textfield','#title'=>'2. INSTITUTION NAME');
+	$form[inst][dst2]=array('#type'=>'ccdt','#name'=>'dst2','#title'=>'DATE STARTED','#ccdt_attribute'=>array(2001,2008),'#prefix'=>'<table><tr><td>','#suffix'=>'</td>');
+	$form[inst][den2]=array('#type'=>'ccdt','#name'=>'den2','#title'=>'DATE ENDED','#ccdt_attribute'=>array(2001,2008),'#prefix'=>'<td>','#suffix'=>'</td></tr></table>');
+	$form[inst][q2]=array('#type'=>'textfield','#title'=>'QUALIFICATION OBTAINED');
+	$form[inst][mhr2]=array('#value'=>'<hr/>');
+	
+	$form[nos]=array('#type'=>'radios','#title'=>'NUMBER OF O-LEVEL SITTINGS','#options'=>array('1'=>'One Sitting','2'=>'Two Sittings'),'#required'=>true);
+	
+	$form['fs']=array('#type'=>'fieldset','#title'=>'FIRST SITTING','#description'=>'Enter at least 6 distinct subjects');
+	$form[fs]['ebd1']=array('#type'=>'select','#title'=>'EXAM BODY','#options'=>_student_bod(),'#required'=>true);
+	$form[fs][edate1]=array('#type'=>'date','#title'=>'EXAM DATE','#required'=>true);
+	$form[fs]['ec1']=array('#type'=>'textfield','#title'=>'EXAM CENTER','#size'=>'20','#required'=>true);
+	$form[fs]['eno1']=array('#type'=>'textfield','#title'=>'EXAM NO','#size'=>'20','#required'=>true);
+	
+	$form[fs][ms1]=array('#type'=>'item','#value'=>'SUBJECTS','#prefix'=>'<table><tr><td></td><th>','#suffix'=>'</th>');
+	
+	$form[fs][ms2]=array('#type'=>'item','#value'=>'GRADE','#prefix'=>'<td>','#suffix'=>'</td></tr>');
+	$tend='';
+	for($i=1;$i<=9;$i++){
+	$form[fs]["m1$i"]=array('#value'=>'<tr><td>'.$i,'#suffix'=>'</td>');
+	$form[fs]["s1$i"]=array('#type'=>'select','#options'=>_student_sub(),'#prefix'=>'<td>','#suffix'=>'</td>');
+	if($i==9)
+	$tend="</table>";
+	$form[fs]["g1$i"]=array('#type'=>'select','#options'=>_student_gr(),'#prefix'=>'<td>','#suffix'=>'</td></tr>'.$tend);
+}
+//$form[fs]["m12"]=array('#value'=>'</table>');
+	$form['fs2']=array('#type'=>'fieldset','#title'=>'SECOND SITTING','#description'=>'Enter at least 6 distinct subjects');
+	$form[fs2]['ebd2']=array('#type'=>'select','#title'=>'EXAM BODY','#options'=>_student_bod());
+	$form[fs2][edate2]=array('#type'=>'date','#title'=>'EXAM DATE');
+	$form[fs2]['ec2']=array('#type'=>'textfield','#title'=>'EXAM CENTER','#size'=>20);
+	$form[fs2]['eno2']=array('#type'=>'textfield','#title'=>'EXAM NO','#size'=>'20');
+	$form[fs2][ms11]=array('#type'=>'item','#value'=>'SUBJECTS','#prefix'=>'<table><tr><td></td><th>','#suffix'=>'</th>');
+	$form[fs2][ms12]=array('#type'=>'item','#value'=>'GRADE','#prefix'=>'<td>','#suffix'=>'</td></tr>');
+	
+	$tend='';
+for($i=1;$i<=9;$i++){
+	$form[fs2]["m2$i"]=array('#value'=>'<tr><td>'.$i,'#suffix'=>'</td>');
+	$form[fs2]["s2$i"]=array('#type'=>'select','#options'=>_student_sub(),'#prefix'=>'<td>','#suffix'=>'</td>');
+	if($i==9)
+	$tend="</table>";
+	$form[fs2]["g2$i"]=array('#type'=>'select','#options'=>_student_gr(),'#prefix'=>'<td>','#suffix'=>'</td></tr>'.$tend);
+}
+
+//	if(is_array($state[storage][values][3]))
+//	_assign_keys($form,$state[storage][values][3]);
+	$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit');
+	$form['jambsubn']=array('#id'=>'edit-next','#value'=>'Next','#type'=>'submit');
+	return $form;
+	
+}
+
+function _student_reg_form5($obj){
+	$amt=variable_get('veritas_student_regfees','1000');
+	$amt=number_format($amt,2);
+	
+	$form[fees]=array('#type'=>'fieldset','#title'=>'Registration Fees');
+	$form[fees][mark]=array('#type'=>'item','#title'=>'Amount Payable','#value'=>'NGN '.$amt);
+	
+///	$form[fees][m]=array('#name'=>'m','#type'=>'radios','#options'=>array('1'=>'Bank Payment','2'=>'Card Payment'),'#title'=>'Payment Method','#required'=>1,'#default_value'=>1,'#attributes'=>array('disabled'=>'disabled'));
+	
+	$form[fees][rno]=array('#type'=>'textfield','#size'=>45,'#title'=>'TELLER NUMBER','#prefix'=>'<table border="1" align="center"><tr><td><table colspan="2" cellspan="2" align="center"><caption>BANK PAYMENT INFORMATION</caption><tr><td>','#suffix'=>'</td></tr>' ,'#required'=>true);
+	$form[fees][cno]=array('#type'=>'textfield','#size'=>45,'#title'=>'NAME','#prefix'=>'<tr><td>','#suffix'=>'</td></tr></table></td></tr></table>','#required'=>true);
+///	$form[fees][fset]=array('#type'=>'fieldset','#title'=>'Your Credit Card Detail','#prefix'=>'<td>','#suffix'=>'</td></tr>');
+	
+  //$form[fees][cc]=array('#type'=>'textfield','#title'=>'CARD NUMBER','#size'=>'25','#prefix'=>'<td><table colspan="2" cellspan="2"><caption>CREDIT CARD PAYMENT</caption><tr><th>','#suffix'=>'</th>');
+	//$form[fees][cpin]=array('#title'=>'CARD PIN','#type'=>'textfield','#size'=>'5','#prefix'=>'<tr><td>','#suffix'=>'</td></tr>');
+
+	//$form[fees]['ed']=array('#type'=>'ccdt','#title'=>'EXPIRY DATE','#prefix'=>'<tr><td>','#suffix'=>'</td></tr></table></td></tr></table>');
+	//if(is_array($state[storage][values][3]))
+	//assign_keys($form,$state[storage][values][3]);
+	
+	$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit');
+	$form['jambsubn']=array('#id'=>'edit-next','#value'=>'Next','#type'=>'submit');
+	
+	$form['#multistep']=true;
+	$form['#redirect']=false;
+	
+	return $form;
+	
+}
+
+function _student_reg_form4($obj){
+	drupal_add_js("function student_disable(t){if(t.value=='normal') {document.getElementById('edit-disability').disabled='disabled';  } else {document.getElementById('edit-disability').disabled =false;}}",'inline');
+	$form['#attributes'] = array('enctype' => "multipart/form-data"); 
+	$form[mark]=array('#value'=>'<b>OTHER INFORMATION</b>');
+	$form[physical]=array('#type'=>'radios','#options'=>array('normal'=>'Normal','disabled'=>'Disabled' ),'#title'=>'PHYSICAL HEALTH STATUS','#required'=>true,'#attributes'=>array('onchange'=>'student_disable(this)'),'#default_value'=>'normal');
+	$form[disability]=array('#id'=>'edit-disability','#title'=>'DISABILITY','#type'=>'select','#options'=>array('blind'=>'Blind','dumb'=>'Dumb','deafdumb'=>'Deaf & Dumb','other'=>'Other'),'#disabled'=>'disabled','#attributes'=>array('class'=>'form-select'));
+	
+	$form[pic]=array('#type'=>'file','#title'=>'UPLOAD PASSPORT PICTURE');
+$amt=variable_get('veritas_student_regfee',10);
+	$form['dec']=array('#type'=>'checkbox','#title'=>'Agree','#prefix'=>'<p>DECLARATION:
+<font color="#1f497d"></font> I, hereby declare that all the information given 
+in this form is, to the best of my knowledge and belief, correct. Any 
+false or incomplete information given in this form will automatically 
+disqualify me from being considered for admission to, or continuing with any course of study in 
+the University. I shall accept as final the decision of the University with regard to my course(s) of study, and placement.');
+	$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit');
+	$form['jambsubn']=array('#id'=>'edit-next','#value'=>'Next','#type'=>'submit');
+	
+	$form['#multistep']=true;
+	$form['#redirect']=false;
+	return $form;
+}
+
+function student_reg_form_validate($form,&$state){
+	global $user;
+	
+	if ($state['clicked_button']['#id']=='edit-previous') {
+    	$state[storage][values][$state['storage']['step']]=$state[values];
+		$nextstep=   $state['storage']['step']-1;
+     return;
+    } elseif ($state['clicked_button']['#id']=='edit-next') {
+	$state[storage][values][$state['storage']['step']]=$state[values];
+   	$nextstep=  $state['storage']['step']+1;
+    }
+    	$v=$state[values];
+    
+if($nextstep==2){
+	if(!$v[q]){
+		form_set_error("You must confirm that you have the required payment information.");
+		return;
+	}
+	
+	
+	
+	if(!$v[email]){
+		
+		form_set_error('enaul','Email is required');
+	}
+if(!veritas_validuser($v[email],$v[email]))
+return false;	
+
+	if($v[nat]==156&&!$v[state]){//only applicable for nigeria
+	form_set_error('state','Required State of origin');
+		
+	}
+	if(!$v[astate]){
+	form_set_error('state','Required Address State');
+		
+	}
+	
+	if($v[state]&&!$v[lga])
+	form_set_error('lga','Required LGA');
+	else if(!$v[alga])
+	form_set_error('alga','Required Address LGA');
+	
+	
+	
+		
+}
+else if($nextstep==3){
+if(!_student_check_course($v[col1],$v[dep1],$v[course1])||!_student_check_course($v[col2],$v[dep2],$v[course2]))
+{
+	form_set_error('','Enter Proper college/department/course combination');
+}
+if(count(array_unique(array($v[s2],$v[s3],$v[s4])))<3||!($v[s2]&&$v[s3]&&$v[s4])){
+	form_set_error('','Enter differnt subjects');
+	
+}
+	
+}
+else if($nextstep==4){
+		if(!$v[ebd1]){
+			form_set_error('ebd1','Enter Exam Body');
+		}
+	
+	
+	$d=array();
+for($i=1;$i<=9;$i++){
+	$s="s1$i";
+	$g="g1$i";
+if($v[$s]){
+$d[]=$v[$s];
+if(!(int)$v[$g]){
+	form_set_error($g,'Enter Grade');
+}
+}
+	}
+if(count(array_unique($d))<6){
+	form_set_error("","Must have alteast 6 different subjects")	;
+}
+if(count(array_unique($d))!=count($d)){
+	form_set_error("","Duplicate subjects entered.")	;
+}
+$d=array();	
+	if($v[nos]==2){
+		if(!$v[ec2]){
+			form_set_error('ec2','Enter Exam Center');
+		}
+			if(!$v[ebd2]){
+			form_set_error('ebd2','Enter Exam Body');
+		}
+				if(!$v[eno2]){
+			form_set_error('eno2','Enter Exam Number');
+		}
+	for($i=1;$i<=9;$i++){
+	$s="s2$i";
+	$g="g2$i";
+if($v[$s]){
+$d[]=$v[$s];
+if(!(int)$v[$g]){
+	form_set_error($g,'Enter Grade');
+}
+}
+	}
+if(count(array_unique($d))<6){
+	form_set_error("","Must have alteast 6 different subjects")	;
+}
+if(count(array_unique($d))!=count($d)){
+//	var_dump($d);
+	form_set_error("","Duplicate subjects entered.")	;
+}
+		
+	}
+
+
+}
+
+else if($nextstep==5){
+	if(!$v[dec]){
+		form_set_error('dec',"You must accept the agreement");
+		return;
+	}
+	$f8=veritas_check_upload('pic');
+	if($f8){
+	form_set_error('pic','Picture cannot be uploaded '.$f8);
+	}
+	//else
+	///$state[storage][file]=$f8->fid;
+	return;
+	
+}
+else if($nextstep==6){
+	$type='Student Registration';
+$state[storage][transid]=$transid=uniqid("s");
+$descr="Student Registration Fees";
+$m=$_POST[mothod];
+$val1=$state[values];
+$m=$val1[m];
+
+$em=$val1[ed][em];
+$ey=$val1[ed][ey];
+$em= sprintf("%02d",$em);
+			$mail=$state[storage][values][1][email];;
+			$name=$state[storage][values][1][fname].' '.$state[storage][values][1][mname].$state[storage][values][1][lname];
+$amt=variable_get('veritas_student_regfees',1000);
+$m=1;
+if($m==2){
+if(!$val1[cc]||!$val1[cpin]){
+	form_set_error('','Invalid Credit Card Details');
+	return;
+}
+$s=	veritas_pay_cc($val1[cc],$val1[cpin],$em,$ey,$amt,$descr,$transid,$name,$mail,'sreg');
+}else if($m==1){
+$cno=$val1[cno];
+$rno=$val1[rno];
+if(!$cno||!$rno){
+	form_set_error('cno','Invalid payment details');	
+	return;
+}
+
+$s=veritas_pay_pin($rno,$cno,$amt,$descr,$transid,$name,$mail,'sreg');
+	
+}
+else{
+form_set_error('method','Choose payment method');
+return;
+}
+if($s>0){
+form_set_error('',"Invalid payment  information. ");	
+return;
+}
+else if($s<0){
+	form_set_error('','Transaction processing error. please try later or contact admin');
+	return;
+	
+}
+
+}
+
+}
+function _student_check_course($col,$dep,$c){
+	$rc=db_query("select p.programme_id,c.college_id,d.department_id from programme p inner join department d on(d.department_id=p.department_id) inner join college c  on (d.college_id=c.college_id) where p.programme_id=%d  ",$c);
+$fc=db_fetch_object($rc);
+if($fc->department_id==$dep&&$fc->college_id==$col&&$col&&$dep){
+	return true;	
+}
+return false;
+}
+function student_reg_form_submit($form,&$state){
+	if ($state['clicked_button']['#id']=='edit-previous') {
+      $state['storage']['step']--;
+          $state['#rebuild']=true;
+      
+      return;
+    } elseif ($state['clicked_button']['#id']=='edit-next') {
+    	$state[storage][values][$state[storage][step]]=$state[values];
+       $state['storage']['step']++;
+    }else
+    return;
+    $nextstep=   $state['storage']['step'];
+   
+    $state['#rebuild']=true;
+    if($nextstep==5){
+    	if($state[values][physical]=='disabled'){
+    	}
+	$f8=file_save_upload('pic',array(),'',false);
+	if(!$f8){
+	drupal_set_message('Picture cannot be uploaded ');
+	return;
+	}
+    	$state[storage][file]=$f8->fid;
+    }
+    if($nextstep==3){
+//    	$state[storage][values][3][course1]=(int)$_POST[course1];
+ //   	$state[storage][values][3][course2]=(int)$_POST[course2];
+    	
+    }
+	if($nextstep==6){
+$val=$state[storage][values][1];;
+///var_dump($state[storage][values]);
+$transid=$state[storage][transid];
+		if(!$transid){
+	drupal_set_message('Registration cannot be done . please contract admin');
+		drupal_goto('veritas/error');
+			
+		}
+		$type='sreg';
+		$acc=veritas_user_save($type,$val[email],$transid);
+$uid=$acc->uid;
+if($uid){
+	
+$f=$state[storage][file];
+	if($f){
+		$fs=new stdClass();
+		$fs->fid=$f;
+	file_set_status($fs,FILE_STATUS_PERMANENT);
+	}
+student_add($uid,$state[storage][values],$f);	
+$t=db_query("select transaction_id from transaction where receipt_no='%s'",$transid);
+$f=db_fetch_object($t);
+	drupal_goto('veritas/receipt/'.$f->transaction_id);
+}else{
+	drupal_set_message('Registration cannot be done . please contract admin');
+	drupal_goto('veritas/error');
+	
+}
+	
+	
+		
+		
+		
+	}
+}
+
+function student_add($uid,$val,$f){
+global $user;
+	$a=$val[1];
+	$b=$val[2];
+	$c=$val[3];
+	$d=$val[4];
+/*
+ * 
+CREATE TABLE `student` (
+  `student_id` int(11) NOT NULL,
+  `user_type_id` int(10) unsigned NOT NULL,
+  `matriculation_no` varchar(20) NOT NULL,
+  `first_name` varchar(30) NOT NULL,
+  `last_name` varchar(30) NOT NULL,
+  `middle_name` varchar(30) default NULL,
+  `title` enum('Mr','Miss','Mrs') NOT NULL,
+  `gender` set('male','female') NOT NULL,
+  `dob` date NOT NULL,
+  `nationality` varchar(30) NOT NULL default 'Nigeria',
+  `lkup_lga_origin` varchar(30) NOT NULL,
+  `marital_status` enum('single','married') NOT NULL,
+  `religion` enum('christianity','islam','traditional','other') NOT NULL,
+  `telephone` varchar(15) default NULL,
+  `mobile_number` varchar(15) default NULL,
+  `email_address` varchar(45) default NULL,
+  `username` varchar(20) default NULL,
+  `pwd` varchar(20) default NULL,
+  `sponsor_name` varchar(45) default NULL,
+  `mode_of_entry` enum('UME','DE','REM') default NULL,
+  `jambno` varchar(20) default NULL,
+  `yearofentry` int(10) unsigned default NULL,
+  `permanent_address1` varchar(45) default NULL,
+  `permanent_address_city` varchar(255) default NULL,
+  `permanent_address_state` varchar(45) default NULL,
+  `physical_health_status` enum('normal','disabled') default NULL,
+  `sponsor_address` varchar(255) default NULL,
+  `h_qualification` varchar(20) default NULL,
+  `h_institution` varchar(45) default NULL,
+  `h_date` varchar(20) default NULL,
+  `mode_of_study` enum('Full_Time','Part_Time','Weekend','Evening','Sandwich','Ocassional','Correspondence','Distance_Learning') default NULL,
+  `hobbies` varchar(45) default NULL,
+  `disability` enum('Blind','Deaf','Dumb','Crippled','NA') default 'NA',
+  `state_origin` varchar(30) default NULL,
+  `nid` int(10) unsigned NOT NULL,
+  PRIMARY KEY  (`student_id`),
+  KEY `student_FKIndex1` (`user_type_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+-- 
+ */	
+//	$v=$val[storage][values][1];
+	
+$a[dob1]=$a[dob][year].'-'.$a[dob][month].'-'.$a[dob][day];
+$c[dst1a]=$c[dst1][em].'/'.$c[dst1][ey];
+$c[dst2a]=$c[dst2][em].'/'.$c[dst2][ey];
+$c[dena]=  $c[den1][em].'/'.$c[den1][ey];
+$c[denb]= $c[den2][em].'/'.$c[den2][ey];
+if($v[physical]=='normal'){
+	$v[disability]='';
+}
+$rr=db_query("select * from religion where relegion_id=%d",$a[rel]);
+$fr=db_fetch_object($rr);
+$a[rel]=$fr->religion_name;
+db_query("insert into student set student_id='%s',user_type_id='%d',matriculation_no='%s',first_name='%s',last_name='%s',middle_name='%s',title='%s'
+	,gender='%s',dob='%s',nationality='%s',lkup_lga_origin='%s',marital_status='%s',religion='%s',
+	telephone='%s',mobile_number='%s',email_address='%s',
+	sponsor_name='%s',mode_of_entry='%s',jambno='%s',yearofentry='%s',
+ permanent_address1='%s',permanent_address_city='%s' ,permanent_address_state ='%s',
+ h_qualification1='%s',h_institution1='%s',h_date1='%s',h_end1='%s',
+ h_qualification2='%s',h_institution2='%s',h_date2='%s',h_end2='%s',
+  physical_health_status='%s',sponsor_address='%s',
+  mode_of_study='%s',hobbies='%s',disability='%s',state_origin='%s',pic_id='%s',subrel='%s'",$uid,$uid,$a[jam],
+  $a[fname],$a[lname],$a[mname],$a[title],
+  $a[sex],$a[dob1],$a[nat],$a[lga],$a[mar],$a[rel],
+  $a[tel1],$a[tel2],$a[email],
+  'sponsorname',$a[mode],$a[jam],date('Y'),
+  $a[address1],$a[city],$a[astate],
+  $c[q1],$c[in1],$c[dst1a],$c[dena],
+  $c[q2],$c[in2],$c[dst2a],$c[denb],
+ $d[physical],'aponsoradd',
+  $a[mods],$a[hob],$d[disability],$a[state],$f,$a[subrel]);
+	//$sid=db_last_insert_id('student','student_id');
+
+db_query("insert into next_of_kin set student_id='%s',name='%s',relationship='%s',
+address1='%s',city='%s',telephone='%s',mobile='%s'",
+$uid,$a[kname],$a[krel],$a[kadd],$a[kcity],$a[ktel],'mobile'); 
+$ed1=$c[edate1][year].'-'.$c[edate1][month].'-'.$c[edate1][day];
+db_query("insert into ext_exam_record set exam_date='%s',exam_center_name='%s',exam_body='%s',exam_student_id='%s',exam_number='%s'"
+,$ed1,$c[ec1],$c[ebd1],$uid,$c[eno1]);
+$eid=db_last_insert_id('ext_exam_record','ext_exam_record_id');
+for($i=1;$i<=9;$i++){
+	$s="s1$i";
+	$g="g1$i";
+if($c[$s])
+db_query("insert into ext_exam_detail  set ext_exam_record_id=%d,subject_id='%s',grade_id='%s'",$eid,$c[$s],$c[$g]);
+}
+if($c[nos]==2){
+$ed1=$c[edate2][year].'-'.$c[edate2][month].'-'.$c[edate2][day];
+db_query("insert into ext_exam_record  set exam_date='%s',exam_center_name='%s',exam_body='%s',exam_student_id='%s',exam_number='%s'"
+,$ed1,$c[ec2],$c[ebd2],$uid,$c[eno2]);
+
+$eid=db_last_insert_id('ext_exam_record','ext_exam_record_id');
+for($i=1;$i<=9;$i++){
+	$s="s1$i";
+	$g="g1$i";
+if($c[$s])
+db_query("insert into ext_exam_detail set ext_exam_record_id=%d,subject_id='%s',grade_id='%s'",$eid,$c[$s],$c[$g]);
+
+}
+
+	
+	
+}
+
+}
+
+function _student_gr(){
+	static $ritles;
+	if(!$titles){
+		$titles[]='Select';
+		$r=db_query("select * from  olevel_grades order by grade_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->grade_id]=$f->grade_name;
+	}
+	return  $titles;
+	
+}
+function _student_sub(){
+	static $ritles;
+	if(!$titles){
+		$titles[]='Select';
+		$r=db_query("select * from  ext_exam_subject order by subject_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->subject_id]=$f->subject_name;
+	}
+	return  $titles;
+	
+}
+
+function _student_bod(){
+	static $ritles;
+	if(!$titles){
+	$titles[]='Select';
+		$r=db_query("select * from ext_exam_body  order by exam_body_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->exam_body_id]=$f->exam_body_name;
+	}
+	return  $titles;
+	
+}
+function _student_rel(){
+	
+	static $ritles;
+	if(!$titles){
+		$r=db_query("select * from kin_relationship  order by relation");
+		while($f=db_fetch_object($r))
+		$titles[$f->relid]=$f->relation;
+	}
+	return  $titles;
+}
+function _student_col(){
+	
+	static $ritles;
+	if(!$titles){
+		$titles[0]="";
+		$r=db_query("select * from college  order by college_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->college_id]=$f->college_name;
+	}
+	return  $titles;
+}
+
+function _student_religion(){
+	static $ritles;
+	if(!$titles){
+	$titles=array();
+	$titles[]='';	
+$r=db_query("select * from religion ");
+while($f=db_fetch_object($r)){
+	$titles[$f->relegion_id]=$f->religion_name;
+}
+///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
+	}
+	return  $titles;
+	
+}
+function _student_dep(){
+	static $ritles;
+	if(!$titles){
+		$titles[0]="";
+		$r=db_query("select * from department  order by department_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->department_id]=$f->department_name;
+	}
+	return  $titles;
+	
+}
+function _student_prg(){
+		static $ritles;
+	if(!$titles){
+		$titles[0]="";
+		$r=db_query("select * from programme order by programme_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->programme_id]=$f->programme_name;
+	}
+	return  $titles;
+	
+}
+
+
+
+
+
+
+
+
+function _student_add_course(){
+$x= $_POST[dep];
+$p=$_POST[div];
+if($p=='div-id-co1'){
+	$nm='course1';
+}
+else if($p=='div-id-co2'){
+	$nm='course2';
+}
+
+if(!$x){
+ print drupal_to_js(array('data' => '', 'status' => false));
+ 	
+}
+
+
+$f=array();
+
+$r=db_query("select * from programme where department_id=%d",$x);
+while($s=db_fetch_object($r))
+$f[$s->programme_id]=$s->programme_name;
+	$form = array(
+    '#type' => 'select',
+    '#title' => 'COURSE',
+    '#options' => $f,
+	'#name'=>$nm
+   
+  );
+
+  $output = _student_ahah_render($form, $nm);
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+	
+}
+function _student_get_subrel(){
+$x=(int)$_POST[rel];
+//$r=db_query("select * from religion where religion_id=%d",$x);
+//$f=db_fetch_object($r);
+
+
+	$r=db_query("select * from religion_detail where religion_id=%d",$x);
+$rows=array();	
+	while($f=db_fetch_object($r)){
+
+			
+		
+		$rows[$f->religion_id_detail]=$f->religion_detail_name;
+		
+	}
+	
+if(!count($rows)){
+$form=array('#type'=>'textfield','#description'=>'Give Details');		
+	}
+	else{
+
+	$form = array(
+    '#type' => 'select',
+    '#title' => 'Denomination',
+    '#options' => $rows,
+  );
+		
+	}
+	
+ $output = _student_ahah_render($form, 'subrel');
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+	
+}
+function _student_add_dep(){
+$x=arg(2);
+
+if($x=='col1'){
+	$n='dep1';	
+	$div='div-id-co1';
+}
+else if($x=='col2'){
+	$n='dep2';
+	$div='div-id-co2';	
+}
+else{
+	
+	exit;
+}
+
+$d=(int)$_POST[$x];
+$f=array();
+$r=db_query("select * from department where college_id=%d",$d);
+$f[]='';
+while($s=db_fetch_object($r))
+$f[$s->department_id]=$s->department_name;
+	$form = array(
+    '#type' => 'select',
+    '#title' => 'DEPARTMENT',
+    '#options' => $f,
+   '#attributes'=>array('class'=>'form-select','onchange'=>"student.getcourse(this,'$div')")
+  );
+
+ $output = _student_ahah_render($form, $n);
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+}
+
+function _student_add_lga() {
+$x=arg(2);
+if($x=='state'){
+$state=(int)$_POST[state];
+$name='lga';
+}
+else if($x=='astate'){
+	$state=(int)$_POST[astate];
+	$name='alga';
+}else
+exit;
+$f=array();
+$f[]='';
+$r=db_query("select * from lga where lga_rel=%d",$state);
+while($s=db_fetch_object($r)){
+	$f[$s->lga_id]=$s->lga_name;
+}
+  // all you have to worry about is the new form field that will be inserted via #ahah
+  
+	
+	$form = array(
+    '#type' => 'select',
+    '#title' => 'LGA',
+    '#options' => $f,
+   
+  );
+///  drupal_alter_form();
+  // ahah_render is where the magic happens. 
+  // 'the value of this field will show up as $form_value['user_problem'] 
+  $output = _student_ahah_render($form, $name);
+  print drupal_to_js(array('data' => $output, 'status' => true));
+  exit();
+}
+/*
+  This function is largely based on the poll module, its been simplified for reuse.
+  $fields is the specific form elements you want to attach via ahah,
+  $name is the form fields array key... e.g. the name for $form['title'] is "title"
+*/ 
+function _student_ahah_render($fields, $name) {
+	
+  drupal_alter('form', $fields, array(), 'student_reg_form');
+	
+  $form_state = array('submitted' => FALSE,'#values'=>$_POST);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  $form = form_get_cache($form_build_id, $form_state);
+  $form[$name] = $fields;
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+   $form_state = array('submitted' => FALSE);
+  
+  // Rebuild the form.
+  $form = form_builder($_POST['form_id'], $form, $form_state);
+
+  // Render the new output.
+  $new_form = $form[$name];
+  return drupal_render($new_form); 
+}
+?>

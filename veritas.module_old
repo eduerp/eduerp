@@ -1,0 +1,899 @@
+<?
+function veritas_menu(){
+	$items['veritas/receipt']=array(
+ 	'page callback' => 'veritas_view_receipt',
+    'access arguments' => array('view receipt'),
+    'type' => MENU_CALLBACK,
+	);
+	
+		$items['veritas/payments']=array(
+	
+	'title'=>'Upload payment file',
+ 	'page callback' => 'drupal_get_form',
+	'page arguments'=>array('veritas_st_form'),	
+    'access arguments' => array('veritas payments'),
+    'type' => MENU_NORMAL_ITEM,
+	);
+	
+	
+	 $items['veritas/error'] = array(
+    'page callback' => 'veritas_error_page',
+    'access arguments' => array('veritas access'),
+    'type' => MENU_CALLBACK,
+  );
+	$items['ajax']=array(
+	'page callback' => 'veritas_ajax',
+    'access arguments' => array('veritas access'),
+    'type' => MENU_CALLBACK,
+  
+	);
+  
+	 $items['admin/settings/veritas'] = array(
+    'title' => 'Veritas Configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('veritas_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+
+function veritas_perm(){
+	return array('view receipt','veritas access','veritas payments');
+}
+
+
+function veritas_mail_receipt($f,$email,$name,$img){
+	global $user;
+	if(!$email)
+	$email=$user->mail;
+	if(!$name){
+
+switch($f->trans_type){
+	case 'sreg':
+	$rc=db_query("select first_name,middle_name,last_name from student where student_id=%d",$f->user_type_id);	
+	$fc=db_fetch_array($rc);
+	$name=$fc[first_name].' '.$fc[last_name];	
+	break;
+	case 'creg':
+	case 'cfee':
+	case 'tfee':
+$rc=db_query("select * from contractor where contractor_id=%d",$f->user_type_id);	
+	$fc=db_fetch_object($rc);
+	$f->name=$name=$fc->companyname;
+	break;
+	default:
+	if($f->username)
+	$f->name=$name=$f->username;
+	else
+ $name=$email;			
+	
+}
+}
+$f->name=$name;
+$message=drupal_mail('veritas','receipt',$email,language_default(),array(),null,false); 
+$message[body]=veritas_print_receipt($f,$img);
+$message[subject]='Transaction Receipt';
+$message[headers]=array_merge($message[headers],array( 'MIME-Version'  => '1.0',
+    'Content-Type'  => 'text/html; charset=UTF-8'));
+drupal_mail_send($message);
+///echo htmlspecialchars($message[body]);
+if($f->trans_type=='cfee'){
+$message=drupal_mail('veritas','preqbid',$email,language_default(),array(),null,false); 
+//$tid=uniqid();
+//db_query("update transaction set username='%s',password_2='%s' where transaction_id='%s'",$user->name,$tid,$f->transaction_id);
+///$url=url('veritas/contractor/tender',array('absolute'=>true));
+
+$message[body]="
+To
+$name
+Dear Sirs/Madams
+Your pre-qualification form submission is now under review by Veritas University. 
+If successful, Veritas University will contact you with further information about how you can bid for existing tenders.
+Director of Works 
+Veritas University
+";
+$message[subject]='Prequalification form submitted';
+$message[headers]=array_merge($message[headers],array( 'MIME-Version'  => '1.0',
+  'Content-Type'  => 'text/plain; charset=UTF-8'));
+drupal_mail_send($message);
+}
+if($f->trans_type=='tfee'){
+	
+}
+}
+
+
+function veritas_view_receipt(){
+	global $user;
+	if(arg(2)){
+		$t_id=(int)arg(2);
+		if(!$t_id){
+		drupal_set_message(t("Transaction id not found"));
+		drupal_goto("veritas/error");
+		}
+		if(!$user->uid){
+		drupal_set_message(t("You need to log in to access this page"));
+		drupal_goto("veritas/error");
+		}
+		$q=db_query("select * from transaction where transaction_id=%d and user_type_id=%d",$t_id,$user->uid);
+		$f=db_fetch_object($q);
+		$type=$f->trans_type;
+switch($f->trans_type){
+	case 'sreg':
+	$rc=db_query("select first_name,middle_name,last_name from student where student_id=%d",$f->user_type_id);	
+	$fc=db_fetch_array($rc);
+	$f->name=$name=$fc[first_name].' '.$fc[last_name];	
+	break;
+	case 'creg':
+	case 'cfee':
+	case 'tfee':
+$rc=db_query("select * from contractor where contractor_id=%d",$f->user_type_id);	
+	$fc=db_fetch_object($rc);
+	$f->name=$name=$fc->companyname;
+	break;
+	default:
+	if($f->username)
+	$f->name=$name=$f->username;
+	else
+    $f->name=$name=$email;			
+	
+}
+		if(!$f->transaction_id){
+		drupal_set_message(t("Transaction id not found"));
+		drupal_goto("veritas/error");
+		}
+		
+	}
+	/*
+	if(variable_get('veritas_logo','')){
+	$img=url('',array('absolute'=>true)).variable_get('veritas_logo','');
+	$img="<img src='$img'>";
+	}
+	else
+	$img='';
+	
+	veritas_mail_receipt($f,$img);
+	*/
+	$f->name=$name;
+	if(arg(3)=='print'){
+	echo  veritas_print_receipt($f,'',true);
+	exit;
+	}
+	return veritas_receipt($f);
+	
+}
+function veritas_lga(){
+	static $ritles;
+	if(!$titles){
+	$titles[0]='';
+	$r=db_query("select * from lga order by lga_name");
+	while($f=db_fetch_object($r))
+	$titles[$f->lga_id]=$f->lga_name;
+	}
+	return  $titles;
+}
+function veritas_table_head($str,$head){
+	
+}
+function veritas_states(){
+	static $ritles;
+	if(!$titles){
+		$titles[0]='';
+	$r=db_query("select * from state order by state_name");
+	while($f=db_fetch_object($r))
+	$titles[$f->state_id]=$f->state_name;
+	}
+	return  $titles;
+	
+}
+function veritas_admin_settings(){
+	
+	$form['veritas_demo']=array('#title'=>'Demo Mode','#description'=>'Payment in demo mode','#type'=>'checkbox','#default_value'=>variable_get('veritas_demo',1));
+	$form['veritas_terminal_id']=array('#type'=>'textfield','#title'=>'Terminal ID','#description'=>'Payment Terminal ID,0000000001 for demo','#default_value'=>variable_get('veritas_terminal_id','0000000001') );
+	$form['veritas_lot_cost']=array('#type'=>'textfield','#title'=>'Cost of Lot','#description'=>'Every lot selected cost $ xxx','#default_value'=>variable_get('veritas_lot_cost','10000') );
+	$form['veritas_student_regfees']=array('#type'=>'textfield','#title'=>'Student Registration Fees','#default_value'=>variable_get('veritas_student_regfees','100') );
+	$form[veritas_logo]=array('#type'=>'textfield','#title'=>'logo image','#description'=>'logo Used for sending mails.logo to be ftpd  and stored . enter the relative url from which the image is accessed.eg. http://yourdrupalinstallation/images/logo.png then enter here images/logo.png  ','#default_value'=>variable_get('veritas_logo',''));
+	$form[veritas_tender_node]=array('#type'=>'textfield','#size'=>6,'#title'=>'Tender Node ID','#description'=>'You must create this node where tender documents are stored. it is the tender link.input its id here.if you leave it blank contractors will get error when trying to access the tender link','#default_value'=>variable_get('veritas_tender_node',''));
+	$form[veritas_lot_upload_cost]=array('#type'=>'textfield','#size'=>6,'#title'=>'Tender Upload cost','#default_value'=>variable_get('veritas_lot_upload_cost',1000));
+	$form[veritas_tender_adminuser]=array('#type'=>'textfield','#size'=>25,'#title'=>'Tender Admin Username','#default_value'=>variable_get('veritas_tender_adminuser',''));
+	
+	return system_settings_form($form);
+}
+
+function veritas_validuser($name,$email){
+    
+ if (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE LOWER(name) = LOWER('%s')", $name)) > 0) {
+  form_set_error('mail', t('The e-mail address %email is already registered.', array('%email' => $email )));
+  
+      return false;
+    }
+    else if (drupal_is_denied('user', $name)) {
+    form_set_error('mail', t('The e-mail address %email has been denied access.', array('%email' => $email)));
+      return false;
+    }
+  if ($error = user_validate_mail($email)) {
+    form_set_error('mail', $error);
+    return false;
+  }
+  else if (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE  LOWER(mail) = LOWER('%s')",  $email)) > 0) {
+    form_set_error('mail', t('The e-mail address %email is already registered.', array('%email' => $email )));
+    return false;
+  }
+  else if (drupal_is_denied('mail', $email)) {
+    form_set_error('mail', t('The e-mail address %email has been denied access.', array('%email' => $email)));
+    return false;
+  }
+    return true;
+	
+}
+function veritas_insert_contractor($val,$uid){
+	$id=$uid;
+
+	
+}
+function veritas_user_save($type,$mail,$transid){
+/*
+$data=$_SESSION[veritas_data];
+if(!is_array($data)){
+watchdog('error','Session data lost for transactionID '.$transid,WATCHDOG_ERROR);	
+drupal_goto(url('veritus/error'));
+	
+}
+*/
+
+if($type=='creg'){
+$rolename='Contractor';
+}
+else if($type=='sreg'){
+$rolename='Student';
+}
+else return;	
+$name=$mail;
+$roles=array();
+$f=db_query("select * from {role} where name='%s'",$rolename);
+$roles=array();
+$f=db_fetch_object($f);
+if($f->rid){
+	$roles[$f->rid]=$f->rid;
+}
+$pass=user_password();
+$data = array('status'=>1,'name'=>$name,'mail'=>$mail,'pass' => $pass, 'init' => $mail, 'roles' => $roles);
+$acc=user_save('',$data);	
+if(!$acc){
+watchdog('error', 'New user creation failed for '.$name.' ,'.$mail.' ,'.$rolename,WATCHDOG_ERROR);
+drupal_goto('veritus/error');
+return;
+}
+$acc->password=$pass;
+$pass2=uniqid();
+db_query("update transaction set user_type_id=%d,username='%s' ,password_2='%s' where receipt_no='%s'",$acc->uid,$acc->name,$pass2,$transid);
+_user_mail_notify('register_no_approval_required', $acc);
+user_authenticate($data);
+return $acc;
+
+}
+function _veritas_insert_student($val,$uid){
+}
+
+function veritas_error_page(){
+	
+	return t('A error occurred in processing your request. Please contact the admin');
+}
+
+function veritas_mail($key, &$message, $params){
+	/*	
+	$message[headers] +=
+	array( 'MIME-Version'  => '1.0',
+    'Content-Type'  => 'text/html; charset=UTF-8');
+	*/
+}
+
+function veritas_receipt($f){
+	global $user;
+	ob_start();
+?>
+<center><h3>VERITAS UNIVERSITY</h3>	
+<div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
+<br/><br/>
+<table cellspacing="2" cellpadding="2">
+<tr><th>Name:</th><td colspan="2" align="left"><b><?=$f->name?></b></td></tr>
+<? if($f->trans_type=='cfee'){ 
+	?>
+
+<tr><td></td><td colspan="2" align="left"> <b><?=$f->trans_descr?></b></td></tr>
+<? 
+$r=db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0 order by lot_name",$user->uid,$f->receipt_no);
+$i=1;
+while($fx=db_fetch_object($r)){
+?>
+<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<? 
+}
+}//cfee
+else if($f->trans_type=='tfee'){
+	?>
+<tr><td></td><td colspan="2"><?=$f->trans_descr?></td></tr>
+<? 
+$r=db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1 order by lot_name",$user->uid,$f->receipt_no);
+$i=1;
+while($fx=db_fetch_object($r)){
+?>
+<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
+<? 
+}	
+	
+}
+else{
+?>
+<tr><td>1</td><td><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
+<?} ?>
+<tr><th colspan="2">Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
+<br/>
+<hr/>
+<b>
+<table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
+<tr><td>Date</td><td><?$dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
+</center>
+<? 
+return ob_get_clean();
+	
+	
+}
+function veritas_admin_links($f){
+	global $user;
+	ob_start();
+	?>
+ <html>
+ <body <?if($isprint){?>onload="window.print()"<?}?>>
+<center><h3>VERITAS UNIVERSITY</h3>	
+<hr/>
+<div align="center"><?=$img ?></div>
+<hr/>
+<table>
+<tr><th>Name:</th><td><?=$f->name?></td></tr>
+</table>
+<table cellspacing="2" cellpadding="2">
+<caption>Tender Approval List</caption>
+<? 
+$r=db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0",$user->uid,$f->receipt_no);
+$i=1;
+$lots=array();
+while($fx=db_fetch_object($r)){
+	$str=uniqid('',true);
+	$link=url("contractor/tender/validate/$str",array('absolute'=>true));
+?>
+<tr><td width="20"><?=$i++?></td><td width="150">Tender <?=$fx->lot_name ?>:</td><td><a href="<?=$link ?>">Click To Approve</a></td></tr>
+<?
+db_query("update contractor_lots set hstr='%s' where id='%d'",$str,$fx->id); 
+}	
+?>
+</table>
+</body></html>
+<?
+$d=ob_get_clean();
+$ad=user_load(array('name'=>variable_get('veritas_tender_adminuser','')));
+$message=drupal_mail('veritas','receipt',$ad->mail,language_default(),array(),null,false); 
+$message[body]=$d;
+$message[subject]='Tender Approval List for '.$f->name;
+$message[headers]=array_merge($message[headers],array( 'MIME-Version'  => '1.0',
+    'Content-Type'  => 'text/html; charset=UTF-8'));
+drupal_mail_send($message);
+
+	
+}
+
+function veritas_print_receipt($f,$img='',$isprint=false){
+	global $user;
+	ob_start();
+?>
+ <html>
+ <body <?if($isprint){?>onload="window.print()"<?}?>>
+<center><h3>VERITAS UNIVERSITY</h3>	
+<hr/>
+<div align="center"><?=$img ?></div>
+<hr/>
+<b>Name:</b><?=$f->name?><br/>
+<table  cellspacing="2" cellpadding="2" align="center">
+<? if($f->trans_type=='cfee'){ ?>
+<tr><td></td><td  align="left"><b><?=$f->trans_descr?></b></td><td></td></tr>
+<? 
+$r=db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0",$user->uid,$f->receipt_no);
+$i=1;
+$lots=array();
+while($fx=db_fetch_object($r)){
+	
+?>                
+<tr><td <?if(!$isprint) {?>width="20" <?} ?>><?=$i++?></td><td <?if(!$isprint) {?>width="200" style="width:200px;"<? } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<? 
+}
+}//cfee
+else if($f->trans_type=='tfee'){
+	?>
+<tr><td></td><td  align="left"><b><?=$f->trans_descr?></b></td></tr>
+<? 
+$r=db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1",$user->uid,$f->receipt_no);
+$i=1;
+while($fx=db_fetch_object($r)){
+?>
+<tr><td <?if(!$isprint) {?>width="20"<?} ?>><?=$i++?></td><td <?if(!$isprint) {?> width="250" style="width:200px;"<?} ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
+<? 
+}	
+	
+}
+else{
+?>
+<tr><td <?if(!$isprint) {?>width="20" <?} ?>>1</td><td <?if(!$isprint) {?>width="200" style="width:200px;"<?} ?>><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
+<?} ?>
+<tr><td></td><th>Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
+<br/>
+<table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
+<tr><td>Date</td><td><?$dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
+
+</center>
+</body></html>
+<? 
+$d=ob_get_clean();
+
+if($f->trans_type=='cfee'&&!$isprint){
+	veritas_admin_links($f);
+}
+return $d;
+}
+
+function veritas_check_upload($source) {
+  global $user;
+  static $upload_cache;
+
+  // Add in our check of the the file name length.
+  $validators['file_validate_name_length'] = array();
+
+  // Return cached objects without processing since the file will have
+  // already been processed and the paths in _FILES will be invalid.
+  if (isset($upload_cache[$source])) {
+    return $upload_cache[$source];
+  }
+
+  // If a file was uploaded, process it.
+  if (isset($_FILES['files']) && $_FILES['files']['name'][$source] && is_uploaded_file($_FILES['files']['tmp_name'][$source])) {
+    // Check for file upload errors and return FALSE if a
+    // lower level system error occurred.
+    switch ($_FILES['files']['error'][$source]) {
+      // @see http://php.net/manual/en/features.file-upload.errors.php
+      case UPLOAD_ERR_OK:
+    $file = new stdClass();
+    $file->filename = file_munge_filename(trim(basename($_FILES['files']['name'][$source]), '.'), $extensions);
+    $file->filepath = $_FILES['files']['tmp_name'][$source];
+    $file->filemime = $_FILES['files']['type'][$source];
+
+    // Rename potentially executable files, to help prevent exploits.
+    if (preg_match('/\.(php|pl|py|cgi|asp|js)$/i', $file->filename) && (substr($file->filename, -4) != '.txt')) {
+      $file->filemime = 'text/plain';
+      $file->filepath .= '.txt';
+      $file->filename .= '.txt';
+    }
+    $file->source = $source;
+    $file->destination = file_destination(file_create_path($dest .'/'. $file->filename), $replace);
+    $file->filesize = $_FILES['files']['size'][$source];
+    $extensions='jpg jpeg gif png txt html doc xls pdf ppt pps odt ods odp ZIP zip csv';
+$errors=file_validate_name_length($file);
+if(count($errors)){
+return implode(",",$errors);	
+drupal_set_message(t('The file %file could not be saved,Error %error',array('%file'=>$source,'%error'=>$errors)));
+}
+$errors=file_validate_extensions($file,$extensions);
+if(count($errors)){
+drupal_set_message(t('The file %file could not be saved,Error %error',array('%file'=>$source,'%error'=>$errors)));
+return implode(",",$errors);	
+}
+
+$errors=file_validate_size($file,variable_get('veritas_file_size',1000000));
+if(count($errors)){
+drupal_set_message(t('The file %file could not be saved,Error %error',array('%file'=>$source,'%error'=>$errors)));
+return implode(",",$errors);	
+}
+
+
+        return 0;
+
+      case UPLOAD_ERR_INI_SIZE:
+      case UPLOAD_ERR_FORM_SIZE:
+        drupal_set_message(t('The file %file could not be saved, because it exceeds %maxsize, the maximum allowed size for uploads.', array('%file' => $source, '%maxsize' => format_size(file_upload_max_size()))), 'error');
+        return 1;
+
+      case UPLOAD_ERR_PARTIAL:
+      case UPLOAD_ERR_NO_FILE:
+        drupal_set_message(t('The file %file could not be saved, because the upload did not complete.', array('%file' => $source)), 'error');
+        return 1;
+
+        // Unknown error
+      default:
+        drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array('%file' => $source)), 'error');
+        return 1;
+    }
+  }
+  drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array('%file' => $source)), 'error');
+  return 1;
+}
+
+function veritas_verify_bankpay($rno,$name2,$amt,$descr,$transid,$name,$email,$type){
+$r=db_query("select * from payment where refno='%s' and paid=0",$rno);
+$f=db_fetch_object($r);
+	
+if($f->refno){
+$name2=preg_replace('/[\s]*$/','',$name2);
+$description=preg_replace('/[\s]*$/','',$f->description);
+$s=preg_match("/$name2\$/i",$description);
+if(!$s){    //strstr(strtoupper($f->description),strtoupper($name2))===false){
+drupal_set_message('Invalid payment information. ');
+return 1;
+}
+	
+$pc=$f->refno;
+$am=floatval($f->cr);
+if($am >=$amt)
+	{
+db_query("update payment set paid=1 where refno='%s'",$rno);
+db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
+,user_type_id='%s',trans_type='%s' ",$transid,$pc,'',$amt,$descr,$uid,$type);
+ $trid=db_last_insert_id('transaction','transaction_id');
+ if(variable_get('veritas_logo','')){
+ $logourl=url('',array('absolute'=>true)).variable_get('veritas_logo','');
+ $img="<img src='$logourl' alt='Veritas Logo'>";
+ }else
+ $img='';
+$r=db_query("select * from transaction where transaction_id=%d",$trid);
+$f=db_fetch_object($r);
+if($f->transaction_id&&($type=='creg'||$type=='sreg')){
+$f->name=$name;
+veritas_mail_receipt($f,$email,$name,$img);
+ }
+return 0;
+ 
+}else{
+	drupal_set_message('Invalid amount '.$am);
+	return 1;
+}
+		
+		
+		
+	
+	
+}
+else {
+	drupal_set_message('Invalid payment information');
+	return 1;
+	
+}	
+
+	return 1;
+}
+
+function veritas_pay_pin($rno ,$cno,$amt,$descr,$transid,$name,$email,$type){
+
+	return veritas_verify_bankpay($rno,$cno,$amt,$descr,$transid,$name,$email,$type);
+	$request=array();
+
+$request['TERMINAL_ID']=variable_get('veritas_terminal_id','0000000001');
+
+//$request['ECHODATA']=1;
+//$request['TRANSACTION_ID']=uniqid();
+$request['RECEIPT_NO']=$rno;
+$request['CONFIRMATION_NO']=$cno;
+///$request['AMOUNT']=urlencode("32.12");
+ $data = '';
+    while (list($key, $value) = each($request)) {
+      $data .= $key .'='. ereg_replace(',', '', $value) .'&';
+    }
+    $data = substr($data, 0, -1);
+ $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, variable_get('veritas_demo',1)?"http://demo.etranzact.com/WebConnect/verifypin.jsp":"https://www.etranzact.net/WebConnect/verifypin.jsp");
+  curl_setopt($ch, CURLOPT_VERBOSE, 1);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  if(!variable_get('veritas_demo',1))
+  curl_setopt($ch,CURLOPT_SSL_VERIFYPEER,false );
+  curl_setopt($ch, CURLOPT_AUTOREFERER,true);
+  curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0;Windows NT 5.1)');
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_HEADER,0);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
+  $str = curl_exec($ch);
+$str= trim(preg_replace( array("/^[\s]+/","/[\s]+/"),array('',','),strip_tags($str)));
+preg_match_all("((\w+)=([\w.]+))",$str,$m);
+$f=$m[1];
+$v=$m[2];
+if($f[2]=='SUCCESS'){
+	if(floatval($v[3])>=0.01){
+$pc=$v[0];
+$tno=$v[1];
+$am=floatval($v[3]);
+if($am >=$amt)
+	{
+
+
+db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
+,user_type_id='%s',trans_type='%s' ",$transid,$pc,'',$amt,$descr,$uid,$type);
+ $trid=db_last_insert_id('transaction','transaction_id');
+ if(variable_get('veritas_logo','')){
+ $logourl=url('',array('absolute'=>true)).variable_get('veritas_logo','');
+ $img="<img src='$logourl' alt='Veritas Logo'>";
+ }else
+ $img='';
+$r=db_query("select * from transaction where transaction_id=%d",$trid);
+$f=db_fetch_object($r);
+if($f->transaction_id&&($type=='creg'||$type=='sreg')){
+$f->name=$name;
+veritas_mail_receipt($f,$email,$name,$img);
+ }
+return 0;
+ 
+}else{
+	drupal_set_message('Invalid amount '.$am);
+	return 1;
+}
+		
+		
+		
+	}
+	else {
+		
+	drupal_set_message('Invalid amount ');
+	return 1;
+		
+	}
+	
+}
+else {
+	drupal_set_message('Payment error please contact admin');
+	return 1;
+	
+}	drupal_set_message('Payment error please contact admin');
+
+	return 1;
+}
+
+function veritas_pay_cc($ccno,$pin,$em,$ey,$amt,$descr,$transid,$name,$email,$type=''){
+	return veritas_pay_pin($pin ,$ccno,$amt,$descr,$transid,$name,$email,$type);
+	global $user;
+	$uid=(int)$user->uid;
+	if(1){//demo
+	if(variable_get('veritas_demo',1)){
+		$url="http://demo.etranzact.com/WebConnect/webconnectProcess.jsp";
+	}
+	else
+		$url="https://etranzact.net/WebConnect/webconnectProcess.jsp";
+	
+$request['ECHODATA']=1;
+$request['TRANSACTION_ID']=$transid;
+//$request['RESPONSE_URL']=urlencode( "http://64.34.215.179/echo.php");
+$request['CARD_NUM']=$ccno;
+$request['CARD_PIN']=$pin;
+$request['EXP_MONTH']=$em;
+$request['EXP_YEAR']=$ey;
+$request['AMOUNT']=number_format($amt,2);
+$request['DESCRIPTION']=$descr;
+$request['NO_RETRY']='';
+$request['TERMINAL_ID']=variable_get('veritas_terminal_id','0000000001');
+ $data = '';
+    while (list($key, $value) = each($request)) {
+      $data .= $key .'='. urlencode(ereg_replace(',', '', $value)) .'&';
+    }
+    $data = substr($data, 0, -1);
+ $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_VERBOSE, 1);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_AUTOREFERER,true);
+  curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0;Windows NT 5.1)');
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_HEADER,0);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION,1);
+  $str = curl_exec($ch);
+  curl_close($ch);
+preg_match('/\<input[^>]*name[^\w]*=[^\w]*success[^>]*\>/i',$str,$m);
+ //var_dump($m[0]);
+ if($m[0]){
+ preg_match("/value[^\w]*(\d+)[^\w]/i",$m[0],$m);
+ }else
+ return array("error");
+if(!$m[0]){
+	watchdog('error','CC processing error. invalid response from server',WATCHDOG_CRITICAL);	
+	return -1;
+	
+}
+$s=$m[1];
+ preg_match('/\<input[^>]*name[^\w]*=[^\w]*card4[^>]*\>/i',$str,$m);
+ if($m[0]){
+ preg_match("/value[^\w]*(\d+)[^\w]/i",$m[0],$m);
+ }
+$c4=$m[1];
+
+preg_match('/\<input[^>]*name[^\w]*=[^\w]*MERCHANT_CODE[^>]*\>/i',$str,$m);
+ if($m[0]){
+ preg_match("/value[^\w]*(\d+)[^\w]/i",$m[0],$m);
+ }
+$mc=$m[1];
+}//dem
+else{
+$s='0';$mc="123124224";$c4="2055";
+}
+if($s==='0'){
+	db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
+,user_type_id='%s',trans_type='%s' ",$transid,$c4,$mc,$amt,$descr,$uid,$type);
+ $trid=db_last_insert_id('transaction','transaction_id');
+ if(variable_get('veritas_logo','')){
+ $logourl=url('',array('absolute'=>true)).variable_get('veritas_logo','');
+ $img="<img src='$logourl' alt='Veritas Logo'>";
+ }else
+ $img='';
+$r=db_query("select * from transaction where transaction_id=%d",$trid);
+$f=db_fetch_object($r);
+if($f->transaction_id){
+$f->name=$name;
+if($type=='creg'||$type=='sreg')
+veritas_mail_receipt($f,$email,$name,$img);
+ }
+  return 0;
+	
+}
+else {
+if(!$c4||!$mc){
+	watchdog('error','CC processing error. invalid response from server',WATCHDOG_CRITICAL);	
+	return -1;
+}
+if($s){
+	
+	return 1;
+}
+}
+return 0;
+//echo "Success $s Card4 $c4 merchant $mc";
+  
+  }
+function _assign_keys(&$form,$state){
+	foreach($form as $key=>&$val){
+		if(is_array($val)&&!((array_key_exists('#type',$val)&&!in_array($val['#type'],array('fieldset','markup','item')))||array_key_exists('#value',$val))){
+			//			echo "for key ".$key."<br/>";
+			_assign_keys($val,$state);
+		}else if(is_array($val)&&array_key_exists('#type',$val)&&!in_array($val['#type'],array('fieldset','markup','item'))&&$state[$key]){
+			$val['#default_value']=$state[$key];
+		}
+	}
+}
+function _veritas_titles(){
+	static $ritles;
+	if(!$titles){
+		$r=db_query("select * from title order by title_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->title_id]=$f->title_name;
+	}
+	return  $titles;
+
+}
+function _veritas_country(){
+	static $ritles;
+	if(!$titles){
+		$r=db_query("select * from country order by country_name");
+		while($f=db_fetch_object($r))
+		$titles[$f->country_id]=$f->country_name;
+	}
+	return  $titles;
+
+}
+function _veritas_religion(){
+	static $ritles;
+	if(!$titles){
+	$titles=array();	
+$r=db_query("select * from religion ");
+while($f=db_fetch_object($r)){
+	$titles[$f->relegion_id]=$f->religion_name;
+}
+///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
+	}
+	return  $titles;
+	
+}
+
+
+
+function veritas_elements(){
+	return array('ccdt'=>array('#input'=>true,'#process' => array('expand_ccdt')
+	));
+}
+
+function expand_ccdt($element){
+	  $options = drupal_map_assoc(range(1, 12), 'map_month');
+	    if (empty($element['#value'])) {
+  }
+  $element['#tree'] = TRUE;
+    $element[em] = array(
+      '#type' => 'select',
+      '#value' => $element['#value'][em],
+      '#attributes' => $element['#attributes'],
+      '#options' => $options,
+    );
+
+    $options = drupal_map_assoc(range(2008,2012));
+    if($element['#ccdt_attribute'])
+  $options= drupal_map_assoc(range($element['#ccdt_attribute'][0],$element['#ccdt_attribute'][1]));
+    
+    $element[ey] = array(
+      '#type' => 'select',
+      '#value' => $element['#value'][ey],
+      '#attributes' => $element['#attributes'],
+      '#options' => $options,
+    );
+    
+	  return $element;
+}
+
+function theme_ccdt($element){
+
+	return theme('form_element', $element, '<div class="container-inline">'. $element['#children'] .'</div>');
+}
+
+function veritas_theme() {
+
+  return array(
+    'ccdt' => array(
+       'arguments' => array('element' => NULL)
+    ),
+  );
+}
+
+function veritas_st_form(){
+	$form['#title']='CSV File upload form';
+	$form[]=array('#value'=>"File name should be *.csv, the narrative field should not contain any ,");
+	$form['#attributes'] = array('enctype' => "multipart/form-data"); 
+	$form['payfile']=array('#type'=>'file');
+	$form['submit']=array('#type'=>'submit','#value'=>'Submit');
+	return $form;
+}
+function veritas_st_form_validate($form,&$form_state){
+	
+$f=veritas_check_upload("payfile");
+if($f){
+	form_set_error('payfile','Sorry file cannot be uploaded. Please try again '.$f);
+	return;
+	}
+		
+}
+function veritas_st_form_submit($form,&$form_state){
+	
+	$d=$n=0;
+	
+  $fx=fopen($_FILES['files']['tmp_name']['payfile'],'r'); 
+$i=0;
+  while($arr=fgetcsv($fx,null,',')) { 
+      if(count($arr)>6){
+      	drupal_set_message("line number ".($i)." in the csv file contains ".count($arr)." fields."); 
+      	return;
+      }
+
+      $arr[4]=str_replace(",",'',$arr[4]);
+      $arr[5]=str_replace(",",'',$arr[5]);
+      if(!is_numeric($arr[5])){
+continue;      	
+      }
+$r=db_query("select * from payment where refno='%s'",$arr[1]);
+$s=db_fetch_object($r);
+if($s->refno){
+	$d++;
+	continue;
+}
+$n++;
+$arr[6]=0;
+      $sql = "insert into payment values ('". 
+                  implode("','", $arr) ."')"; 
+      $f=db_query($sql);
+      if(db_error()) {
+drupal_set_message('dberror in line '.$i);
+return;
+      } 
+  }
+     drupal_set_message(" inserted  $n new records ") ;
+}

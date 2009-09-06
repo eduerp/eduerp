@@ -1,0 +1,29 @@
+<?
+function veritas_install(){
+db_query("insert into {role} set name='Student'");
+db_query("insert into {role} set name='Contractor'");
+drupal_set_message('contractor module installed');
+}
+function veritas_uninstall(){
+db_query("delete from {role} where (name='Student' or name='Contractor')");
+drupal_set_message('contractor module uninstalled');
+
+}
+function veritas_enable(){
+$s=db_fetch_object(db_query("select * from {role} where name='Student'"));
+if(!$s->name){
+db_query("insert into {role} set name='Student'");
+db_set_message('Student role added');
+}
+$s=db_fetch_object(db_query("select * from {role} where name='Contractor'"));
+if(!$s->name){
+db_query("insert into {role} set name='Contractor'");
+db_set_message('Contractor role added');
+
+}
+
+
+}
+
+
+?>

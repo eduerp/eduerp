@@ -1,0 +1,3059 @@
+<?php
+/*All variables, which are needed to run the clearnce process by AR staff's in the main menu of AR. */
+function staff_menu() {
+  $items['staff/sign_in']=array(
+    'title'=>'Staff Login',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_login_form'),
+    'access arguments' => array('staff register'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['staff/registration']=array(
+    'title'=>'Staff Registration',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_registration_form'),
+    'access arguments' => array('staff register'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/list']=array(
+    'title'=>'Staff List',
+    'page callback' => 'search_staff_list',
+    //'page arguments'=>array('staff_cousrse_assign_form'),
+    'access arguments' => array('staff list'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/department']=array(
+    'title'=>'Staff List',
+    'page callback' => 'staff_department_list',
+    'access arguments' => array('staff department list'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/viewlecturer']=array(
+    'title'=>'Staff List',
+    'page callback' => 'staff_lecturer_list',
+    'access arguments' => array('staff view lecturer'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/registrablecourse']=array(
+    'title'=>'Course Program Assign',
+    'page callback' => 'staff_course_assign',
+    //'page arguments'=>array('staff_cousrse_assign_form'),
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/profile']=array(
+    'title'=>'Staff Profile',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_profile_form'),
+     'access arguments' => array('staff profile'),
+     'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/view']=array(
+    'title'=>'Staff Profile',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_view_form'),
+    'access arguments' => array('staff view'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/assignrole']=array(
+    'title'=>'Staff Profile',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_assign_role_form'),
+    'access arguments' => array('staff assign role'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/registration/success']=array(
+    'page callback' => 'registartion_success',
+    'access arguments' => array('student register'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/clearance']=array(
+    'title'=>'Clearance',
+    'page callback' => '_staff_clearance',
+    'access arguments' => array('staff clearence'),
+    'type' => MENU_CALLBACK,
+  );
+  /*$items['logout']=array(
+    'title'=>'Staff Logout',
+    'page callback' => '_staff_logout',
+    'access arguments' => array('staff register'),
+    'type' => MENU_CALLBACK,
+  );*/
+  $items['staff/begin_clearance']=array(
+    'title'=>'Begin Clearance',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_begin_clearance_form'),
+    'access arguments' => array('staff clearence'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['staff/cleared']=array(
+    'page callback' => 'staff_cleared_student',
+    'access arguments' => array('staff cleared list'),
+    'type' => MENU_CALLBACK,
+  );
+  /*Special Menu's For Registrar.*/
+  $items['staff/not_cleared']=array(
+    'page callback' => 'staff_notcleared_student',
+    'access arguments' => array('staff not cleared list'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['staff/create_ar']=array(
+    'title'=>'Create Asistant Registrar',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=>array('staff_create_ar_form'),
+    'access arguments' => array('staff create ar'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+/*Function to get the staff permission.*/
+function staff_perm() {
+  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearence','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list');
+}
+
+function staff_assign_role_form_submit($form,&$state) {
+
+  $values = $form['#post'];
+  if ($state['storage']['step'] == 1) {
+    $query = 'Update veritas_staff set usrname = "'.$values['username'].'" , password = "'.$values['password'].'" ,  role_id ="'.$values['staff_role'].'" where staff_id='.$values['staff_id'];
+    db_query($query);
+  }
+
+  if ($state['storage']['step'] == 2) {
+
+    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
+    db_query($query);
+    $query = 'delete from  veritas_staff_department  where staff_id='.arg(2);
+    db_query($query);
+    $query = "insert veritas_staff_department set staff_id=".arg(2)." , department_id='".$state['values']['staff_department']."' ";
+    db_query($query);
+    drupal_set_message('Role Assigned');
+
+    drupal_goto("superadmin/stafflist");
+  }
+  if ($state['storage']['step'] == 3) {
+
+    $query = 'delete from  veritas_staff_college  where staff_id='.arg(2);
+    db_query($query);
+    $query = "insert veritas_staff_college set staff_id=".arg(2)." , assigned_college='".$state['values']['staff_college']."' ";
+    db_query($query);
+    drupal_set_message('Role Assigned');
+
+    drupal_goto("superadmin/stafflist");
+  }
+  if ($state['storage']['step'] == 4) {
+
+    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
+    db_query($query);
+    $query = 'delete from  veritas_staff_college  where staff_id='.arg(2);
+    db_query($query);
+    $query = "insert veritas_staff_college set staff_id=".arg(2)." , assigned_college='".$state['values']['staff_college']."' ";
+    db_query($query);
+    drupal_set_message('Role Assigned');
+
+    drupal_goto("superadmin/stafflist");
+  }
+  if ($state['storage']['step'] == 5) {
+
+    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
+    db_query($query);
+    drupal_set_message('Role Assigned');
+
+    drupal_goto("superadmin/stafflist");
+  }
+  if ($state['storage']['step'] == 6) {
+
+    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
+    db_query($query);
+    drupal_set_message('Role Assigned');
+
+    drupal_goto("superadmin/stafflist");
+  }
+  if ($state['storage']['step'] == 7) {
+
+    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
+    db_query($query);
+    drupal_set_message('Role Assigned');
+
+    drupal_goto("superadmin/stafflist");
+  }
+  if ($state['clicked_button']['#id'] == 'edit-previous') {
+
+    $state['storage']['step']--;
+    $state['#rebuild']=true;
+    return;
+  }
+  elseif ($state['clicked_button']['#id'] == 'edit-next') {
+    $state[storage][values][$state[storage][step]] = $state[values];
+    $state['#rebuild']=true;
+    if ($state['storage']['step'] == 1) {
+
+      switch($values['staff_role']) {
+
+        case 7:
+          $state['storage']['step']++;
+          break;
+        case 6:
+          $state['storage']['step'] = 3;
+          break;
+        case 5:
+        case 4:
+          $state['storage']['step'] = 4;
+          break;
+        case 8 :
+          $state['storage']['step'] = 5;
+          break;
+        case 10 :
+          $state['storage']['step'] = 7;
+          break ;
+        case 1:
+        case 2:
+        case 3:
+        case 11:
+        case 13:
+          drupal_set_message('Role Assigned');
+
+          drupal_goto("staff/list");
+          break;
+        case 14 :
+          $state['storage']['step'] = 6;
+          break ;
+      }
+    }
+    return;
+  }
+}
+
+
+function staff_assign_role_form(&$obj) {
+
+  if (!$obj[storage][step])
+  $obj[storage][step]=1;
+  $st=$obj[storage][step];
+
+  if ($st==1) {
+ //return _student_reg_form6($obj);
+ //   return _student_reg_form5($obj);
+    return assign_role_form1($obj);
+
+  } elseif ($st==2) {
+
+   return assign_role_form_hod($obj);
+
+  } elseif ($st==3) {
+
+    return assign_role_form_assign_college($obj);
+
+  } elseif ($st==4) {
+
+    return assign_role_form_assign_registrar($obj);
+
+  } elseif ($st==5) {
+    return assign_role_form_assign_hod($obj);
+  } elseif ($st==6) {
+    return assign_role_form_assign_vc($obj);
+  } elseif ($st==7) {
+    return assign_role_form_assign_bursar($obj);
+  }
+}
+function search_staff_list() {
+  ob_start();
+
+  echo  drupal_get_form('staff_search_form');
+
+
+  ?>
+
+
+<?php
+  staff_search_list();
+  return ob_get_clean();
+  }
+function staff_lecturer_list() {
+  ob_start();
+  $query = "select distinct * from `veritas_staff` s
+    inner join registrable_course rc on rc.lecturer_id = s.staff_id
+    inner join course c on rc.course_id = c.course_id
+    inner join programme p on p.programme_id = rc.programme_id
+    where s.parent_id=". arg(2);
+  $result = db_query($query);
+?>
+    <table border='1' align='center'  cellpadding="5" cellspacing="5">
+    <tr bgcolor='#ACCFCC'><td><b>Name</b></td><td><b>Course</b></td><td><b>Programme</b></td></tr>
+<?php
+  while ($f=db_fetch_object($result)) {
+?>
+      <tr>
+      <td><a href="view/<?php echo $f->staff_id?>"><? echo $f->staff_first_name; ?></a></td>
+      <td><? echo $f->course_title; ?></td>
+      <td><? echo $f->programme_name; ?></td>
+      </tr>
+<?php
+  }
+?>
+    </table>
+<?php
+  return ob_get_clean();
+}
+function staff_department_list() {
+  ob_start();
+  $r=db_query("select d.* ,  s.* from `department` d inner join veritas_staff_college sc on d.college_id = sc.assigned_college  Left join veritas_staff_department sd on sd.department_id = d.department_id left join veritas_staff s on sd.staff_id=s.staff_id where sc.staff_id=%d", $_SESSION['staff']['data']->staff_id);
+  $f[]='Select';
+?>
+    <table border='1' align='center'  cellpadding="5" cellspacing="5">
+    <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>Hod</b></td><td><b>Action</b></td></tr>
+<?php
+  while ($f=db_fetch_object($r)) {
+?>
+      <tr>
+      <td><? echo $f->department_name; ?></td>
+      <td><a href="view/<?php echo $f->staff_id?>"><? echo $f->staff_first_name; ?></a></td>
+<?php
+    if ($f->staff_id == "") {
+?>
+        <td>No Hod Assigned</td>
+<?php
+    }
+    else {
+?>
+        <td><a href="viewlecturer/<? echo $f->staff_id; ?>">View Lecturers</a></td>
+<?php
+    }
+?>
+      </tr>
+<?php
+  }
+?>
+    </table>
+<?php
+  return ob_get_clean();
+}
+function staff_search_list() {
+  $search_keys = array('gender', 'department_id', 'staff_type_id', 'grade_level_id', 'state');
+  $search_values = array(
+    'gender' => '',
+    'department_id',
+    'staff_type_id',
+    'grade_level_id',
+    'state');
+  $data = array_filter($_POST);
+  $condition = array();
+  foreach ($search_keys as $value) {
+    if (isset($data['$value'])) {
+      $condition[] = "s .". $value ."='". $data[$value] ."'";
+    }
+  }
+  if (implode(' and ', $condition) != '') {
+    $condition = " where ". implode(' and ', $condition);
+  }
+  else {
+    $condition  = '';
+  }
+  $query = "Select  s.* , sr.name as role_name from `veritas_staff` s left join veritas_staff_role sr on sr.id = s.role_id ". $condition;
+  $result = db_query($query);
+?>
+    <table border='1' align='center'>
+    <tr bgcolor='#ACCFCC'><td colspan='7'><b>Staff List</b></td></tr>
+    <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Role</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
+<?php
+  while ($f = db_fetch_object($result)) {
+?>
+      <tr>
+      <td><?php echo $f->staff_last_name; ?></td>
+      <td><?php echo $f->staff_middle_name; ?></td>
+      <td><?php echo $f->staff_first_name; ?></td>
+      <td><? echo $f->role_name; ?></td>
+      <td><a href="view/<? echo $f->staff_id; ?>">View</a></td>
+      <td><a href="<?php echo url('staff/assignrole/'. $f->staff_id)?>">Assign Role</a></td>
+      </tr>
+<?php
+  }
+?>
+    </table>
+<?php
+}
+function staff_view_form(&$obj) {
+  $query ="select * from `veritas_staff` where staff_id = '". arg(2) ."'";
+  $result = db_query($query);
+  //echo  "select * from student where jambno = '".$form['#post']['jamb_no']."' and Admitted = 'Yes'" ; die ;
+  $data = db_fetch_object($result);
+  $form['staff_type'] = array(
+    '#type' => 'select',
+    '#options' => staff_type(),
+    '#title' => 'Staff Type',
+    '#default_value' => $data->staff_type_id);
+  $form['employment_type'] = array(
+    '#type' => 'select',
+    '#options' => employment_type(),
+    '#title' => 'Employment Type',
+    '#default_value' => $data->employment_type_id );
+  $form['staff_number'] = array(
+  '#title' => 'Staff Number',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => $data->staff_no);
+  $form['staff_position'] = array(
+    '#type' => 'select',
+    '#options' => staff_position(),
+    '#title' => 'Position',
+    '#default_value' => $data->position_id );
+  $form['staff_tax_number'] = array(
+    '#title' => 'Tax Number',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => $data->tax_number);
+  $form['staff_department'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#default_value' => $data->department_id);
+  $form['staff_room'] = array(
+    '#title' => 'Room',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => $data->room_number);
+  $form['salary_garde_level'] = array(
+    '#type' => 'select',
+    '#options' => salary_grade(),
+    '#title' => 'Salary Grade Level',
+    '#default_value' => $data->grade_level_id);
+  $form['appointment_date'] = array(
+    '#type' => 'date',
+    '#title' => 'Appointment date',
+    '#default_value' => $data->appointment_date);
+  $form['assumption_date'] = array(
+    '#type' => 'date',
+    '#title' => 'Assumption  date',
+    '#default_value' => $data->assumption_date);
+  $form['ressumption_date'] = array(
+    '#type' => 'date',
+    '#title' => 'Ressumption  date',
+    '#default_value' => $data->resumption_date);
+  $form['bank'] = array(
+    '#type' => 'select',
+    '#options' => staff_banks(),
+    '#title' => 'Bank',
+    '#default_value' => $data->bank_id);
+  $form['account_number'] = array(
+    '#title' => 'Account Number',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUR,
+    '#default_value' => $data->account_id);
+  $form['staff_role'] = array(
+    '#type' => 'select',
+    '#options' => staff_roles(),
+    '#title' => 'Role',
+    '#default_value' => $data->role_id,
+    '#required' => TRUE );
+  $form['staff_id'] = array(
+    '#type' => 'hidden',
+    '#title' => 'Role',
+    '#default_value' => $data->staff_id,
+    '#required' => TRUE);
+  //$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit','#default_value'=>$data->staff_type_id);
+  return $form;
+}
+function staff_course_assign() {
+  ob_start();
+  echo  drupal_get_form('staff_course_assign_form1');
+  course_assign_list();
+?>
+<?php
+  return ob_get_clean();
+}
+function staff_search_form(&$obj) {
+  $form = array(
+    '#theme' => 'form_panel_table',
+    '#form_panel_table_attributes' => array('border' => 0),
+    '#redirect' => FALSE);
+  $form['department_id'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 1);
+  $form['gender'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      '' => 'Select',
+      'M' => 'Male',
+      'F' => 'Female'),
+    '#title' => 'Gender',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#form_panel_col' => 2,
+    '#form_panel_row' => 1);
+  $form['staff_type_id'] = array(
+    '#type' => 'select',
+    '#options' => staff_type(),
+    '#title' => 'Staff Type',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#form_panel_col' => 3,
+    '#form_panel_row' => 1);
+  $form['grade_level_id'] = array(
+    '#type' => 'select',
+    '#options' => salary_grade(),
+    '#title' => 'Grade Level',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#form_panel_col' => 4,
+    '#form_panel_row' => 1);
+  $form['state'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#title' => 'State of origin',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#form_panel_col' => 5,
+    '#form_panel_row' => 1);
+  $form['jambsubn'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Search',
+    '#type' => 'submit',
+    '#form_panel_col' => 6,
+    '#form_panel_row' => 1);
+  return $form ;
+}
+function staff_course_assign_form1(&$obj) {
+  $form = array(
+    '#theme' => 'form_panel_table',
+    '#form_panel_table_attributes' => array('border' => 0));
+  $form['title_test'] = array(
+    '#type' => 'item',
+    '#value' => '<b>Course</b>',
+    '#required' => TRUE,
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 1);
+  $form['programme_id'] = array(
+    '#type' => 'select',
+    '#options' => staff_prg(),
+    '#title' => 'Programme',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#required' => TRUE,
+    '#form_panel_col' => 2,
+    '#form_panel_row' => 2);
+  $form['level_id'] = array(
+    '#type' => 'select',
+    '#options' => staff_level(),
+    '#title' => 'Level',
+    '#required' => TRUE,
+    '#form_panel_col' => 3,
+    '#form_panel_row' => 2);
+  $form['course_id'] = array(
+    '#type' => 'select',
+    '#options' => staff_course(),
+    '#title' => 'Course',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#required' => TRUE,
+    '#form_panel_col' => 4,
+    '#form_panel_row' => 2);
+  $form['course_type_id'] = array(
+    '#type' => 'select',
+    '#options' => array( 1 => 'Core', 2 => 'Elective'),
+    '#title' => 'Course Type',
+    '#required' => TRUE,
+    '#form_panel_col' => 5,
+    '#form_panel_row' => 2);
+  $form['staff_id'] = array(
+    '#type' => 'select',
+    '#options' => lecturer(),
+    '#title' => 'Lecturer',
+    '#required' => TRUE ,
+    '#form_panel_col' => 6,
+    '#form_panel_row' => 2);
+  $form['min_credit'] = array(
+    '#title' => 'Min Credit',
+    '#type' => 'textfield',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#size' => 20,
+    '#required' => TRUE,
+    '#form_panel_col' => 7,
+    '#form_panel_row' => 2);
+  $form['max_credit'] = array(
+    '#title' => 'Max Credit',
+    '#type' => 'textfield',
+    '#attributes' => array(
+      'style' => 'width:100px'),
+    '#size' => 20,
+    '#required' => TRUE,
+    '#form_panel_col' => 8,
+    '#form_panel_row' => 2);
+  $form['jambsubn'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Add',
+    '#type' => 'submit',
+    '#form_panel_col' => 9,
+    '#form_panel_row' => 2);
+  return $form;
+}
+function course_assign_list() {
+  $query = "Select p.programme_name, l.level_name, c.course_title, vs.staff_first_name, rc. *
+    from registrable_course rc
+    inner join programme p on p.programme_id = rc.programme_id
+    inner join level l on l.level_id = rc.level_id
+    inner join course c on rc.course_id = c.course_id
+    left join veritas_staff vs on vs.staff_id = rc.lecturer_id
+";
+  $r=db_query($query);
+  while ($f = db_fetch_object($r)) {
+    $course_type = array('1' => 'Core', 2 => 'Elective');
+    $html .= '<tr>
+    <td>'. $f->programme_name .'</td><td>'. $f->level_name .'&nbsp;</td>
+    <td>'. $f->course_title .'</td><td>'. $course_type[$f->course_type] .'</td>
+    <td>'. $f->staff_first_name .'</td>
+    <td>'. $f->min_credit_load .'&nbsp;</td>
+    <td>'. $f->max_credit_load .'</td>
+    </tr>';
+  }
+?>
+<table border ="1">
+<?php echo  $html; ?>
+</table>
+<?php
+}
+function staff_course_assign_form1_submit(&$form, &$state) {
+  $values = $state['values'];
+  echo  $query = "insert into `registrable_course` set
+    course_id = '". $values['course_id'] ."',
+    programme_id = '". $values['programme_id'] ."',
+    level_id = '". $values['level_id'] ."',
+    course_type = '". $values['course_type_id'] ."',
+    min_credit_load  = '". $values['min_credit'] ."',
+    max_credit_load = '". $values['max_credit'] ."',
+    lecturer_id = '". $values['staff_id'] ."'
+  ";
+  db_query($query);
+  drupal_set_message("Registable Course Created");
+  drupal_goto("staff/registrablecourse");
+}
+function lecturer() {
+  $titles['']="Select";
+  $r=db_query("select * from `veritas_staff` where parent_id = ". $_SESSION['staff']['data']->staff_id ." order by staff_first_name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->staff_id]=$f->staff_first_name;
+  return  $titles;
+}
+function staff_prg() {
+  $titles['']="";
+  $r=db_query("select p.* from `programme` p inner join veritas_staff_department sd on sd.department_id=p.department_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by programme_name");
+  while ($f=db_fetch_object($r))
+    $titles[$f->programme_id]=$f->programme_name;
+  return  $titles;
+}
+function staff_level() {
+  $titles['']="";
+  $r=db_query("select * from `level` order by level_name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->level_id]=$f->level_name;
+  return  $titles;
+}
+function staff_course() {
+  $titles['']="";
+  $r=db_query("select * from `course` c inner join veritas_staff_department sd on sd.department_id=c.deapartment_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by course_title");
+  while ($f=db_fetch_object($r))
+    $titles[$f->course_id]=$f->course_title;
+  return  $titles;
+}
+function staff_registration_form(&$obj) {
+  unset($_SESSION['student']);
+  unset($_SESSION['veritas']);
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st == 1) {
+    return staff_registration_form1($obj);
+  }
+  elseif ($st == 2) {
+    return staff_registration_form2($obj);
+  }
+  elseif ($st == 3) {
+    return staff_registration_form3($obj);
+  }
+}
+function staff_registration_form2(&$obj) {
+  $form['title_test'] = array(
+    '#type' => 'item',
+    '#value' => '<b>Staff Information</b>');
+  $form['staff_type'] = array(
+    '#type' => 'select',
+    '#options' => staff_type(),
+    '#title' => 'Staff Type',
+    '#required' => TRUE);
+  $form['employment_type'] = array(
+    '#type' => 'select',
+    '#options' => employment_type(),
+    '#title' => 'Employment Type',
+    '#required' => TRUE);
+  $form['staff_number'] = array(
+    '#title' => 'Staff Number',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE);
+  $form['staff_position'] = array(
+    '#type' => 'select',
+    '#options' => staff_position(),
+    '#title' => 'Position',
+    '#required' => TRUE);
+  $form['staff_tax_number'] = array(
+    '#title' => 'Tax Number',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE);
+  $form['staff_department'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#required' => TRUE);
+  $form['staff_room']=array(
+    '#title' => 'Room',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE);
+  $form['salary_garde_level'] = array(
+    '#type' => 'select',
+    '#options' => salary_grade(),
+    '#title' => 'Salary Grade Level');
+  $form['appointment_date'] = array(
+    '#type' => 'date',
+    '#title' => 'Appointment date',
+    '#required' => TRUE);
+  $form['assumption_date'] = array(
+    '#type' => 'date',
+    '#title' => 'Assumption  date',
+    '#required' => TRUE);
+  $form['ressumption_date'] = array(
+    '#type' => 'date',
+    '#title' => 'Ressumption  date',
+    '#required' => TRUE);
+  $form['bank']=array(
+    '#type' => 'select',
+    '#options' => staff_banks(),
+    '#title' => 'Bank',
+    '#required' => TRUE);
+  $form['account_number'] = array(
+    '#title' => 'Account Number',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE);
+  $form['jambsubp'] = array(
+    '#id' => 'edit-previous',
+    '#value' => 'Previous',
+    '#type' => 'submit');
+  $form['jambsubn'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Next',
+    '#type' => 'submit');
+  return $form;
+}
+function staff_banks() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Select";
+    $r=db_query("select * from `veritas_bank`  order by name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->id]=$f->name;
+  }
+  return  $titles;
+}
+function staff_roles() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Select";
+    $r=db_query("select * from `veritas_staff_role` order by name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->id]=$f->name;
+  }
+  return  $titles;
+}
+function salary_grade() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Select";
+    $r=db_query("select * from `veritas_salary_grade`  order by salary_grade_level");
+    while ($f=db_fetch_object($r))
+      $titles[$f->id]=$f->salary_grade_level;
+  }
+  return  $titles;
+}
+function staff_type() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Staff Type";
+    $r=db_query("select * from `veritas_staff_type`  order by staff_type_name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->staff_type_id]=$f->staff_type_name;
+  }
+  return  $titles;
+}
+function employment_type() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Employment Type";
+    $r=db_query("select * from `veritas_employment_type`  order by name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->id]=$f->name;
+  }
+  return  $titles;
+}
+function staff_position() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Position";
+    $r=db_query("select * from `veritas_staff_position`  order by name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->id]=$f->name;
+  }
+  return  $titles;
+}
+function department() {
+  static $titles;
+  if (!$titles) {
+    $titles[0]="Select";
+    $r=db_query("select * from `department`  order by department_name");
+    while ($f=db_fetch_object($r))
+      $titles[$f->department_id]=$f->department_name;
+  }
+  return  $titles;
+}
+function staff_registration_form1(&$obj) {
+  $form['#attributes'] = array(
+    'enctype' => "multipart/form-data");
+  $form['title_test'] = array(
+    '#type' => 'item',
+    '#value' => '<b>Personal Information</b>');
+  $form['title'] = array(
+    '#type' => 'select',
+    '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
+    '#required' => TRUE,
+    '#title' => 'Title',
+    '#default_value' => $_SESSION['student']['data']->title);
+  $form['lastname'] = array(
+    '#title' => 'Last Name',
+    '#type' => 'textfield',
+    '#required' => TRUE,
+    '#size' => 20);
+  $form['firstname'] = array(
+    '#title' => 'First Name',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE);
+  $form['middlename'] = array(
+    '#title' => 'Middle Name',
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['dob'] = array(
+    '#type' => 'date',
+    '#title' => 'Date Of Birth');
+  $nationality = 156 ; /*nigeria*/
+  $form['nat'] = array(
+    '#type' => 'select',
+    '#default_value' => $nationality,
+    '#options' => _veritas_country(),
+    '#title' => 'Nationality',
+    '#required' => TRUE);
+  $form['state'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#required' => TRUE,
+    '#title' => 'State Of Origin(Only for nigeria)',
+    '#ahah' => array(
+    'event' => 'change',
+    'wrapper' => 'ilga',
+    'path' => 'student/ajaxlga/state',
+    'method' => 'html'));
+  $form['lga'] = array(
+    '#type' => 'select',
+    '#default_value' => 0,
+    '#options' => veritas_lga(),
+    '#required' => TRUE ,
+    '#title' => 'LGA',
+    '#prefix' => '<div id="ilga">',
+    '#suffix' => '</div>',
+    '#attributes' => array('disabled' => 'disabled', 'class' => 'form-select'));
+  $form['sex'] = array(
+    '#type' => 'radios',
+    '#title' => "Gender",
+    '#options' => array(
+      'male' => 'Male',
+      'female' => 'Female'),
+    '#required' => TRUE);
+  $form['mar'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      'married' => 'Married',
+      'single' => 'Single'),
+    '#title' => 'MARITAL STATUS',
+    '#required' => TRUE);
+  $form['maiden'] = array(
+    '#title' => 'Maiden Name',
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['per_home_address'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'Permanent Home Address');
+  $form['per_city_address'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'Permanent City Address');
+  $form['tmp_home_address'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'Temporary  Home Address');
+  $form['tmp_city_address'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'Temporary City Address');
+  $form['tel'] = array(
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#title' => 'Landline');
+  $form['gsm'] = array(
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#title' => 'Mobile Number',
+    '#required' => TRUE);
+  $form['gsm2'] = array(
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#title' => 'Mobile Number 2');
+  $form['email'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Personal Email',
+    '#size' => 45);
+  $form['medical_part1']['blood_group'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'O+' => 'O+',
+      'O-' => 'O-',
+      'A+' => 'A+',
+      'A-' => 'A-',
+      'B+' => 'B+',
+      'B-' => 'B-',
+      'AB+' => 'AB+',
+      'AB-' => 'AB-') ,
+    '#title' => 'Blood Group',
+    '#required' => TRUE);
+  $form['pic']=array(
+    '#type' => 'file',
+    '#title' => 'Upload Passport Picture');
+  $form['signature'] = array(
+    '#type' => 'file',
+    '#title' => 'Upload Signature Picture');
+  $form['username'] = array(
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#title' => 'Username');
+  $form['password'] = array(
+    '#type' => 'password',
+    '#size' => 25,
+    '#title' => 'Password');
+  $form['cpassword'] = array(
+    '#type' => 'password',
+    '#size' => 25,
+    '#title' => 'Confirm Password');
+  /*$form['jambsubp'] = array(
+    '#id' => 'edit-previous',
+    '#value' => 'Previous',
+    '#type' => 'submit');*/
+  $form['jambsubn'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Next',
+    '#type' => 'submit');
+  return $form;
+}
+function staff_registration_form3(&$obj) {
+  //$form['#title']=t('Next of Kin Details');
+  $form['title_test'] = array(
+    '#type' => 'item',
+    '#value' => '<b>Next of Kin Details</b>');
+  $form['kin_name'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Name',
+    '#size' => 45,
+    '#required' => TRUE);
+  $form['kin_relation'] = array(
+    '#type' => 'select',
+    '#options' => _student_rel(),
+    '#title' => 'Relationship',
+    '#required' => TRUE);
+  $form['kin_address'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'Address');
+  $form['kin_city'] =array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'City');
+  $form['kin_telephone'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#title' => 'Telephone');
+  $form['kin_mobile'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#required' => TRUE,
+    '#title' => 'Mobile');
+  $form['kin_email'] = array(
+    '#type' => 'textfield',
+    '#size' => 60,
+    '#title' => 'Email');
+  $form['jambsubp'] = array(
+    '#id' => 'edit-previous',
+    '#value' => 'Previous',
+    '#type' => 'submit');
+  $form['jambsubn'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Next',
+    '#type' => 'submit');
+  return $form;
+}
+function staff_registration_form_submit(&$form, &$state) {
+  if ($state['storage']['step'] == 1) {
+    //print_R($form);
+    $state['storage']['values'][$state['storage']['step']] = $data = $form['#post'];
+  }
+  if ($state['storage']['step'] == 2) {
+    $state['storage']['values'][$state['storage']['step']]=$data = $form['#post'];
+  }
+  if ($state['storage']['step'] == 3) {
+    $state['storage']['values'][$state['storage']['step']] = $data = $form['#post'];
+    ///insert drupal_user
+    $data = $state['storage']['values'];
+    $drupal_data = array(
+      'mail' => $data[1]['email'],
+      'pass' => $data[1]['password'],
+      'name' => $data[1]['username'],
+      'roles' => array(),
+      'init' => $data[1]['email'],
+      'status' => 0
+      );
+    $user = user_save(NULL, $drupal_data);
+
+    // ALAN 20090802
+    $result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
+    while ($row = db_fetch_array($result)) {
+      if ($row['name'] === 'profile_last_name') {
+        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $data[1]['lastname']);
+      }
+      elseif ($row['name'] === 'profile_first_name') {
+        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $data[1]['firstname']);
+      }
+      elseif (($row['name'] === 'profile_middle_name') && !empty($data[1]['middlename'])) {
+        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $data[1]['middlename']);
+      }
+    }
+    // END ALAN
+
+    $query = "insert veritas_staff set
+staff_first_name='%s' ,
+staff_last_name='%s',
+staff_middle_name='%s',
+staff_maiden_name='%s',
+dob='%s',
+staff_title='%s',
+nationality='%s',
+state='%s',
+lga='%s',
+address='%s',
+city='%s',
+tel='%s' ,
+gsm='%s' ,
+personal_email='%s' ,
+marital_status ='%s' ,
+gender='%s',
+blood_group = '%s' ,
+staff_no = '%s',
+staff_type_id ='%s',
+department_id = '%s',
+position_id = '%s',
+grade_level_id = '%s',
+room_number = '%s',
+appointment_date = '%s',
+assumption_date = '%s',
+resumption_date = '%s',
+bank_id = '%s',
+account_id  = '%s',
+gsm2 = '%s',
+pic = '%s',
+signature = '%s',
+permanent_home_address = '%s',
+permanent_city_address = '%s',
+temp_home_address = '%s',
+temp_city_address = '%s',
+employment_type_id = '%s',
+tax_number = '%s' ,
+user_id ='%s'
+";
+    $gender = array('female' => 'F', 'male' => 'M');
+    $data[1]['sex'] = $gender[$data[1]['sex']];
+    db_query($query,
+      $data[1]['firstname'],
+      $data[1]['lastname'],
+      $data[1]['middlename'],
+      $data[1]['maiden'],
+      $data[1]['dob']['year'] ."-". $data[1]['dob']['month'] ."-". $data[1]['dob']['day'],
+      $data[1]['title'],
+      $data[1]['nat'],
+      $data[1]['state'],
+      $data[1]['lga'],
+      $data[1]['address'],
+      $data[1]['city'],
+      $data[1]['tel'],
+      $data[1]['gsm'],
+      $data[1]['email'],
+      $data[1]['mar'],
+      $data[1]['sex'],
+      $data[1]['blood_group'],
+      $data[2]['staff_number'],
+      $data[2]['staff_type'],
+      $data[2]['staff_department'],
+      $data[2]['staff_position'],
+      $data[2]['salary_garde_level'],
+      $data[2]['staff_room'],
+      $data[2]['appointment_date']['year'] ."-". $data[2]['appointment_date']['month'] ."-". $data[2]['appointment_date']['day'],
+      $data[2]['assumption_date']['year'] ."-". $data[2]['assumption_date']['month'] ."-". $data[2]['assumption_date']['day'],
+      $data[2]['ressumption_date']['year'] ."-". $data[2]['ressumption_date']['month'] ."-". $data[2]['ressumption_date']['day'],
+      $data[2]['bank'],
+      $data[2]['account_number'],
+      $data[1]['gsm2'],
+      $data['pic'],
+      $data['signature'],
+      $data[1]['per_home_address'],
+      $data[1]['per_city_address'],
+      $data[1]['tmp_home_address'],
+      $data[1]['tmp_city_address'],
+      $data[2]['employment_type'],
+      $data[2]['staff_tax_number'],
+      $user->uid);
+    $staff_id = db_last_insert_id('veritas_staff', 'id');
+    $query = "insert veritas_staff_kin set
+ name = '%s',
+ relation_id='%s',
+ address='%s',
+ city='%s',
+ telephone='%s',
+ mobile='%s',
+ email='%s',
+ staff_id='%s'
+ ";
+    db_query($query,
+      $data[3]['kin_name'],
+      $data[3]['kin_relation'],
+      $data[3]['kin_address'],
+      $data[3]['kin_city'],
+      $data[3]['kin_telephone'],
+      $data[3]['kin_mobile'],
+      $data[3]['kin_email'],
+      $staff_id
+      );
+    drupal_goto('staff/registration/success');
+  }
+  if ($state['clicked_button']['#id'] == 'edit-previous') {
+    $state['storage']['values'][$state['storage']['step']]=$state['values'];
+    $state['storage']['step']--;
+    // return;
+  }
+  elseif ($state['clicked_button']['#id'] == 'edit-next') {
+    $state['storage']['values'][$state['storage']['step']]=$state['values'];
+    $nextstep=  $state['storage']['step']++;
+  }
+}
+function registartion_success() {
+  ob_start();
+  echo "Registration successfull";
+  return ob_get_clean();
+}
+function staff_registration_form_validate(&$form, &$state) {
+  if ($state['storage']['step'] == 1) {
+    $pic = file_save_upload_name('pic', array(), variable_get('file_directory_path', NULL) .'/staff/pic/', FALSE, NULL);
+    if (!$pic) {
+      form_set_error('pic', 'Picture cannot be uploaded ');
+      //return;
+    }
+    $state['storage']['pic'] = $pic->fid;
+    $signature=file_save_upload_name('signature', array(), variable_get('file_directory_path', NULL) .'/staff/signature', FALSE, NULL);
+    if (!$signature) {
+      form_set_error('signature', 'Signature cannot be uploaded ');
+      //return;
+    }
+    $state['storage']['signature'] = $signature->fid;
+    if ($form['#post']['cpassword'] != $form['#post']['password']) {
+      form_set_error('submitted[cpassword]', "Password not match with  Confirm Password");
+      return;
+    }
+    /* $query ="select * from veritas_staff where usrname = '".$form['#post']['username']."'";
+    $result = db_query($query);
+    if ($result && mysql_num_rows($result) > 0) {
+      form_set_error('submitted[username]',"Username already exists.");
+    }*/
+  }
+  if ($state['storage']['step'] ==2) {
+  }
+  if ($state['storage']['step'] ==3) {
+  }
+  return;
+}
+/*Function that creates staff login form.*/
+function staff_login_form(&$obj) {
+  unset($_SESSION['student']['data']);
+  unset($_SESSION['veritas']);
+  unset($_SESSION['staff']);
+  $form['#title'] = t('Staff Login');
+  $form['user'] = array(
+    '#title' => 'Username',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE);
+  $form['pass'] = array(
+    '#title' => 'Password',
+    '#type' => 'password',
+    '#required' => TRUE,
+    '#size' => 20);
+  $form['submit'] = array(
+    '#value' => 'Login',
+    '#type' => 'submit');
+  return $form;
+}
+ /*Function that specifies the next action after staff submits his/her form.*/
+ /*function staff_login_form_submit(&$obj)
+ {
+      drupal_goto('staff/home');
+ }*/
+
+ /*Staff module multiple form call back.*/
+function staff_module_form(&$obj) {
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+    $st=$obj['storage']['step'];
+  if ($st == 1)
+    return staff_profile_form($obj);
+  else if ($st == 2)
+    return staff_begin_clearance_form($obj);
+}
+function staff_begin_clearance_form(&$obj) {
+  if (arg(2)) {
+    //echo "<br>2 ".arg(2);
+    $_SESSION['staff']['mat']=arg(2);
+    $_SESSION['staff']['mat'];
+    $obj['storage']['step']=2;
+    return staff_begin_clearance_form2($obj);
+  }
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st == 1)
+    return staff_begin_clearance_form1($obj);
+  else if ($st == 2)
+    return staff_begin_clearance_form2($obj);
+  //else if ($st==3)
+    //return staff_begin_clearance_form3($obj);
+  //else if ($st==4)
+    //return staff_begin_clearance_form($obj);
+}
+function staff_begin_clearance_formold(&$obj) {
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st == 1)
+    return staff_begin_clearance_form1($obj);
+  else if ($st == 2)
+    return staff_begin_clearance_form2($obj);
+  //else if ($st==3)
+    //return staff_begin_clearance_form3($obj);
+  //else if ($st==4)
+    //return staff_begin_clearance_form($obj);
+}
+/*Function that validates staff login.*/
+function staff_login_form_validate($form, &$states) {
+  $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a.staff_type_id=b.staff_type_id left outer join veritas_staff_role as c on a.role_id=c.id  where a.usrname = '". $form['#post']['user'] ."'");
+  if ($result && mysql_num_rows($result) > 0) {
+    $data = db_fetch_object($result);
+    /*Check if staff is an academic staff*/
+    /*if ($data->staff_type!=='AR' && $data->category!=2)
+    {
+      form_set_error('submitted["user"]'," Not an AR staff.");
+      //drupal_goto('staff/academic');
+    }*/
+    /*Check if password mismatches*/
+    if ($data->password!==$form['#post']['pass']) {
+      form_set_error('submitted["user"]', " Password did not match.");
+    }
+    /*Check if staff is non-academic staff then retrive the values from database table and set it in SESSION*/
+    else {
+      $qry = "select a . *, b.name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
+      //die;
+      $res=db_query($qry);
+      $result1 = db_fetch_object($res);
+      $_SESSION['staff']['role'] = $result1->name;
+      $_SESSION['staff']['user'] = $data->usrname;
+      $_SESSION['staff']['data'] = $data;
+      drupal_goto('staff/profile');
+    }
+  }
+}
+function staff_user($op, &$edit, &$account, $category) {
+  //var_dump($_SESSION['staff']['data']->role_id);
+  switch ($op) {
+    case 'login':
+      $query ="select * from `veritas_staff`  where user_id = ". $account->uid;
+      $result = db_query($query);
+      if ($result && mysql_num_rows($result) > 0) {
+        $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a . staff_type_id = b . staff_type_id left outer join veritas_staff_role as c on a . role_id=c . id  where a . user_id = '". $account->uid ."'");
+        if ($result && mysql_num_rows($result) > 0) {
+          $data = db_fetch_object($result);
+          /*Check if staff is an academic staff*/
+          /*if ($data->staff_type!=='AR' && $data->category!=2)
+          {
+            form_set_error('submitted["user"]'," Not an AR staff.");
+            //drupal_goto('staff/academic');
+          }*/
+          $qry = "select a . *, b . name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
+          $res=db_query($qry);
+          $result1=db_fetch_object($res);
+          $_SESSION['staff']['role'] = $result1->name;
+          $_SESSION['staff']['user'] = $data->usrname;
+          $_SESSION['staff']['data'] = $data;
+          // drupal_goto('staff/profile');
+        }
+      }
+    break;
+  }
+}
+function staff_home_form(&$obj) {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+}
+/*Code adding started on 24/02/2009 for staff profile form.*/
+function staff_profile_form(&$obj) {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+  if (isset($_SESSION['staff']['data']->staff_id)) {
+    $qry = "select * from `veritas_staff` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+    $res = db_query($qry);
+    if ($res && mysql_num_rows($res) > 0) {
+      $data = db_fetch_object($res);
+      $_SESSION['staff']['user'] = $data->usrname;
+      $_SESSION['staff']['data'] = $data;
+      //echo $_SESSION['staff']['data']->state;
+    }
+  }
+  $form['#title'] = t('Staff Profile');
+  $form['title'] = array(
+    '#type' => 'select',
+    '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
+    '#required' => TRUE,
+    '#title' => 'Title',
+    '#default_value' => $_SESSION['staff']['data']->staff_title);
+  $form['fname'] = array(
+    '#title' => 'First Name',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => $_SESSION['staff']['data']->staff_first_name);
+  $form['mname'] = array(
+    '#title' => 'Middle Name',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#default_value' => $_SESSION['staff']['data']->staff_middle_name);
+  $form['lname'] = array(
+    '#title' => 'Last Name',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#default_value' => $_SESSION['staff']['data']->staff_last_name,
+    '#required' => TRUE);
+  $form['maidname'] = array(
+    '#title' => 'Maiden Name',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#default_value' => $_SESSION['staff']['data']->staff_maiden_name,
+    '#required' => TRUE);
+  $form['gender'] = array(
+    '#title' => 'Gender',
+    '#type' => 'select',
+    '#options' => array('M' => 'Male', 'F' => 'Female'),
+    '#default_value' => $_SESSION['staff']['data']->gender,
+    '#required' => TRUE);
+  $form['nation'] = array(
+    '#title' => 'Nationality',
+    '#type' => 'select',
+    '#options' => _veritas_country(),
+    '#default_value' => $_SESSION['staff']['data']->nationality,
+    '#required' => TRUE);
+  $form['state'] = array(
+    '#title' => 'State',
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#default_value' => $_SESSION['staff']['data']->state,
+    '#required' => TRUE);
+  $form['address'] = array(
+    '#title' => 'Address',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->address,
+    '#required' => TRUE);
+  $form['city'] = array(
+    '#title' => 'City',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->city,
+    '#required' => TRUE);
+  $form['tel'] = array(
+    '#title' => 'Telephone',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->tel,
+    '#required' => TRUE);
+  $form['gsm'] = array(
+    '#title' => 'GSM',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->gsm,
+    '#required' => TRUE);
+  $form['pemail'] = array(
+    '#title' => 'Personal Email',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->personal_email,
+    '#required' => TRUE);
+  $form['mstatus'] = array(
+    '#title' => 'Marital Status',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->marital_status,
+    '#required' => TRUE);
+  $form['location'] = array(
+    '#title' => 'Location',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->location);
+  $form['blood'] = array(
+    '#title' => 'Blood Group',
+    '#type' => 'textfield',
+    '#default_value' => $_SESSION['staff']['data']->blood_group,
+    '#size' => 5);
+  /*$form['dob']=array('#type'=>'date','#title'=>'Date Of Birth', '#default_value'=>$_SESSION['staff']['data']->dob);*/
+  $form['dob'] = array(
+    '#type' => 'date',
+    '#title' => 'Date Of Birth',
+    '#default_value' => array(
+      'day' => (int)substr($_SESSION['staff']['data']->dob, -2),
+      'month' => (int)substr($_SESSION['staff']['data']->dob, 5, 2),
+      'year' => substr($_SESSION['staff']['data']->dob, 0, 4)));
+  $form['user'] = array(
+    '#title' => 'User Name',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#default_value' => $_SESSION['staff']['data']->usrname,
+    '#required' => TRUE,
+    '#attributes' => array('readonly' => 'readonly'));
+  $form['lbl'] = array('#type' => 'fieldset', '#title' => 'Change Password');
+  $form['lbl']['newpass'] = array(
+    '#title' => 'New Password',
+    '#type' => 'password',
+    '#size' => 20);
+  $form['lbl']['confpass'] = array(
+    '#title' => 'Confirm Password',
+    '#type' => 'password',
+    '#size' => 20);
+  $form['submit'] = array(
+    '#id' => 'enter',
+    '#value' => 'Submit',
+    '#type' => 'submit');
+  return $form;
+}
+/*Code adding ended on 24/02/2009 for staff profile form.*/
+/*Code adding started on 24/02/2009 for staff profile validation form.*/
+function staff_profile_form_validate($form, &$states) {
+  ob_start();
+  /*Check whether newpassword and confirm password field's are filled or not.*/
+  $values = $form['lbl']['#post'];
+  $newpass = $values['newpass'];
+  $confpass = $values['confpass'];
+  //if ($form['#post']['newpass']!='' && $form['#post']['confpass']!='')
+  if ($newpass!='' && $newpass!='') {
+    /*Check if confirm password field do not matches with new password field.*/
+    //if ($form['#post']['newpass']===$form['#post']['confpass'])
+    if ($newpass===$confpass) {
+      $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
+      $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."',  staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', personal_email='". $form['#post']['pemail'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."', blood_group='". $form['#post']['blood'] ."', dob='". $dob ."', password='". $newpass ."' where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+      $result = db_query($qry);
+      $show = mysql_affected_rows();
+      if ($result && mysql_affected_rows()>0) {
+        drupal_set_message('You have successfully updated your details.');
+        drupal_goto('staff/home');
+      }
+    }
+    else {
+      //form_set_error('Password did not match.');
+      drupal_set_message('Password did not match');
+      drupal_goto('staff/profile');
+    }
+  }
+  if ($form['#post']['newpass'] == '' && $form['#post']['confpass'] != '') {
+    drupal_set_message('Please specify new password');
+  }
+  else if ($form['#post']['newpass'] != '' && $form['#post']['confpass'] == '') {
+    drupal_set_message('Please specify confirmation password');
+  }
+  else {
+    $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
+    $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
+      where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+    /*$qry="update veritas_staff set title='".$form['#post']['title']."', first_name='".$form['#post']['fname']."', last_name='".$form['#post']['lname']."', middle_name='".$form['#post']['mname']."', usrname='".$form['#post']['user']."', blood_group='".$form['#post']['blood']."', dob='".$form['#post']['dob']."',  where staff_id = '".$_SESSION['staff']['data']->staff_id."'";*/
+    $result = db_query($qry);
+    if ($result && mysql_affected_rows()>0) {
+      drupal_set_message('You have successfully updated your details.');
+      drupal_goto('staff/home');
+    }
+  }
+}
+/*Code adding ended on 24/02/2009 for staff profile validation form.*/
+/*Code adding started on 25/02/2009 for staff clearance form. */
+function _staff_clearance() {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+  $qry = "select * from `veritas_staff_college` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+  $result = db_query($qry);
+  ob_start();
+  //if ($result && mysql_affected_rows()>0)
+  if (1) {
+    while ($res=db_fetch_object($result)) {
+      $qry1 = "select * from `college` where college_id='". $res->assigned_college ."'";
+      $result1 = db_query($qry1);
+      while ($res1=db_fetch_object($result1)) {
+        /*Query to fetch all the data's from student, department and college table.*/
+        // $qry2 = "SELECT * FROM student AS a LEFT OUTER JOIN department AS d ON a.first_choice=d.department_id LEFT OUTER JOIN college AS c ON d.college_id=c.college_id WHERE a.staff_id='".$_SESSION['staff']['data']->staff_id."'";
+        $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
+        $qry2 =  "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
+        $result2 = db_query($qry2);
+        // $show = mysql_affected_rows();
+      }
+    }
+  }
+  else {
+    drupal_set_message('You are not assigned to any college.');
+    drupal_goto('staff/home');
+  }
+  if (mysql_num_rows($result2) < 1) {
+    drupal_set_message('No student has been cleared by you.');
+  }
+?>
+  <table border='1' align='center'>
+  <tr bgcolor='#ACCFCC'><td colspan='7'><b>Cleared Student List</b></td></tr>
+  <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Mat. No.</b></td><td><b>College</b></td><td><b>Department</b></td><td><b>Clearance Date</b></td></tr>
+<?php
+  while ($f=db_fetch_object($result2)) {
+?>
+    <tr>
+    <td><?php echo $f->last_name; ?></td>
+    <td><?php echo $f->middle_name; ?></td>
+    <td><?php echo $f->first_name; ?></td>
+    <td><?php echo $f->matriculation_no; ?></td>
+    <td><?php echo $f->college_name; ?></td>
+    <td><?php echo $f->department_name; ?></td>
+    <td><?php echo $f->clearance_date; ?></td>
+    </tr>
+<?php
+  }
+?>
+  </table>
+<?php
+  return ob_get_clean();
+}
+    /*Code adding ended on 25/02/2009 for staff clearance form. */
+
+    /*Code adding started on 26/02/2009 for staff logout page. */
+function _staff_logout() {
+  ob_start();
+  if (isset($_SESSION['staff'])) {
+    unset($_SESSION['staff']);
+    drupal_goto('staff/sign_in');
+  }
+  return ob_get_clean();
+}
+    /* Code adding started on 26/02/2009 for staff logout page. */
+
+    /* Code adding started on 27/02/2009 for student clearance page. */
+function staff_begin_clearance_form1(&$obj) {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+  if (isset($_SESSION['staff']['mat'])) {
+    unset($_SESSION['staff']['mat']);
+  }
+  if (isset($_SESSION['staff']['jamb'])) {
+    unset($_SESSION['staff']['jamb']);
+  }
+  $form['#title'] = t('Begin Clearance');
+  $form['matno'] = array(
+    '#title' => 'Matriculation No .',
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['lbl_or'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Or');
+  $form['lbl_or']['jambno'] = array(
+    '#title' => 'JAMB No .',
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['submit'] = array(
+    '#value' => 'Next',
+    '#type' => 'submit',
+    '#id' => 'edit-next');
+  return $form;
+}
+     /* Code adding ended on 27/02/2009 for student clearance page. */
+
+    /* Code adding started on 27/02/2009 for student clearance page validation. */
+function staff_begin_clearance_form_submit($form, &$state) {
+  if ($state['clicked_button']['#id'] == 'edit-previous') {
+    $state['storage']['step']--;
+   // $state['#rebuild']=true;
+    return;
+  }
+  elseif ($state['clicked_button']['#id'] == 'edit-next') {
+    /*$values=$form['verify']['#post'];
+if ($values['result']=='yes') {
+
+//die;
+ //echo $values['result'];
+ $state['storage']['step']= 2;
+}else if ($values['result']=='no') {
+
+ $state['storage']['step']= 3;
+}*/
+    $state['storage']['values'][$state['storage']['step']]=$state['values'];
+    $state['storage']['step']++;
+    $state['#rebuild']=TRUE;
+  }
+  else
+    return;
+}
+function staff_begin_clearance_form_validate($form, &$state) {
+  if ($state['storage']['step'] == 1) {
+    //print_R($form);
+    $values=$form['lbl_or']['#post'];
+    $jambno=$values['jambno'];
+    if ($form['#post']['matno'] != '' && $jambno!='') {
+      drupal_set_message('Please enter either Matriculation no or JAMB no.');
+    }
+    else {
+      if ($jambno != '' && $form['#post']['matno']=='') {
+        $qry = "select * from `admitted_student` where jambno='". $jambno ."'";
+        $res = db_query($qry);
+        if ($res && mysql_num_rows($res)>0) {
+          $result = db_fetch_object($res);
+          $_SESSION['staff']['jamb']=$result->jambno;
+          //drupal_set_message('Wellcome to clearance process.');
+        }
+        else {
+          form_set_error('jambno', "Jamb number not valid.");
+        }
+      }
+      else {
+        $qry = "select * from `admitted_student` where matriculation_no='". $form['#post']['matno'] ."'";
+        $res = db_query($qry);
+        if ($res && mysql_num_rows($res)>0) {
+          $result = db_fetch_object($res);
+          //if (!isset($_SESSION['staff']['mat']))
+          $_SESSION['staff']['mat']=$result->matriculation_no;
+          //drupal_set_message('Wellcome to clearance process.');
+        }
+        else {
+          form_set_error('matno', "Matriculation number not valid.");
+        }
+      }
+    }
+  }
+  if ($state['storage']['step'] == 2) {
+    /*echo "<pre>";
+    print_R($_SESSION);
+    print_R($form);
+    echo "</pre>";
+    die;*/
+    $results=$form['verify']['#post'];
+    $results1=$form['clear']['#post'];
+    $results2=$form['approve']['#post'];
+    if ($_SESSION['staff']['role'] != 'Registrar') {
+      if ($results['result'] == '' && $results1['cleared']=='') {
+        drupal_set_message('Please specify verify and clearance status');
+      }
+      if ($results1['cleared'] == 'no' && $results1['reject'] == '') {
+        drupal_set_message('Please explain reason for rejection.');
+      }
+      if ($results1['cleared'] == 'no' && $results['result'] == 'no') {
+        $dt = date('Y-m-d');
+        $qry = "update `admitted_student` set clearance_status=0, verify_status=0, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res = db_query($qry);
+        if ($res && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          //drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+      if ($results1['cleared'] == 'yes' && $results['result'] == 'yes') {
+        $dt = date('Y-m-d');
+        $qry = "update `admitted_student` set clearance_status=1, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res = db_query($qry);
+        if ($res && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+      if ($results1['cleared'] == 'no' && $results['result'] == 'yes') {
+        $dt = date('Y-m-d');
+        $qry = "update `admitted_student` set clearance_status=0, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res = db_query($qry);
+        if ($res && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          //drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+      if ($results['result'] == 'yes') {
+        $dt = date('Y-m-d');
+        $qry = "update `admitted_student` set verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res = db_query($qry);
+        if ($res && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          //drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+      if ($results['result'] == 'no') {
+        $dt = date('Y-m-d');
+        $qry = "update `admitted_student` set verify_status=0, clearance_date='" . $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res = db_query($qry);
+        if ($res && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          //drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+      if ($results1['cleared'] == 'yes' && $results['result'] == 'no') {
+        drupal_set_message('Students can only be cleared when their datas are verified');
+      }
+    }
+    if ($_SESSION['staff']['role'] == 'Registrar') {
+      if ($results2['accept'] == 'no') {
+        $dt1 = date('Y-m-d');
+        $qry_rej = "update `admitted_student` set clearance_status=0, verify_status=0, clearance_date='". $dt1 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res_rej = db_query($qry_rej);
+        if ($res_rej && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          //drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+      if ($results2['accept'] == 'yes') {
+        $dt2 = date('Y-m-d');
+        $qry_acc = "update `admitted_student` set clearance_status=2, clearance_date='". $dt2 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $res_acc = db_query($qry_acc);
+        if ($res_acc && mysql_affected_rows()>0) {
+          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          //drupal_set_message('Student status updated sucessfully.');
+          drupal_goto('staff/cleared');
+        }
+      }
+    }
+  }
+}
+    /* Code adding ended on 27/02/2009 for student clearance page validation. */
+
+    /* Code adding started on 27/02/2009 for student clearance main page. */
+function staff_begin_clearance_form2(&$obj) {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+  $qry = "select * from `admitted_student` where (matriculation_no='". $_SESSION['staff']['mat'] ."' or jambno='". $_SESSION['staff']['jamb'] ."' )AND (verify_status=0 OR clearance_status=0 )";
+  $res = db_query($qry);
+  if ($res && mysql_num_rows($res)>0) {
+    $result=db_fetch_object($res);
+    $_SESSION['staff']['stud_info']=$result->student_id;
+    $qry1 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
+    $res1 = db_query($qry1);
+    if ($res1 && mysql_num_rows($res1)>0) {
+      $result1=db_fetch_object($res1);
+      $qry2 = "SELECT a . ext_exam_rec_id, a . exam_date, a . exam_center_name, a . exam_number, b . exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a . exam_body=b . exam_body_id WHERE a . exam_student_id='". $result->student_id ."'";
+      $res2 = db_query($qry2);
+      $result2 = db_fetch_object($res2);
+      $query3 = " SELECT *
+        FROM admitted_ext_exam_record er
+        LEFT JOIN admitted_ext_exam_detail ed ON ed . ext_exam_record_id = er . ext_exam_rec_id
+        where er . exam_student_id = '". $result->student_id ."' order by er . ext_exam_rec_id " ;
+      $r=db_query($query3);
+      while ($f=db_fetch_object($r)) {
+        $prev_subjects = $data[$f->ext_exam_rec_id]['subjects'] ;
+        $data[$f->ext_exam_rec_id] = array(
+          'exam_body ' => $f->exam_body,
+          'exam_date' => $f->exam_date,
+          'exam_center_name' => $f->exam_center_name,
+          'exam_number' => $f->exam_number,
+          'exam_body' => $f->exam_body,
+        );
+        $data[$f->ext_exam_rec_id]['subjects'] = $prev_subjects ;
+        $data[$f->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
+        if (!in_array($f->ext_exam_rec_id, $data_key)) {
+          $data_key[] = $f->ext_exam_rec_id;
+        }
+      }
+      $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
+      $res4 = db_query($qry4);
+      $result4 = db_fetch_object($res4);
+      $qry5 = "select a . session_id, b . sess_name from `admitted_student` as a join session as b on a . session_id=b . session_id where a . student_id='". $result->student_id ."'";
+      $res5 = db_query($qry5);
+      $result5 = db_fetch_object($res5);
+      $qry6 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
+      $res6 = db_query($qry6);
+      $result6 = db_fetch_object($res6);
+      $qry7 = "select * from `admitted_sponsor` where student_id='". $result->student_id ."'";
+      $res7 = db_query($qry7);
+      $result7 = db_fetch_object($res7);
+    }
+  }
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Admission Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['extra']['college0'] = array(
+    '#type' => 'item',
+    '#title' => 'College',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['college1'] = array(
+    '#type' => 'item',
+    '#value' => $result4->college_abbreviation,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['dept0'] = array(
+    '#type' => 'item',
+    '#title' => 'Department',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['dept1'] = array(
+    '#type' => 'item',
+    '#value' => $result4->department_name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  //$form['extra']['space13']=array('#type'=>'item','#prefix'=>'<td>&nbsp;','#suffix'=>'</td>');
+  $form['extra']['programme0'] = array(
+    '#type' => 'item',
+    '#title' => 'Programme',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['programme1'] = array(
+    '#type' => 'item',
+    '#value' => $result4->programme_name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['extra']['study_mode0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mode of Study',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['study_mode1'] = array(
+    '#type' => 'item',
+    '#value' => $result->mode_of_study,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['space14'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['extra']['entry_mode0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mode of Entry',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['entry_mode1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->mode_of_entry,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['sess0'] = array(
+    '#type' => 'item',
+    '#title' => 'SESSION',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['sess1'] = array(
+    '#type' => 'item',
+    '#value' => $result5->sess_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>',
+    '#size' => 15);
+  $form['personal'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Personal Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  /*$form['personal'][img_lbl]=array('#type'=>'item', '#title'=>'Student Image');
+  $form['personal']['img_sig']=array('#title'=>'Student Image','#value'=>'<img src="'.load_image().'" />');*/
+  $form['personal']['img_lbl0'] = array(
+    '#type' => 'item',
+    '#title' => 'Student Image',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['img_lbl1'] = array(
+    '#value' => '<img src="'. load_image() .'" />',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space11'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['img_sig0'] = array(
+    '#type' => 'item',
+    '#title' => 'Student Signature',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['img_sig1'] = array(
+    '#value' => '<img src="'. load_signature() .'" />',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['matno0'] = array(
+    '#type' => 'item',
+    '#title' => 'Matriculation No.',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['matno1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->matriculation_no,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space0'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['jambno0'] = array(
+    '#type' => 'item',
+    '#title' => 'JAMB No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['jambno1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->jambno,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['fname0'] = array(
+    '#type' => 'item',
+    '#title' => 'First Name',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['fname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->first_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space1'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Middle Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->middle_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space2'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['lname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Last Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->last_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['gender0'] = array(
+    '#type' => 'item',
+    '#title' => 'Gender',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['gender1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->gender,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space3'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['origin0'] = array(
+    '#type' => 'item',
+    '#title' => 'State Of Origin',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['origin1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#default_value' => $result->state_origin,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['lga0'] = array(
+    '#type' => 'item',
+    '#title' => 'LGA Of Origin',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['lga1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_lga(),
+    '#default_value' => $result->lkup_lga_origin,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['space4'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus0'] = array(
+    '#type' => 'item',
+    '#title' => 'Marital Status',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus1'] = array(
+    '#type' => 'item',
+    '#value' => $result->marital_status,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['address0'] = array(
+    '#type' => 'item',
+    '#title' => 'Permanent Address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['address1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->permanent_address1,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space5'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['city0'] = array(
+    '#type' => 'item',
+    '#title' => 'City',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['city1'] = array(
+    '#type' => 'item',
+    '#value' => $result->permanent_address_city,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['state0'] = array(
+    '#type' => 'item',
+    '#title' => 'State',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['state1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#default_value' => $result->permanent_address_state,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['space6'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mobile0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mobile No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile1'] = array(
+    '#type' => 'item',
+    '#value' => $result->mobile_number,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['email0'] = array(
+    '#type' => 'item',
+    '#title' => 'E-mail address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['email1'] = array(
+    '#type' => 'item',
+    '#value' => $result->email_address,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space15'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['health0'] = array(
+    '#type' => 'item',
+    '#title' => 'Health Status',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['health1'] = array(
+    '#type' => 'item',
+    '#value' => $result->physical_health_status,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['nextofkin'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Sponsor/Next of Kin Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['nextofkin']['nofkin0'] = array(
+    '#type' => 'item',
+    '#title' => 'Next of Kin Name',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['nofkin1'] = array(
+    '#type' => 'item',
+    '#value' => $result6->name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['relation0'] = array(
+    '#type' => 'item',
+    '#title' => 'Relationship',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['relation1'] = array(
+    '#type' => 'item',
+    '#value' => $result6->relationship,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['mobile0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mobile',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['mobile1'] = array(
+    '#type' => 'item',
+    '#value' => $result6->mobile,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['nextofkin']['sponsor0'] = array(
+    '#type' => 'item',
+    '#title' => 'Sponsor',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['sponsor1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->sponsor_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  if ($result7->mobile != $result6->mobile) {
+    $form['nextofkin']['smobile0'] = array(
+      '#type' => 'item',
+      '#title' => 'Mobile',
+      '#prefix' => '<td>',
+      '#suffix' => '</td>');
+    $form['nextofkin']['smobile1'] = array(
+      '#type' => 'item',
+      '#size' => 20,
+      '#value' => $result7->mobile,
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr></table>');
+  }
+  else {
+    $form['nextofkin']['smobile0'] = array(
+      '#type' => 'item',
+      '#title' => 'Mobile',
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr></table>');
+  }
+  $form['fs'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'O-Level Results 1st  Sitting',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['fs']['qualification0'] = array(
+    '#type' => 'item',
+    '#title' => 'QUALIFICATION',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['fs']['qualification1'] = array(
+    '#type' => 'item',
+    '#value' => $result->h_qualification1,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs']['space22'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['fs']['institution0'] = array(
+    '#type' => 'item',
+    '#title' => 'INSTITUTION',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs']['institution1'] = array(
+    '#type' => 'item',
+    '#value' => $result->h_institution1,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['fs']['ebd0'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM BODY',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['fs']['ebd1'] = array(
+    '#type' => 'select',
+    '#options' => _student_bod(),
+    '#default_value' => $data[$data_key[0]]['exam_body'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['fs']['space8'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['fs']['edate0'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM DATE',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  //$form[fs]['edate1'] = array('#type'=>'date','#default_value'=>$data[$data_key[0]]['exam_date'],'#prefix'=>'<td>','#suffix'=>'</td></tr>','#attributes'=>array('disabled' => 'disabled'));
+  $form['fs']['edate1'] = array(
+    '#type' => 'date',
+    '#default_value' => array(
+      'day' => (int)substr($data[$data_key[0]]['exam_date'], -2),
+      'month' => (int)substr($data[$data_key[0]]['exam_date'], 5, 2),
+      'year' => substr($data[$data_key[0]]['exam_date'], 0, 4)),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['fs']['ec0'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM CENTER',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['fs']['ec1'] = array(
+    '#type' => 'item',
+    '#size' => '20',
+    '#value' => $data[$data_key[0]]['exam_center_name'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs']['space9'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['fs']['eno0'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM NO',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs']['eno1'] = array(
+    '#type' => 'item',
+    '#size' => '20',
+    '#value' => $data[$data_key[0]]['exam_number'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['fs']['ms1'] = array(
+    '#type' => 'item',
+    '#value' => 'SUBJECTS',
+    '#prefix' => '<table><tr><td></td><th>',
+    '#suffix' => '</th>');
+  $form['fs']['ms2'] = array(
+    '#type' => 'item',
+    '#value' => 'GRADE',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $temp=0;
+  for ($i=1;$i<=9;$i++) {
+    $temp = $i-1;
+    $form['fs']["m1$i"] = array(
+      '#value' => '<tr><td>'. $i,
+      '#suffix' => '</td>');
+    $form['fs']["s1$i"] = array(
+      '#type' => 'select',
+      '#options' => _student_sub(),
+      '#prefix' => '<td>',
+      '#suffix' => '</td>',
+      '#default_value' => $data[$data_key[0]]['subjects'][$temp]['subject'],
+      '#attributes' => array('disabled' => 'disabled'));
+    if ($i == 9)
+      $tend="</table>";
+    $form['fs']["g1$i"] = array(
+      '#type' => 'select',
+      '#options' => _student_gr(),
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr>'. $tend,
+      '#default_value' => $data[$data_key[0]]['subjects'][$temp]['grade'],
+      '#attributes' => array('disabled' => 'disabled'));
+    $temp = 0;
+  }
+  unset($data[$data_key[0]]);
+//$form[fs]["m12"]=array('#value'=>'</table>');
+//ext_exam_rec_id  exam_date  exam_center_name  exam_number  exam_body  exam_student_id  ext_exam_record_id  subject_id  grade_id
+  $form['fs2'] = array(
+    '#id' => 'setting_sec',
+    '#type' => 'fieldset',
+    '#title' => 'O-Level Results 2nd Sitting',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['fs2']['qualification10'] = array(
+    '#type' => 'item',
+    '#title' => 'QUALIFICATION',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['fs2']['qualification11'] = array(
+    '#type' => 'item',
+    '#value' => $result->h_qualification2,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs2']['space25'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['fs2']['institution10'] = array(
+    '#type' => 'item',
+    '#title' => 'INSTITUTION',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs2']['institution11'] = array(
+    '#type' => 'item',
+    '#value' => $result->h_institution2,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['fs2']['ebd20'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM BODY',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['fs2']['ebd21'] = array(
+    '#type' => 'select',
+    '#options' => _student_bod(),
+    '#default_value' => $data[$data_key[1]]['exam_body'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['fs2']['space10'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['fs2']['edate20'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM DATE',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  //$form[fs2]['edate21'] = array('#type'=>'date','#default_value'=>$data[$data_key[1]]['exam_date'], '#prefix'=>'<td>','#suffix'=>'</td></tr>','#attributes'=>array('disabled' => 'disabled'));
+  $form['fs2']['edate21'] = array(
+    '#type' => 'date',
+    '#default_value' => array(
+      'day' => (int)substr($data[$data_key[1]]['exam_date'], -2),
+      'month' => (int)substr($data[$data_key[1]]['exam_date'], 5, 2),
+      'year' => substr($data[$data_key[1]]['exam_date'], 0, 4)),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['fs2']['ec20'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM CENTER',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['fs2']['ec21'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $data[$data_key[1]]['exam_center_name'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs2']['space11'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['fs2']['eno20'] = array(
+    '#type' => 'item',
+    '#title' => 'EXAM NO',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['fs2']['eno21'] = array(
+    '#type' => 'item',
+    '#size' => '20',
+    '#value' => $data[$data_key[1]]['exam_number'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['fs2']['ms11']=array(
+    '#type' => 'item',
+    '#value' => 'SUBJECTS',
+    '#prefix' => '<table><tr><td></td><th>',
+    '#suffix' => '</th>');
+  $form['fs2']['ms12'] = array(
+    '#type' => 'item',
+    '#value' => 'GRADE',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $tend='';
+  for ($i=1;$i<=9;$i++) {
+    $temp = $i-1;
+    $form['fs2']["m2$i"] = array(
+      '#value' => '<tr><td>'. $i,
+      '#suffix' => '</td>');
+    $form['fs2']["s2$i"] = array(
+      '#type' => 'select',
+      '#options' => _student_sub(),
+      '#prefix' => '<td>',
+      '#suffix' => '</td>',
+      '#default_value' => $data[$data_key[1]]['subjects'][$temp]['subject'],
+      '#attributes' => array('disabled' => 'disabled'));
+    if ($i == 9)
+      $tend="</table>";
+    $form['fs2']["g2$i"] = array(
+      '#type' => 'select',
+      '#options' => _student_gr(),
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr>'. $tend,
+      '#default_value' => $data[$data_key[1]]['subjects'][$temp]['grade'],
+      '#attributes' => array('disabled' => 'disabled'));
+    $temp = 0;
+  }
+  if ($_SESSION['staff']['role'] !== 'Registrar') {
+    $form['verify'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Verified Results',
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE);
+    $form['verify']['result'] = array(
+      '#type' => 'radios',
+      '#title' => 'Is Verified',
+      '#options' => array('yes' => 'Yes', 'no' => 'No'));
+    $form['clear'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Clear Student',
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE);
+    $form['clear']['cleared'] = array(
+      '#type' => 'radios',
+      '#title' => 'Is Cleared',
+      '#options' => array('yes' => 'Yes', 'no' => 'No'));
+    $form['clear']['reject'] = array(
+      '#type' => 'textarea',
+      '#title' => 'Reason for Rejection',
+      '#prefix' => '<div id="reason">',
+      '#suffix' => '</div>');
+  }
+  if ($_SESSION['staff']['role']==='Registrar') {
+    $form['approve'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Approve Student',
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE);
+    $form['approve']['accept'] = array(
+      '#type' => 'radios',
+      '#options' => array('yes' => 'Accept', 'no' => 'Reject'));
+  }
+  $form['submit'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Submit',
+    '#type' => 'submit');
+  $form['#multistep']=TRUE;
+  $form['#redirect']=FALSE;
+  return $form;
+}
+function load_image() {
+  global $result;
+  $qry9 = "select a . pic_id, b . filepath from `admitted_student` as a join files as b on a . pic_id=b . fid where a . student_id='". $_SESSION['staff']['stud_info'] ."'";
+  $res9=db_query($qry9);
+  if ($res9 && mysql_num_rows($res9)>0) {
+    $result9=db_fetch_object($res9);
+    //print_R($result9);
+    $pic_path=$result9->filepath;
+    $host=$_SERVER['HTTP_HOST'];
+    $repalce=$_SERVER['DOCUMENT_ROOT'];
+    $file_path='http://';
+    $file_path .=str_replace($repalce, $host, $pic_path);
+    $file_path=strip_tags($file_path);
+    //$path='<img src="'.$file_path.'" />';
+  }
+  else {
+    //$path='No Images Available';
+  }
+  return $file_path;
+}
+function load_signature() {
+  //global $result;
+  $qry10 = "select a . signature_pic_id, b . filepath from `admitted_student` as a join files as b on a . signature_pic_id=b . fid where a . student_id='". $_SESSION['staff']['stud_info'] ."'";
+  $res10=db_query($qry10);
+  if ($res10 && mysql_num_rows($res10)>0) {
+    $result10=db_fetch_object($res10);
+    //print_R($result10);
+   //echo $_SESSION['staff']['stud_info'];
+    $pic_path=$result10->filepath;
+    $host=$_SERVER['HTTP_HOST'];
+    $repalce=$_SERVER['DOCUMENT_ROOT'];
+    $file_path='http://';
+    $file_path .=str_replace($repalce, $host, $pic_path);
+    $file_path = strip_tags($file_path);
+    //$path='<img src="'.$file_path.'" />';
+  }
+  else {
+    //$path='No Images Available';
+  }
+  return $file_path;
+}
+function staff_begin_clearance_form4(&$obj) {
+  $message=drupal_mail(
+    'staff',
+    'rejection',
+    $_SESSION['student']['data']->email_address,
+    language_default(),
+    array(),
+    NULL,
+    FALSE);
+  $message['body']=veritas_student_receipt($f, TRUE);
+  $message['subject']='Transaction Receipt';
+  $message['headers'] = array_merge(
+    $message['headers'],
+    array( 'MIME-Version' => '1.0',
+      'Content-Type'  => 'text/html;
+ charset=UTF-8'));
+  drupal_mail_send($message);
+}
+function staff_cleared_student() {
+  $msg=$_SESSION['staff']['msg'];
+  ob_start();
+?>
+  <center><h5><? echo $msg; ?></h5>
+<?php
+  $d=ob_get_clean();
+  return $d;
+}
+function staff_notcleared_student() {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+  if ($_SESSION['staff']['role'] !== 'Registrar') {
+    $_SESSION['staff']['msg']='You are not authorized to access this page.';
+    drupal_goto('staff/cleared');
+  }
+  ob_start();
+  if (isset($_SESSION['staff']['mat'])) {
+    unset($_SESSION['staff']['mat']);
+  }
+  /*Query to fetch all the data's from student, department and college table.*/
+  $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d.college_id=c . college_id  WHERE a . clearance_status=2 ORDER BY a . last_name ASC";
+  $result2 = db_query($qry2);
+  echo mysql_error();
+  $show = mysql_num_rows($result2);
+  if (!$show) {
+    drupal_set_message('No students for  clearence.');
+  }
+?>
+  <table border='1' align='center'>
+  <tr bgcolor='#ACCFCC'><td colspan='7'><b>Not Cleared Student List</b></td></tr>
+  <tr><td><b>Mat. No.</b></td><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name </b></td><td><b>College</b></td><td><b>Department</b></td><!--<td><b>Clearance Date</b></td>--></tr>
+<?php
+  while ($f=db_fetch_object($result2)) {
+?>
+    <tr>
+    <td><a href='<?php echo 'begin_clearance/'. $f->matriculation_no;?>'><?php echo $f->matriculation_no;?></a></td>
+    <!--<td><? url('begin_clearance');?><? $data[]=$f->matriculation_no; $_SESSION['staff']['mat']=$data; echo $f->matriculation_no; ?></td>-->
+    <td><?php echo $f->last_name; ?></td>
+    <td><?php echo $f->middle_name; ?></td>
+    <td><? echo $f->first_name; ?></td>
+    <!--<td><? echo $f->matriculation_no; ?></td>-->
+    <td><?php echo $f->college_name; ?></td>
+    <td><?php echo $f->department_name; ?></td>
+    <!--<td><? echo $f->clearance_date; ?></td>-->
+    </tr>
+<?php
+  }
+?>
+  </table>
+<?php
+  return ob_get_clean();
+}
+function staff_create_ar_form(&$obj) {
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st==1)
+    return staff_create_ar_form1($obj);
+}
+function staff_create_ar_form1(&$obj) {
+  if (!isset($_SESSION['staff']['data']->staff_id)) {
+    drupal_goto('staff/sign_in');
+  }
+  if ($_SESSION['staff']['role']!=='Registrar') {
+    $_SESSION['staff']['msg']='You are not authorized to view this page.';
+    drupal_goto('staff/cleared');
+  }
+  $form['#title']=t('Create Staff Profile');
+  $form['personal'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Personal Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['personal']['title0'] = array(
+    '#type' => 'item',
+    '#title' => 'Title',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['title1'] = array(
+    '#type' => 'select',
+    '#options' => _veritas_titles(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['fname0'] = array(
+    '#title' => 'First Name',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['fname1'] = array(
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space0'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mname0'] = array(
+    '#title' => 'Middle Name',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname1'] = array(
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['lname0'] = array(
+    '#title' => 'Last Name',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname1'] = array(
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space1'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['maidname0'] = array(
+    '#title' => 'Maiden Name',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['maidname1'] = array(
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['gender0'] = array(
+    '#title' => 'Gender',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['gender1'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'M' => 'Male',
+      'F' => 'Female'),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space2'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['blood0'] = array(
+    '#title' => 'Blood Group',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['blood1'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'O+' => 'O+',
+      'O-' => 'O-',
+      'A+' => 'A+',
+      'A-' => 'A-',
+      'B+' => 'B+',
+      'B-' => 'B-',
+      'AB+' => 'AB+',
+      'AB-' => 'AB-'),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['dob0'] = array(
+    '#type' => 'item',
+    '#title' => 'Date of Birth',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['dob1'] = array(
+    '#type' => 'date',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space3'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus0'] = array(
+    '#type' => 'item',
+    '#title' => 'Marital Status',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus1'] = array(
+    '#type' => 'select',
+    '#options' => array('married' => 'Married', 'single' => 'Single'),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['address'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Address Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['address']['nation0'] = array(
+    '#title' => 'Nationality',
+    '#type' => 'item',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['address']['nation1'] = array(
+    '#type' => 'select',
+    '#options' => _veritas_country(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['address']['space0'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['address']['state0'] = array(
+    '#title' => 'State',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['address']['state1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['address']['add0'] = array(
+    '#title' => 'Address',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['address']['add1'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#size' => 30);
+  $form['address']['space1'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['address']['city0'] = array(
+    '#title' => 'City',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['address']['city1'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#size' => 30);
+  $form['address']['tel0']  = array(
+    '#title' => 'Telephone',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['address']['tel1'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#size' => 30);
+  $form['address']['space2'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['address']['gsm0'] = array(
+    '#title' => 'GSM',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['address']['gsm1'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#size' => 30);
+  $form['address']['pemail0'] = array(
+    '#title' => 'Personal Email',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['address']['pemail1'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#size' => 30);
+  $form['address']['space3'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['address']['location0'] = array(
+    '#title' => 'Location',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['address']['location1'] = array(
+    '#type' => 'textfield',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#size' => 30);
+  $form['address']['lga0'] = array(
+    '#title' => 'LGA',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['address']['lga1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_lga(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['loginfo'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Account Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['loginfo']['user0'] = array(
+    '#title' => 'User Name',
+    '#type' => 'item',
+    '#required' => TRUE,
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['user1'] = array(
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['space0'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['loginfo']['uemail0'] = array(
+    '#title' => 'University Email',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['uemail1'] = array(
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['loginfo']['newpass0'] = array(
+    '#title' => 'New Password',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['newpass1'] = array(
+    '#type' => 'password',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#size' => 20);
+  $form['loginfo']['space1'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['loginfo']['confpass0'] = array(
+    '#title' => 'Confirm Password',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['confpass1'] = array(
+    '#type' => 'password',
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['loginfo']['type0'] = array(
+    '#title' => 'Staff Type',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['type1'] = array(
+    '#type' => 'select',
+    '#options' => find_staff(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['space2'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['loginfo']['dept0'] = array(
+    '#title' => 'Department',
+    '#type' => 'item',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['dept1'] = array(
+    '#type' => 'select',
+    '#options' => find_dept(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['loginfo']['college0'] = array(
+    '#title' => 'Assign College',
+    '#type' => 'item',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['loginfo']['college1'] = array(
+    '#type' => 'select',
+    '#options' => find_college(),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['submit'] = array(
+    '#id' => 'enter',
+    '#value' => 'Submit',
+    '#type' => 'submit');
+  return $form;
+}
+/*function staff_create_ar_form_validate($form,&$state)
+{
+ if ($state['storage']['step'] == 1)
+ {
+
+       $values=$form['loginfo']['#post'];
+    if ($values['user1']!='')
+   {
+   if ($values['newpass1']!='')
+  {
+
+             if ($values['confpass1']=='')
+   {
+     drupal_set_message('Please enter confirmation password');
+   }
+
+  }
+
+   if ($values['confpass1']!='')
+  {
+
+             if ($values['newpass1']=='')
+   {
+     drupal_set_message('Please enter new password');
+   }
+
+  }
+        if ($values['newpass1']=='' && $values['confpass1']=='')
+  {
+           drupal_set_message('Please specify password.');
+  }
+  }
+     if ($values['newpass1']!='')
+  {
+   if ($values['confpass1']!='')
+  {
+
+             if ($values['user1']=='')
+   {
+     drupal_set_message('Please enter user id.');
+   }
+
+  }
+
+  }
+}
+
+}*/
+function staff_create_ar_form_submit($form, &$state) {
+  if ($state['storage']['step'] == 1) {
+    $values=$form['loginfo']['#post'];
+    if ($values['user1'] != '') {
+      if ($values['newpass1'] != '') {
+        if ($values['confpass1'] == '') {
+          drupal_set_message('Please enter confirmation password');
+        }
+      }
+      if ($values['confpass1'] != '') {
+        if ($values['newpass1'] == '') {
+          drupal_set_message('Please enter new password');
+        }
+      }
+      if ($values['newpass1'] == '' && $values['confpass1'] == '') {
+        drupal_set_message('Please specify password.');
+      }
+    }
+    if ($values['newpass1'] != '') {
+      if ($values['confpass1']!='') {
+        if ($values['user1'] == '') {
+          drupal_set_message('Please enter user id.');
+        }
+      }
+    }
+    add_registrar($form);
+  }
+}
+function add_registrar($form) {
+  $result1 = $form['personal']['#post'];
+  $result2 = $form['address']['#post'];
+  $result3 = $form['loginfo']['#post'];
+}
+function find_college() {
+  $qry="select * from `college`";
+  $res=db_query($qry);
+  while ($result=db_fetch_object($res)) {
+    $titles[$result->college_id]=$result->college_abbreviation;
+  }
+  return $titles;
+}
+function find_staff() {
+  $qry="select * from `staff_type`";
+  $res=db_query($qry);
+  while ($result=db_fetch_object($res)) {
+    $titles[$result->staff_type_id]=$result->staff_type_name;
+  }
+  return $titles;
+}
+function find_dept() {
+  $qry="select * from `department`";
+  $res=db_query($qry);
+  while ($result=db_fetch_object($res)) {
+    $titles[$result->department_id]=$result->department_name;
+  }
+  return $titles;
+}

@@ -1,0 +1,108 @@
+<?php
+
+/**
+ *  Implementation of hook_perm().
+ */
+function grading_perm() {
+  $perms = array();
+
+  foreach (content_fields() as $field) {
+    $perms[] = 'edit '. $field['field_name'];
+    // $perms[] = 'view '. $field['field_name'];
+  }
+
+  $perms[] = 'view grading';
+  $perms[] = 'view my grades';
+
+  return $perms;
+}
+
+
+function grading_menu() {
+  $items = array();
+
+  $items['grading/viewgrades'] = array(
+    'title' => 'View Course Grades',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('course'),
+    'access arguments' => array('view grading'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['grading/viewgpa'] = array(
+    'title' => 'View Programme GPAs',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('gpa'),
+    'access arguments' => array('view grading'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['grading/viewmygrades'] = array(
+    'title' => 'View My Grades',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('student'),
+    'access arguments' => array('view my grades'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implementation of hook_field_access().
+ *
+ * @see content_access().
+ */
+function grading_field_access($op, $field, $account, $node = NULL) {
+  global $user;
+  static $locked = array(); // Cache
+
+  if (is_null($account)) {
+    $account = $user;
+  }
+
+  // User #1 has all privileges:
+  if ($account->uid == 1) {
+    return TRUE;
+  }
+
+  switch ($op) {
+    case 'view':
+      // return user_access($op .' '. $field['field_name'], $account);
+      return TRUE; // Normal access control determines whether all the content can be viewed or not
+
+    case 'edit':
+      $editablegradingfields = array('field_ca1' => 1, 'field_ca2' => 1, 'field_ca3' => 1, 'field_ca4' => 1, 'field_exam_score' => 1, 'field_comment_grades' => 1);
+      if (empty($editablegradingfields[$field['field_name']])) {
+        return user_access($op .' '. $field['field_name'], $account);
+      }
+
+      if (empty($node)) return FALSE;
+
+      if (empty($locked)) { // Not cached...
+        // Retrieve the locked indicators for all fields for any student_grades in a course that has the current user as a lecturer.
+        // (After a number of years this could get big?)
+        // Another assumption made here is that none of the fields are reused in other tables so that Drupal will not store them in dedicated tables!
+        $sql = "SELECT g.nid, field_ca1locked_value AS field_ca1, field_ca2locked_value AS field_ca2, field_ca3locked_value AS field_ca3, field_ca4locked_value AS field_ca4, field_examscorelocked_value AS field_exam_score
+          FROM {content_type_student_grades} g, {content_type_course_instance} c WHERE g.field_course_instance_nid=c.nid AND c.field_lecturer_uid=%d";
+
+        $result = db_query($sql, $account->uid);
+
+        while ($row = db_fetch_array($result)) {
+          $locked[$row['nid']] = $row;
+        }
+      }
+
+      if ($field['field_name'] === 'field_comment_grades') $field['field_name'] = 'field_exam_score'; // Assume comment should not be edited if the exam_score is locked
+
+      // Check if this student_grades is owned by this lecturer
+      if (empty($locked[$node->nid])) return FALSE;
+
+      // Check if this lock is empty
+      if (empty($locked[$node->nid][$field['field_name']])) return TRUE;
+      return FALSE;
+   }
+  return TRUE;
+}
+?>
