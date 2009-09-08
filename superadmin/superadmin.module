@@ -56,7 +56,7 @@ function assign_role_form_submit($form , &$state) {
   $values = $form['#post'];
   if ($state['storage']['step'] == 1) {
    assign_drupal_role($values['user_id'] , $values['staff_role']);
-   $query = 'Update {veritas_staff} set usrname = "'. $values['username'] .'" , password = "'. $values['password'] .'" ,  role_id ="'. $values['staff_role'] .'" where staff_id='. $values['staff_id'];
+   $query = 'Update {veritas_staff} set role_id ="'. $values['staff_role'] .'" where staff_id='. $values['staff_id'];
    db_query($query);
   }
   if ($state['storage']['step'] == 2) {
@@ -88,7 +88,7 @@ function assign_role_form_submit($form , &$state) {
    drupal_goto("superadmin/stafflist");
   }
   if ($state['storage']['step'] == 5) {
-   $query = 'Update {veritas_staff} set parent_id ="'. $values['staff_parent'] .'" where staff_id='. $values['staff_id'];
+     $query = 'Update {veritas_staff} set parent_id ="'. $values['staff_parent'] .'" where staff_id='. $values['staff_id'];
    db_query($query);
    drupal_set_message('Role Assigned');
    drupal_goto("superadmin/stafflist");
@@ -528,8 +528,7 @@ function superadmin_login_form_validate($form, &$states) {
    $query = "select * from {veritas_superadmin} where username = '". $form['#post']['username'] ."'";
  //echo  "select * from student where jambno = '".$form['#post']['jamb_no']."' and Admitted = 'Yes'" ; die ;
   $result = db_query($query);
-  if ($result && mysql_num_rows($result) > 0) {
-    $data = db_fetch_object($result);
+  if ($result && ($data = db_fetch_object($result))) {
     if ($form['#post']['password'] == $data->password) {
        $_SESSION['veritas']['superadmin']['data'] = $data;
     }

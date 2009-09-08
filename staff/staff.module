@@ -1,4 +1,6 @@
 <?php
+include('../veritas_global.inc');
+
 /*All variables, which are needed to run the clearnce process by AR staff's in the main menu of AR. */
 function staff_menu() {
   $items['staff/sign_in']=array(
@@ -8,6 +10,7 @@ function staff_menu() {
     'access arguments' => array('staff register'),
     'type' => MENU_CALLBACK,
   );
+
   $items['staff/registration']=array(
     'title'=>'Staff Registration',
     'page callback' => 'drupal_get_form',
@@ -79,31 +82,25 @@ function staff_menu() {
   $items['staff/clearance']=array(
     'title'=>'Clearance',
     'page callback' => '_staff_clearance',
-    'access arguments' => array('staff clearence'),
+    'access arguments' => array('staff clearance'),
     'type' => MENU_CALLBACK,
   );
-  /*$items['logout']=array(
-    'title'=>'Staff Logout',
-    'page callback' => '_staff_logout',
-    'access arguments' => array('staff register'),
-    'type' => MENU_CALLBACK,
-  );*/
   $items['staff/begin_clearance']=array(
     'title'=>'Begin Clearance',
     'page callback' => 'drupal_get_form',
     'page arguments'=>array('staff_begin_clearance_form'),
-    'access arguments' => array('staff clearence'),
+    'access arguments' => array('staff clearance'),
     'type' => MENU_CALLBACK,
   );
   $items['staff/cleared']=array(
     'page callback' => 'staff_cleared_student',
-    'access arguments' => array('staff cleared list'),
+    'access arguments' => array('staff clearance'),
     'type' => MENU_CALLBACK,
   );
   /*Special Menu's For Registrar.*/
   $items['staff/not_cleared']=array(
     'page callback' => 'staff_notcleared_student',
-    'access arguments' => array('staff not cleared list'),
+    'access arguments' => array('staff clearance'),
     'type' => MENU_CALLBACK,
   );
 
@@ -121,7 +118,7 @@ function staff_menu() {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearence','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list');
+  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list');
 }
 
 function staff_assign_role_form_submit($form,&$state) {
@@ -1049,6 +1046,10 @@ function staff_registration_form_submit(&$form, &$state) {
     $state['storage']['values'][$state['storage']['step']] = $data = $form['#post'];
     ///insert drupal_user
     $data = $state['storage']['values'];
+
+    if (empty($data[1]['middlename'])) $data[1]['middlename'] = ''; // ALAN 20090830
+    $timezone = variable_get('date_default_timezone', 0); // ALAN 20090903
+
     $drupal_data = array(
       'mail' => $data[1]['email'],
       'pass' => $data[1]['password'],
@@ -1056,23 +1057,16 @@ function staff_registration_form_submit(&$form, &$state) {
       'roles' => array(),
       'init' => $data[1]['email'],
       'status' => 0
+
+      // ALAN 20090830
+      ,
+      'profile_last_name' => $data[1]['lastname'],
+      'profile_first_name' => $data[1]['firstname'],
+      'profile_middle_name' => $data[1]['middlename'],
+      'timezone' => $timezone
+      // END ALAN
       );
     $user = user_save(NULL, $drupal_data);
-
-    // ALAN 20090802
-    $result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
-    while ($row = db_fetch_array($result)) {
-      if ($row['name'] === 'profile_last_name') {
-        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $data[1]['lastname']);
-      }
-      elseif ($row['name'] === 'profile_first_name') {
-        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $data[1]['firstname']);
-      }
-      elseif (($row['name'] === 'profile_middle_name') && !empty($data[1]['middlename'])) {
-        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $data[1]['middlename']);
-      }
-    }
-    // END ALAN
 
     $query = "insert veritas_staff set
 staff_first_name='%s' ,
@@ -1213,7 +1207,7 @@ function staff_registration_form_validate(&$form, &$state) {
     }
     /* $query ="select * from veritas_staff where usrname = '".$form['#post']['username']."'";
     $result = db_query($query);
-    if ($result && mysql_num_rows($result) > 0) {
+    if ($result && db_fetch_object($result)) {
       form_set_error('submitted[username]',"Username already exists.");
     }*/
   }
@@ -1296,8 +1290,7 @@ function staff_begin_clearance_formold(&$obj) {
 /*Function that validates staff login.*/
 function staff_login_form_validate($form, &$states) {
   $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a.staff_type_id=b.staff_type_id left outer join veritas_staff_role as c on a.role_id=c.id  where a.usrname = '". $form['#post']['user'] ."'");
-  if ($result && mysql_num_rows($result) > 0) {
-    $data = db_fetch_object($result);
+  if ($result && ($data = db_fetch_object($result))) {
     /*Check if staff is an academic staff*/
     /*if ($data->staff_type!=='AR' && $data->category!=2)
     {
@@ -1317,7 +1310,7 @@ function staff_login_form_validate($form, &$states) {
       $_SESSION['staff']['role'] = $result1->name;
       $_SESSION['staff']['user'] = $data->usrname;
       $_SESSION['staff']['data'] = $data;
-      drupal_goto('staff/profile');
+	  drupal_goto('staff/profile');
     }
   }
 }
@@ -1328,32 +1321,33 @@ function staff_user($op, &$edit, &$account, $category) {
       $query ="select COUNT(*) from `veritas_staff`  where user_id = '". $account->uid."'";
       $result = db_query($query);
 	  $rows = db_fetch_array($result);
-	  
-	  
-      if ($result && $rows[0] > 0) { 
-	 
+
+	  if ($result && $rows[0] > 0) {
+
         $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a . staff_type_id = b . staff_type_id left outer join veritas_staff_role as c on a . role_id=c . id  where a . user_id = '". $account->uid ."'");
-	
-        if ($result && mysql_num_rows($result) > 0) {
-          $data = db_fetch_object($result);
+
+        if ($result && ($data = db_fetch_object($result))) {
           /*Check if staff is an academic staff*/
           /*if ($data->staff_type!=='AR' && $data->category!=2)
           {
             form_set_error('submitted["user"]'," Not an AR staff.");
             //drupal_goto('staff/academic');
           }*/
+
           $qry = "select a . *, b . name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
           $res=db_query($qry);
           $result1=db_fetch_object($res);
           $_SESSION['staff']['role'] = $result1->name;
           $_SESSION['staff']['user'] = $data->usrname;
           $_SESSION['staff']['data'] = $data;
-          // drupal_goto('staff/profile');
+		  // drupal_goto('staff/profile');
         }
       }
     break;
   }
 }
+
+
 function staff_home_form(&$obj) {
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('staff/sign_in');
@@ -1367,8 +1361,7 @@ function staff_profile_form(&$obj) {
   if (isset($_SESSION['staff']['data']->staff_id)) {
     $qry = "select * from `veritas_staff` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
     $res = db_query($qry);
-    if ($res && mysql_num_rows($res) > 0) {
-      $data = db_fetch_object($res);
+    if ($res && ($data = db_fetch_object($res))) {
       $_SESSION['staff']['user'] = $data->usrname;
       $_SESSION['staff']['data'] = $data;
       //echo $_SESSION['staff']['data']->state;
@@ -1507,8 +1500,8 @@ function staff_profile_form_validate($form, &$states) {
       $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
       $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."',  staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', personal_email='". $form['#post']['pemail'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."', blood_group='". $form['#post']['blood'] ."', dob='". $dob ."', password='". $newpass ."' where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
       $result = db_query($qry);
-      $show = mysql_affected_rows();
-      if ($result && mysql_affected_rows()>0) {
+      $show = db_affected_rows();
+      if ($result && db_affected_rows()>0) {
         drupal_set_message('You have successfully updated your details.');
         drupal_goto('staff/home');
       }
@@ -1531,7 +1524,7 @@ function staff_profile_form_validate($form, &$states) {
       where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
     /*$qry="update veritas_staff set title='".$form['#post']['title']."', first_name='".$form['#post']['fname']."', last_name='".$form['#post']['lname']."', middle_name='".$form['#post']['mname']."', usrname='".$form['#post']['user']."', blood_group='".$form['#post']['blood']."', dob='".$form['#post']['dob']."',  where staff_id = '".$_SESSION['staff']['data']->staff_id."'";*/
     $result = db_query($qry);
-    if ($result && mysql_affected_rows()>0) {
+    if ($result && db_affected_rows()>0) {
       drupal_set_message('You have successfully updated your details.');
       drupal_goto('staff/home');
     }
@@ -1540,13 +1533,13 @@ function staff_profile_form_validate($form, &$states) {
 /*Code adding ended on 24/02/2009 for staff profile validation form.*/
 /*Code adding started on 25/02/2009 for staff clearance form. */
 function _staff_clearance() {
-  if (!isset($_SESSION['staff']['data']->staff_id)) {
+  /*if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('staff/sign_in');
-  }
+  }*/
   $qry = "select * from `veritas_staff_college` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
   $result = db_query($qry);
   ob_start();
-  //if ($result && mysql_affected_rows()>0)
+  //if ($result && db_affected_rows()>0)
   if (1) {
     while ($res=db_fetch_object($result)) {
       $qry1 = "select * from `college` where college_id='". $res->assigned_college ."'";
@@ -1557,7 +1550,7 @@ function _staff_clearance() {
         $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
         $qry2 =  "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
         $result2 = db_query($qry2);
-        // $show = mysql_affected_rows();
+        // $show = db_affected_rows();
       }
     }
   }
@@ -1565,7 +1558,7 @@ function _staff_clearance() {
     drupal_set_message('You are not assigned to any college.');
     drupal_goto('staff/home');
   }
-  if (mysql_num_rows($result2) < 1) {
+  if (!db_fetch_object($result2)) {
     drupal_set_message('No student has been cleared by you.');
   }
 ?>
@@ -1606,9 +1599,11 @@ function _staff_logout() {
 
     /* Code adding started on 27/02/2009 for student clearance page. */
 function staff_begin_clearance_form1(&$obj) {
+/*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('staff/sign_in');
   }
+*/
   if (isset($_SESSION['staff']['mat'])) {
     unset($_SESSION['staff']['mat']);
   }
@@ -1661,6 +1656,8 @@ if ($values['result']=='yes') {
     return;
 }
 function staff_begin_clearance_form_validate($form, &$state) {
+  global $user;
+
   if ($state['storage']['step'] == 1) {
     //print_R($form);
     $values=$form['lbl_or']['#post'];
@@ -1670,25 +1667,20 @@ function staff_begin_clearance_form_validate($form, &$state) {
     }
     else {
       if ($jambno != '' && $form['#post']['matno']=='') {
-        $qry = "select * from `admitted_student` where jambno='". $jambno ."'";
-        $res = db_query($qry);
-        if ($res && mysql_num_rows($res)>0) {
-          $result = db_fetch_object($res);
-          $_SESSION['staff']['jamb']=$result->jambno;
-          //drupal_set_message('Wellcome to clearance process.');
+        $qry = "select * from {admitted_student} where jambno='%s'";
+        $res = db_query($qry, $jambno);
+        if ($res && ($result = db_fetch_object($res))) {
+          $_SESSION['staff']['mat']=$result->matriculation_no;
         }
         else {
           form_set_error('jambno', "Jamb number not valid.");
         }
       }
       else {
-        $qry = "select * from `admitted_student` where matriculation_no='". $form['#post']['matno'] ."'";
-        $res = db_query($qry);
-        if ($res && mysql_num_rows($res)>0) {
-          $result = db_fetch_object($res);
-          //if (!isset($_SESSION['staff']['mat']))
+        $qry = "select * from {admitted_student} where matriculation_no='%s'";
+        $res = db_query($qry, $form['#post']['matno']);
+        if ($res && ($result = db_fetch_object($res))) {
           $_SESSION['staff']['mat']=$result->matriculation_no;
-          //drupal_set_message('Wellcome to clearance process.');
         }
         else {
           form_set_error('matno', "Matriculation number not valid.");
@@ -1697,15 +1689,10 @@ function staff_begin_clearance_form_validate($form, &$state) {
     }
   }
   if ($state['storage']['step'] == 2) {
-    /*echo "<pre>";
-    print_R($_SESSION);
-    print_R($form);
-    echo "</pre>";
-    die;*/
     $results=$form['verify']['#post'];
     $results1=$form['clear']['#post'];
     $results2=$form['approve']['#post'];
-    if ($_SESSION['staff']['role'] != 'Registrar') {
+    if (!veritas_has_role($user, 'Registrar')) {
       if ($results['result'] == '' && $results1['cleared']=='') {
         drupal_set_message('Please specify verify and clearance status');
       }
@@ -1714,9 +1701,9 @@ function staff_begin_clearance_form_validate($form, &$state) {
       }
       if ($results1['cleared'] == 'no' && $results['result'] == 'no') {
         $dt = date('Y-m-d');
-        $qry = "update `admitted_student` set clearance_status=0, verify_status=0, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
-        if ($res && mysql_affected_rows()>0) {
+        if ($res && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
@@ -1724,19 +1711,22 @@ function staff_begin_clearance_form_validate($form, &$state) {
       }
       if ($results1['cleared'] == 'yes' && $results['result'] == 'yes') {
         $dt = date('Y-m-d');
-        $qry = "update `admitted_student` set clearance_status=1, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry = "update {admitted_student} set clearance_status=1, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
-        if ($res && mysql_affected_rows()>0) {
+        if ($res && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           drupal_set_message('Student status updated sucessfully.');
+          $userid = db_fetch_object(db_query("SELECT user_id FROM {admitted_student} WHERE student_id=%d", $_SESSION['staff']['stud_info']));
+          $user_account = user_load($userid->user_id);
+          veritas_add_role($user_account, 'Student');
           drupal_goto('staff/cleared');
         }
       }
       if ($results1['cleared'] == 'no' && $results['result'] == 'yes') {
         $dt = date('Y-m-d');
-        $qry = "update `admitted_student` set clearance_status=0, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry = "update {admitted_student} set clearance_status=0, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
-        if ($res && mysql_affected_rows()>0) {
+        if ($res && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
@@ -1744,9 +1734,9 @@ function staff_begin_clearance_form_validate($form, &$state) {
       }
       if ($results['result'] == 'yes') {
         $dt = date('Y-m-d');
-        $qry = "update `admitted_student` set verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry = "update {admitted_student} set verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
-        if ($res && mysql_affected_rows()>0) {
+        if ($res && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
@@ -1754,9 +1744,9 @@ function staff_begin_clearance_form_validate($form, &$state) {
       }
       if ($results['result'] == 'no') {
         $dt = date('Y-m-d');
-        $qry = "update `admitted_student` set verify_status=0, clearance_date='" . $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry = "update {admitted_student} set verify_status=0, clearance_date='" . $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
-        if ($res && mysql_affected_rows()>0) {
+        if ($res && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
@@ -1766,12 +1756,12 @@ function staff_begin_clearance_form_validate($form, &$state) {
         drupal_set_message('Students can only be cleared when their datas are verified');
       }
     }
-    if ($_SESSION['staff']['role'] == 'Registrar') {
+    if (veritas_has_role($user, 'Registrar')) {
       if ($results2['accept'] == 'no') {
         $dt1 = date('Y-m-d');
-        $qry_rej = "update `admitted_student` set clearance_status=0, verify_status=0, clearance_date='". $dt1 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry_rej = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt1 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res_rej = db_query($qry_rej);
-        if ($res_rej && mysql_affected_rows()>0) {
+        if ($res_rej && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
@@ -1779,9 +1769,9 @@ function staff_begin_clearance_form_validate($form, &$state) {
       }
       if ($results2['accept'] == 'yes') {
         $dt2 = date('Y-m-d');
-        $qry_acc = "update `admitted_student` set clearance_status=2, clearance_date='". $dt2 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
+        $qry_acc = "update {admitted_student} set clearance_status=2, clearance_date='". $dt2 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res_acc = db_query($qry_acc);
-        if ($res_acc && mysql_affected_rows()>0) {
+        if ($res_acc && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
@@ -1794,18 +1784,17 @@ function staff_begin_clearance_form_validate($form, &$state) {
 
     /* Code adding started on 27/02/2009 for student clearance main page. */
 function staff_begin_clearance_form2(&$obj) {
+/*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('staff/sign_in');
-  }
-  $qry = "select * from `admitted_student` where (matriculation_no='". $_SESSION['staff']['mat'] ."' or jambno='". $_SESSION['staff']['jamb'] ."' )AND (verify_status=0 OR clearance_status=0 )";
-  $res = db_query($qry);
-  if ($res && mysql_num_rows($res)>0) {
-    $result=db_fetch_object($res);
+  }*/
+  $qry = "select * from {admitted_student} where (matriculation_no='%s' or jambno='%s') AND (verify_status=0 OR clearance_status=0)";
+  $res = db_query($qry, $_SESSION['staff']['mat'], $_SESSION['staff']['jamb']);
+  if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['stud_info']=$result->student_id;
-    $qry1 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
-    $res1 = db_query($qry1);
-    if ($res1 && mysql_num_rows($res1)>0) {
-      $result1=db_fetch_object($res1);
+    $qry1 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
+    $res1 = db_query($qry1, $result->student_id);
+    if ($res1 && ($result1=db_fetch_object($res1))) {
       $qry2 = "SELECT a . ext_exam_rec_id, a . exam_date, a . exam_center_name, a . exam_number, b . exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a . exam_body=b . exam_body_id WHERE a . exam_student_id='". $result->student_id ."'";
       $res2 = db_query($qry2);
       $result2 = db_fetch_object($res2);
@@ -2507,8 +2496,7 @@ function load_image() {
   global $result;
   $qry9 = "select a . pic_id, b . filepath from `admitted_student` as a join files as b on a . pic_id=b . fid where a . student_id='". $_SESSION['staff']['stud_info'] ."'";
   $res9=db_query($qry9);
-  if ($res9 && mysql_num_rows($res9)>0) {
-    $result9=db_fetch_object($res9);
+  if ($res9 && ($result9=db_fetch_object($res9))) {
     //print_R($result9);
     $pic_path=$result9->filepath;
     $host=$_SERVER['HTTP_HOST'];
@@ -2527,8 +2515,7 @@ function load_signature() {
   //global $result;
   $qry10 = "select a . signature_pic_id, b . filepath from `admitted_student` as a join files as b on a . signature_pic_id=b . fid where a . student_id='". $_SESSION['staff']['stud_info'] ."'";
   $res10=db_query($qry10);
-  if ($res10 && mysql_num_rows($res10)>0) {
-    $result10=db_fetch_object($res10);
+  if ($res10 && ($result10=db_fetch_object($res10))) {
     //print_R($result10);
    //echo $_SESSION['staff']['stud_info'];
     $pic_path=$result10->filepath;
@@ -2572,9 +2559,10 @@ function staff_cleared_student() {
   return $d;
 }
 function staff_notcleared_student() {
+/*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('staff/sign_in');
-  }
+  }*/
   if ($_SESSION['staff']['role'] !== 'Registrar') {
     $_SESSION['staff']['msg']='You are not authorized to access this page.';
     drupal_goto('staff/cleared');
@@ -2586,10 +2574,9 @@ function staff_notcleared_student() {
   /*Query to fetch all the data's from student, department and college table.*/
   $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d.college_id=c . college_id  WHERE a . clearance_status=2 ORDER BY a . last_name ASC";
   $result2 = db_query($qry2);
-  echo mysql_error();
-  $show = mysql_num_rows($result2);
-  if (!$show) {
-    drupal_set_message('No students for  clearence.');
+  //echo db_error();
+  if (!db_fetch_object($result2)) {
+    drupal_set_message('No students for clearance.');
   }
 ?>
   <table border='1' align='center'>

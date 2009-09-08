@@ -57,8 +57,6 @@ function veritas_menu() {
       'administer site configuration'
     ),
     'type' => MENU_NORMAL_ITEM,
-
-    
   );
   return $items;
 }
@@ -331,6 +329,42 @@ function veritas_admin_settings() {
     '#size' => 25,
     '#title' => 'Tender Admin Username',
     '#default_value' => variable_get('veritas_tender_adminuser', '')
+  );
+
+  // Generate a list of sessions starting from the previous year or the currently configured session
+  // whichever is lower and then a session ahead of the current year.
+  $sessions = array();
+  $current_year = intval(date('Y'));
+  $current_session_year  = intval(preg_replace('/\/\d+$/', "", variable_get('veritas_current_session', sprintf('%s/%s', $current_year-1, $current_year))));
+  $start_year = min($current_year, $current_session_year);
+  for ($c = $start_year - 5; $c <= $current_year+5; $c++):
+    $sessions[sprintf("%s/%s", $c, $c+1)] = sprintf("%s/%s", $c, $c+1);
+  endfor;
+
+  $form['veritas_current_session'] = array (
+    '#type' => 'select',
+    '#title' => t('Current Session'),
+    '#default_value' => variable_get('veritas_current_session', sprintf('%s/%s', $current_year-1, $current_year)),
+    '#description' => t('Please specify the current session'),
+    '#options' => $sessions,
+    '#tree' => TRUE,
+  );
+
+  $form['veritas_current_semester'] = array(
+    '#type' => 'select',
+    '#title' => t('Current Semester'),
+    '#default_value' => variable_get('veritas_current_semester', 1),
+    '#description' => t('Please select the current semester'),
+    '#options' => array( 1 => t('1'), 2 => t('2') ),
+    '#tree' => TRUE,
+  );
+
+  $form['veritas_allow_course_registrations'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow Course Registrations?'),
+    '#default_value' => variable_get('veritas_allow_course_registrations', '1'),
+    '#description' => t('This switch determines whether students are allowed to register for courses'),
+    '#tree' => TRUE,
   );
 
   return system_settings_form($form);

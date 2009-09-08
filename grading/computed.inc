@@ -12,7 +12,7 @@ function calctotal($exam, $ca1, $ca2, $ca3, $ca4) {
 
 function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
 
-  if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam === '-')) return '-';
+  if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
   return (string)calctotal($exam, $ca1, $ca2, $ca3, $ca4);
 }
@@ -20,7 +20,7 @@ function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 
 function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
 
-  if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam === '-')) return '-';
+  if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
   $total = calctotal($exam, $ca1, $ca2, $ca3, $ca4);
   if ($total >= 70) $gp = 5;
@@ -38,7 +38,7 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
 
 function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
 
-  if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam === '-')) return '-';
+  if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
   $total = (int)grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name);
   if ($total === 5) return 'A';
@@ -87,7 +87,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       }
     }
 
-    $sql = "UPDATE {student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_credit_load_completed_value={$load}
+    $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_credit_load_completed_value={$load}
       WHERE field_student_ref_gpa_uid={$uid} AND
         gpa.field_session_id_gpa_value=ci.field_session_id_value AND
         gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
@@ -98,14 +98,14 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       $gpa = $gpa / $load;
       $gpa = number_format($gpa, 2);
 
-      $sql = "UPDATE {student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_gpa_value={$gpa}
+      $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_gpa_value={$gpa}
         WHERE gpa.field_student_ref_gpa_uid={$uid} AND
           gpa.field_session_id_gpa_value=ci.field_session_id_value AND
           gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
           ci.nid={$course_instance_nid}";
       db_query($sql);
 
-      $sql = "SELECT gpa.field_gpa_value FROM {student_gpa} gpa
+      $sql = "SELECT gpa.field_gpa_value FROM {content_type_student_gpa} gpa
         WHERE gpa.field_student_ref_gpa_uid={$uid}";
       $semestergpas = db_query($sql);
       $cgpa = 0.0;
@@ -120,7 +120,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       if ($countsemesters) {
         $cgpa = $cgpa / $countsemesters;
         $cgpa = number_format($cgpa, 2);
-        $sql = "UPDATE {student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value={$cgpa}
+        $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value={$cgpa}
           WHERE gpa.field_student_ref_gpa_uid={$uid} AND
             gpa.field_session_id_gpa_value=ci.field_session_id_value AND
             gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND

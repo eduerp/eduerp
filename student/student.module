@@ -1,4 +1,5 @@
 <?php
+
 function student_menu() {
 
   $items['student/new'] = array(
@@ -21,12 +22,7 @@ function student_menu() {
   'access arguments' => array('student login'),
   'type' => MENU_CALLBACK,
   );
-  /*$items['logout'] = array(
-   'page callback' => 'drupal_get_form',
-   'page arguments' => array('register_student_logout'),
-   'access arguments' => array('student admit'),
-   'type' => MENU_CALLBACK,
-  );*/
+  
   $items['student/course'] = array(
    'page callback' => 'drupal_get_form',
    'page arguments' => array('student_course_form'),
@@ -34,23 +30,16 @@ function student_menu() {
    'type' => MENU_CALLBACK,
   );
 
- /*$items['student/changepassword']=array(
- 'page callback' => 'drupal_get_form',
- 'page arguments'=>array('student_change_password_form'),
-  'access arguments' => array('student register'),
-    'type' => MENU_CALLBACK,
- );*/
-
   $items['student/ajaxlga'] = array(
     'page callback' => '_student_add_lga',
     'access arguments' => array('student register'),
     'type' => MENU_CALLBACK,
   );
 
-  $items['student/resgistercourses'] = array(
+  $items['student/registercourses'] = array(
     'title' => 'Register Courses',
     'page callback' => 'student_courses',
-    'access arguments' => array('student registercourse'),
+    'access arguments' => array('student course'),
     'type' => MENU_NORMAL_ITEM,
   );
 
@@ -150,7 +139,9 @@ function student_change_password_form_validate($form, &$states) {
 }
 
 function register_student_login_form(&$obj) {
+
   unset($_SESSION['student']);
+
   $form['#title'] = t('Student Login');
   $form['matriculation_no'] = array(
     '#title' => 'Matriculation No.',
@@ -207,10 +198,10 @@ function student_course_form(&$obj) {
 }
 
 function student_courses() {
-
+/*
   if (!isset($_SESSION['student']['data']->student_id)) {
     drupal_goto('user');
-  }
+  }*/
   $query = "select distinct c.* from {registered_course} rc inner join {registrable_course} rac on rac.reg_course_id = rc.registered_course_id inner join {course} c on rac.course_id= c.course_id";
    $result = db_query($query);
    $html = "<table border='1'>";
@@ -505,7 +496,7 @@ function student_course_form_submit($form,&$state){
   }
   if($state['storage']['step'] == 2){
      add_student_courses($state['clicked_button']['#post']);
-     drupal_goto("student/resgistercourses");
+     drupal_goto("student/registercourses");
   }
   if ($state['clicked_button']['#id'] == 'edit-previous') {
       $state['storage']['step']--;
@@ -526,28 +517,35 @@ function add_student_courses($data) {
   $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
   $result = db_query($query);
   $row =  db_fetch_object($result);
-  $query = "delete from  {registered_course} where student_id". $_SESSION['student']['id'];
+  $query = "delete from  {registered_course} where student_id=". $_SESSION['student']['id'];
   $result = db_query($query);
 
-  // ALAN, BUG (temporarily set to 1), I had $row->semester_id, but no semester is passed (and it would be c.semester not rc.semester_id in any case)
-  delete_student_grades($row->user_id, $row->session_id, 1); // ALAN 20090805 (Delete, for this Semester only!)
+  // ALAN 20090902
+  $sql = "SELECT * FROM {current_session_semester} WHERE id=1";
+  $session_rows = db_query($sql);
+  $session_row = db_fetch_object($session_rows);
+  $session_id = $session_row->session_id;
+  $semester_id = $session_row->semester_id;
+
+  delete_student_grades($row->user_id, $session_id, $semester_id); // Delete, for this Semester only! (For Veritas, other universities will be different.)
+  // END ALAN
 
   foreach ($data['corecourses'] as $key => $value ) {
-    $query = "insert registered_course set {registered_course_id} = ". $value ." ,  student_id=". $_SESSION['student']['id'] ." , session_id=". $row->session_id ;
+    $query = "insert registered_course set {registered_course_id} = ". $value ." ,  student_id=". $_SESSION['student']['id'] ." , session_id=". $session_id ;
     db_query($query);
-    create_cck_records($row, $value, $data); // ALAN 20090804
+    create_cck_records($row, $value, $data, $session_id); // ALAN 20090804
   }
   foreach($data['electivecourses'] as $key => $value ) {
-    $query = "insert {registered_course} set registered_course_id = ". $key ." ,  student_id=". $_SESSION['student']['id'] ." , session_id=". $row->session_id ;
+    $query = "insert {registered_course} set registered_course_id = ". $key ." ,  student_id=". $_SESSION['student']['id'] ." , session_id=". $session_id ;
     db_query($query);
-    create_cck_records($row, $key, $data);   // ALAN 20090804
+    create_cck_records($row, $key, $data, $session_id);   // ALAN 20090804
   }
 }
 
 
 // ALAN 20090804
 
-function create_cck_records($admitted_student, $reg_course_id, $data) {
+function create_cck_records($admitted_student, $reg_course_id, $data, $session_id) {
 
   if (empty($admitted_student->middle_name)) {
     $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name;
@@ -582,11 +580,23 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
     rc.course_id=c.course_id AND
     p.department_id=d.department_id AND
     d.college_id=co.college_id AND
-    s.session_id={$admitted_student->session_id} AND
+    s.session_id={$session_id} AND
     rc.level_id=l.level_id AND
     rc.lecturer_id=vs.staff_id";
   $program_result = db_query($query);
   $program_row = db_fetch_object($program_result);
+
+  // Find Alternate Lecturer uid
+  $query = "SELECT vs.user_id AS alternate_user_id
+  FROM {registrable_course} rc, {veritas_staff} vs
+  WHERE
+    rc.reg_course_id={$reg_course_id} AND
+    rc.lecturer_id_alternate=vs.staff_id";
+  $alternate_result = db_query($query);
+  if (!empty($alternate_result)) {
+    $alternate_row = db_fetch_object($alternate_result);
+  }
+  else $alternate_row->alternate_user_id = NULL;
 
   // Get details of the student's home programme, department, college (as opposed to the course's)
   $query = "SELECT
@@ -597,6 +607,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
     d.college_id,
     co.college_name,
     co.college_abbreviation,
+    l.level_id,
     l.level_name
   FROM {programme} p, {department} d, {college} co, {level} l
   WHERE
@@ -607,7 +618,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
   $home_program_result = db_query($query);
   $home_program_row = db_fetch_object($home_program_result);
 
-  $program = get_cck_nid('program', 'field_program_id', $program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  $program = get_cck_nid('program', 'field_programme_id', $program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   if (empty($program)) {
     // program CCK
     $node = new stdClass();
@@ -622,14 +633,14 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
     $node->field_programme_name[0]['value']        = $program_row->programme_name;
     $node->field_department_id[0]['value']         = $program_row->department_id;
     $node->field_department_name[0]['value']       = $program_row->department_name;
-    $node->field_college_id                        = $program_row->college_id;
-    $node->field_college_name                      = $program_row->college_name;
-    $node->field_college_abbreviation              = $program_row->college_abbreviation;
+    $node->field_college_id[0]['value']            = $program_row->college_id;
+    $node->field_college_name[0]['value']          = $program_row->college_name;
+    $node->field_college_abbreviation[0]['value']  = $program_row->college_abbreviation;
     node_save($node);
     $program = $node->nid;
   }
 
-  $home_program = get_cck_nid('program', 'field_program_id', $home_program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+  $home_program = get_cck_nid('program', 'field_programme_id', $home_program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   if (empty($home_program)) {
     // program CCK
     $node = new stdClass();
@@ -644,9 +655,9 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
     $node->field_programme_name[0]['value']        = $home_program_row->programme_name;
     $node->field_department_id[0]['value']         = $home_program_row->department_id;
     $node->field_department_name[0]['value']       = $home_program_row->department_name;
-    $node->field_college_id                        = $home_program_row->college_id;
-    $node->field_college_name                      = $home_program_row->college_name;
-    $node->field_college_abbreviation              = $home_program_row->college_abbreviation;
+    $node->field_college_id[0]['value']            = $home_program_row->college_id;
+    $node->field_college_name[0]['value']          = $home_program_row->college_name;
+    $node->field_college_abbreviation[0]['value']  = $home_program_row->college_abbreviation;
     node_save($node);
     $home_program = $node->nid;
   }
@@ -668,6 +679,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
     $node->field_program_ref_course[0]['nid']      = $program;
     $node->field_credit_load[0]['value']           = $program_row->credit_load;
     $node->field_lecturer[0]['uid']                = $program_row->user_id;
+    $node->field_lecturer_alternate[0]['uid']      = $alternate_row->alternate_user_id;
     $node->field_session_id[0]['value']            = $program_row->session_id;
     $node->field_sess_name[0]['value']             = $program_row->sess_name;
     $node->field_semester_id[0]['value']           = $program_row->semester_id;
@@ -704,6 +716,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data) {
     $node->field_level_id_gpa[0]['value']          = $home_program_row->level_id;
     $node->field_level_name_gpa[0]['value']        = $home_program_row->level_name;
     node_save($node);
+    $student_gpa = $node->nid;
   }
 
   // Will never exist, because previously deleted.
@@ -1120,6 +1133,10 @@ function student_registration_form_submit($form, &$state) {
     $sql = "select * from {role} where name = '%s'";
     $q = db_query($sql, 'Student');
     $f = db_fetch_object($q);
+
+    if (empty($_SESSION['student']['data']->middle_name)) $_SESSION['student']['data']->middle_name = ''; // ALAN 20090830
+    $timezone = variable_get('date_default_timezone', 0); // ALAN 20090903
+
     $drupal_data = array(
       'mail' => $_SESSION['student']['data']->email_address,
       'pass' => $_SESSION['student']['data']->dob,
@@ -1127,6 +1144,14 @@ function student_registration_form_submit($form, &$state) {
       'roles' => array($f->rid),
       'init' => $_SESSION['student']['data']->email_address,
       'status' => 1
+
+      // ALAN 20090830
+      ,
+      'profile_last_name' => $_SESSION['student']['data']->last_name,
+      'profile_first_name' => $_SESSION['student']['data']->first_name,
+      'profile_middle_name' => $_SESSION['student']['data']->middle_name,
+      'timezone' => $timezone
+      // END ALAN
     );
     $user = user_save(NULL, $drupal_data);
     $query = "update {admitted_student} set matriculation_no ='". $mat_number ."' , user_id='". $user->uid ."' where student_id ='". $_SESSION['student']['data']->student_id ."'";
@@ -1144,20 +1169,20 @@ function student_registration_form_submit($form, &$state) {
     $rc = db_query("select * from {admitted_student} where student_id=%d", $f->student_id);
     $fc = db_fetch_array($rc);
 
-    // ALAN 20090802
-    $result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
-    while ($row = db_fetch_array($result)) {
-      if ($row['name'] === 'profile_last_name') {
-        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['last_name']);
-      }
-      elseif ($row['name'] === 'profile_first_name') {
-        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['first_name']);
-      }
-      elseif (($row['name'] === 'profile_middle_name') && !empty($fc['middle_name'])) {
-        db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['middle_name']);
-      }
-    }
-    // END ALAN
+    //// ALAN 20090802
+    //$result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
+    //while ($row = db_fetch_array($result)) {
+    //  if ($row['name'] === 'profile_last_name') {
+    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['last_name']);
+    //  }
+    //  elseif ($row['name'] === 'profile_first_name') {
+    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['first_name']);
+    //  }
+    //  elseif (($row['name'] === 'profile_middle_name') && !empty($fc['middle_name'])) {
+    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['middle_name']);
+    //  }
+    //}
+    //// END ALAN
 
     $f->name = $name = $fc['first_name'] .' '. $fc['middle_name'] .' '. $fc['last_name'];
     $f->student_data = $fc;
@@ -1180,14 +1205,16 @@ function student_registration_form_submit($form, &$state) {
   }
   if ($state['storage']['step'] == 6) {
     //$pic=file_save_upload_name('pic',array(),file_directory_path().'/student_pic',false,$_SESSION['student']['data']->jambno);
-    $name = 'VUG'. vsprintf("%04d", array($_SESSION['student']['data']->student_id));
+    $name = 'PICVUG'. vsprintf("%04d", array($_SESSION['student']['data']->student_id));
     $pic = file_save_upload_name('pic', array(), variable_get('file_directory_path',NULL) .'/student_pic', TRUE, $name);
+
     if (!$pic) {
       drupal_set_message('Picture cannot be uploaded ');
    //return;
     }
     $photo['pic'] = $pic->fid;
   //$signature=file_save_upload_name('signature',array(),'/sites/files/signature',false,$_SESSION['student']['data']->jambno);
+  $name = 'SGVUG'. vsprintf("%04d", array($_SESSION['student']['data']->student_id));
     $signature = file_save_upload_name('signature', array(), variable_get('file_directory_path',NULL) .'/signature', TRUE, $name);
     if (!$signature) {
        drupal_set_message('Signature Picture cannot be uploaded ');
@@ -1195,7 +1222,7 @@ function student_registration_form_submit($form, &$state) {
     }
     $photo['signature'] = $signature->fid;
     add_pics($photo);
-   }
+	}
    if($state['storage']['step'] == 5) {
      add_accomodation($form);
    }
@@ -1279,9 +1306,14 @@ $f=db_fetch_object($t);
 }
 
 function student_reg_form(&$obj) {
+
+
    //print_R($_SESSION['student']['data']->matriculation_no);
-  if (!$obj['storage']['step'])
-    $obj['storage']['step'] = 1;
+  if (!$obj['storage']['step']){
+    unset($_SESSION['student']);   //----unset session of student--kniouijuhi//
+	$obj['storage']['step'] = 1;
+  }
+
   $st = $obj['storage']['step'];
   if($st == 1)
     return _student_reg_form1($obj);
@@ -1312,7 +1344,7 @@ function _student_reg_form3($state) {
     '#type' => 'ccdt',
     '#name' => 'dst1',
     '#title' => 'DATE STARTED',
-    '#ccdt_attribute' => array(2001,2008),
+    '#ccdt_attribute' => array(2001,date('Y')),
     '#prefix' => '<table><tr><td>',
     '#suffix' => '</td>'
   );
@@ -1320,7 +1352,7 @@ function _student_reg_form3($state) {
     '#type' => 'ccdt',
     '#name' => 'den1',
     '#title' => 'DATE ENDED',
-    '#ccdt_attribute' => array(2001, 2008),
+    '#ccdt_attribute' => array(2001, date('Y')),
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>'
   );
@@ -1338,7 +1370,7 @@ function _student_reg_form3($state) {
      '#type' => 'ccdt',
      '#name' => 'dst2',
      '#title' => 'DATE STARTED',
-     '#ccdt_attribute' => array(2001, 2008),
+     '#ccdt_attribute' => array(2001, date('Y')),
      '#prefix' => '<table><tr><td>',
      '#suffix' => '</td>'
    );
@@ -1346,7 +1378,7 @@ function _student_reg_form3($state) {
      '#type' => 'ccdt',
      '#name' => 'den2',
      '#title' => 'DATE ENDED',
-     '#ccdt_attribute' => array(2001, 2008),
+     '#ccdt_attribute' => array(2001, date('Y')),
      '#prefix' => '<td>',
      '#suffix' => '</td></tr></table>'
    );
@@ -2079,7 +2111,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#type' => 'ccdt',
       '#name' => 'dst1',
       '#title' => 'DATE STARTED',
-      '#ccdt_attribute' => array(2001, 2008),
+      '#ccdt_attribute' => array(2001, date('Y')),
       '#prefix' => '<table><tr><td>',
       '#suffix' => '</td>'
    );
@@ -2087,7 +2119,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#type' => 'ccdt',
       '#name' => 'den1',
       '#title' => 'DATE ENDED',
-      '#ccdt_attribute' => array(2001, 2008),
+      '#ccdt_attribute' => array(2001, date('Y')),
       '#prefix' => '<td>',
       '#suffix' => '</td></tr></table>'
    );
@@ -2105,7 +2137,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#type' => 'ccdt',
      '#name' => 'dst2',
      '#title' => 'DATE STARTED',
-     '#ccdt_attribute' => array(2001, 2008),
+     '#ccdt_attribute' => array(2001, date('Y')),
      '#prefix' => '<table><tr><td>',
      '#suffix' => '</td>'
    );
@@ -2113,7 +2145,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#type' => 'ccdt',
      '#name' => 'den2',
      '#title' => 'DATE ENDED',
-     '#ccdt_attribute' => array(2001, 2008),
+     '#ccdt_attribute' => array(2001, date('Y')),
      '#prefix' => '<td>',
      '#suffix' => '</td></tr></table>'
    );
@@ -3015,10 +3047,10 @@ function add_student_medical_details($form) {
 
   $values = $form['medical_part1']['state_of_health']['#post'] ;
   if ($values['diseases_not_in_form'] == 1) {
-    $diseases_details = mysql_real_escape_string ($values['diseases_not_details'] );
+    $diseases_details = db_escape_string($values['diseases_not_details'] );
   }
   else {
-   $diseases_details=mysql_real_escape_string ($values['diseases_details']) ;
+   $diseases_details=db_escape_string($values['diseases_details']) ;
   }
   $key_pairs = array(
     'health_status' => $values['state_of_health'],
@@ -3132,7 +3164,7 @@ function add_kin($form) {
   }
   $query .=  " {admitted_next_of_kin} set
     title = '". $form['kin']['title']['#post']['title'] ."' ,
-    name  = '". mysql_real_escape_string($form['kin']['title']['#post']['kname']) ."',
+    name  = '". db_escape_string($form['kin']['title']['#post']['kname']) ."',
     relationship = '". $form['kin']['title']['#post']['krel'] ."' ,
     address1 = '". $form['kin']['title']['#post']['kadd'] ."' ,
     city = '". $form['kin']['title']['#post']['kcity'] ."' ,
@@ -3152,7 +3184,7 @@ function add_kin($form) {
          $query = "insert into ";
       }
       $query .=  " admitted_sponsor set
-           name  = '". mysql_real_escape_string($form['kin']['title']['#post']['sname']) ."',
+           name  = '". db_escape_string($form['kin']['title']['#post']['sname']) ."',
            address1 = '". $form['kin']['title']['#post']['sadd'] ."' ,
            city = '". $form['kin']['title']['#post']['scity'] ."' ,
            telephone = '". $form['kin']['title']['#post']['stel'] ."' ,
@@ -3642,8 +3674,8 @@ function _student_accomodation_validate() {
   $name is the form fields array key... e.g. the name for $form['title'] is "title"
 */
 function _student_ahah_render($fields, $name) {
- 
-  
+
+
   drupal_alter('form', $fields, array(), 'student_registration_form');
 
   $form_state = array('submitted' => FALSE,'#values'=>$_POST);
@@ -3722,7 +3754,7 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
 
     if (!$filename) {
 
-      $filename = trim(basename($_FILES['files']['name'][$source]), '.');
+    echo  $filename = trim(basename($_FILES['files']['name'][$source]), '.');
 
     } else {
 
@@ -3776,6 +3808,10 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
     // Move uploaded files from PHP's upload_tmp_dir to Drupal's temporary directory.
     // This overcomes open_basedir restrictions for future file operations.
     $file->filepath = $file->destination;
+	if(file_exists($file->filepath)) {
+      unlink($file->filepath);
+	}
+
     if (!move_uploaded_file($_FILES['files']['tmp_name'][$source], $file->filepath)) {
       form_set_error($source, t('File upload error. Could not move uploaded file.'));
       watchdog('file', 'Upload error. Could not move uploaded file %file to destination %destination.', array('%file' => $file->filename, '%destination' => $file->filepath));
