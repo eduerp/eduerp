@@ -100,10 +100,11 @@ function grading_field_access($op, $field, $account, $node = NULL) {
         // Retrieve the locked indicators for all fields for any student_grades in a course that has the current user as a lecturer.
         // (After a number of years this could get big?)
         // Another assumption made here is that none of the fields are reused in other tables so that Drupal will not store them in dedicated tables!
-        $sql = "SELECT g.nid, field_ca1locked_value AS field_ca1, field_ca2locked_value AS field_ca2, field_ca3locked_value AS field_ca3, field_ca4locked_value AS field_ca4, field_examscorelocked_value AS field_exam_score
-          FROM {content_type_student_grades} g, {content_type_course_instance} c WHERE g.field_course_instance_nid=c.nid AND c.field_lecturer_uid=%d";
+        $sql = "SELECT sg.nid, field_ca1locked_value AS field_ca1, field_ca2locked_value AS field_ca2, field_ca3locked_value AS field_ca3, field_ca4locked_value AS field_ca4, field_examscorelocked_value AS field_exam_score
+          FROM {content_type_student_grades} sg, {content_type_course_instance} ci
+          WHERE sg.field_course_instance_nid=ci.nid AND (ci.field_lecturer_uid={$account->uid} OR ci.field_lecturer_alternate_uid={$account->uid})";
 
-        $result = db_query($sql, $account->uid);
+        $result = db_query($sql);
 
         while ($row = db_fetch_array($result)) {
           $locked[$row['nid']] = $row;
