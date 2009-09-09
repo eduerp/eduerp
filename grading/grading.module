@@ -214,7 +214,7 @@ function _grading_department_list() {
   $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
-    $names[$row->name] = $row->name;
+    $names[$row->name."'X"] = $row->name."'X";
   }
   return $names;
 }
@@ -309,40 +309,7 @@ function _grading_ahah_stats() {
   $output = '<table class="body-table"><tbody>';
 
 $output .= var_export($_POST, TRUE);
-//$output .= '<br />POST ABOVE SESSION BELOW...<br />';
-//$output .= var_export($form_state, TRUE);
-//$output .= var_export($_SESSION, TRUE);
-$output .= "SELECT
-    COUNT(*) AS number_students,
-    SUM(fully) AS sumfully,
-    SUM(part) AS sumpart,
-    SUM(none) AS sumnone,
-    MIN(ca1l) AS ca1locked,
-    MIN(ca2l) AS ca2locked,
-    MIN(ca3l) AS ca3locked,
-    MIN(ca4l) AS ca4locked,
-    MIN(examl) AS examlocked
-  FROM
-    (
-      SELECT
-        BIT_AND(sg.field_exam_score_value > 0) AS fully,
-        BIT_OR(sg.field_exam_score_value > 0) AS part,
-        BIT_AND(sg.field_exam_score_value = 0) AS none,
-        MIN(sg.field_ca1locked_value) AS ca1l,
-        MIN(sg.field_ca2locked_value) AS ca2l,
-        MIN(sg.field_ca3locked_value) AS ca3l,
-        MIN(sg.field_ca4locked_value) AS ca4l,
-        MIN(sg.field_examscorelocked_value) AS examl
-      FROM content_type_student_grades sg, content_type_student_gpa gpa, content_type_program p
-      WHERE
-        sg.field_student_gpa_nid=gpa.nid AND
-        gpa.field_level_name_gpa_value='{$level}' AND
-        gpa.field_sess_name_gpa_value='{$session}' AND
-        gpa.field_semester_name_gpa_value='{$semester}' AND
-        gpa.field_program_ref_gpa_nid=p.nid AND
-        p.field_department_name_value='{$department}'
-      GROUP BY sg.field_mat_no_uid
-    ) AS eachstudent";
+
   $output .= '<tr><th valign="top" class="table-label" colspan="2">DEPARTMENTAL SUMMARY RESULTS</th></tr>';
 
   $output .= '<tr>';
