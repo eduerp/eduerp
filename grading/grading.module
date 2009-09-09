@@ -258,7 +258,7 @@ function grading_stats_department_form_submit($form, &$state) {
 }
 
 
-function _grading_ahah_stats() {
+function _grading_ahah_stats(&$form_state) {
   global $user;
   global $base_url;
 
@@ -310,7 +310,8 @@ function _grading_ahah_stats() {
 
 $output .= var_dump($_POST);
 $output .= '<br />POST ABOVE SESSION BELOW...<br />';
-$output .= var_dump($_SESSION);
+$output .= var_dump($form_state);
+//$output .= var_dump($_SESSION);
 $output .= "SELECT
     COUNT(*) AS number_students,
     SUM(fully) AS sumfully,
