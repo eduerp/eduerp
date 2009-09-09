@@ -344,10 +344,598 @@ function _grading_ahah_stats() {
   }
 
   $output .= '<tr><td colspan="2"></td></tr>';
+
+  // Find Dean uid
+  $sql = "SELECT vs.user_id AS dean_uid
+    FROM {content_type_program} p, {veritas_staff} vs, {users_roles} ur, {role} r
+    WHERE p.field_programme_name_value='%s' AND p.field_department_id_value=vs.department_id AND vs.user_id=ur.uid AND ur.rid=r.rid AND r.name='Dean'";
+  $deanresult = db_query($sql, $programme);
+  if (!empty($deanresult)) {
+    $dean_uid = '';
+    while ($dean = db_fetch_object($deanresult)) {
+      if ($dean_uid === '') $dean_uid = $dean->dean_uid;
+      else $dean_uid = $dean_uid . ',' . $dean->dean_uid;
+    }
+  }
+  else {
+    $dean_uid = 0;
+  }
+
+  // Find Registrar uid
+  $sql = "SELECT ur.uid AS registrar_uid
+    FROM {users_roles} ur, {role} r
+    WHERE ur.rid=r.rid AND r.name='Registrar'";
+  $registrarresult = db_query($sql);
+  if (!empty($registrarresult)) {
+    $registrar_uid = '';
+    while ($registrar = db_fetch_object($registrarresult)) {
+      if ($registrar_uid === '') $registrar_uid = $registrar->registrar_uid;
+      else $registrar_uid = $registrar_uid . ',' . $registrar->registrar_uid;
+    }
+  }
+  else {
+    $registrar_uid = 0;
+  }
+
+  // Find VC uid
+  $sql = "SELECT ur.uid AS vc_uid
+    FROM {users_roles} ur, {role} r
+    WHERE ur.rid=r.rid AND r.name='VC'";
+  $vcresult = db_query($sql);
+  if (!empty($vcresult)) {
+    $vc_uid = '';
+    while ($vc = db_fetch_object($vcresult)) {
+      if ($vc_uid === '') $vc_uid = $vc->vc_uid;
+      else $vc_uid = $vc_uid . ',' . $vc->vc_uid;
+    }
+  }
+  else {
+    $vc_uid = 0;
+  }
+
+  $exams[1] = array('lock' => $summaryrow->ca1locked,  'gradestext' => 'Continuous Assessment 1', 'fieldtoapprove' => 'field_ca1locked_value',       'srcfield' => 'field_ca1_value', 'destfield' => 'field_ca1forstudent_value');
+  $exams[2] = array('lock' => $summaryrow->ca2locked,  'gradestext' => 'Continuous Assessment 2', 'fieldtoapprove' => 'field_ca2locked_value',       'srcfield' => 'field_ca2_value', 'destfield' => 'field_ca2forstudent_value');
+  $exams[3] = array('lock' => $summaryrow->ca3locked,  'gradestext' => 'Continuous Assessment 3', 'fieldtoapprove' => 'field_ca3locked_value',       'srcfield' => 'field_ca3_value', 'destfield' => 'field_ca3forstudent_value');
+  $exams[4] = array('lock' => $summaryrow->ca4locked,  'gradestext' => 'Continuous Assessment 4', 'fieldtoapprove' => 'field_ca4locked_value',       'srcfield' => 'field_ca4_value', 'destfield' => 'field_ca4forstudent_value');
+  $exams[5] = array('lock' => $summaryrow->examlocked, 'gradestext' => 'Semester Exam',           'fieldtoapprove' => 'field_examscorelocked_value', 'srcfield' => 'NONE', 'destfield' => 'NONE');
+
+  global $eduerpdeanapprovalform;
+  global $eduerpregistrarapprovalform;
+  global $eduerpvcapprovalform;
+  $showdeanform = false;
+  $showregistrarform = false;
+  $showvcform = false;
+
+  foreach ($exams as $exam) {
+    if ($exam['lock'] == 0) {
+      $output .= '<tr><td colspan="2">Waiting on some Lecturer Approvals for ' . $exam['gradestext'] . '</td></tr>';
+    }
+    elseif ($exam['lock'] == 1) {
+      $output .= '<tr><td colspan="2">Waiting on Head of Department to Approve ' . $exam['gradestext'] . ' for some Programmes</td></tr>';
+    }
+    elseif ($exam['lock'] == 2) {
+      $dean_uid_array = explode(',', $dean_uid);
+      if (in_array($user->uid, $dean_uid_array)) {
+        $showdeanform = true;
+
+        if ($exam['srcfield'] != 'NONE') { // if this is a CA, notification goes to VC also
+          if (empty($registrar_uid)) {
+            $registrar_uid = $vc_uid;
+          }
+          elseif (!empty($vc_uid)) {
+            $registrar_uid = $registrar_uid . ',' . $vc_uid;
+          }
+        }
+        $eduerpdeanapprovalform->department_url = $base_url . rawurlencode("grading/stats?department={$department}&level={$level}&session={$session}&semester={$semester}");
+        $eduerpdeanapprovalform->dean_uid = $dean_uid;
+        $eduerpdeanapprovalform->registrar_uid = $registrar_uid;
+        $eduerpdeanapprovalform->department = $department;
+        $eduerpdeanapprovalform->level = $level;
+        $eduerpdeanapprovalform->session = $session;
+        $eduerpdeanapprovalform->semester = $semester;
+        $eduerpdeanapprovalform->gradestext = $exam['gradestext'];
+        $eduerpdeanapprovalform->fieldtoapprove = $exam['fieldtoapprove'];
+        $eduerpdeanapprovalform->srcfield = $exam['srcfield'];
+        $eduerpdeanapprovalform->destfield = $exam['destfield'];
+      }
+      else {
+        $output .= '<tr><td colspan="2">Waiting on Dean to Approve ' . $exam['gradestext'] . '</td></tr>';
+      }
+      break;
+    }
+    elseif ($exam['lock'] == 3) { // This is only for final exam, CAs go straight to state 5
+      $registrar_uid_array = explode(',', $registrar_uid);
+      if (in_array($user->uid, $registrar_uid_array)) {
+        $showregistrarform = true;
+
+        $eduerpregistrarapprovalform->department_url = $base_url . rawurlencode("grading/stats?department={$department}&level={$level}&session={$session}&semester={$semester}");
+        $eduerpregistrarapprovalform->registrar_uid = $registrar_uid;
+        $eduerpregistrarapprovalform->vc_uid = $vc_uid;
+        $eduerpregistrarapprovalform->department = $department;
+        $eduerpregistrarapprovalform->level = $level;
+        $eduerpregistrarapprovalform->session = $session;
+        $eduerpregistrarapprovalform->semester = $semester;
+        $eduerpregistrarapprovalform->gradestext = $exam['gradestext'];
+        $eduerpregistrarapprovalform->fieldtoapprove = $exam['fieldtoapprove'];
+        $eduerpregistrarapprovalform->srcfield = $exam['srcfield'];
+        $eduerpregistrarapprovalform->destfield = $exam['destfield'];
+      }
+      else {
+        $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Submitted to Registrar</td></tr>';
+      }
+      break;
+    }
+    elseif ($exam['lock'] == 4) {
+      $vc_uid_array = explode(',', $vc_uid);
+      if (in_array($user->uid, $vc_uid_array)) {
+        $showvcform = true;
+
+        $eduerpvcapprovalform->department_url = $base_url . rawurlencode("grading/stats?department={$department}&level={$level}&session={$session}&semester={$semester}");
+        $eduerpvcapprovalform->vc_uid = $vc_uid;
+        $eduerpvcapprovalform->department = $department;
+        $eduerpvcapprovalform->level = $level;
+        $eduerpvcapprovalform->session = $session;
+        $eduerpvcapprovalform->semester = $semester;
+        $eduerpvcapprovalform->gradestext = $exam['gradestext'];
+        $eduerpvcapprovalform->fieldtoapprove = $exam['fieldtoapprove'];
+        $eduerpvcapprovalform->srcfield = $exam['srcfield'];
+        $eduerpvcapprovalform->destfield = $exam['destfield'];
+      }
+      else {
+        $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Submitted to Vice Chancellor</td></tr>';
+      }
+      break;
+    }
+    elseif ($exam['lock'] == 5) {
+      $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Fully Approved</td></tr>';
+    }
+  }
+
   $output .= '</tbody></table>';
+
+  if ($showdeanform) {
+    $output .= drupal_get_form('approve_grades_dean_form');
+  }
+  elseif ($showregistrarform) {
+    $output .= drupal_get_form('approve_grades_registrar_form');
+  }
+  elseif ($showvcform) {
+    $output .= drupal_get_form('approve_grades_vc_form');
+  }
 
   print drupal_to_js(array('data' => $output, 'status' => true));
 
   exit();
+}
+
+
+// Put up form to allow Dean to approve grades (relevant locked fields will then become 3 (or 5 if this is a CA) (1 is lecturer approval, 2 is HOD approval)).
+
+function approve_grades_dean_form($form_state) {
+  global $eduerpdeanapprovalform;
+
+  $form['comment'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Enter a comment on the grades for the Dean.',
+    '#cols' => 80,
+    '#rows' => 5,
+    '#required' => TRUE
+  );
+
+  $form['department_url'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->department_url);
+  $form['dean_uid'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->dean_uid);
+  $form['registrar_uid'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->registrar_uid);
+  $form['department'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->department);
+  $form['level'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->level);
+  $form['session'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->session);
+  $form['semester'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->semester);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->fieldtoapprove);
+  $form['srcfield'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->srcfield);
+  $form['destfield'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->destfield);
+  $form['gradestext'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->gradestext);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpdeanapprovalform->gradestext . '.');
+
+  return $form;
+}
+
+
+function approve_grades_dean_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['comment'])) {
+    form_set_error('comment', 'You must enter a comment for the Registrar!');
+  }
+}
+
+
+function approve_grades_dean_form_submit($form, &$form_state) {
+  global $user;
+
+  $department     = $form_state['values']['department'];
+  $level          = $form_state['values']['level'];
+  $session        = $form_state['values']['session'];
+  $semester       = $form_state['values']['semester'];
+  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
+  $srcfield       = $form_state['values']['srcfield'];
+  $destfield      = $form_state['values']['destfield'];
+  $comment        = $form_state['values']['comment'];
+  $department_url = $form_state['values']['department_url'];
+  $dean_uid       = $form_state['values']['dean_uid'];
+  $registrar_uid  = $form_state['values']['registrar_uid'];
+  $gradestext     = $form_state['values']['gradestext'];
+
+  if ($srcfield != 'NONE') {
+    $statetoset = '5'; // This is a CA so make it fully approved
+  }
+  else {
+    $statetoset = '3';
+  }
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+    SET sg.`{$fieldtoapprove}`='{$statetoset}'
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s'";
+
+  db_query($sql, $level, $session, $semester, $department);
+
+  $sql = "SELECT p.field_college_name AS college
+    FROM {content_type_program} p
+    WHERE p.field_department_name_value='%s'
+    LIMIT 1";
+  $collegeresult = db_query($sql, $department);
+  if (!empty($collegeresult)) {
+    $collegerow = db_fetch_object($collegeresult);
+    $college = $collegerow->college;
+  }
+  else {
+    $college = '';
+  }
+
+  profile_load_profile($user);
+
+  $name = '';
+  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+    $middle = '';
+    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
+    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+  }
+
+  $firsttime = TRUE;
+  $registrar_uid_array = explode(',', $registrar_uid);
+  foreach ($registrar_uid_array as $registrar_uid_i) {
+
+    if (!empty($registrar_uid_i)) $destination_user = user_load($registrar_uid_i);
+    else $destination_user = NULL;
+
+    $subject = "$gradestext for $department/$level/$session/$semester Approved by $name";
+
+    $body = '';
+    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+      $middle = '';
+      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
+      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+    }
+
+    $body .= "I have approved $gradestext\n\n";
+    $body .= "URL: $department_url\n";
+    $body .= "Department: $department\n";
+    $body .= "College: $college\n";
+    $body .= "Level: $level\n";
+    $body .= "Session: $session\n";
+    $body .= "semester: $semester\n\n";
+    $body .= "Dean's comment...\n";
+    $body .= str_replace('<br />', "\n", $comment);
+    $body .= "\n\n{$name}\n";
+
+    if ($firsttime) {
+      $node = new stdClass();
+      $node->type                            = 'approval';
+      $node->uid                             = 1;
+      $node->status                          = 1;
+      $node->promote                         = 0;
+      $node->sticky                          = 0;
+      $node->comment                         = 2;
+      $node->title                           = $subject;
+      $node->body                            = $comment;
+      $node->field_url[0]['value']           = $department_url;
+      $node->field_approver[0]['uid']        = $user->uid;
+      $node->field_destination[0]['uid']     = $registrar_uid;
+      $node->field_department1[0]['value']   = $department;
+      $node->field_college1[0]['value']      = $college;
+      $node->field_level1[0]['value']        = $level;
+      $node->field_session1[0]['value']      = $session;
+      $node->field_semester1[0]['value']     = $semester;
+      $node->field_what_approved[0]['value'] = $gradestext;
+      $node->field_action[0]['value']        = 'Approved by Dean';
+      node_save($node);
+
+      $firsttime = FALSE;
+    }
+
+    if (!empty($destination_user)) {
+      $message = drupal_mail('grading', 'approval', $destination_user->mail, language_default(), array(), $user->mail, FALSE);
+      $message['subject'] = $subject;
+      $message['body'] = $body;
+      drupal_mail_send($message);
+    }
+  }
+
+  drupal_set_message('Approval successfull');
+}
+
+
+// Put up form to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
+
+function approve_grades_registrar_form($form_state) {
+  global $eduerpregistrarapprovalform;
+
+  $form['comment'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Enter a comment on the grades for the Registrar.',
+    '#cols' => 80,
+    '#rows' => 5,
+    '#required' => TRUE
+  );
+
+  $form['department_url'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->department_url);
+  $form['registrar_uid'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->registrar_uid);
+  $form['vc_uid'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->vc_uid);
+  $form['department'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->department);
+  $form['level'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->level);
+  $form['session'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->session);
+  $form['semester'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->semester);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->fieldtoapprove);
+  $form['srcfield'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->srcfield);
+  $form['destfield'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->destfield);
+  $form['gradestext'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->gradestext);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpregistrarapprovalform->gradestext . '.');
+
+  return $form;
+}
+
+
+function approve_grades_registrar_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['comment'])) {
+    form_set_error('comment', 'You must enter a comment for the Vice Chancellor!');
+  }
+}
+
+
+function approve_grades_registrar_form_submit($form, &$form_state) {
+  global $user;
+
+  $department     = $form_state['values']['department'];
+  $level          = $form_state['values']['level'];
+  $session        = $form_state['values']['session'];
+  $semester       = $form_state['values']['semester'];
+  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
+  $srcfield       = $form_state['values']['srcfield'];
+  $destfield      = $form_state['values']['destfield'];
+  $comment        = $form_state['values']['comment'];
+  $department_url = $form_state['values']['department_url'];
+  $registrar_uid  = $form_state['values']['registrar_uid'];
+  $vc_uid         = $form_state['values']['vc_uid'];
+  $gradestext     = $form_state['values']['gradestext'];
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+    SET sg.`{$fieldtoapprove}`='4'
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s'";
+
+  db_query($sql, $level, $session, $semester, $department);
+
+  $sql = "SELECT p.field_college_name AS college
+    FROM {content_type_program} p
+    WHERE p.field_department_name_value='%s'
+    LIMIT 1";
+  $collegeresult = db_query($sql, $department);
+  if (!empty($collegeresult)) {
+    $collegerow = db_fetch_object($collegeresult);
+    $college = $collegerow->college;
+  }
+  else {
+    $college = '';
+  }
+
+  profile_load_profile($user);
+
+  $name = '';
+  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+    $middle = '';
+    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
+    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+  }
+
+  $firsttime = TRUE;
+  $vc_uid_array = explode(',', $vc_uid);
+  foreach ($vc_uid_array as $vc_uid_i) {
+
+    if (!empty($vc_uid_i)) $destination_user = user_load($vc_uid_i);
+    else $destination_user = NULL;
+
+    $subject = "$gradestext for $department/$level/$session/$semester Approved by $name";
+
+    $body = '';
+    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+      $middle = '';
+      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
+      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+    }
+
+    $body .= "I have approved $gradestext\n\n";
+    $body .= "URL: $department_url\n";
+    $body .= "Department: $department\n";
+    $body .= "College: $college\n";
+    $body .= "Level: $level\n";
+    $body .= "Session: $session\n";
+    $body .= "semester: $semester\n\n";
+    $body .= "Registrar's comment...\n";
+    $body .= str_replace('<br />', "\n", $comment);
+    $body .= "\n\n{$name}\n";
+
+    if ($firsttime) {
+      $node = new stdClass();
+      $node->type                            = 'approval';
+      $node->uid                             = 1;
+      $node->status                          = 1;
+      $node->promote                         = 0;
+      $node->sticky                          = 0;
+      $node->comment                         = 2;
+      $node->title                           = $subject;
+      $node->body                            = $comment;
+      $node->field_url[0]['value']           = $department_url;
+      $node->field_approver[0]['uid']        = $user->uid;
+      $node->field_destination[0]['uid']     = $vc_uid;
+      $node->field_department1[0]['value']   = $department;
+      $node->field_college1[0]['value']      = $college;
+      $node->field_level1[0]['value']        = $level;
+      $node->field_session1[0]['value']      = $session;
+      $node->field_semester1[0]['value']     = $semester;
+      $node->field_what_approved[0]['value'] = $gradestext;
+      $node->field_action[0]['value']        = 'Approved by Registrar';
+      node_save($node);
+
+      $firsttime = FALSE;
+    }
+
+    if (!empty($destination_user)) {
+      $message = drupal_mail('grading', 'approval', $destination_user->mail, language_default(), array(), $user->mail, FALSE);
+      $message['subject'] = $subject;
+      $message['body'] = $body;
+      drupal_mail_send($message);
+    }
+  }
+
+  drupal_set_message('Approval successfull');
+}
+
+
+// Put up form to allow VC to approve grades (relevant locked fields will then become 5)
+// Also set the student visible exam score to the values set by the lecturer
+
+function approve_grades_vc_form($form_state) {
+  global $eduerpvcapprovalform;
+
+  $form['comment'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Enter a comment on the grades for the Record.',
+    '#cols' => 80,
+    '#rows' => 5,
+    '#required' => TRUE
+  );
+
+  $form['department_url'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->department_url);
+  $form['vc_uid'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->vc_uid);
+  $form['department'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->department);
+  $form['level'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->level);
+  $form['session'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->session);
+  $form['semester'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->semester);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->fieldtoapprove);
+  $form['gradestext'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->gradestext);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpvcapprovalform->gradestext . '.');
+
+  return $form;
+}
+
+
+function approve_grades_vc_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['comment'])) {
+    form_set_error('comment', 'You must enter a comment for the Record!');
+  }
+}
+
+
+function approve_grades_vc_form_submit($form, &$form_state) {
+  global $user;
+
+  $department     = $form_state['values']['department'];
+  $level          = $form_state['values']['level'];
+  $session        = $form_state['values']['session'];
+  $semester       = $form_state['values']['semester'];
+  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
+  $comment        = $form_state['values']['comment'];
+  $department_url = $form_state['values']['department_url'];
+  $vc_uid         = $form_state['values']['vc_uid'];
+  $gradestext     = $form_state['values']['gradestext'];
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+    SET sg.`{$fieldtoapprove}`='5'
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s'";
+
+  db_query($sql, $level, $session, $semester, $department);
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+    SET sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+  $sql = "SELECT p.field_college_name AS college
+    FROM {content_type_program} p
+    WHERE p.field_department_name_value='%s'
+    LIMIT 1";
+  $collegeresult = db_query($sql, $department);
+  if (!empty($collegeresult)) {
+    $collegerow = db_fetch_object($collegeresult);
+    $college = $collegerow->college;
+  }
+  else {
+    $college = '';
+  }
+
+  profile_load_profile($user);
+
+  $name = '';
+  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+    $middle = '';
+    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
+    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+  }
+
+  $subject = "$gradestext for $department/$level/$session/$semester Approved by $name";
+
+  $node = new stdClass();
+  $node->type                            = 'approval';
+  $node->uid                             = 1;
+  $node->status                          = 1;
+  $node->promote                         = 0;
+  $node->sticky                          = 0;
+  $node->comment                         = 2;
+  $node->title                           = $subject;
+  $node->body                            = $comment;
+  $node->field_url[0]['value']           = $department_url;
+  $node->field_approver[0]['uid']        = $user->uid;
+  $node->field_department1[0]['value']   = $department;
+  $node->field_college1[0]['value']      = $college;
+  $node->field_level1[0]['value']        = $level;
+  $node->field_session1[0]['value']      = $session;
+  $node->field_semester1[0]['value']     = $semester;
+  $node->field_what_approved[0]['value'] = $gradestext;
+  $node->field_action[0]['value']        = 'Approved by VC';
+  node_save($node);
+
+  drupal_set_message('Approval successfull');
 }
 ?>
