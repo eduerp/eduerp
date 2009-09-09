@@ -267,6 +267,9 @@ function _grading_ahah_stats() {
   $session    = $_POST['session'];
   $semester   = $_POST['semester'];
 
+  $departmentenc = rawurlencode($department);
+  $sessionenc    = rawurlencode($session);
+
   // Display statistics on exams completed
   $sql = "SELECT
     COUNT(*) AS number_students,
@@ -339,7 +342,8 @@ function _grading_ahah_stats() {
     $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
 
     while ($programmerow = db_fetch_object($programmerows)) {
-      $output .= '<tr><td colspan="2"><a href="' . $base_url . rawurlencode("gpa?programme={$programmerow->programme}&level={$level}&session={$session}&semester={$semester}") . '">$programme</a></td></tr>';
+      $programmeenc = rawurlencode($programmerow->programme);
+      $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">$programme</a></td></tr>';
     }
   }
 
@@ -426,7 +430,7 @@ function _grading_ahah_stats() {
             $registrar_uid = $registrar_uid . ',' . $vc_uid;
           }
         }
-        $eduerpdeanapprovalform->department_url = $base_url . rawurlencode("grading/stats?department={$department}&level={$level}&session={$session}&semester={$semester}");
+        $eduerpdeanapprovalform->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
         $eduerpdeanapprovalform->dean_uid = $dean_uid;
         $eduerpdeanapprovalform->registrar_uid = $registrar_uid;
         $eduerpdeanapprovalform->department = $department;
@@ -448,7 +452,7 @@ function _grading_ahah_stats() {
       if (in_array($user->uid, $registrar_uid_array)) {
         $showregistrarform = true;
 
-        $eduerpregistrarapprovalform->department_url = $base_url . rawurlencode("grading/stats?department={$department}&level={$level}&session={$session}&semester={$semester}");
+        $eduerpregistrarapprovalform->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
         $eduerpregistrarapprovalform->registrar_uid = $registrar_uid;
         $eduerpregistrarapprovalform->vc_uid = $vc_uid;
         $eduerpregistrarapprovalform->department = $department;
@@ -470,7 +474,7 @@ function _grading_ahah_stats() {
       if (in_array($user->uid, $vc_uid_array)) {
         $showvcform = true;
 
-        $eduerpvcapprovalform->department_url = $base_url . rawurlencode("grading/stats?department={$department}&level={$level}&session={$session}&semester={$semester}");
+        $eduerpvcapprovalform->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
         $eduerpvcapprovalform->vc_uid = $vc_uid;
         $eduerpvcapprovalform->department = $department;
         $eduerpvcapprovalform->level = $level;
