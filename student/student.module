@@ -22,7 +22,7 @@ function student_menu() {
   'access arguments' => array('student login'),
   'type' => MENU_CALLBACK,
   );
-  
+
   $items['student/course'] = array(
    'page callback' => 'drupal_get_form',
    'page arguments' => array('student_course_form'),
@@ -627,7 +627,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
     $node->status                                  = 1;  // Published
     $node->promote                                 = 0;
     $node->sticky                                  = 0;
-    $node->comment                                 = 2;  // Read/Write
+    $node->comment                                 = 0;
     $node->title                                   = $program_row->programme_name;
     $node->field_programme_id[0]['value']          = $program_row->programme_id;
     $node->field_programme_name[0]['value']        = $program_row->programme_name;
@@ -649,7 +649,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
     $node->status                                  = 1;  // Published
     $node->promote                                 = 0;
     $node->sticky                                  = 0;
-    $node->comment                                 = 2;  // Read/Write
+    $node->comment                                 = 0;
     $node->title                                   = $home_program_row->programme_name;
     $node->field_programme_id[0]['value']          = $home_program_row->programme_id;
     $node->field_programme_name[0]['value']        = $home_program_row->programme_name;
@@ -671,7 +671,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
     $node->status                                  = 1;  // Published
     $node->promote                                 = 0;
     $node->sticky                                  = 0;
-    $node->comment                                 = 2;  // Read/Write
+    $node->comment                                 = 0;
     $node->title                                   = $program_row->course_title . ' - ' . $program_row->sess_name . ' - ' . $program_row->semester_id . ' - ' . $program_row->level_name;
     $node->field_course_id[0]['value']             = $program_row->course_id;
     $node->field_course_code[0]['value']           = $program_row->course_code;
@@ -699,7 +699,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
     $node->status                                  = 1;  // Published
     $node->promote                                 = 0;
     $node->sticky                                  = 0;
-    $node->comment                                 = 2;  // Read/Write
+    $node->comment                                 = 0;
     $node->title                                   = $studentname . ' - ' . $program_row->sess_name . ' - ' . $program_row->semester_id;
     $node->field_student_ref_gpa[0]['uid']         = $admitted_student->user_id;
     $node->field_program_ref_gpa[0]['nid']         = $home_program; // No longer GPA for Program but for whole semester's courses
@@ -729,7 +729,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
     $node->status                                  = 1;  // Published
     $node->promote                                 = 0;
     $node->sticky                                  = 0;
-    $node->comment                                 = 2;  // Read/Write
+    $node->comment                                 = 0;
     $node->title                                   = $studentname;
     $node->field_mat_no[0]['uid']                  = $admitted_student->user_id;
     $node->field_course_instance[0]['nid']         = $course_instance;
