@@ -308,10 +308,10 @@ function _grading_ahah_stats(&$form_state) {
 
   $output = '<table class="body-table"><tbody>';
 
-$output .= var_dump($_POST);
+$output .= var_export($_POST, TRUE);
 $output .= '<br />POST ABOVE SESSION BELOW...<br />';
-$output .= var_dump($form_state);
-//$output .= var_dump($_SESSION);
+$output .= var_export($form_state, TRUE);
+$output .= var_export($_SESSION, TRUE);
 $output .= "SELECT
     COUNT(*) AS number_students,
     SUM(fully) AS sumfully,
