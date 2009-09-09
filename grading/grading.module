@@ -214,7 +214,7 @@ function _grading_department_list() {
   $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
-    $names[$row->name."'X"] = $row->name."'X";
+    $names[$row->name] = $row->name;
   }
   return $names;
 }
@@ -262,10 +262,10 @@ function _grading_ahah_stats() {
   global $user;
   global $base_url;
 
-  $department = $_POST['department'];
-  $level      = $_POST['level'];
-  $session    = $_POST['session'];
-  $semester   = $_POST['semester'];
+  $department = stripslashes($_POST['department']);
+  $level      = stripslashes($_POST['level']);
+  $session    = stripslashes($_POST['session']);
+  $semester   = stripslashes($_POST['semester']);
 
   $departmentenc = rawurlencode($department);
   $sessionenc    = rawurlencode($session);
@@ -308,8 +308,6 @@ function _grading_ahah_stats() {
 
   $output = '<table class="body-table"><tbody>';
 
-$output .= var_export($_POST, TRUE);
-
   $output .= '<tr><th valign="top" class="table-label" colspan="2">DEPARTMENTAL SUMMARY RESULTS</th></tr>';
 
   $output .= '<tr>';
@@ -346,7 +344,7 @@ $output .= var_export($_POST, TRUE);
 
     while ($programmerow = db_fetch_object($programmerows)) {
       $programmeenc = rawurlencode($programmerow->programme);
-      $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">$programme</a></td></tr>';
+      $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
     }
   }
 
@@ -355,8 +353,8 @@ $output .= var_export($_POST, TRUE);
   // Find Dean uid
   $sql = "SELECT vs.user_id AS dean_uid
     FROM {content_type_program} p, {veritas_staff} vs, {users_roles} ur, {role} r
-    WHERE p.field_programme_name_value='%s' AND p.field_department_id_value=vs.department_id AND vs.user_id=ur.uid AND ur.rid=r.rid AND r.name='Dean'";
-  $deanresult = db_query($sql, $programme);
+    WHERE p.field_department_name_value='%s' AND p.field_department_id_value=vs.department_id AND vs.user_id=ur.uid AND ur.rid=r.rid AND r.name='Dean'";
+  $deanresult = db_query($sql, $department);
   if (!empty($deanresult)) {
     $dean_uid = '';
     while ($dean = db_fetch_object($deanresult)) {
