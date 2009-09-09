@@ -214,7 +214,7 @@ function _grading_department_list() {
   $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
-    $names[] = $row->name;
+    $names[$row->name] = $row->name;
   }
   return $names;
 }
@@ -225,7 +225,7 @@ function _grading_session_list() {
   $sql = "SELECT DISTINCT field_sess_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
-    $names[] = $row->name;
+    $names[$row->name] = $row->name;
   }
   return $names;
 }
@@ -236,7 +236,7 @@ function _grading_semester_list() {
   $sql = "SELECT DISTINCT field_semester_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
-    $names[] = $row->name;
+    $names[$row->name] = $row->name;
   }
   return $names;
 }
@@ -247,7 +247,7 @@ function _grading_level_list() {
   $sql = "SELECT DISTINCT field_level_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
-    $names[] = $row->name;
+    $names[$row->name] = $row->name;
   }
   return $names;
 }
@@ -258,7 +258,7 @@ function grading_stats_department_form_submit($form, &$state) {
 }
 
 
-function _grading_ahah_stats(&$form_state) {
+function _grading_ahah_stats() {
   global $user;
   global $base_url;
 
@@ -309,9 +309,9 @@ function _grading_ahah_stats(&$form_state) {
   $output = '<table class="body-table"><tbody>';
 
 $output .= var_export($_POST, TRUE);
-$output .= '<br />POST ABOVE SESSION BELOW...<br />';
-$output .= var_export($form_state, TRUE);
-$output .= var_export($_SESSION, TRUE);
+//$output .= '<br />POST ABOVE SESSION BELOW...<br />';
+//$output .= var_export($form_state, TRUE);
+//$output .= var_export($_SESSION, TRUE);
 $output .= "SELECT
     COUNT(*) AS number_students,
     SUM(fully) AS sumfully,
