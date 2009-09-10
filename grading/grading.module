@@ -379,7 +379,7 @@ function _grading_ahah_stats() {
   $summaryrows = db_query($sql, $level, $session, $semester, $department);
   $summaryrow = db_fetch_object($summaryrows);
 
-  $output = '<table class="body-table"><tbody>';
+  $output = '<br /><table class="body-table"><tbody>';
 
   $output .= '<tr><th valign="top" class="table-label" colspan="2">DEPARTMENTAL SUMMARY RESULTS</th></tr>';
 
@@ -413,6 +413,7 @@ function _grading_ahah_stats() {
       p.field_department_name_value='%s' ORDER BY programme ASC";
   $programmerows = db_query($sql, $level, $session, $semester, $department);
   if (!empty($programmerows)) {
+    $output .= '<tr><td colspan="2"></td></tr>';
     $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
 
     while ($programmerow = db_fetch_object($programmerows)) {
@@ -483,6 +484,8 @@ function _grading_ahah_stats() {
   $showdeanform = false;
   $showregistrarform = false;
   $showvcform = false;
+
+  $output .= '<tr><td colspan="2"></td></tr>';
 
   foreach ($exams as $exam) {
     if ($exam['lock'] == 0) {
@@ -1186,7 +1189,7 @@ function _grading_ahah_stats_uni() {
     $querywhere = '';
   }
 
-  $output = '<table class="body-table"><tbody>';
+  $output = '<br /><table class="body-table"><tbody>';
   $output .= '<tr><th valign="top" class="table-label" colspan="5">' . $title . ' SUMMARY RESULTS</th></tr>';
 
   $output .= '<tr>';
@@ -1264,6 +1267,7 @@ function _grading_ahah_stats_uni() {
       else             $programmerows = db_query($sql, $level, $session, $semester);
 
       if (!empty($programmerows)) {
+        $output .= '<tr><td colspan="5"></td></tr>';
         $output .= '<tr><td colspan="5">View Department Details (for Level: ' . $level . ')...</td></tr>';
 
         while ($programmerow = db_fetch_object($programmerows)) {
