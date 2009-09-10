@@ -1269,6 +1269,8 @@ $output .= $levelparm . '<br />';
           {$querywhere}
           ORDER BY department ASC";
 
+$output .= $sql . '<br />';
+
       if ($queryvalue) $programmerows = db_query($sql, $level, $session, $semester, $queryvalue);
       else             $programmerows = db_query($sql, $level, $session, $semester);
 
@@ -1277,7 +1279,7 @@ $output .= $levelparm . '<br />';
 
         while ($programmerow = db_fetch_object($programmerows)) {
           $departmentenc = rawurlencode($programmerow->department);
-          $output .= '<tr><td colspan="5"><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
+          $output .= '<tr><td colspan="5"><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->department . '</a></td></tr>';
         }
       }
     }
