@@ -1235,6 +1235,13 @@ function _grading_ahah_stats_uni() {
           GROUP BY sg.field_mat_no_uid
         ) AS eachstudent";
 
+$output .= $sql . '<br />';
+$output .= $level . '<br />';
+$output .= $session . '<br />';
+$output .= $semester . '<br />';
+$output .= $queryvalue . '<br />';
+$output .= $querywhere . '<br />';
+$output .= $levelparm . '<br />';
       if ($queryvalue) $summaryrows = db_query($sql, $level, $session, $semester, $queryvalue);
       else             $summaryrows = db_query($sql, $level, $session, $semester);
       $summaryrow = db_fetch_object($summaryrows);
