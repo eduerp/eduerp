@@ -126,11 +126,21 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
 function grading_stats_department_form(&$obj) {
 
-echo var_export($_GET, TRUE);
-//TEMP DEBUG
+  if (!empty($_GET['department'])) $departmentdefault = stripslashes($_GET['department']);
+  else $departmentdefault = 'Arts and Theology';
+
+  if (!empty($_GET['session'])) $sessiondefault = stripslashes($_GET['session']);
+  else $sessiondefault = '2008/2009';
+
+  if (!empty($_GET['semester'])) $semesterdefault = stripslashes($_GET['semester']);
+  else $semesterdefault = '1';
+
+  if (!empty($_GET['level'])) $leveldefault = stripslashes($_GET['level']);
+  else $leveldefault = '100';
+
   $form['department'] = array(
     '#type' => 'select',
-    '#default_value' => 'Arts and Theology ',
+    '#default_value' => $departmentdefault,
     '#options' => _grading_department_list(),
     '#title' => 'Department',
     '#ahah' =>array(
@@ -145,7 +155,7 @@ echo var_export($_GET, TRUE);
 
   $form['session'] = array(
     '#type' => 'select',
-    '#default_value' => '2008/2009',
+    '#default_value' => $sessiondefault,
     '#options' => _grading_session_list(),
     '#title' => 'Session',
     '#ahah' =>array(
@@ -160,7 +170,7 @@ echo var_export($_GET, TRUE);
 
   $form['semester'] = array(
     '#type' => 'select',
-    '#default_value' => '1',
+    '#default_value' => $semesterdefault,
     '#options' => _grading_semester_list(),
     '#title' => 'Semester',
     '#ahah' =>array(
@@ -175,7 +185,7 @@ echo var_export($_GET, TRUE);
 
   $form['level'] = array(
     '#type' => 'select',
-    '#default_value' => '100',
+    '#default_value' => $leveldefault,
     '#options' => _grading_level_list(),
     '#title' => 'Level',
     '#ahah' =>array(
