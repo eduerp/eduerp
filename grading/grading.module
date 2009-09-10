@@ -1168,17 +1168,17 @@ function _grading_ahah_stats_uni() {
   if ($programme !== 'All') {
     $title = 'PROGRAMME';
     $queryvalue = $programme;
-    $querywhere = "p.field_programme_name_value='%s'";
+    $querywhere = "AND p.field_programme_name_value='%s'";
   }
   elseif ($department !== 'All') {
     $title = 'DEPARTMENTAL';
     $queryvalue = $department;
-    $querywhere = "p.field_department_name_value='%s'";
+    $querywhere = "AND p.field_department_name_value='%s'";
   }
   elseif ($college !== 'All') {
     $title = 'COLLEGE';
     $queryvalue = $college;
-    $querywhere = "p.field_college_name_value='%s'";
+    $querywhere = "AND p.field_college_name_value='%s'";
   }
   else {
     $title = 'UNIVERSITY';
@@ -1230,7 +1230,7 @@ function _grading_ahah_stats_uni() {
             gpa.field_level_name_gpa_value='%s' AND
             gpa.field_sess_name_gpa_value='%s' AND
             gpa.field_semester_name_gpa_value='%s' AND
-            gpa.field_program_ref_gpa_nid=p.nid AND
+            gpa.field_program_ref_gpa_nid=p.nid
             {$querywhere}
           GROUP BY sg.field_mat_no_uid
         ) AS eachstudent";
@@ -1265,7 +1265,7 @@ $output .= $levelparm . '<br />';
           gpa.field_level_name_gpa_value='%s' AND
           gpa.field_sess_name_gpa_value='%s' AND
           gpa.field_semester_name_gpa_value='%s' AND
-          gpa.field_program_ref_gpa_nid=p.nid AND
+          gpa.field_program_ref_gpa_nid=p.nid
           {$querywhere}
           ORDER BY department ASC";
 
