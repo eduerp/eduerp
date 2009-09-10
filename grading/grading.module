@@ -234,7 +234,7 @@ function grading_stats_department_form(&$obj) {
 }
 
 
-function _grading_college_list() {
+function _grading_college_list_any() {
   $names = array();
   $sql = "SELECT DISTINCT field_college_name_value AS name FROM {content_type_program} ORDER BY name ASC";
   $rows = db_query($sql);
@@ -256,7 +256,19 @@ function _grading_department_list() {
 }
 
 
-function _grading_programme_list() {
+function _grading_department_list_any() {
+  $names = array();
+  $names['0'] = '<Any>';
+  $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
+  $rows = db_query($sql);
+  while ($row = db_fetch_object($rows)) {
+    $names[$row->name] = $row->name;
+  }
+  return $names;
+}
+
+
+function _grading_programme_list_any() {
   $names = array();
   $sql = "SELECT DISTINCT field_programme_name_value AS name FROM {content_type_program} ORDER BY name ASC";
   $rows = db_query($sql);
@@ -291,6 +303,18 @@ function _grading_semester_list() {
 
 function _grading_level_list() {
   $names = array();
+  $sql = "SELECT DISTINCT field_level_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
+  $rows = db_query($sql);
+  while ($row = db_fetch_object($rows)) {
+    $names[$row->name] = $row->name;
+  }
+  return $names;
+}
+
+
+function _grading_level_list_any() {
+  $names = array();
+  $names['0'] = '<Any>';
   $sql = "SELECT DISTINCT field_level_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
@@ -1026,7 +1050,7 @@ function grading_stats_uni_form(&$obj) {
   $form['level'] = array(
     '#type' => 'select',
     '#default_value' => '100',
-    '#options' => _grading_level_list(),
+    '#options' => _grading_level_list_any(),
     '#title' => 'Level',
     '#ahah' =>array(
       'event'   => 'change',
@@ -1039,7 +1063,7 @@ function grading_stats_uni_form(&$obj) {
 
   $form['college'] = array(
     '#type' => 'select',
-    '#options' => _grading_college_list(),
+    '#options' => _grading_college_list_any(),
     '#title' => 'College',
     '#ahah' =>array(
       'event'   => 'change',
@@ -1052,7 +1076,7 @@ function grading_stats_uni_form(&$obj) {
 
   $form['department'] = array(
     '#type' => 'select',
-    '#options' => _grading_department_list(),
+    '#options' => _grading_department_list_any(),
     '#title' => 'Department',
     '#ahah' =>array(
       'event'   => 'change',
@@ -1065,7 +1089,7 @@ function grading_stats_uni_form(&$obj) {
 
   $form['programme'] = array(
     '#type' => 'select',
-    '#options' => _grading_programme_list(),
+    '#options' => _grading_programme_list_any(),
     '#title' => 'Programme',
     '#ahah' =>array(
       'event'   => 'change',
