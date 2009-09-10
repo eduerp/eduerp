@@ -59,6 +59,20 @@ function grading_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['grading/stats'] = array(
+    'title'=>'Grading University Stats',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=> array('grading_stats_uni_form'),
+    'access arguments' => array('view grading'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['grading/ahahstatsuni'] = array(
+    'page callback' => '_grading_ahah_stats_uni',
+    'access arguments' => array('view grading'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -220,9 +234,31 @@ function grading_stats_department_form(&$obj) {
 }
 
 
+function _grading_college_list() {
+  $names = array();
+  $sql = "SELECT DISTINCT field_college_name_value AS name FROM {content_type_program} ORDER BY name ASC";
+  $rows = db_query($sql);
+  while ($row = db_fetch_object($rows)) {
+    $names[$row->name] = $row->name;
+  }
+  return $names;
+}
+
+
 function _grading_department_list() {
   $names = array();
   $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
+  $rows = db_query($sql);
+  while ($row = db_fetch_object($rows)) {
+    $names[$row->name] = $row->name;
+  }
+  return $names;
+}
+
+
+function _grading_programme_list() {
+  $names = array();
+  $sql = "SELECT DISTINCT field_programme_name_value AS name FROM {content_type_program} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->name] = $row->name;
@@ -953,5 +989,272 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   node_save($node);
 
   drupal_set_message('Approval successfull');
+}
+
+
+function grading_stats_uni_form(&$obj) {
+  $form['session'] = array(
+    '#type' => 'select',
+    '#default_value' => '2008/2009',
+    '#options' => _grading_session_list(),
+    '#title' => 'Session',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      ),
+    '#required' => true
+    );
+
+  $form['semester'] = array(
+    '#type' => 'select',
+    '#default_value' => '1',
+    '#options' => _grading_semester_list(),
+    '#title' => 'Semester',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      ),
+    '#required' => true
+    );
+
+  $form['level'] = array(
+    '#type' => 'select',
+    '#default_value' => '100',
+    '#options' => _grading_level_list(),
+    '#title' => 'Level',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      )
+    );
+
+  $form['college'] = array(
+    '#type' => 'select',
+    '#options' => _grading_college_list(),
+    '#title' => 'College',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      )
+    );
+
+  $form['department'] = array(
+    '#type' => 'select',
+    '#options' => _grading_department_list(),
+    '#title' => 'Department',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      )
+    );
+
+  $form['programme'] = array(
+    '#type' => 'select',
+    '#options' => _grading_programme_list(),
+    '#title' => 'Programme',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      )
+    );
+
+  $form['updatebutton'] = array(
+    '#type' => 'button',
+    '#value' => 'Update the Statistics',
+    '#ahah' => array(
+      'path'    => 'grading/ahahstatsuni',
+      'wrapper' => 'stats_here_uni',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      )
+    );
+
+  $form['statshereuni'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="stats_here_uni">',
+    '#value' => ' ',
+    '#suffix' => '</div>',
+    );
+
+  return $form;
+}
+
+
+function grading_stats_uni_form_submit($form, &$state) {
+  drupal_set_message('Submitted<br />');
+}
+
+
+function _grading_ahah_stats_uni() {
+  global $user;
+  global $base_url;
+
+  $session = stripslashes($_POST['session']);
+  $sessionenc = rawurlencode($session);
+
+  $semester = stripslashes($_POST['semester']);
+
+  if (!empty($_POST['level'])) {
+    $levelparm = stripslashes($_POST['level']);
+  }
+  else {
+    $levelparm = 'All';
+  }
+
+  if (!empty($_POST['college'])) {
+    $college = stripslashes($_POST['college']);
+  }
+  else {
+    $college = 'All';
+  }
+
+  if (!empty($_POST['department'])) {
+    $department = stripslashes($_POST['department']);
+  }
+  else {
+    $department = 'All';
+  }
+
+  if (!empty($_POST['programme'])) {
+    $programme = stripslashes($_POST['programme']);
+  }
+  else {
+    $programme = 'All';
+  }
+
+  if ($programme !== 'All') {
+    $title = 'PROGRAMME';
+    $queryvalue = $programme;
+    $querywhere = "p.field_programme_name_value='%s'";
+  }
+  elseif ($department !== 'All') {
+    $title = 'DEPARTMENTAL';
+    $queryvalue = $department;
+    $querywhere = "p.field_department_name_value='%s'";
+  }
+  elseif ($college !== 'All') {
+    $title = 'COLLEGE';
+    $queryvalue = $college;
+    $querywhere = "p.field_college_name_value='%s'";
+  }
+  else {
+    $title = 'UNIVERSITY';
+    $queryvalue = FALSE;
+    $querywhere = '';
+  }
+
+  $output = '<table class="body-table"><tbody>';
+  $output .= '<tr><th valign="top" class="table-label" colspan="5">' . $title . ' SUMMARY RESULTS</th></tr>';
+
+  $output .= '<tr>';
+  $output .= '<td valign="top" class="table-label">LEVEL</td>';
+  $output .= '<td valign="top" class="table-label">Total No. of Registered Students</td>';
+  $output .= '<td valign="top" class="table-label">No. of Students that Completed Exams</td>';
+  $output .= '<td valign="top" class="table-label">No. of Students that Partially Completed Exams</td>';
+  $output .= '<td valign="top" class="table-label">No. of Absent Students</td>';
+  $output .= '</tr>';
+
+  $levels = _grading_level_list();
+
+  foreach ($levels as $level) {
+    if (($levelparm === All) || ($levelparm == $level)) {
+
+      // Display statistics on exams completed
+      $sql = "SELECT
+        COUNT(*) AS number_students,
+        SUM(fully) AS sumfully,
+        SUM(part) AS sumpart,
+        SUM(none) AS sumnone,
+        MIN(ca1l) AS ca1locked,
+        MIN(ca2l) AS ca2locked,
+        MIN(ca3l) AS ca3locked,
+        MIN(ca4l) AS ca4locked,
+        MIN(examl) AS examlocked
+      FROM
+        (
+          SELECT
+            BIT_AND(sg.field_exam_score_value > 0) AS fully,
+            BIT_OR(sg.field_exam_score_value > 0) AS part,
+            BIT_AND(sg.field_exam_score_value = 0) AS none,
+            MIN(sg.field_ca1locked_value) AS ca1l,
+            MIN(sg.field_ca2locked_value) AS ca2l,
+            MIN(sg.field_ca3locked_value) AS ca3l,
+            MIN(sg.field_ca4locked_value) AS ca4l,
+            MIN(sg.field_examscorelocked_value) AS examl
+          FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+          WHERE
+            sg.field_student_gpa_nid=gpa.nid AND
+            gpa.field_level_name_gpa_value='%s' AND
+            gpa.field_sess_name_gpa_value='%s' AND
+            gpa.field_semester_name_gpa_value='%s' AND
+            gpa.field_program_ref_gpa_nid=p.nid AND
+            {$querywhere}
+          GROUP BY sg.field_mat_no_uid
+        ) AS eachstudent";
+
+      if ($queryvalue) $summaryrows = db_query($sql, $level, $session, $semester, $queryvalue);
+      else             $summaryrows = db_query($sql, $level, $session, $semester);
+      $summaryrow = db_fetch_object($summaryrows);
+
+      $output .= '<tr>';
+      $output .= '<td valign="top" class="table-label">' . $level . '</td>';
+      $output .= '<td valign="top">' . $summaryrow->number_students . '</td>';
+      $output .= '<td valign="top">' . $summaryrow->sumfully . '</td>';
+      $output .= '<td valign="top">' . ($summaryrow->sumpart - $summaryrow->sumfully) . '</td>';
+      $output .= '<td valign="top">' . $summaryrow->sumnone . '</td>';
+      $output .= '</tr>';
+    }
+  }
+
+  foreach ($levels as $level) {
+    if (($levelparm === All) || ($levelparm == $level)) {
+
+      $sql = "SELECT DISTINCT p.field_department_name_value AS department
+        FROM {content_type_student_gpa} gpa, {content_type_program} p
+        WHERE
+          gpa.field_level_name_gpa_value='%s' AND
+          gpa.field_sess_name_gpa_value='%s' AND
+          gpa.field_semester_name_gpa_value='%s' AND
+          gpa.field_program_ref_gpa_nid=p.nid AND
+          {$querywhere}
+          ORDER BY department ASC";
+
+      if ($queryvalue) $programmerows = db_query($sql, $level, $session, $semester, $queryvalue);
+      else             $programmerows = db_query($sql, $level, $session, $semester);
+
+      if (!empty($programmerows)) {
+        $output .= '<tr><td colspan="5">View Department Details (for Level: ' . $level . ')...</td></tr>';
+
+        while ($programmerow = db_fetch_object($programmerows)) {
+          $departmentenc = rawurlencode($programmerow->department);
+          $output .= '<tr><td colspan="5"><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
+        }
+      }
+    }
+  }
+
+  $output .= '</tbody></table>';
+
+  print drupal_to_js(array('data' => $output, 'status' => true));
+
+  exit();
 }
 ?>
