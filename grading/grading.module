@@ -1234,14 +1234,6 @@ function _grading_ahah_stats_uni() {
             {$querywhere}
           GROUP BY sg.field_mat_no_uid
         ) AS eachstudent";
-
-$output .= $sql . '<br />';
-$output .= $level . '<br />';
-$output .= $session . '<br />';
-$output .= $semester . '<br />';
-$output .= $queryvalue . '<br />';
-$output .= $querywhere . '<br />';
-$output .= $levelparm . '<br />';
       if ($queryvalue) $summaryrows = db_query($sql, $level, $session, $semester, $queryvalue);
       else             $summaryrows = db_query($sql, $level, $session, $semester);
       $summaryrow = db_fetch_object($summaryrows);
@@ -1268,9 +1260,6 @@ $output .= $levelparm . '<br />';
           gpa.field_program_ref_gpa_nid=p.nid
           {$querywhere}
           ORDER BY department ASC";
-
-$output .= $sql . '<br />';
-
       if ($queryvalue) $programmerows = db_query($sql, $level, $session, $semester, $queryvalue);
       else             $programmerows = db_query($sql, $level, $session, $semester);
 
