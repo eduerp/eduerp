@@ -952,7 +952,12 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   $gradestext     = $form_state['values']['gradestext'];
 
   $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
-    SET sg.`{$fieldtoapprove}`='5'
+    SET
+      sg.`{$fieldtoapprove}`='5',
+      sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`,
+      sg.`field_totalscoreforstudent_value`=sg.`field_total_score_value`,
+      sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
+      sg.`field_gradeforstudent_value`=sg.`field_grade_value`
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
       gpa.field_level_name_gpa_value='%s' AND
@@ -960,13 +965,13 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
       p.field_department_name_value='%s'";
-
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
-    SET sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`
+  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_program} p
+    SET
+      gpa.`field_gpaforstudent_value`=gpa.`field_gpa_value`,
+      gpa.`field_cgpaforstudent_value`=gpa.`field_cgpa_value`
     WHERE
-      sg.field_student_gpa_nid=gpa.nid AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -1017,6 +1022,24 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   $node->field_what_approved[0]['value'] = $gradestext;
   $node->field_action[0]['value']        = 'Approved by VC';
   node_save($node);
+
+  // Queue e-mails for Students
+  $sql = "SELECT field_student_ref_gpa_uid FROM {content_type_student_gpa} gpa, {content_type_program} p
+    WHERE
+      gpa.field_level_name_gpa_value=\'%s\' AND
+      gpa.field_sess_name_gpa_value=\'%s\' AND
+      gpa.field_semester_name_gpa_value=\'%s\' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value=\'%s\'";
+  $studentresult = db_query($sql, $level, $session, $semester, $department);
+  if (!empty($studentresult)) {
+    while ($student = db_fetch_object($studentresult)) {
+      $student_uid = $student->field_student_ref_gpa_uid;
+
+      db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, \'%s\', \'%s\', %d)",
+       $user->uid, $student_uid, $gradestext, $department, 3);
+    }
+  }
 
   drupal_set_message('Approval successfull');
 }
