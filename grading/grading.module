@@ -101,25 +101,27 @@ function grading_field_access($op, $field, $account, $node = NULL) {
     case 'view':
       if (user_access('view grading', $account)) return TRUE; // ALL content types are treated as grading, if more are added these can be differentiated later
 
-       // Allow these regardless
-       $ci_fields = array('field_course_code', 'field_course_title', 'field_credit_load', 'field_sess_name', 'field_semester_name');
-       if (in_array($field['field_name'], $ci_fields)) return TRUE;
+      if (empty($node)) return TRUE; // I belive this is for the headings
 
-       $sg_fields = array('field_ca1forstudent', 'field_ca2forstudent', 'field_ca3forstudent', 'field_ca4forstudent', 'field_examscoreforstudent', 'field_totalscoreforstudent', 'field_gradepointforstudent', 'field_gradeforstudent');
-       if (in_array($field['field_name'], $sg_fields)) {
-         if (empty($sg_nids)) { // Not cached...
-           // Find content that is for this user (assuming they are a student)
-           $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_mat_no_uid=%d";
-           $nids = db_query($sql, $account->uid);
-           while ($nid = db_fetch_object($nids)) {
-             $sg_nids[] = $nid->nid;
-           }
-         }
-         if (!empty($node->nid) && in_array($node->nid, $sg_nids)) return TRUE;
-       }
+      // Allow these regardless
+      $ci_fields = array('field_course_code', 'field_course_title', 'field_credit_load', 'field_sess_name', 'field_semester_name');
+      if (in_array($field['field_name'], $ci_fields)) return TRUE;
 
-       $gpa_fields = array('field_gpaforstudent', 'field_cgpaforstudent');
-       if (in_array($field['field_name'], $gpa_fields)) {
+      $sg_fields = array('field_ca1forstudent', 'field_ca2forstudent', 'field_ca3forstudent', 'field_ca4forstudent', 'field_examscoreforstudent', 'field_totalscoreforstudent', 'field_gradepointforstudent', 'field_gradeforstudent');
+      if (in_array($field['field_name'], $sg_fields)) {
+        if (empty($sg_nids)) { // Not cached...
+          // Find content that is for this user (assuming they are a student)
+          $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_mat_no_uid=%d";
+          $nids = db_query($sql, $account->uid);
+          while ($nid = db_fetch_object($nids)) {
+            $sg_nids[] = $nid->nid;
+          }
+        }
+        if (!empty($node->nid) && in_array($node->nid, $sg_nids)) return TRUE;
+      }
+
+      $gpa_fields = array('field_gpaforstudent', 'field_cgpaforstudent');
+      if (in_array($field['field_name'], $gpa_fields)) {
         if (empty($gpa_nids)) {
           $sql = "SELECT nid FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid=%d";
           $nids = db_query($sql, $account->uid);
