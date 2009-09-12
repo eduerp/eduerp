@@ -85,6 +85,8 @@ function grading_menu() {
 function grading_field_access($op, $field, $account, $node = NULL) {
   global $user;
   static $locked = array(); // Cache
+  static $sg_nids = array();
+  static $gpa_nids = array();
 
   if (is_null($account)) {
     $account = $user;
@@ -97,8 +99,38 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
   switch ($op) {
     case 'view':
-return TRUE;
-      return user_access('view grading', $account); // ALL content types are treated as grading, if more are added these can be differentiated later
+      if (user_access('view grading', $account)) return TRUE; // ALL content types are treated as grading, if more are added these can be differentiated later
+
+       // Allow these regardless
+       $ci_fields = array('field_course_code', 'field_course_title', 'field_credit_load', 'field_sess_name', 'field_semester_name');
+       if (in_array($field['field_name'], $ci_fields)) return TRUE;
+
+       $sg_fields = array('field_ca1forstudent', 'field_ca2forstudent', 'field_ca3forstudent', 'field_ca4forstudent', 'field_examscoreforstudent', 'field_totalscoreforstudent', 'field_gradepointforstudent', 'field_gradeforstudent');
+       if (in_array($field['field_name'], $sg_fields)) {
+         if (empty($sg_nids)) { // Not cached...
+           // Find content that is for this user (assuming they are a student)
+           $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_mat_no_uid=%d";
+           $nids = db_query($sql, $account->uid);
+           while ($nid = db_fetch_object($nids)) {
+             $sg_nids[] = $nid->nid;
+           }
+         }
+         if (!empty($node->nid) && in_array($node->nid, $sg_nids)) return TRUE;
+       }
+
+       $gpa_fields = array('field_gpaforstudent', 'field_cgpaforstudent');
+       if (in_array($field['field_name'], $gpa_fields)) {
+        if (empty($gpa_nids)) {
+          $sql = "SELECT nid FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid=%d";
+          $nids = db_query($sql, $account->uid);
+          while ($nid = db_fetch_object($nids)) {
+            $gpa_nids[] = $nid->nid;
+          }
+        }
+        if (!empty($node->nid) && in_array($node->nid, $gpa_nids)) return TRUE;
+      }
+
+      return FALSE;
       // return user_access($op .' '. $field['field_name'], $account);
       // return TRUE; // Normal access control determines whether all the content can be viewed or not
 
