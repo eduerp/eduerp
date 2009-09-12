@@ -611,13 +611,13 @@ function _grading_ahah_stats() {
   $output .= '</tbody></table>';
 
   if (empty($registrar_uid)) {
-    $output .= \'THERE IS NO REGISTRAR, ONE MUST BE ASSIGNED\';
+    $output .= 'THERE IS NO REGISTRAR, ONE MUST BE ASSIGNED';
   }
   elseif ($showdeanform) {
     $output .= drupal_get_form('approve_grades_dean_form');
   }
   elseif (empty($vc_uid)) {
-    $output .= \'THERE IS NO VICE CHANCELLOR, ONE MUST BE ASSIGNED\';
+    $output .= 'THERE IS NO VICE CHANCELLOR, ONE MUST BE ASSIGNED';
   }
   elseif ($showregistrarform) {
     $output .= drupal_get_form('approve_grades_registrar_form');
@@ -1067,17 +1067,17 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   // Queue e-mails for Students
   $sql = "SELECT field_student_ref_gpa_uid FROM {content_type_student_gpa} gpa, {content_type_program} p
     WHERE
-      gpa.field_level_name_gpa_value=\'%s\' AND
-      gpa.field_sess_name_gpa_value=\'%s\' AND
-      gpa.field_semester_name_gpa_value=\'%s\' AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value=\'%s\'";
+      p.field_department_name_value='%s'";
   $studentresult = db_query($sql, $level, $session, $semester, $department);
   if (!empty($studentresult)) {
     while ($student = db_fetch_object($studentresult)) {
       $student_uid = $student->field_student_ref_gpa_uid;
 
-      db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, \'%s\', \'%s\', %d)",
+      db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, '%s', '%s', %d)",
        $user->uid, $student_uid, $gradestext, $department, 3);
     }
   }
