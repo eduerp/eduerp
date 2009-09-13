@@ -656,7 +656,7 @@ function _grading_ahah_stats() {
 // Put up form to allow Dean to approve grades (relevant locked fields will then become 3 (or 5 if this is a CA) (1 is lecturer approval, 2 is HOD approval)).
 
 function approve_grades_dean_form($form_state) {
-  $form['departmentname'] = array('#value' => '<b>' . $_SESSION['eduerpdeanapprovalform']->department . '</b>');
+  $form['departmentname'] = array('#value' => '<b>Department: ' . $_SESSION['eduerpdeanapprovalform']->department . '</b>');
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -820,7 +820,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 // Put up form to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
 
 function approve_grades_registrar_form($form_state) {
-  $form['departmentname'] = array('#value' => '<b>' . $_SESSION['eduerpregistrarapprovalform']->department . '</b>');
+  $form['departmentname'] = array('#value' => '<b>Department: ' . $_SESSION['eduerpregistrarapprovalform']->department . '</b>');
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -978,7 +978,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
 // Also set the student visible exam score to the values set by the lecturer
 
 function approve_grades_vc_form($form_state) {
-  $form['departmentname'] = array('#value' => '<b>' . $_SESSION['eduerpvcapprovalform']->department . '</b>');
+  $form['departmentname'] = array('#value' => '<b>Department: ' . $_SESSION['eduerpvcapprovalform']->department . '</b>');
 
   $form['comment'] = array(
     '#type' => 'textarea',
