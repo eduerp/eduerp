@@ -73,6 +73,13 @@ function grading_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['grading/eduerpdeanapprovalform'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('approve_grades_dean_form'),
+    'access arguments' => array('view grading'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -514,9 +521,6 @@ function _grading_ahah_stats() {
   $exams[4] = array('lock' => $summaryrow->ca4locked,  'gradestext' => 'Continuous Assessment 4', 'fieldtoapprove' => 'field_ca4locked_value',       'srcfield' => 'field_ca4_value', 'destfield' => 'field_ca4forstudent_value');
   $exams[5] = array('lock' => $summaryrow->examlocked, 'gradestext' => 'Semester Exam',           'fieldtoapprove' => 'field_examscorelocked_value', 'srcfield' => 'NONE', 'destfield' => 'NONE');
 
-  global $eduerpdeanapprovalform;
-  global $eduerpregistrarapprovalform;
-  global $eduerpvcapprovalform;
   $showdeanform = false;
   $showregistrarform = false;
   $showvcform = false;
@@ -543,17 +547,17 @@ function _grading_ahah_stats() {
             $registrar_uid = $registrar_uid . ',' . $vc_uid;
           }
         }
-        $eduerpdeanapprovalform->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
-        $eduerpdeanapprovalform->dean_uid = $dean_uid;
-        $eduerpdeanapprovalform->registrar_uid = $registrar_uid;
-        $eduerpdeanapprovalform->department = $department;
-        $eduerpdeanapprovalform->level = $level;
-        $eduerpdeanapprovalform->session = $session;
-        $eduerpdeanapprovalform->semester = $semester;
-        $eduerpdeanapprovalform->gradestext = $exam['gradestext'];
-        $eduerpdeanapprovalform->fieldtoapprove = $exam['fieldtoapprove'];
-        $eduerpdeanapprovalform->srcfield = $exam['srcfield'];
-        $eduerpdeanapprovalform->destfield = $exam['destfield'];
+        $_SESSION['eduerpdeanapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
+        $_SESSION['eduerpdeanapprovalform']->dean_uid = $dean_uid;
+        $_SESSION['eduerpdeanapprovalform']->registrar_uid = $registrar_uid;
+        $_SESSION['eduerpdeanapprovalform']->department = $department;
+        $_SESSION['eduerpdeanapprovalform']->level = $level;
+        $_SESSION['eduerpdeanapprovalform']->session = $session;
+        $_SESSION['eduerpdeanapprovalform']->semester = $semester;
+        $_SESSION['eduerpdeanapprovalform']->gradestext = $exam['gradestext'];
+        $_SESSION['eduerpdeanapprovalform']->fieldtoapprove = $exam['fieldtoapprove'];
+        $_SESSION['eduerpdeanapprovalform']->srcfield = $exam['srcfield'];
+        $_SESSION['eduerpdeanapprovalform']->destfield = $exam['destfield'];
       }
       else {
         $output .= '<tr><td colspan="2">Waiting on Dean to Approve ' . $exam['gradestext'] . '</td></tr>';
@@ -565,17 +569,17 @@ function _grading_ahah_stats() {
       if (in_array($user->uid, $registrar_uid_array)) {
         $showregistrarform = true;
 
-        $eduerpregistrarapprovalform->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
-        $eduerpregistrarapprovalform->registrar_uid = $registrar_uid;
-        $eduerpregistrarapprovalform->vc_uid = $vc_uid;
-        $eduerpregistrarapprovalform->department = $department;
-        $eduerpregistrarapprovalform->level = $level;
-        $eduerpregistrarapprovalform->session = $session;
-        $eduerpregistrarapprovalform->semester = $semester;
-        $eduerpregistrarapprovalform->gradestext = $exam['gradestext'];
-        $eduerpregistrarapprovalform->fieldtoapprove = $exam['fieldtoapprove'];
-        $eduerpregistrarapprovalform->srcfield = $exam['srcfield'];
-        $eduerpregistrarapprovalform->destfield = $exam['destfield'];
+        $_SESSION['eduerpregistrarapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
+        $_SESSION['eduerpregistrarapprovalform']->registrar_uid = $registrar_uid;
+        $_SESSION['eduerpregistrarapprovalform']->vc_uid = $vc_uid;
+        $_SESSION['eduerpregistrarapprovalform']->department = $department;
+        $_SESSION['eduerpregistrarapprovalform']->level = $level;
+        $_SESSION['eduerpregistrarapprovalform']->session = $session;
+        $_SESSION['eduerpregistrarapprovalform']->semester = $semester;
+        $_SESSION['eduerpregistrarapprovalform']->gradestext = $exam['gradestext'];
+        $_SESSION['eduerpregistrarapprovalform']->fieldtoapprove = $exam['fieldtoapprove'];
+        $_SESSION['eduerpregistrarapprovalform']->srcfield = $exam['srcfield'];
+        $_SESSION['eduerpregistrarapprovalform']->destfield = $exam['destfield'];
       }
       else {
         $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Submitted to Registrar</td></tr>';
@@ -587,16 +591,16 @@ function _grading_ahah_stats() {
       if (in_array($user->uid, $vc_uid_array)) {
         $showvcform = true;
 
-        $eduerpvcapprovalform->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
-        $eduerpvcapprovalform->vc_uid = $vc_uid;
-        $eduerpvcapprovalform->department = $department;
-        $eduerpvcapprovalform->level = $level;
-        $eduerpvcapprovalform->session = $session;
-        $eduerpvcapprovalform->semester = $semester;
-        $eduerpvcapprovalform->gradestext = $exam['gradestext'];
-        $eduerpvcapprovalform->fieldtoapprove = $exam['fieldtoapprove'];
-        $eduerpvcapprovalform->srcfield = $exam['srcfield'];
-        $eduerpvcapprovalform->destfield = $exam['destfield'];
+        $_SESSION['eduerpvcapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
+        $_SESSION['eduerpvcapprovalform']->vc_uid = $vc_uid;
+        $_SESSION['eduerpvcapprovalform']->department = $department;
+        $_SESSION['eduerpvcapprovalform']->level = $level;
+        $_SESSION['eduerpvcapprovalform']->session = $session;
+        $_SESSION['eduerpvcapprovalform']->semester = $semester;
+        $_SESSION['eduerpvcapprovalform']->gradestext = $exam['gradestext'];
+        $_SESSION['eduerpvcapprovalform']->fieldtoapprove = $exam['fieldtoapprove'];
+        $_SESSION['eduerpvcapprovalform']->srcfield = $exam['srcfield'];
+        $_SESSION['eduerpvcapprovalform']->destfield = $exam['destfield'];
       }
       else {
         $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Submitted to Vice Chancellor</td></tr>';
@@ -614,7 +618,8 @@ function _grading_ahah_stats() {
     $output .= 'THERE IS NO REGISTRAR, ONE MUST BE ASSIGNED';
   }
   elseif ($showdeanform) {
-    $output .= drupal_get_form('approve_grades_dean_form');
+    // $output .= drupal_get_form('approve_grades_dean_form');
+    $output .= '<a href="' . $base_url . 'grading/eduerpdeanapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpdeanapprovalform']->gradestext . '</a>';
   }
   elseif (empty($vc_uid)) {
     $output .= 'THERE IS NO VICE CHANCELLOR, ONE MUST BE ASSIGNED';
@@ -635,7 +640,6 @@ function _grading_ahah_stats() {
 // Put up form to allow Dean to approve grades (relevant locked fields will then become 3 (or 5 if this is a CA) (1 is lecturer approval, 2 is HOD approval)).
 
 function approve_grades_dean_form($form_state) {
-  global $eduerpdeanapprovalform;
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -645,21 +649,19 @@ function approve_grades_dean_form($form_state) {
     '#required' => TRUE
   );
 
-  $form['department_url'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->department_url);
-  $form['dean_uid'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->dean_uid);
-  $form['registrar_uid'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->registrar_uid);
-  $form['department'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->department);
-  $form['level'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->level);
-  $form['session'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->session);
-  $form['semester'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->semester);
-  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->fieldtoapprove);
-  $form['srcfield'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->srcfield);
-  $form['destfield'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->destfield);
-  $form['gradestext'] = array('#type' => 'value', '#value' => $eduerpdeanapprovalform->gradestext);
+  $form['department_url'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->department_url);
+  $form['dean_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->dean_uid);
+  $form['registrar_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->registrar_uid);
+  $form['department'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->department);
+  $form['level'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->level);
+  $form['session'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->session);
+  $form['semester'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->semester);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->fieldtoapprove);
+  $form['srcfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->srcfield);
+  $form['destfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->destfield);
+  $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->gradestext);
 
-  $form['somescript'] = array('#value' => 'DDDDDDDD<b>DDD</b>DDD&lt;b&gt;XXXXXXXXXX&lt;/b&gt;DDDDDDD');
-
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpdeanapprovalform->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpdeanapprovalform']->gradestext . '.');
 
   return $form;
 }
@@ -790,13 +792,16 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   }
 
   drupal_set_message('Approval successfull');
+
+  $departmentenc = rawurlencode($department);
+  $sessionenc = rawurlencode($session);
+  drupal_goto("grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}");
 }
 
 
 // Put up form to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
 
 function approve_grades_registrar_form($form_state) {
-  global $eduerpregistrarapprovalform;
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -806,19 +811,19 @@ function approve_grades_registrar_form($form_state) {
     '#required' => TRUE
   );
 
-  $form['department_url'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->department_url);
-  $form['registrar_uid'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->registrar_uid);
-  $form['vc_uid'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->vc_uid);
-  $form['department'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->department);
-  $form['level'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->level);
-  $form['session'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->session);
-  $form['semester'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->semester);
-  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->fieldtoapprove);
-  $form['srcfield'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->srcfield);
-  $form['destfield'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->destfield);
-  $form['gradestext'] = array('#type' => 'value', '#value' => $eduerpregistrarapprovalform->gradestext);
+  $form['department_url'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->department_url);
+  $form['registrar_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->registrar_uid);
+  $form['vc_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->vc_uid);
+  $form['department'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->department);
+  $form['level'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->level);
+  $form['session'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->session);
+  $form['semester'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->semester);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->fieldtoapprove);
+  $form['srcfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->srcfield);
+  $form['destfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->destfield);
+  $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->gradestext);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpregistrarapprovalform->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . '.');
 
   return $form;
 }
@@ -949,7 +954,6 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
 // Also set the student visible exam score to the values set by the lecturer
 
 function approve_grades_vc_form($form_state) {
-  global $eduerpvcapprovalform;
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -959,16 +963,16 @@ function approve_grades_vc_form($form_state) {
     '#required' => TRUE
   );
 
-  $form['department_url'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->department_url);
-  $form['vc_uid'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->vc_uid);
-  $form['department'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->department);
-  $form['level'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->level);
-  $form['session'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->session);
-  $form['semester'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->semester);
-  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->fieldtoapprove);
-  $form['gradestext'] = array('#type' => 'value', '#value' => $eduerpvcapprovalform->gradestext);
+  $form['department_url'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->department_url);
+  $form['vc_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->vc_uid);
+  $form['department'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->department);
+  $form['level'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->level);
+  $form['session'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->session);
+  $form['semester'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->semester);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->fieldtoapprove);
+  $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->gradestext);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpvcapprovalform->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpvcapprovalform']->gradestext . '.');
 
   return $form;
 }
