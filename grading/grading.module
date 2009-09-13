@@ -705,7 +705,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "SELECT p.field_college_name AS college
+  $sql = "SELECT p.field_college_name_value AS college
     FROM {content_type_program} p
     WHERE p.field_department_name_value='%s'
     LIMIT 1";
@@ -857,7 +857,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
 
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "SELECT p.field_college_name AS college
+  $sql = "SELECT p.field_college_name_value AS college
     FROM {content_type_program} p
     WHERE p.field_department_name_value='%s'
     LIMIT 1";
@@ -1020,7 +1020,7 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       p.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "SELECT p.field_college_name AS college
+  $sql = "SELECT p.field_college_name_value AS college
     FROM {content_type_program} p
     WHERE p.field_department_name_value='%s'
     LIMIT 1";
