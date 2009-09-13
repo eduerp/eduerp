@@ -633,16 +633,18 @@ function _grading_ahah_stats() {
   }
   elseif ($showdeanform) {
     // $output .= drupal_get_form('approve_grades_dean_form');
-    $output .= '<a href="' . $base_url . '/grading/eduerpdeanapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpdeanapprovalform']->gradestext . '</a>';
+    $output .= '<a href="' . $base_url . '/grading/eduerpdeanapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpdeanapprovalform']->gradestext . " for level $level</a>";
   }
   elseif (empty($vc_uid)) {
     $output .= 'THERE IS NO VICE CHANCELLOR, ONE MUST BE ASSIGNED';
   }
   elseif ($showregistrarform) {
-    $output .= drupal_get_form('approve_grades_registrar_form');
+    // $output .= drupal_get_form('approve_grades_registrar_form');
+    $output .= '<a href="' . $base_url . '/grading/eduerpregistrarapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . " for level $level</a>";
   }
   elseif ($showvcform) {
-    $output .= drupal_get_form('approve_grades_vc_form');
+    // $output .= drupal_get_form('approve_grades_vc_form');
+    $output .= '<a href="' . $base_url . '/grading/eduerpvcapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpvcapprovalform']->gradestext . " for level $level</a>";
   }
 
   print drupal_to_js(array('data' => $output, 'status' => true));
@@ -675,7 +677,7 @@ function approve_grades_dean_form($form_state) {
   $form['destfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->destfield);
   $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->gradestext);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpdeanapprovalform']->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpdeanapprovalform']->gradestext . " for level $_SESSION['eduerpdeanapprovalform']->level");
 
   return $form;
 }
@@ -838,7 +840,7 @@ function approve_grades_registrar_form($form_state) {
   $form['destfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->destfield);
   $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->gradestext);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . " for level $_SESSION['eduerpregistrarapprovalform']->level");
 
   return $form;
 }
@@ -962,6 +964,11 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
   }
 
   drupal_set_message('Approval successfull');
+  $_SESSION['eduerpregistrarapprovalform'] = NULL; // Just in case they somehow come back to the form
+
+  $departmentenc = rawurlencode($department);
+  $sessionenc = rawurlencode($session);
+  drupal_goto('grading/stats', "department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}");
 }
 
 
@@ -987,7 +994,7 @@ function approve_grades_vc_form($form_state) {
   $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->fieldtoapprove);
   $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpvcapprovalform']->gradestext);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpvcapprovalform']->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpvcapprovalform']->gradestext . " for level $_SESSION['eduerpvcapprovalform']->level");
 
   return $form;
 }
@@ -1104,6 +1111,11 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   }
 
   drupal_set_message('Approval successfull');
+  $_SESSION['eduerpvcapprovalform'] = NULL; // Just in case they somehow come back to the form
+
+  $departmentenc = rawurlencode($department);
+  $sessionenc = rawurlencode($session);
+  drupal_goto('grading/stats', "department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}");
 }
 
 
