@@ -633,18 +633,18 @@ function _grading_ahah_stats() {
   }
   elseif ($showdeanform) {
     // $output .= drupal_get_form('approve_grades_dean_form');
-    $output .= '<a href="' . $base_url . '/grading/eduerpdeanapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpdeanapprovalform']->gradestext . " for level $level</a>";
+    $output .= '<a href="' . $base_url . '/grading/eduerpdeanapprovalform">Click here to go to a Form for Approval of ' . $_SESSION['eduerpdeanapprovalform']->gradestext . " for level $level</a>";
   }
   elseif (empty($vc_uid)) {
     $output .= 'THERE IS NO VICE CHANCELLOR, ONE MUST BE ASSIGNED';
   }
   elseif ($showregistrarform) {
     // $output .= drupal_get_form('approve_grades_registrar_form');
-    $output .= '<a href="' . $base_url . '/grading/eduerpregistrarapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . " for level $level</a>";
+    $output .= '<a href="' . $base_url . '/grading/eduerpregistrarapprovalform">Click here to go to a Form for Approval of ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . " for level $level</a>";
   }
   elseif ($showvcform) {
     // $output .= drupal_get_form('approve_grades_vc_form');
-    $output .= '<a href="' . $base_url . '/grading/eduerpvcapprovalform">Click here to go to form for approval of ' . $_SESSION['eduerpvcapprovalform']->gradestext . " for level $level</a>";
+    $output .= '<a href="' . $base_url . '/grading/eduerpvcapprovalform">Click here to go to a Form for Approval of ' . $_SESSION['eduerpvcapprovalform']->gradestext . " for level $level</a>";
   }
 
   print drupal_to_js(array('data' => $output, 'status' => true));
@@ -656,6 +656,7 @@ function _grading_ahah_stats() {
 // Put up form to allow Dean to approve grades (relevant locked fields will then become 3 (or 5 if this is a CA) (1 is lecturer approval, 2 is HOD approval)).
 
 function approve_grades_dean_form($form_state) {
+  $form['departmentname'] = array('#value' => '<b>' . $_SESSION['eduerpdeanapprovalform']->department . '</b>');
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -819,6 +820,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 // Put up form to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
 
 function approve_grades_registrar_form($form_state) {
+  $form['departmentname'] = array('#value' => '<b>' . $_SESSION['eduerpregistrarapprovalform']->department . '</b>');
 
   $form['comment'] = array(
     '#type' => 'textarea',
@@ -976,6 +978,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
 // Also set the student visible exam score to the values set by the lecturer
 
 function approve_grades_vc_form($form_state) {
+  $form['departmentname'] = array('#value' => '<b>' . $_SESSION['eduerpvcapprovalform']->department . '</b>');
 
   $form['comment'] = array(
     '#type' => 'textarea',
