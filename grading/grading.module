@@ -270,7 +270,7 @@ function grading_stats_department_form(&$obj) {
 
   $form['updatebutton'] = array(
     '#type' => 'button',
-    '#value' => 'Update the Statistics',
+    '#value' => 'Show Grade Statistics and Approval Status for above selection',
     '#ahah' => array(
       'path'    => 'grading/ahahstats',
       'wrapper' => 'stats_here',
@@ -1204,7 +1204,7 @@ function grading_stats_uni_form(&$obj) {
 
   $form['updatebutton'] = array(
     '#type' => 'button',
-    '#value' => 'Update the Statistics',
+    '#value' => 'Show Grade Statistics for above selection',
     '#ahah' => array(
       'path'    => 'grading/ahahstatsuni',
       'wrapper' => 'stats_here_uni',
@@ -1366,7 +1366,7 @@ function _grading_ahah_stats_uni() {
 
       if (!empty($programmerows)) {
         $output .= '<tr><td colspan="5"><br /></td></tr>';
-        $output .= '<tr><td colspan="5">View Department Details (for Level: ' . $level . ')...</td></tr>';
+        $output .= '<tr><td colspan="5">View Department Details (for level ' . $level . ')...</td></tr>';
 
         while ($programmerow = db_fetch_object($programmerows)) {
           $departmentenc = rawurlencode($programmerow->department);
