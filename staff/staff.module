@@ -1296,7 +1296,7 @@ function staff_begin_clearance_form(&$obj) {
   if (arg(2)) {
     //echo "<br>2 ".arg(2);
     $_SESSION['staff']['mat']=arg(2);
-    $_SESSION['staff']['mat'];
+    //$_SESSION['staff']['mat'];
     $obj['storage']['step']=2;
     return staff_begin_clearance_form2($obj);
   }
@@ -1711,6 +1711,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $res = db_query($qry, $jambno);
         if ($res && ($result = db_fetch_object($res))) {
           $_SESSION['staff']['mat']=$result->matriculation_no;
+          $_SESSION['staff']['jamb']=$jambno;
         }
         else {
           form_set_error('jambno', "Jamb number not valid.");
@@ -1852,6 +1853,7 @@ function staff_begin_clearance_form2(&$obj) {
           'exam_number' => $f->exam_number,
           'exam_body' => $f->exam_body,
         );
+        $data_key = array();
         $data[$f->ext_exam_rec_id]['subjects'] = $prev_subjects ;
         $data[$f->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
         if (!in_array($f->ext_exam_rec_id, $data_key)) {
