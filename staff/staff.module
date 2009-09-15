@@ -1829,8 +1829,14 @@ function staff_begin_clearance_form2(&$obj) {
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('staff/sign_in');
   }*/
-  $qry = "select * from {admitted_student} where (matriculation_no='%s' or jambno='%s') AND (verify_status=0 OR clearance_status=0)";
-  $res = db_query($qry, $_SESSION['staff']['mat'], $_SESSION['staff']['jamb']);
+  if (isset($_SESSION['staff']['jamb'])) {
+    $qry = "select * from {admitted_student} where (jambno='%s') AND (verify_status=0 OR clearance_status=0)";
+    $res = db_query($qry, $_SESSION['staff']['jamb']);
+  }
+  else {
+    $qry = "select * from {admitted_student} where (matriculation_no='%s') AND (verify_status=0 OR clearance_status=0)";
+    $res = db_query($qry, $_SESSION['staff']['mat']);
+  }
   if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['stud_info']=$result->student_id;
     $qry1 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
