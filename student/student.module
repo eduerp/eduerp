@@ -182,10 +182,10 @@ function register_student_login_form_submit(&$obj) {
 }
 
 function student_course_form(&$obj) {
-
+/*
   if (!isset($_SESSION['student']['data']->student_id)) {
     drupal_goto('user');
-  }
+  }*/
   if (!$obj['storage']['step'])
     $obj['storage']['step'] = 1;
   $st = $obj['storage']['step'];
@@ -202,6 +202,9 @@ function student_courses() {
   if (!isset($_SESSION['student']['data']->student_id)) {
     drupal_goto('user');
   }*/
+  // Send the student to the student view
+  drupal_goto('student');
+
   $query = "select distinct c.* from {registered_course} rc inner join {registrable_course} rac on rac.reg_course_id = rc.registered_course_id inner join {course} c on rac.course_id= c.course_id";
    $result = db_query($query);
    $html = "<table border='1'>";
@@ -1338,7 +1341,8 @@ function _student_reg_form3($state) {
   $form['inst']['in1'] = array(
     '#type' => 'textfield',
     '#title' => 'INSTITUTION NAME',
-    '#required' => TRUE
+    '#required' => TRUE,
+    '#default_value' => $_POST['in1'],
   );
   $form['inst']['dst1'] = array(
     '#type' => 'ccdt',
@@ -1359,12 +1363,14 @@ function _student_reg_form3($state) {
   $form['inst']['q1'] = array(
     '#type' => 'textfield',
     '#title' => 'QUALIFICATION OBTAINED',
-    '#required' => TRUE
+    '#required' => TRUE,
+    '#default_value' => $_POST['q1'],
   );
   $form['inst']['mhr1'] = array('#value' => '<hr/>');
   $form['inst']['in2'] = array(
     '#type' => 'textfield',
-    '#title' => '2. INSTITUTION NAME'
+    '#title' => '2. INSTITUTION NAME',
+    '#default_value' => $_POST['in2'],
   );
   $form['inst']['dst2'] = array(
      '#type' => 'ccdt',
@@ -1384,7 +1390,8 @@ function _student_reg_form3($state) {
    );
    $form['inst']['q2'] = array(
      '#type' => 'textfield',
-     '#title' => 'QUALIFICATION OBTAINED'
+     '#title' => 'QUALIFICATION OBTAINED',
+     '#default_value' => $_POST['q2'],
    );
    $form['inst']['mhr2'] = array(
       '#value' => '<hr/>'
@@ -1393,7 +1400,8 @@ function _student_reg_form3($state) {
      '#type' => 'radios',
      '#title' => 'NUMBER OF O-LEVEL SITTINGS',
      '#options' => array('1' => 'One Sitting', '2' => 'Two Sittings'),
-     '#required' => TRUE
+     '#required' => TRUE,
+     '#default_value' => $_POST['nos'],
    );
    $form['fs'] = array(
       '#type' => 'fieldset',
@@ -1404,48 +1412,55 @@ function _student_reg_form3($state) {
       '#type' => 'select',
       '#title' => 'EXAM BODY',
       '#options' => _student_bod(),
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#default_value' => $_POST['ebd1'],
    );
    $form['fs']['edate1'] = array(
      '#type' => 'date',
      '#title' => 'EXAM DATE',
-     '#required' => TRUE
+     '#required' => TRUE,
+     '#default_value' => $_POST['edate1'],
    );
    $form['fs']['ec1'] = array(
       '#type' => 'textfield',
       '#title' => 'EXAM CENTER',
       '#size' => '20',
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#default_value' => $_POST['ec1'],
    );
    $form['fs']['eno1'] = array(
      '#type' => 'textfield',
      '#title' => 'EXAM NO',
      '#size' => '20',
-     '#required' => TRUE
+     '#required' => TRUE,
+     '#default_value' => $_POST['eno1'],
    );
    $form['fs']['ms1'] = array(
      '#type' => 'item',
      '#value' => 'SUBJECTS',
      '#prefix' => '<table><tr><td></td><th>',
-     '#suffix' => '</th>'
+     '#suffix' => '</th>',
+     '#default_value' => $_POST['ms1'],
    );
    $form['fs']['ms2'] = array(
       '#type' => 'item',
       '#value' => 'GRADE',
       '#prefix' => '<td>',
-      '#suffix' => '</td></tr>'
+      '#suffix' => '</td></tr>',
+      '#default_value' => $_POST['ms2'],
    );
    $tend = '';
   for ($i = 1; $i <= 9; $i++) {
-    $form['fs']["m1$i"] = array('#value' => '<tr><td>'.$i, '#suffix' => '</td>');
-    $form['fs']["s1$i"] = array('#type' => 'select', '#options' => _student_sub(), '#prefix' => '<td>', '#suffix' => '</td>');
+    $form['fs']["m1$i"] = array('#value' => '<tr><td>'.$i, '#suffix' => '</td>', '#default_value' => $_POST["m1$i"]);
+    $form['fs']["s1$i"] = array('#type' => 'select', '#options' => _student_sub(), '#default_value' => $_POST["s1$i"], '#prefix' => '<td>', '#suffix' => '</td>');
     if ($i == 9)
       $tend = "</table>";
    $form['fs']["g1$i"] = array(
      '#type' => 'select',
      '#options' => _student_gr(),
      '#prefix' => '<td>',
-     '#suffix' => '</td></tr>'. $tend
+     '#suffix' => '</td></tr>'. $tend,
+     '#default_value' => $_POST["g1$i"],
    );
   }
 //$form[fs]["m12"]=array('#value'=>'</table>');
@@ -1457,45 +1472,53 @@ function _student_reg_form3($state) {
    $form['fs2']['ebd2'] = array(
      '#type' => 'select',
      '#title' => 'EXAM BODY',
-     '#options' => _student_bod()
+     '#options' => _student_bod(),
+     '#default_value' => $_POST['ebd2'],
     );
     $form['fs2']['edate2'] = array(
       '#type' => 'date',
-      '#title' => 'EXAM DATE'
+      '#title' => 'EXAM DATE',
+      '#default_value' => $_POST['edate2'],
     );
     $form['fs2']['ec2'] = array(
       '#type' => 'textfield',
       '#title' => 'EXAM CENTER',
-      '#size' => 20
+      '#size' => 20,
+      '#default_value' => $_POST['ec2'],
     );
    $form['fs2']['eno2'] = array(
      '#type' => 'textfield',
      '#title' => 'EXAM NO',
-     '#size' => '20'
+     '#size' => '20',
+     '#default_value' => $_POST['eno2'],
    );
    $form['fs2']['ms11'] = array(
      '#type' => 'item',
      '#value' => 'SUBJECTS',
      '#prefix' => '<table><tr><td></td><th>',
-     '#suffix' => '</th>'
+     '#suffix' => '</th>',
+     '#default_value' => $_POST['ms11'],
     );
    $form['fs2']['ms12'] = array(
      '#type' => 'item',
      '#value' => 'GRADE',
      '#prefix' => '<td>',
-     '#suffix' => '</td></tr>'
+     '#suffix' => '</td></tr>',
+     '#default_value' => $_POST['ms12'],
    );
    $tend = '';
    for ($i = 1; $i <= 9; $i++) {
      $form['fs2']["m2$i"] = array(
        '#value' => '<tr><td>'. $i,
-       '#suffix' => '</td>'
+       '#suffix' => '</td>',
+       '#default_value' => $_POST["m2$i"],
      );
      $form['fs2']["s2$i"] = array(
        '#type' => 'select',
        '#options' => _student_sub(),
        '#prefix' => '<td>',
-       '#suffix' => '</td>'
+       '#suffix' => '</td>',
+       '#default_value' => $_POST["s2$i"],
      );
      if ($i == 9)
        $tend="</table>";
@@ -1503,7 +1526,8 @@ function _student_reg_form3($state) {
       '#type' => 'select',
       '#options' => _student_gr(),
       '#prefix' => '<td>',
-      '#suffix' => '</td></tr>'. $tend
+      '#suffix' => '</td></tr>'. $tend,
+      '#default_value' => $_POST["g2$i"],
     );
   }
   // if(is_array($state[storage][values][3]))
@@ -1594,7 +1618,8 @@ function _student_reg_form1(&$obj) {
    $form['q'] = array(
      '#type' => 'checkbox',
      '#title' => 'Yes I have already paid the required amount before 24 hours',
-     '#description' => 'Please confirm you have already paid through bank at least before 24 hours from now.and have the TELLER NUMBER and NAME . <br />You will be required to enter this information later and the paid amount must match with the amount payable now. In case you are not able to provide the required information the form won\'t be accepted'
+     '#description' => 'Please confirm you have already paid through bank at least before 24 hours from now.and have the TELLER NUMBER and NAME . <br />You will be required to enter this information later and the paid amount must match with the amount payable now. In case you are not able to provide the required information the form won\'t be accepted',
+     '#default_value' => $_POST['q'],
    );
    $form['#title'] = t('Personal Information');
    $form['jam'] = array(
@@ -1602,65 +1627,65 @@ function _student_reg_form1(&$obj) {
      '#type' => 'textfield',
      '#size' => 20,
      '#required' => TRUE,
-     '#default_value' => $_SESSION['student']['data']->jambno
+     '#default_value' => $_POST['jam'],
    );
    $form['mode'] = array(
      '#type' => 'select',
      '#options' => array('UME' => 'UME', 'DE' => 'DE', 'MEX' => 'MEX'),
      '#title' => 'Mode Of Entry',
-     '#default_value' => $_SESSION['student']['data']->mode_of_entry
+     '#default_value' => $_POST['mode'],
    );
    $form['mods'] = array(
      '#title' => 'Mode Of Study',
      '#type' => 'select',
      '#options' => array('Full_Time' => 'Full Time', 'Part_Time' => 'Part Time', 'Weekend' => 'Weekend', 'Evening' => 'Evening', 'Sandwich' => 'Sandwich', 'Ocassional' => 'Ocassional' , 'Correspondence' => 'Correspondence', 'Distance_Learning' => 'Distance_Learning'),
-     '#default_value' => $_SESSION['student']['data']->mode_of_study
+     '#default_value' => $_POST['mods'],
    );
    $form['title'] = array(
       '#type' => 'select',
       '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
       '#required' => TRUE,
       '#title' => 'Title',
-      '#default_value' => $_SESSION['student']['data']->title
+      '#default_value' => $_POST['title']
     );
     $form['lname'] = array(
       '#title' => 'Surname',
       '#type' => 'textfield',
       '#size' => 20,
       '#required' => TRUE,
-      '#default_value' => $_SESSION['student']['data']->last_name
+      '#default_value' => $_POST['lname'],
     );
    $form['fname'] = array(
      '#title' => 'First Name',
      '#type' => 'textfield',
      '#size' => 20,
      '#required' => TRUE,
-     '#default_value' => $_SESSION['student']['data']->first_name
+     '#default_value' => $_POST['fname'],
    );
    $form['mname'] = array(
      '#title' => 'Middle Name',
      '#type' => 'textfield',
      '#size' => 20,
-     '#default_value' => $_SESSION['student']['data']->middle_name
+     '#default_value' => $_POST['mname'],
    );
    $form['sex'] = array(
      '#type' => 'radios',
      '#title' => "Gender",
      '#options' => array('male' => 'Male', 'female' => 'Female'),
      '#required' =>TRUE,
-     '#default_value' => $_SESSION['student']['data']->gender
+     '#default_value' => $_POST['sex'],
    );
    $form['dob'] = array(
      '#type' => 'date',
      '#title' => 'Date Of Birth',
-     '#default_value' => $_SESSION['student']['data']->dob
+     '#default_value' => $_POST['dob'],
     );
    $form['mar'] = array(
      '#type' => 'radios',
      '#options' => array('married' => 'Married', 'single' => 'Single'),
      '#title' => 'MARITAL STATUS',
      '#required' => TRUE,
-     '#default_value' => $_SESSION['student']['data']->marital_status
+     '#default_value' => $_POST['mar'],
    );
    if (isset($_SESSION['student']['data']->nationality)) {
       $nationality = $_SESSION['student']['data']->nationality;
@@ -1670,7 +1695,7 @@ function _student_reg_form1(&$obj) {
    }
    $form['nat'] = array(
       '#type' => 'select',
-      '#default_value' => $nationality ,
+      '#default_value' => $_POST['nat'] ? $_POST['nat'] : $nationality ,
       '#options' => _veritas_country() ,
       '#title' => 'Nationality'
    );
@@ -1680,7 +1705,7 @@ function _student_reg_form1(&$obj) {
      '#options' => veritas_states(),
      '#title' => 'State Of Origin(Only for nigeria)',
      '#ahah' => array('event' => 'change', 'wrapper' => 'ilga', 'path' => 'student/ajaxlga/state', 'method' => 'html'),
-     '#default_value' => $_SESSION['student']['data']->state_origin
+     '#default_value' => $_POST['state'],
     );
    $form['lga'] = array(
       '#type' => 'select',
@@ -1690,31 +1715,32 @@ function _student_reg_form1(&$obj) {
       '#prefix' => '<div id="ilga">',
       '#suffix' => '</div>',
       '#attributes' => array('disabled' => 'disabled', 'class' => 'form-select'),
-      '#default_value' => $_SESSION['student']['data']->lkup_lga_origin
+      '#default_value' => $_POST['lga'],
     );
     $form['rel'] = array(
       '#title' => 'Religion',
       '#type' => 'select',
       '#options' => $rels,
       '#ahah' => array('event' => 'change', 'wrapper' => 'edit-subr', 'path' => 'student/religions', 'method' => 'html'),
-      '#default_value' => $_SESSION['student']['data']->religion
+      '#default_value' => $_POST['rel'],
    );
    $form['subrel'] = array(
       '#value' => '<div id="edit-subr"></div>',
-      '#default_value' => $_SESSION['student']['data']->subrel
+      '#default_value' => $_POST['subrel'],
     );
  // $form['subrel']=array('#title'=>'Denomination','#option'=>_student_sub(),'#atteibute'=>array('disabled'=>'disabled'));
    $form['hob'] = array(
       '#type' => 'textfield',
       '#title' => 'HOBBIES',
       '#size' => 40,
-      '#default_value' => $_SESSION['student']['data']->hobbies
+      '#default_value' => $_POST['hob'],
     );
     $form['address'] = array(
       '#type' => 'fieldset',
       '#title' => 'Address & Contact Info',
       '#collapsed' => FALSE,
-      '#collapsible' => TRUE
+      '#collapsible' => TRUE,
+      '#default_value' => $_POST['address'],
     );
     $form['address']['email'] = array(
       '#type' => 'textfield',
@@ -1722,14 +1748,14 @@ function _student_reg_form1(&$obj) {
       '#size' => 45,
       '#required' => TRUE,
       '#description' => 'Your login details will be sent here',
-      '#default_value' => $_SESSION['student']['data']->email_address
+      '#default_value' => $_POST['email'],
     );
    $form['address']['city'] = array(
      '#type' => 'textfield',
      '#title' => 'City',
      '#size' => 15,
      '#required' => TRUE,
-     '#default_value' => $_SESSION['student']['data']->permanent_address_city
+     '#default_value' => $_POST['city'],
     );
     $form['address']['astate'] = array(
        '#type' => 'select',
@@ -1737,7 +1763,7 @@ function _student_reg_form1(&$obj) {
        '#title' => 'State',
        '#ahah' => array('event' => 'change', 'wrapper' => 'ailga', 'path' => 'student/ajaxlga/astate', 'method' => 'html'),
        '#required' => TRUE,
-       '#default_value' => $_SESSION['student']['data']->permanent_address_state
+       '#default_value' => $_POST['astate'],
      );
    $form['address']['alga'] = array(
      '#type' => 'select',
@@ -1746,14 +1772,14 @@ function _student_reg_form1(&$obj) {
      '#prefix' => '<div id="ailga">',
      '#suffix' => '</div>',
      '#attributes' => array('class' => 'form-select', 'disabled' => 'disabled'),
-     '#default_value' => $_SESSION['student']['data']->permanent_address1
+     '#default_value' => $_POST['alga'],
    );
    $form['address']['address1'] = array(
      '#type' => 'textfield',
      '#size' =>60,
      '#required' => TRUE,
      '#title' => 'Address 1',
-     '#default_value' => $_SESSION['student']['data']->permanent_address1
+     '#default_value' => $_POST['address1'],
    );
 // $form[address][address2]=array('#type'=>'textfield','#size'=>25 ,'#title'=>'Address 2');
    $form['address']['tel1'] = array(
@@ -1761,13 +1787,13 @@ function _student_reg_form1(&$obj) {
      '#size' => 25,
      '#required' => TRUE,
      '#title' => 'Telephone',
-     '#default_value' => $_SESSION['student']['data']->telephone
+     '#default_value' => $_POST['tel1'],
     );
    $form['address']['tel2'] = array(
      '#type' => 'textfield',
      '#size' =>25,
      '#title' => 'Mobile',
-     '#default_value' => $_SESSION['student']['data']->mobile_number
+     '#default_value' => $_POST['tel2'],
     );
     $form['kin'] = array(
       '#type' => 'fieldset',
@@ -1777,37 +1803,43 @@ function _student_reg_form1(&$obj) {
        '#type' => 'textfield',
        '#size' =>45,
        '#title' => 'KIN NAME',
-       '#required' => TRUE
+       '#required' => TRUE,
+       '#default_value' => $_POST['kname'],
     );
     $form['kin']['kadd'] = array(
       '#type' => 'textarea',
       '#rows' => 3,
       '#cols' => 10,
       '#title' =>'Address',
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#default_value' => $_POST['kadd'],
     );
     $form['kin']['kcity'] = array(
       '#type' => 'textfield',
       '#size' => 20,
       '#title' => 'City',
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#default_value' => $_POST['kcity'],
     );
     $form['kin']['kstate'] = array(
       '#type' => 'select',
       '#options' => veritas_states(),
       '#required' => TRUE,
-      '#title' => 'STATE'
+      '#title' => 'STATE',
+      '#default_value' => $_POST['kstate'],
     );
     $form['kin']['ktel'] = array(
       '#type' => 'textfield',
       '#size' => 25,
-      '#title' => 'Telephone'
+      '#title' => 'Telephone',
+      '#default_value' => $_POST['ktel'],
     );
     $form['kin']['krel'] = array(
       '#type' => 'select',
       '#options' => _student_rel(),
       '#title' => 'Relationship',
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#default_value' => $_POST['krel'],
     );
  ///if(is_array($obj[storage][values][1]))
  //_assign_keys($form,$obj[storage][values][1]);
@@ -1848,21 +1880,21 @@ function _student_reg_form2($state) {
       '#title' => 'FIRST CHOICE'
    );
    $form['fc']['col1'] = array('#type' => 'select',
-     '#default_value' => 1,
+     '#default_value' => $_POST['col1'],
      '#options' => _student_col(),
      '#title' => 'College',
      '#theme' => 'hidden'
    );
    $form['fc']['dep1'] = array(
       '#type' => 'select',
-      '#default_value' => $data['department_id'],
+      '#default_value' => $_POST['dep1'],
       '#options' => _student_dep(),
       '#title' => 'Department',
       '#ahah' => array('wrapper' => 'div-id-co1', 'method' => 'html', 'event' => 'change', 'path' => 'student/ajaxdep/dep1')
     );
    $form['fc']['course1'] = array(
      '#type' => 'select',
-     '#default_value' => $_SESSION['student']['data']->first_choice,
+     '#default_value' => $_POST['course1'],
      '#options' => _student_prg(),
      '#title' => 'Course',
      '#prefix' => '<div id="div-id-co1">',
@@ -1875,7 +1907,7 @@ function _student_reg_form2($state) {
    );
    $form['fc1']['col2'] = array(
      '#type' => 'select',
-     '#default_value' => 1,
+     '#default_value' => $_POST['col2'],
      '#options' => _student_col(),
      '#title' => 'College',
      '#theme' => 'hidden',
@@ -1883,7 +1915,7 @@ function _student_reg_form2($state) {
    );
    $form['fc1']['dep2'] = array(
      '#type' => 'select',
-     '#default_value' => 0,
+     '#default_value' => $_POST['dep2'],
      '#options' => _student_dep(),
      '#title' => 'Department',
      '#prefix' => '<div id="div-id-dp2">',
@@ -1892,7 +1924,7 @@ function _student_reg_form2($state) {
    );
    $form['fc1']['course2'] = array(
      '#type' => 'select',
-     '#default_value' => 0,
+     '#default_value' => $_POST['course2'],
      '#options' => _student_prg(),
      '#title' => 'Course',
      '#prefix' => '<div id="div-id-co2">',
@@ -1906,28 +1938,33 @@ function _student_reg_form2($state) {
    $form['sub']['s1'] = array(
      '#type' => 'item',
      '#title' => 'SUBJECT 1',
-     '#value' => 'English(Compulsory)'
+     '#value' => 'English(Compulsory)',
+     '#default_value' => $_POST['s1'],
    );
    $form['sub']['s2'] = array(
      '#type' => 'select',
      '#options' => _student_sub(),
-     '#title' => 'SUBJECT 2'
+     '#title' => 'SUBJECT 2',
+     '#default_value' => $_POST['s2'],
    );
    $form['sub']['s3'] = array(
      '#type' => 'select',
      '#options' => _student_sub(),
-     '#title' => 'SUBJECT 3'
+     '#title' => 'SUBJECT 3',
+     '#default_value' => $_POST['s3'],
    );
    $form['sub']['s4'] = array(
      '#type' => 'select',
      '#options' => _student_sub(),
-     '#title' => 'SUBJECT 4'
+     '#title' => 'SUBJECT 4',
+     '#default_value' => $_POST['s4'],
    );
    $form['etown'] = array(
       '#type' => 'textfield',
       '#title' => 'EXAMINATION TOWN',
       '#size' => 24,
-      '#required' => TRUE
+      '#required' => TRUE,
+      '#default_value' => $_POST['etown'],
    );
    // if(is_array($obj[storage][values][2]))
    // _assign_keys($form,$state[storage][values][2]);
@@ -1945,21 +1982,22 @@ function _student_registration_form2($state) {
    $form['kin'] = array(
      '#type' => 'fieldset',
      '#title' => 'NEXT OF KIN',
-     '#collapsible' => TRUE
+     '#collapsible' => TRUE,
+     '#default_value' => $_POST['kin'],
    );
    $form['kin']['title'] = array(
      '#type' => 'select',
      '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
      '#required' => TRUE,
      '#title' => 'Title',
-     '#default_value' => $data['name']
+     '#default_value' => $_POST['title'],
    );
    $form['kin']['kname'] = array(
      '#type' => 'textfield',
      '#size' => 45,
      '#title' => 'Name',
      '#required' => TRUE,
-     '#default_value' => $data['name']
+     '#default_value' => $_POST['kname'],
    );
    $form['kin']['kadd'] = array(
       '#type' => 'textarea',
@@ -1967,32 +2005,32 @@ function _student_registration_form2($state) {
       '#cols' => 10,
       '#title' => 'Address',
       '#required' => TRUE,
-      '#default_value' => $data['address1']
+      '#default_value' => $_POST['kadd'],
    );
    $form['kin']['kcity'] = array(
      '#type' => 'textfield',
      '#size' =>20,
      '#title' => 'City',
      '#required' => TRUE,
-     '#default_value' => $data['city']
+     '#default_value' => $_POST['kcity'],
    );
    $form['kin']['krel'] = array(
      '#type' => 'select',
      '#options' => _student_rel(),
      '#title' => 'Relationship',
      '#required' => TRUE,
-     '#default_value' => trim($data['relationship'])
+     '#default_value' => trim($_POST['krel']),
    );
    $form['kin']['ktel'] = array(
      '#type' => 'textfield',
      '#size' => 25,
      '#title' => 'Landline number',
-     '#default_value' => $data['telephone']);
+     '#default_value' => $_POST['ktel']);
    $form['kin']['kmobile'] = array(
      '#type' => 'textfield',
      '#size' =>25,
      '#title' => 'Mobile',
-     '#default_value' => $data['mobile']
+     '#default_value' => $_POST['kmobile']
    );
    $form['sponsor'] = array(
      '#type' => 'fieldset',
@@ -2003,33 +2041,39 @@ function _student_registration_form2($state) {
    $form['sponsor']['title'] = array(
     '#type' => 'select',
     '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
-    '#title' => 'Title', '#default_value' => ''
+    '#title' => 'Title', '#default_value' => '',
+    '#default_value' => $_POST['title'],
    );
    $form['sponsor']['sname'] = array(
      '#type' => 'textfield',
      '#size' => 45,
-     '#title' => 'Name'
+     '#title' => 'Name',
+     '#default_value' => $_POST['sname'],
    );
    $form['sponsor']['sadd'] = array(
      '#type' => 'textarea',
      '#rows' => 3,
      '#cols' => 10,
-     '#title' => 'Address'
+     '#title' => 'Address',
+     '#default_value' => $_POST['sadd'],
    );
    $form['sponsor']['scity'] = array(
      '#type' => 'textfield',
      '#size' => 20,
-     '#title' => 'City'
+     '#title' => 'City',
+     '#default_value' => $_POST['scity'],
    );
    $form['sponsor']['stel'] = array(
      '#type' => 'textfield',
      '#size' => 25,
-     '#title' => 'Landline number'
+     '#title' => 'Landline number',
+     '#default_value' => $_POST['stel'],
    );
    $form['sponsor']['smobile'] = array(
      '#type' => 'textfield',
      '#size' => 25,
-     '#title' => 'Mobile'
+     '#title' => 'Mobile',
+     '#default_value' => $_POST['smobile'],
    );
   // if(is_array($obj[storage][values][2]))
   // _assign_keys($form,$state[storage][values][2]);
@@ -2105,7 +2149,8 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
     $form['inst']['in1'] = array(
        '#type' => 'textfield',
        '#title' => 'INSTITUTION NAME',
-       '#required' => TRUE
+       '#required' => TRUE,
+       '#default_value' => $_POST['in1'],
     );
     $form['inst']['dst1'] = array(
       '#type' => 'ccdt',
@@ -2113,7 +2158,8 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#title' => 'DATE STARTED',
       '#ccdt_attribute' => array(2001, date('Y')),
       '#prefix' => '<table><tr><td>',
-      '#suffix' => '</td>'
+      '#suffix' => '</td>',
+      '#default_value' => $_POST['dst1'],
    );
    $form['inst']['den1'] = array(
       '#type' => 'ccdt',
@@ -2121,17 +2167,20 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#title' => 'DATE ENDED',
       '#ccdt_attribute' => array(2001, date('Y')),
       '#prefix' => '<td>',
-      '#suffix' => '</td></tr></table>'
+      '#suffix' => '</td></tr></table>',
+      '#default_value' => $_POST['den1'],
    );
    $form['inst']['q1'] = array(
      '#type' => 'textfield',
      '#title' => 'QUALIFICATION OBTAINED',
-     '#required' => TRUE
+     '#default_value' => $_POST['q1'],
+     '#required' => TRUE,
    );
    $form['inst']['mhr1'] = array('#value' => '<hr/>');
    $form['inst']['in2'] = array(
       '#type' => 'textfield',
-      '#title' => '2. Second Secondary Institution Attended (skip this section if you have attended only one secondary Institution)'
+      '#title' => '2. Second Secondary Institution Attended (skip this section if you have attended only one secondary Institution)',
+      '#default_value' => $_POST['in2'],
    );
    $form['inst']['dst2'] = array(
      '#type' => 'ccdt',
@@ -2139,7 +2188,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#title' => 'DATE STARTED',
      '#ccdt_attribute' => array(2001, date('Y')),
      '#prefix' => '<table><tr><td>',
-     '#suffix' => '</td>'
+     '#suffix' => '</td>',
    );
    $form['inst']['den2'] = array(
      '#type' => 'ccdt',
@@ -2151,6 +2200,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
    );
    $form['inst']['q2'] = array(
      '#type' => 'textfield',
+     '#default_value' => $_POST['q2'],
      '#title' => 'QUALIFICATION OBTAINED'
    );
    $form['inst']['mhr2'] = array('#value' => '<hr/>');
@@ -2159,7 +2209,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#title' => 'NUMBER OF O-LEVEL SITTINGS',
       '#options' => array('1' => 'One Sitting', '2' => 'Two Sittings'),
       '#required' => TRUE,
-      '#default_value' => 1
+      '#default_value' => $_POST['nos'] ? $_POST['nos'] : 1,
     );
     $form['fs'] = array(
       '#type' => 'fieldset',
@@ -2171,39 +2221,41 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#title' => 'EXAM BODY',
      '#options' => _student_bod(),
      '#required' => TRUE,
-     '#default_value' => $data[$data_key[0]]['exam_body']
+     '#default_value' => $_POST['ebd1'],
    );
    $form['fs']['edate1'] = array(
      '#type' => 'date',
      '#title' => 'EXAM DATE',
      '#required' => TRUE,
-     '#default_value' => $data[$data_key[0]]['exam_date']
+     '#default_value' => $_POST['edate1'],
    );
    $form['fs']['ec1'] = array(
      '#type' => 'textfield',
      '#title' => 'EXAM CENTER',
      '#size' => '20',
      '#required' => TRUE,
-     '#default_value' => $data[$data_key[0]]['exam_center_name']
+     '#default_value' => $_POST['ec1'],
    );
    $form['fs']['eno1'] = array(
      '#type' => 'textfield',
      '#title' => 'EXAM NO',
      '#size' => '20',
      '#required' => TRUE,
-     '#default_value' => $data[$data_key[0]]['exam_number']
+     '#default_value' => $_POST['eno1'],
    );
    $form['fs']['ms1'] = array(
      '#type' => 'item',
      '#value' => 'SUBJECTS',
      '#prefix' => '<table><tr><td></td><th>',
-     '#suffix' => '</th>'
+     '#suffix' => '</th>',
+     '#default_value' => $_POST['ms1'],
    );
    $form['fs']['ms2'] = array(
      '#type' => 'item',
      '#value' => 'GRADE',
      '#prefix' => '<td>',
-     '#suffix' => '</td></tr>'
+     '#suffix' => '</td></tr>',
+     '#default_value' => $_POST['ms2'],
    );
    $temp = 0;
    for ($i = 1; $i <= 9; $i++) {
@@ -2214,7 +2266,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
         '#options' => _student_sub(),
         '#prefix' => '<td>',
         '#suffix' => '</td>',
-        '#default_value' => $data[$data_key[0]]['subjects'][$temp]['subject']
+        '#default_value' => $_POST["s1$i"],
      );
      if ($i == 9)
        $tend = "</table>";
@@ -2223,7 +2275,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
        '#options' => _student_gr(),
        '#prefix' => '<td>',
        '#suffix' => '</td></tr>'. $tend,
-       '#default_value' => $data[$data_key[0]]['subjects'][$temp]['grade']
+       '#default_value' => $_POST["g1$i"],
      );
      $temp = 0;
    }
@@ -2240,35 +2292,37 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#type' => 'select',
      '#title' => 'EXAM BODY',
      '#options' => _student_bod(),
-     '#default_value' => $data[$data_key[1]]['exam_body']
+     '#default_value' => $_POST['ebd2'],
    );
    $form['fs2']['edate2'] = array(
       '#type' => 'date',
       '#title' => 'EXAM DATE',
-      '#default_value' => $data[$data_key[1]]['exam_date']
+      '#default_value' => $_POST['edate2'],
    );
    $form['fs2']['ec2'] = array(
       '#type' => 'textfield',
       '#title' => 'EXAM CENTER',
       '#size' => 20,
-      '#default_value' => $data[$data_key[1]]['exam_center_name']
+      '#default_value' => $_POST['ec2'],
    );
    $form['fs2']['eno2'] = array(
      '#type' => 'textfield',
      '#title' => 'EXAM NO',
      '#size' => '20',
-     '#default_value' => $data[$data_key[1]]['exam_number']
+     '#default_value' => $_POST['eno2'],
    );
    $form['fs2']['ms11'] = array(
      '#type' => 'item',
      '#value' => 'SUBJECTS',
-     '#prefix' => '<table><tr><td></td><th>','#suffix'=>'</th>'
+     '#prefix' => '<table><tr><td></td><th>','#suffix'=>'</th>',
+     '#default_value' => $_POST['ms11'],
    );
    $form['fs2']['ms12'] = array(
      '#type' => 'item',
      '#value' => 'GRADE',
      '#prefix' => '<td>',
-     '#suffix' => '</td></tr>'
+     '#suffix' => '</td></tr>',
+     '#default_value' => $_POST['ms12'],
    );
    $tend = '';
    for ($i = 1; $i <= 9; $i++) {
@@ -2279,7 +2333,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
         '#options' => _student_sub(),
         '#prefix' => '<td>',
         '#suffix' => '</td>',
-        '#default_value' => $data[$data_key[1]]['subjects'][$temp]['subject']
+        '#default_value' => $_POST["s2$i"],
      );
      if ($i == 9)
        $tend = "</table>";
@@ -2288,7 +2342,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
        '#options' => _student_gr(),
        '#prefix' => '<td>',
        '#suffix' => '</td></tr>'. $tend,
-       '#default_value' => $data[$data_key[1]]['subjects'][$temp]['grade']
+       '#default_value' => $_POST["g2$i"],
      );
      $temp = 0;
    }
@@ -2566,13 +2620,15 @@ function _student_registration_form4($obj) {
      '#type' => 'radios',
      '#options' => array('good' => 'good', 'fair' => 'fair', 'poor' =>poor ),
      '#title' => 'State of Health',
-     '#required' => TRUE
+     '#required' => TRUE,
+     '#default_value' => $_POST['state_of_health'],
    );
    $form['medical_part1']['ever_hospital'] = array(
      '#type' => 'radios',
      '#options' => array('1' => 'Yes', '0' => 'No'),
      '#title' => 'Ever Been Admitted as an in-patient Into Hospital? ',
-     '#required' => TRUE
+     '#required' => TRUE,
+     '#default_value' => $_POST['ever_hospital'],
    );
    $form['medical_part1']['diseases'] = array('#type' => 'fieldset', '#title' => '<b>If yes fill the following fields:</b>');
    $form['medical_part1']['diseases'][tuberculosis]=array(
