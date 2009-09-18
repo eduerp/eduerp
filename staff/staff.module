@@ -2547,15 +2547,17 @@ function load_image() {
   if ($res9 && ($result9=db_fetch_object($res9))) {
     //print_R($result9);
     $pic_path=$result9->filepath;
-    $host=$_SERVER['HTTP_HOST'];
+    /*$host=$_SERVER['HTTP_HOST'];
     $repalce=$_SERVER['DOCUMENT_ROOT'];
     $file_path='http://';
     $file_path .=str_replace($repalce, $host, $pic_path);
-    $file_path=strip_tags($file_path);
+    $file_path=strip_tags($file_path);*/
+    $file_path = file_create_url($pic_path);
     //$path='<img src="'.$file_path.'" />';
   }
   else {
     //$path='No Images Available';
+    // TODO: Fix this situation
   }
   return $file_path;
 }
@@ -2567,11 +2569,12 @@ function load_signature() {
     //print_R($result10);
    //echo $_SESSION['staff']['stud_info'];
     $pic_path=$result10->filepath;
-    $host=$_SERVER['HTTP_HOST'];
+/*    $host=$_SERVER['HTTP_HOST'];
     $repalce=$_SERVER['DOCUMENT_ROOT'];
     $file_path='http://';
     $file_path .=str_replace($repalce, $host, $pic_path);
-    $file_path = strip_tags($file_path);
+    $file_path = strip_tags($file_path);*/
+    $file_path = file_create_url($pic_path);
     //$path='<img src="'.$file_path.'" />';
   }
   else {

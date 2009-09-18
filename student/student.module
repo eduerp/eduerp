@@ -1209,7 +1209,7 @@ function student_registration_form_submit($form, &$state) {
   if ($state['storage']['step'] == 6) {
     //$pic=file_save_upload_name('pic',array(),file_directory_path().'/student_pic',false,$_SESSION['student']['data']->jambno);
     $name = 'PICVUG'. vsprintf("%04d", array($_SESSION['student']['data']->student_id));
-    $pic = file_save_upload_name('pic', array(), variable_get('file_directory_path',NULL) .'/student_pic', TRUE, $name);
+    $pic = file_save_upload_name('pic', array(), file_directory_path().'/student_pic', TRUE, $name);
 
     if (!$pic) {
       drupal_set_message('Picture cannot be uploaded ');
@@ -1218,7 +1218,7 @@ function student_registration_form_submit($form, &$state) {
     $photo['pic'] = $pic->fid;
   //$signature=file_save_upload_name('signature',array(),'/sites/files/signature',false,$_SESSION['student']['data']->jambno);
   $name = 'SGVUG'. vsprintf("%04d", array($_SESSION['student']['data']->student_id));
-    $signature = file_save_upload_name('signature', array(), variable_get('file_directory_path',NULL) .'/signature', TRUE, $name);
+    $signature = file_save_upload_name('signature', array(), file_directory_path().'/signature', TRUE, $name);
     if (!$signature) {
        drupal_set_message('Signature Picture cannot be uploaded ');
        return;
@@ -3833,8 +3833,9 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
 
     // If the destination is not provided, or is not writable, then use the
     // temporary directory.
+    // Tim: This is not a good strategy. It should fail if the destination is not writable
     if (empty($dest) || file_check_path($dest) === FALSE) {
-      $dest = file_directory_temp();
+      //$dest = file_directory_temp();
     }
 
     $file->source = $source;
@@ -3864,11 +3865,13 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
     // Move uploaded files from PHP's upload_tmp_dir to Drupal's temporary directory.
     // This overcomes open_basedir restrictions for future file operations.
     $file->filepath = $file->destination;
+    // I'm not so sure unlinking the destionation file before reuploading is the best
+    // Let's see what happens in reality.
 	if(file_exists($file->filepath)) {
       unlink($file->filepath);
 	}
 
-    if (!move_uploaded_file($_FILES['files']['tmp_name'][$source], $file->filepath)) {
+    if (!file_move($_FILES['files']['tmp_name'][$source], $file->filepath)) {
       form_set_error($source, t('File upload error. Could not move uploaded file.'));
       watchdog('file', 'Upload error. Could not move uploaded file %file to destination %destination.', array('%file' => $file->filename, '%destination' => $file->filepath));
       return 0;
