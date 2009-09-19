@@ -322,22 +322,27 @@ function student_course_form1(&$obj) {
    $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
    $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
    $form['courses']['select_credit'] = array('#type'=>'hidden', '#value'=>$selected_load);
-   $script = '
-    var counter = '. $selected_load .' ;
-   $(function(){
-   $(".select_course").click(function(){
-   counter = parseInt($("#selected_load").text());
-   if(this.checked == true){
-       counter += parseInt($(this).val());
-    $("#selected_load").text(counter);
-   } else {
-      counter -= parseInt($(this).val());
-    $("#selected_load").text(counter);
-   }
-   $("#edit-select-credit-1").val(counter);
+   $script =<<<EOD
+    // For some reason, the following javascript gets rendered twice!
+    var counter = $selected_load;
+    $(function(){
+      // The following line was added to null the effect
+      // of the previous binding as a result of a repeat
+      // of the javascript.
+      $(".select_course").unbind();
+      $(".select_course").click(function(){
+        counter = parseInt($("#selected_load").text());
+        if(this.checked == true){
+          counter += parseInt(\$(this).val());
+          $("#selected_load").text(counter);
+        } else {
+          counter -= parseInt($(this).val());
+          $("#selected_load").text(counter);
+        }
+        $("#edit-select-credit-1").val(counter);
+      });
    });
-   });
-  ';
+EOD;
   drupal_add_js($script,'inline','header', FALSE, FALSE);
   $form['courses']['core'] = array('#type' => 'item', '#value' => $core_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
   $form['courses']['elective'] = array('#type' => 'item', '#value' => $elective_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
