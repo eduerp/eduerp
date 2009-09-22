@@ -316,8 +316,8 @@ function student_course_form1(&$obj) {
   $rows[$row->course_id] = $row->course_title;
   }
    $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
-   $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td>'. $min_max_credits->max_credit_load .'</td></tr>';
-   $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td>'. $min_max_credits->min_credit_load .'</td></tr>';
+   $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
+   $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td><span id="min_load">'. $min_max_credits->min_credit_load .'</span></td></tr>';
    $credit_counter_html .= '<tr><th>Selected Credit Load</th><td><span id="selected_load">'. $selected_load .'</span></td></tr>';
    $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
    $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
@@ -340,6 +340,21 @@ function student_course_form1(&$obj) {
           $("#selected_load").text(counter);
         }
         $("#edit-select-credit-1").val(counter);
+      });
+      $("form").unbind();
+      $("form").submit( function() {
+        selected_load = parseInt($("#selected_load").text());
+        min_load = parseInt($("#min_load").text());
+        max_load = parseInt($("#max_load").text());
+        if (selected_load < min_load) {
+          alert("Please select enough courses to meet the minimum credit load requirement.");
+          return false;
+        }
+        if (selected_load > max_load) {
+          alert("Your credit load is higher than the recommended maximum credit load. Please shed off some courses.");
+          return false;
+        }
+        return true;
       });
    });
 EOD;
@@ -457,32 +472,44 @@ function student_course_form2(&$obj) {
   }
 
   $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
-  $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td>'. $min_max_credits->max_credit_load .'</td></tr>';
-  $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td>'. $min_max_credits->min_credit_load .'</td></tr>';
+  $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
+  $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td><span id="min_load">'. $min_max_credits->min_credit_load .'</span></td></tr>';
   $credit_counter_html .= '<tr><th>Selected Credit Load</th><td><span id="selected_load">'. $selected_load .'</span></td></tr>';
   $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
   $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
   $form['courses']['select_credit'] = array('#type'=>'hidden', '#value'=>$selected_load);
-  $script = '
-    var counter = '. $selected_load .' ;
-  $(function(){
+  $script =<<<EOD
+var counter = '$selected_load';
+$(function(){
+  $(".select_course").unbind();
   $(".select_course").click(function(){
-
     counter = parseInt($("#selected_load").text());
-   if(this.checked == true){
-       counter += parseInt($(this).val());
-    $("#selected_load").text(counter);
-   } else {
+    if(this.checked == true){
+      counter += parseInt($(this).val());
+      $("#selected_load").text(counter);
+    } else {
       counter -= parseInt($(this).val());
-    $("#selected_load").text(counter);
-   }
-
-   $("#edit-select-credit").val(counter);
-
-
+      $("#selected_load").text(counter);
+    }
+    $("#edit-select-credit").val(counter);
   });
- });
- ';
+  $("form").unbind();
+  $("form").submit( function() {
+    selected_load = parseInt($("#selected_load").text());
+    min_load = parseInt($("#min_load").text());
+    max_load = parseInt($("#max_load").text());
+    if (selected_load < min_load) {
+      alert("Please select enough courses to meet the minimum credit load requirement.");
+      return false;
+    }
+    if (selected_load > max_load) {
+      alert("Your credit load is higher than the recommended maximum credit load. Please shed off some courses.");
+      return false;
+    }
+    return true;
+  });
+});
+EOD;
   drupal_add_js($script,'inline','header');
   $form['courses']['core'] = array('#type' => 'item', '#value' => $core_html,"#prefix" => '<table border="1">' , "#suffix" => '</table>');
   $form['courses']['elective'] = array('#type'=>'item', '#value' => $elective_html,"#prefix" => '<table border="1">' , "#suffix" => '</table>');
