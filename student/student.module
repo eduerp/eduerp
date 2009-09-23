@@ -1906,17 +1906,18 @@ function _student_reg_form2($state) {
    $result = db_query("Select * from {programme} where programme_id='". $_SESSION['student']['data']->first_choice ."'");
    $data = db_fetch_array($result);
    $form['#cache'] = FALSE; //$data['department_id']
-   $form['markx'] = array('#value' => '<b>JAMB DETAILS<b/>');
+   $form['markx'] = array('#value' => '<b>JAMB DETAILS</b>');
    $form['fc'] = array(
       '#type' => 'fieldset',
       '#title' => 'FIRST CHOICE'
    );
-   $form['fc']['col1'] = array('#type' => 'select',
-     '#default_value' => $_POST['col1'],
-     '#options' => _student_col(),
-     '#title' => 'College',
-     '#theme' => 'hidden'
-   );
+//   $form['fc']['col1'] = array(
+//     '#type' => 'select',
+//     '#default_value' => $_POST['col1'],
+//     '#options' => _student_col(),
+//     '#title' => 'College',
+//     '#theme' => 'hidden'
+//   );
    $form['fc']['dep1'] = array(
       '#type' => 'select',
       '#default_value' => $_POST['dep1'],
@@ -1937,14 +1938,14 @@ function _student_reg_form2($state) {
      '#type' => 'fieldset',
      '#title' => 'SECOND CHOICE'
    );
-   $form['fc1']['col2'] = array(
-     '#type' => 'select',
-     '#default_value' => $_POST['col2'],
-     '#options' => _student_col(),
-     '#title' => 'College',
-     '#theme' => 'hidden',
-     '#ahah' => array('wrapper' => 'div-id-dp2' , 'method' => 'html', 'event' => 'change', 'path' => 'student/ajaxdep/col2')
-   );
+//   $form['fc1']['col2'] = array(
+//     '#type' => 'select',
+//     '#default_value' => $_POST['col2'],
+//     '#options' => _student_col(),
+//     '#title' => 'College',
+//     '#theme' => 'hidden',
+//     '#ahah' => array('wrapper' => 'div-id-dp2' , 'method' => 'html', 'event' => 'change', 'path' => 'student/ajaxdep/col2')
+//   );
    $form['fc1']['dep2'] = array(
      '#type' => 'select',
      '#default_value' => $_POST['dep2'],
@@ -2944,9 +2945,9 @@ function student_reg_form_validate($form, &$state) {
          form_set_error('alga', 'Required Address LGA');
    }
    else if ($nextstep == 3) {
-      if (!_student_check_course($v['col1'], $v['dep1'], $v['course1']) || !_student_check_course($v['col2'] ,$v['dep2'] ,$v['course2'])) {
-         form_set_error('', 'Enter Proper college/department/course combination');
-      }
+      //if (!_student_check_course($v['col1'], $v['dep1'], $v['course1']) || !_student_check_course($v['col2'] ,$v['dep2'] ,$v['course2'])) {
+      //   form_set_error('', 'Enter Proper college/department/course combination');
+      //}
      if (count(array_unique(array($v['s2'], $v['s3'], $v['s4']))) < 3 || !($v['s2'] && $v['s3'] && $v['s4'])) {
        form_set_error('', 'Enter differnt subjects');
      }
