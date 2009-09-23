@@ -341,6 +341,32 @@ function veritas_admin_settings() {
     $sessions[sprintf("%s/%s", $c, $c+1)] = sprintf("%s/%s", $c, $c+1);
   endfor;
 
+  $veritas_current_session = variable_get('veritas_current_session', sprintf('%s/%s', $current_year-1, $current_year));
+  // Check if the current session is in the session table
+  $session_sql = "SELECT * FROM {session} WHERE `sess_name` = '%s'";
+  $session_rs = db_query($session_sql, $veritas_current_session);
+  if (!db_result($session_rs)) {
+    $session_insert_rs = "INSERT INTO {session} (`sess_name`) VALUES ('%s')";
+    db_query($session_insert_rs, $veritas_current_session);
+  }
+
+  // Check if the current session is set
+  $current_session_sql = "SELECT css.*, s.sess_name FROM {current_session_semester} css LEFT JOIN {session} s ON s.session_id=css.session_id LIMIT 1";
+  $current_session_rs = db_query($current_session_sql);
+  if ($current_session_rs) {
+    $result = db_fetch_object($current_session_rs);
+    if ($result->sess_name != $veritas_current_session) {
+      $current_sql = "SELECT * FROM {session} WHERE `sess_name`='%s'";
+      $current_rs = db_query($current_sql, $veritas_current_session);
+
+      if ($current_rs):
+        $current_obj = db_fetch_object($current_rs);
+        $update_sql = "UPDATE {current_session_semester} SET `session_id`=%d";
+        $rs = db_query($update_sql, $current_obj->session_id);
+      endif;
+    }
+  }
+
   $form['veritas_current_session'] = array (
     '#type' => 'select',
     '#title' => t('Current Session'),
@@ -349,6 +375,10 @@ function veritas_admin_settings() {
     '#options' => $sessions,
     '#tree' => TRUE,
   );
+  
+  // Update semester settings
+  $semester_update_sql = "UPDATE {current_session_semester} SET semester_id=%d";
+  $rs = db_query($semester_update_sql, variable_get('veritas_current_semester', 1));
 
   $form['veritas_current_semester'] = array(
     '#type' => 'select',

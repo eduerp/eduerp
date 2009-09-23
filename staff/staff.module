@@ -1869,7 +1869,7 @@ function staff_begin_clearance_form2(&$obj) {
       $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
       $res4 = db_query($qry4);
       $result4 = db_fetch_object($res4);
-      $qry5 = "select a . session_id, b . sess_name from `admitted_student` as a join session as b on a . session_id=b . session_id where a . student_id='". $result->student_id ."'";
+      $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
       $res5 = db_query($qry5);
       $result5 = db_fetch_object($res5);
       $qry6 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
