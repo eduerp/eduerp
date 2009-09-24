@@ -195,15 +195,18 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
 
 function grading_stats_department_form(&$obj) {
+  $sql = "SELECT css.semester_id, s.sess_name FROM {current_session_semester} css, {session} s WHERE css.id=1 AND css.session_id=s.session_id";
+  $css_rows = db_query($sql);
+  $css_row = db_fetch_object($css_rows);
+  $sessiondefault = $css_row->sess_name;
+  $semesterdefault = $css_row->semester_id;
 
   if (!empty($_GET['department'])) $departmentdefault = stripslashes($_GET['department']);
   else $departmentdefault = 'Arts and Theology';
 
   if (!empty($_GET['session'])) $sessiondefault = stripslashes($_GET['session']);
-  else $sessiondefault = '2008/2009';
 
   if (!empty($_GET['semester'])) $semesterdefault = stripslashes($_GET['semester']);
-  else $semesterdefault = '1';
 
   if (!empty($_GET['level'])) $leveldefault = stripslashes($_GET['level']);
   else $leveldefault = '100';
@@ -1123,9 +1126,15 @@ function approve_grades_vc_form_submit($form, &$form_state) {
 
 
 function grading_stats_uni_form(&$obj) {
+  $sql = "SELECT css.semester_id, s.sess_name FROM {current_session_semester} css, {session} s WHERE css.id=1 AND css.session_id=s.session_id";
+  $css_rows = db_query($sql);
+  $css_row = db_fetch_object($css_rows);
+  $sessiondefault = $css_row->sess_name;
+  $semesterdefault = $css_row->semester_id;
+
   $form['session'] = array(
     '#type' => 'select',
-    '#default_value' => '2008/2009',
+    '#default_value' => $sessiondefault,
     '#options' => _grading_session_list(),
     '#title' => 'Session',
     '#ahah' =>array(
@@ -1140,7 +1149,7 @@ function grading_stats_uni_form(&$obj) {
 
   $form['semester'] = array(
     '#type' => 'select',
-    '#default_value' => '1',
+    '#default_value' => $semesterdefault,
     '#options' => _grading_semester_list(),
     '#title' => 'Semester',
     '#ahah' =>array(
