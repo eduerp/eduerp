@@ -919,7 +919,7 @@ function student_login_form_submit(&$obj) {
 
 function student_registration_form(&$obj) {
   if (!isset($_SESSION['student']['data']->student_id)) {
-    drupal_goto('student/login');
+    drupal_goto('user/login');
   }
   $query = "select * from {admitted_transaction} where student_id='". $_SESSION['student']['id'] ."'";
   $result = db_query($query);
