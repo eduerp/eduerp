@@ -186,6 +186,12 @@ function student_course_form(&$obj) {
   if (!isset($_SESSION['student']['data']->student_id)) {
     drupal_goto('user');
   }*/
+  // Users should not be able to change their courses when it's closed
+  if (!variable_get('veritas_allow_course_registrations', '0')) {
+    drupal_set_message("Sorry. You are not allowed to register courses at this time.");
+    return false;
+  }
+
   if (!$obj['storage']['step'])
     $obj['storage']['step'] = 1;
   $st = $obj['storage']['step'];
