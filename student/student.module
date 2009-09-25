@@ -198,24 +198,8 @@ function student_course_form(&$obj) {
 }
 
 function student_courses() {
-/*
-  if (!isset($_SESSION['student']['data']->student_id)) {
-    drupal_goto('user');
-  }*/
   // Send the student to the student view
   drupal_goto('student');
-
-  $query = "select distinct c.* from {registered_course} rc inner join {registrable_course} rac on rac.reg_course_id = rc.registered_course_id inner join {course} c on rac.course_id= c.course_id";
-   $result = db_query($query);
-   $html = "<table border='1'>";
-   while ($row = db_fetch_object($result)) {
-     $html .= "<tr>
-       <th>". $row->course_code ."</th>
-        <td>Lecturer Name</td>
-        </tr>";
-    }
-    $html .= "</table>";
-    return $html;
 }
 
 function student_course_form1(&$obj) {
@@ -552,8 +536,8 @@ function add_student_courses($data) {
   $query = "select * from {admitted_student} where student_id=%d";
   $result = db_query($query, $_SESSION['student']['id']);
   $row =  db_fetch_object($result);
-  $query = "delete from {registered_course} where student_id=%d";
-  $result = db_query($query, $_SESSION['student']['id']);
+  //$query = "delete from {registered_course} where student_id=%d";
+  //$result = db_query($query, $_SESSION['student']['id']);
 
   // ALAN 20090902
   $sql = "SELECT * FROM {current_session_semester} WHERE id=1";
@@ -566,13 +550,13 @@ function add_student_courses($data) {
   // END ALAN
 
   foreach ($data['corecourses'] as $key => $value ) {
-    $query = "insert {registered_course} set registered_course_id=%d, student_id=%d, session_id=%d";
-    db_query($query, $value, $_SESSION['student']['id'], $session_id);
+    //$query = "insert {registered_course} set registered_course_id=%d, student_id=%d, session_id=%d";
+    //db_query($query, $value, $_SESSION['student']['id'], $session_id);
     create_cck_records($row, $value, $data, $session_id); // ALAN 20090804
   }
   foreach($data['electivecourses'] as $key => $value ) {
-    $query = "insert {registered_course} set registered_course_id=%d, student_id=%d, session_id=%d";
-    db_query($query, $key, $_SESSION['student']['id'], $session_id);
+    //$query = "insert {registered_course} set registered_course_id=%d, student_id=%d, session_id=%d";
+    //db_query($query, $key, $_SESSION['student']['id'], $session_id);
     create_cck_records($row, $key, $data, $session_id);   // ALAN 20090804
   }
 }
