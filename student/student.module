@@ -611,6 +611,39 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
   $program_result = db_query($query);
   $program_row = db_fetch_object($program_result);
 
+  if (empty($program_row)) {
+    // Behave gracefully if there is no lecturer_id (could have used LEFT JOIN above, but would have involved retest)
+    $query = "SELECT
+      p.programme_id,
+      p.programme_name,
+      p.department_id,
+      c.course_id,
+      c.course_code,
+      c.course_title,
+      c.credit_load,
+      c.semester AS semester_id,
+      d.department_name,
+      d.college_id,
+      co.college_name,
+      co.college_abbreviation,
+      s.session_id,
+      s.sess_name,
+      l.level_id,
+      l.level_name
+    FROM {registrable_course} rc, {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l
+    WHERE
+      rc.reg_course_id={$reg_course_id} AND
+      rc.programme_id=p.programme_id AND
+      rc.course_id=c.course_id AND
+      p.department_id=d.department_id AND
+      d.college_id=co.college_id AND
+      s.session_id={$session_id} AND
+      rc.level_id=l.level_id";
+    $program_result = db_query($query);
+    $program_row = db_fetch_object($program_result);
+    $program_row->user_id = NULL;
+  }
+
   // Find Alternate Lecturer uid
   $query = "SELECT vs.user_id AS alternate_user_id
   FROM {registrable_course} rc, {veritas_staff} vs
