@@ -1394,4 +1394,47 @@ function _grading_ahah_stats_uni() {
 
   exit();
 }
+
+grading_cron() {
+  global $base_url;
+
+  $notifications = db_query("SELECT * FROM cron_notification LIMIT 20");
+  while ($notification = db_fetch_object($notifications)) {
+    if ($notification->instruction == 3) {
+
+      $source_user = user_load($notification->approver_uid);
+      $name = '';
+      if (!empty($source_user->profile_first_name) && !empty($source_user->profile_last_name)) {
+        $middle = '';
+        if (!empty($source_user->profile_middle_name)) $middle = $source_user->profile_middle_name . ' ';
+        $name = "$source_user->profile_first_name {$middle}$source_user->profile_last_name";
+      }
+
+      $destination_user = user_load($notification->student_uid);
+      $gradestext = $notification->gradestext;
+      $programme = $notification->programme;
+      $subject = "$gradestext for $programme Approved";
+
+      $body = '';
+      if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+        $middle = '';
+        if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
+        $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+      }
+      $body .= "I have approved the $gradestext for $programme\n\n";
+      $body .= "To view your grades go to $base_url/student\n";
+      $body .= "You will have to login first.\n\n";
+      $body .= "{$name}\n";
+
+      $message = drupal_mail('grading', 'notifystudent', $destination_user->mail, language_default(), array(), $source_user->mail, FALSE);
+      $message['subject'] = $subject;
+      $message['body'] = $body;
+      drupal_mail_send($message);
+    }
+    if ($notification->instruction == 1 || $notification->instruction == 3) {
+      // Placeholder to send SMS
+    }
+    db_query("DELETE FROM cron_notification WHERE approver_uid=%d AND student_uid=%d AND gradestext='%s' AND programme='%s'", $notification->approver_uid, $notification->student_uid, $notification->gradestext, $notification->programme);
+  }
+}
 ?>
