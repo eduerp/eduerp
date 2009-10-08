@@ -903,6 +903,41 @@ function delete_student_grades($uid, $session_id, $semester_id) {
       search_wipe($node->nid, 'node');
     }
   }
+
+  // Now remove 'student_gpa'
+  $field = content_database_info(content_fields('field_session_id_gpa', 'student_gpa'));
+  $table_student_gpa = $field['table'];
+  $where = $field['columns']['value']['column'] . "='$session_id'";
+
+  $field = content_database_info(content_fields('field_semester_id_gpa', 'student_gpa'));
+  $where .= ' AND ' . $field['columns']['value']['column'] . "='$semester_id'";
+
+  $field = content_database_info(content_fields('field_student_ref_gpa', 'student_gpa'));
+  $where .= ' AND ' . $field['columns']['uid']['column'] . "=$uid";
+
+  $sql = "SELECT nid FROM {{$table_student_gpa}} WHERE $where";
+
+  $result = db_query($sql);
+
+  while ($row = db_fetch_object($result)) {
+    // Copied from node_delete(), but want to bypass access control.
+    $node = node_load($row->nid);
+
+    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+
+    // Call the node-specific callback (if any):
+    node_invoke($node, 'delete');
+    node_invoke_nodeapi($node, 'delete');
+
+    // Clear the page and block caches.
+    cache_clear_all();
+
+    // Remove this node from the search index if needed.
+    if (function_exists('search_wipe')) {
+      search_wipe($node->nid, 'node');
+    }
+  }
 }
 // END ALAN
 
