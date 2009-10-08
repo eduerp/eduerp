@@ -112,7 +112,94 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['staff/ajax']=array(
+    'title' => 'AJAX Routines',
+    'page callback' => '_staff_ajax',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
+}
+
+
+function _staff_ajax() {
+  $task = arg(2);
+
+  switch ($task):
+    case 'course':
+      $courses[""] = "";
+
+      $program = $_POST['programme_id'];
+      $level = $_POST['level_id'];
+
+      // Retrieve available courses that have not been assigned
+      $sql = "SELECT * FROM {course} WHERE course_id NOT IN (SELECT course_id FROM {registrable_course} WHERE programme_id=%d AND level_id=%d) ORDER BY course_code ASC";
+      $rs = db_query($sql, $program, $level);
+      while ($row = db_fetch_object($rs)) {
+        $courses[$row->course_id] = $row->course_title;
+      }
+
+      $form['course_id'] = array(
+        '#type' => 'select',
+        '#title' => 'Course',
+        '#options' => $courses,
+        '#attributes' => array('style' => 'width:100px'),
+        '#required' => TRUE);
+
+      $output = _staff_ahah_render($form, 'staff-course-assign-form1');
+      print drupal_to_js(array('data' => $output, 'status' => true));
+      break;
+    case 'delete':
+      $allocation_id = arg(3);
+
+      // Delete this allocation
+      $sql = "DELETE FROM {registrable_course} WHERE reg_course_id=%d";
+      $rs = db_query($sql, $allocation_id);
+      
+      if (db_affected_rows() > 0) echo "OK";
+      else echo "FAIL";
+      break;
+  endswitch;
+  exit();
+}
+
+
+function staff_course_assign_form1_validate($form, &$form_state) {
+  return true;
+}
+/*
+  This function is largely based on the poll module, its been simplified for reuse.
+  $fields is the specific form elements you want to attach via ahah,
+  $name is the form fields array key... e.g. the name for $form['title'] is "title"
+*/
+function _staff_ahah_render($fields, $name) {
+
+  drupal_alter('form', $fields, array(), 'staff_course_form');
+
+  $form_state = array('submitted' => FALSE,'#values'=>$_POST);
+  $form_build_id = $_POST['form_build_id'];
+  // Add the new element to the stored form. Without adding the element to the
+  // form, Drupal is not aware of this new elements existence and will not
+  // process it. We retreive the cached form, add the element, and resave.
+  $form = form_get_cache($form_build_id, $form_state);
+  if($form[$name]['#required'] == true){
+    $fields['#required'] =  true;
+  }
+  $form[$name] = $fields;
+  form_set_cache($form_build_id, $form, $form_state);
+  $form += array(
+    '#post' => $_POST,
+    '#programmed' => FALSE,
+  );
+   $form_state = array('submitted' => FALSE);
+
+  // Rebuild the form.
+  $form = form_builder($_POST['form_id'], $form, $form_state);
+
+  // Render the new output.
+  $new_form = $form[$name];
+  return drupal_render($new_form);
 }
 
 
@@ -468,9 +555,20 @@ function staff_view_form(&$obj) {
   return $form;
 }
 function staff_course_assign() {
+  $delete_assignment_js =<<< EOD
+function delete_course(id) {  
+  if (confirm('Are you sure you want to delete this course assignment?')) {
+    $.get('/staff/ajax/delete/'+id, function(data) { location.href='/staff/registrablecourse'; });
+  }
+}
+EOD;
+  drupal_add_js($delete_assignment_js, 'inline');
+
   ob_start();
   echo  drupal_get_form('staff_course_assign_form1');
+  echo "<div id='assigned_courses'>";
   course_assign_list();
+  echo "</div>";
 ?>
 <?php
   return ob_get_clean();
@@ -555,15 +653,19 @@ function staff_course_assign_form1(&$obj) {
     '#options' => staff_level(),
     '#title' => 'Level',
     '#required' => TRUE,
+    '#ahah' => array('path' => 'staff/ajax/course', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'courses'),
     '#form_panel_col' => 3,
     '#form_panel_row' => 2);
   $form['course_id'] = array(
     '#type' => 'select',
-    '#options' => staff_course(),
     '#title' => 'Course',
+    '#options' => staff_course(),
     '#attributes' => array(
       'style' => 'width:100px'),
+    '#prefix' => "<div id='courses'>",
+    '#suffix' => "</div>",
     '#required' => TRUE,
+    '#disabled' => TRUE,
     '#form_panel_col' => 4,
     '#form_panel_row' => 2);
   $form['course_type_id'] = array(
@@ -580,24 +682,6 @@ function staff_course_assign_form1(&$obj) {
     '#required' => TRUE ,
     '#form_panel_col' => 6,
     '#form_panel_row' => 2);
-  $form['min_credit'] = array(
-    '#title' => 'Min Credit',
-    '#type' => 'textfield',
-    '#attributes' => array(
-      'style' => 'width:100px'),
-    '#size' => 20,
-    '#required' => TRUE,
-    '#form_panel_col' => 7,
-    '#form_panel_row' => 2);
-  $form['max_credit'] = array(
-    '#title' => 'Max Credit',
-    '#type' => 'textfield',
-    '#attributes' => array(
-      'style' => 'width:100px'),
-    '#size' => 20,
-    '#required' => TRUE,
-    '#form_panel_col' => 8,
-    '#form_panel_row' => 2);
   $form['jambsubn'] = array(
     '#id' => 'edit-next',
     '#value' => 'Add',
@@ -607,23 +691,26 @@ function staff_course_assign_form1(&$obj) {
   return $form;
 }
 function course_assign_list() {
-  $query = "Select p.programme_name, l.level_name, c.course_title, vs.staff_first_name, rc. *
+  $query = "SELECT p.field_programme_name_value AS programme_name, l.level_name, c.course_title, vs.staff_first_name, vs.staff_last_name, rc.*
     from registrable_course rc
-    inner join programme p on p.programme_id = rc.programme_id
+    inner join content_type_program p on p.field_programme_id_value = rc.programme_id
     inner join level l on l.level_id = rc.level_id
     inner join course c on rc.course_id = c.course_id
     left join veritas_staff vs on vs.staff_id = rc.lecturer_id
+    WHERE p.field_department_id_value = %d
 ";
-  $r=db_query($query);
+  $r=db_query($query, $_SESSION['staff']['data']->department_id);
+  $html .= "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
     $course_type = array('1' => 'Core', 2 => 'Elective');
-    $html .= '<tr>
-    <td>'. $f->programme_name .'</td><td>'. $f->level_name .'&nbsp;</td>
-    <td>'. $f->course_title .'</td><td>'. $course_type[$f->course_type] .'</td>
-    <td>'. $f->staff_first_name .'</td>
-    <td>'. $f->min_credit_load .'&nbsp;</td>
-    <td>'. $f->max_credit_load .'</td>
-    </tr>';
+    $html .=<<<EOD
+<tr>
+  <td>{$f->programme_name}</td><td>{$f->level_name}&nbsp;</td>
+  <td>{$f->course_title}</td><td>{$course_type[$f->course_type]}</td>
+  <td>{$f->staff_first_name}</td>
+  <td><input type="button" class="delete_btn" value="Delete" onClick="delete_course({$f->reg_course_id});" /></td>
+</tr>
+EOD;
   }
 ?>
 <table border ="1">
@@ -633,32 +720,26 @@ function course_assign_list() {
 }
 function staff_course_assign_form1_submit(&$form, &$state) {
   $values = $state['values'];
-  echo  $query = "insert into `registrable_course` set
-    course_id = '". $values['course_id'] ."',
-    programme_id = '". $values['programme_id'] ."',
-    level_id = '". $values['level_id'] ."',
-    course_type = '". $values['course_type_id'] ."',
-    min_credit_load  = '". $values['min_credit'] ."',
-    max_credit_load = '". $values['max_credit'] ."',
-    lecturer_id = '". $values['staff_id'] ."'
-  ";
-  db_query($query);
+  $query = "INSERT INTO {registrable_course} SET course_id=%d, programme_id=%d, level_id=%d, course_type=%d, lecturer_id=%d";
+  db_query($query, $values['course_id'], $values['programme_id'], $values['level_id'], $values['course_type_id'], $values['staff_id']);
   drupal_set_message("Registable Course Created");
   drupal_goto("staff/registrablecourse");
 }
 function lecturer() {
   $titles['']="Select";
-  $r=db_query("select * from `veritas_staff` where parent_id = ". $_SESSION['staff']['data']->staff_id ." order by staff_first_name");
+  $r=db_query("select * from `veritas_staff` where department_id = ". $_SESSION['staff']['data']->department_id ." order by staff_first_name");
     while ($f=db_fetch_object($r))
-      $titles[$f->staff_id]=$f->staff_first_name;
+      $titles[$f->staff_id]=sprintf('%s %s', $f->staff_first_name, $f->staff_last_name);
   return  $titles;
 }
 function staff_prg() {
-  $titles['']="";
-  $r=db_query("select p.* from `programme` p inner join veritas_staff_department sd on sd.department_id=p.department_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by programme_name");
-  while ($f=db_fetch_object($r))
-    $titles[$f->programme_id]=$f->programme_name;
-  return  $titles;
+  $titles[''] = "";
+  $sql = "SELECT DISTINCT field_programme_name_value AS name, field_programme_id_value AS id FROM {content_type_program} WHERE field_department_id_value=%d ORDER BY name ASC";
+  $rows = db_query($sql, $_SESSION['staff']['data']->department_id);
+  while ($row = db_fetch_object($rows)) {
+    $titles[$row->id] = $row->name;
+  }
+  return $titles;
 }
 function staff_level() {
   $titles['']="";
@@ -669,7 +750,8 @@ function staff_level() {
 }
 function staff_course() {
   $titles['']="";
-  $r=db_query("select * from `course` c inner join veritas_staff_department sd on sd.department_id=c.deapartment_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by course_title");
+  //$r=db_query("select * from `course` c inner join veritas_staff_department sd on sd.department_id=c.department_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by course_title");
+  $r = db_query("SELECT * FROM {course}");
   while ($f=db_fetch_object($r))
     $titles[$f->course_id]=$f->course_title;
   return  $titles;
@@ -1356,12 +1438,11 @@ function staff_user($op, &$edit, &$account, $category) {
   //var_dump($_SESSION['staff']['data']->role_id);
   switch ($op) {
     case 'login':
-      $query ="select COUNT(*) from `veritas_staff`  where user_id = '". $account->uid."'";
-      $result = db_query($query);
-	  $rows = db_fetch_array($result);
-
-	  if ($result && $rows[0] > 0) {
-
+      $query ="select COUNT(*) AS count from `veritas_staff` where user_id = %d";
+      $result = db_query($query, $account->uid);
+	    $rows = db_fetch_array($result);
+    
+	    if ($result && intval($rows['count']) > 0) {
         $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a . staff_type_id = b . staff_type_id left outer join veritas_staff_role as c on a . role_id=c . id  where a . user_id = '". $account->uid ."'");
 
         if ($result && ($data = db_fetch_object($result))) {
@@ -1372,12 +1453,16 @@ function staff_user($op, &$edit, &$account, $category) {
             //drupal_goto('staff/academic');
           }*/
 
-          $qry = "select a . *, b . name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
-          $res=db_query($qry);
-          $result1=db_fetch_object($res);
-          $_SESSION['staff']['role'] = $result1->name;
-          $_SESSION['staff']['user'] = $data->usrname;
+          //$qry = "select a . *, b . name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
+          //$res=db_query($qry);
+          //$result1=db_fetch_object($res);
+
+          // Since we've reimplemented non-drupal features like roles, this is not necessary
+          // I'm leaving it commented just in case.
+          //$_SESSION['staff']['role'] = $result1->name;
+          //$_SESSION['staff']['user'] = $data->usrname;
           $_SESSION['staff']['data'] = $data;
+
 		  // drupal_goto('staff/profile');
         }
       }
