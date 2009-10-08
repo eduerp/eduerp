@@ -1801,6 +1801,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         else {
           form_set_error('jambno', "Jamb number not valid.");
         }
+        if ($result->clearance_status && $result->verify_status) form_set_error('jambno', 'This student has already been cleared');
       }
       else {
         $qry = "select * from {admitted_student} where matriculation_no='%s'";
@@ -1811,6 +1812,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         else {
           form_set_error('matno', "Matriculation number not valid.");
         }
+        if ($result->clearance_status && $result->verify_status) form_set_error('matno', 'This student has already been cleared');
       }
     }
   }
