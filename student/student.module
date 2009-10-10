@@ -3,31 +3,32 @@
 function student_menu() {
 
   $items['student/new'] = array(
-    'title' => 'JAMB/UME STUDENT REGISTRATION FORM',
+    'title' => 'JAMB/UME Student Application Form',
     'page callback' => 'drupal_get_form',
     'page arguments'=>array('student_reg_form'),
     'access arguments' => array('student new'),
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['student/registration2'] = array(
-   'title' => 'Student Registration',
+  $items['student/registration'] = array(
+   'title' => 'Student Registration Form',
    'page callback' => 'drupal_get_form',
    'page arguments' => array('student_registration_form'),
    'access arguments' => array('student admit'),
    'type' => MENU_NORMAL_ITEM,
   );
-  $items['studentreg/login'] = array(
-  'page callback' => 'drupal_get_form',
-  'page arguments' => array('register_student_login_form'),
-  'access arguments' => array('student login'),
-  'type' => MENU_CALLBACK,
-  );
+  //$items['studentreg/login'] = array(
+  //'page callback' => 'drupal_get_form',
+  //'page arguments' => array('register_student_login_form'),
+  //'access arguments' => array('student login'),
+  //'type' => MENU_CALLBACK,
+  //);
 
   $items['student/course'] = array(
+   'title' => 'Student Course Registration Form',
    'page callback' => 'drupal_get_form',
    'page arguments' => array('student_course_form'),
    'access arguments' => array('student course'),
-   'type' => MENU_CALLBACK,
+   'type' => MENU_NORMAL_ITEM,
   );
 
   $items['student/ajaxlga'] = array(
@@ -36,8 +37,15 @@ function student_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['student/registercourses'] = array(
-    'title' => 'Register Courses',
+  $items['student/listcourses'] = array(
+    'title' => 'List My Courses',
+    'page callback' => 'student_courses',
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/showgrades'] = array(
+    'title' => 'Show My Grades',
     'page callback' => 'student_courses',
     'access arguments' => array('student course'),
     'type' => MENU_NORMAL_ITEM,
@@ -521,7 +529,7 @@ function student_course_form_submit($form,&$state){
   }
   if($state['storage']['step'] == 2){
      add_student_courses($state['clicked_button']['#post']);
-     drupal_goto("student/registercourses");
+     drupal_goto("student/listcourses");
   }
   if ($state['clicked_button']['#id'] == 'edit-previous') {
       $state['storage']['step']--;
@@ -972,7 +980,7 @@ function student_login_form(&$obj){
 }
 
 function student_login_form_submit(&$obj) {
-  drupal_goto('student/registration2');
+  drupal_goto('student/registration');
 }
 
 function student_registration_form(&$obj) {
