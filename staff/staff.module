@@ -510,7 +510,7 @@ function staff_view_form(&$obj) {
     '#title' => 'Room',
     '#type' => 'textfield',
     '#size' => 20,
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#default_value' => $data->room_number);
   $form['salary_garde_level'] = array(
     '#type' => 'select',
@@ -811,13 +811,13 @@ function staff_registration_form2(&$obj) {
     '#options' => department(),
     '#title' => 'Department',
     '#default_value' => $_POST['staff_department'],
-    '#required' => TRUE);
+    '#required' => FALSE);
   $form['staff_room']=array(
     '#title' => 'Room',
     '#type' => 'textfield',
     '#size' => 20,
     '#default_value' => $_POST['staff_room'],
-    '#required' => TRUE);
+    '#required' => FALSE);
   $form['salary_garde_level'] = array(
     '#type' => 'select',
     '#options' => salary_grade(),
@@ -923,7 +923,7 @@ function staff_position() {
 function department() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Select";
+    $titles[0]="Not Applicable";
     $r=db_query("select * from `department`  order by department_name");
     while ($f=db_fetch_object($r))
       $titles[$f->department_id]=$f->department_name;
