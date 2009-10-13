@@ -1267,7 +1267,9 @@ function student_registration_form_submit($form, &$state) {
       'timezone' => $timezone
       // END ALAN
     );
-    $user = user_save(NULL, $drupal_data);
+
+		// Instead of creating a new user account, replace the old one with the new data
+    $user = user_save(user_load($_SESSION['student']['data']->student_id), $drupal_data);
     $query = "update {admitted_student} set matriculation_no ='". $mat_number ."' , user_id='". $user->uid ."' where student_id ='". $_SESSION['student']['data']->student_id ."'";
     db_query($query);
   /////////////////////////////////////////////////////

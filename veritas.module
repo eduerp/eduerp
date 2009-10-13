@@ -452,7 +452,7 @@ function veritas_user_save($type, $mail, $transid) {
     $rolename = 'Contractor';
   } else
     if ($type == 'sreg') {
-      $rolename = 'Student';
+      $rolename = 'Applicant';
     } else
       return;
   $name = $mail;
@@ -481,11 +481,12 @@ function veritas_user_save($type, $mail, $transid) {
   $acc->password = $pass;
   $pass2 = uniqid();
   db_query("update transaction set user_type_id=%d,username='%s' ,password_2='%s' where receipt_no='%s'", $acc->uid, $acc->name, $pass2, $transid);
-  _user_mail_notify('register_no_approval_required', $acc);
+  // For now disable mail notifications
+	//_user_mail_notify('register_no_approval_required', $acc);
   user_authenticate($data);
   return $acc;
-
 }
+
 function _veritas_insert_student($val, $uid) {
 }
 
