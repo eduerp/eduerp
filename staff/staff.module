@@ -1801,7 +1801,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         else {
           form_set_error('jambno', "Jamb number not valid.");
         }
-        if ($result->clearance_status && $result->verify_status) form_set_error('jambno', 'This student has already been cleared');
+        if ($result->clearance_status == 1 && $result->verify_status == 1) form_set_error('jambno', 'This student has already been cleared');
       }
       else {
         $qry = "select * from {admitted_student} where matriculation_no='%s'";
@@ -1812,7 +1812,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         else {
           form_set_error('matno', "Matriculation number not valid.");
         }
-        if ($result->clearance_status && $result->verify_status) form_set_error('matno', 'This student has already been cleared');
+        if ($result->clearance_status == 1 && $result->verify_status == 1) form_set_error('matno', 'This student has already been cleared');
       }
     }
   }
@@ -1912,16 +1912,12 @@ function staff_begin_clearance_form_validate($form, &$state) {
 
     /* Code adding started on 27/02/2009 for student clearance main page. */
 function staff_begin_clearance_form2(&$obj) {
-/*
-  if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
-  }*/
   if (isset($_SESSION['staff']['jamb'])) {
-    $qry = "select * from {admitted_student} where (jambno='%s') AND (verify_status=0 OR clearance_status=0)";
+    $qry = "select * from {admitted_student} where (jambno='%s') AND (verify_status != 1 AND clearance_status != 1)";
     $res = db_query($qry, $_SESSION['staff']['jamb']);
   }
   else {
-    $qry = "select * from {admitted_student} where (matriculation_no='%s') AND (verify_status=0 OR clearance_status=0)";
+    $qry = "select * from {admitted_student} where (matriculation_no='%s') AND (verify_status != 1 AND clearance_status != 1)";
     $res = db_query($qry, $_SESSION['staff']['mat']);
   }
   if ($res && ($result=db_fetch_object($res))) {
