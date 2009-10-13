@@ -1220,10 +1220,29 @@ function _student_registration_form1(&$obj) {
 function student_registration_form_submit($form, &$state) {
 
   if ($state['storage']['step'] == 7) {
+		// Retrieve the program abbreviation
+		$q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.id=s.first_choice AND s.student_id=%d";
+		$rs = db_query($q, $_SESSION['student']['data']->student_id);
+		$program = db_fetch_array($rs);
+		
+		// Attempt to get the highest matno for the current session for the specified program
+		$search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session'), 2, 2));
+		$sql = "SELECT MID(matriculation_no, LENGTH('%s')+1, LENGTH(matriculation_no)) AS last_index FROM {admitted_student} WHERE matriculation_no RLIKE '%s[[:digit:]]+' ORDER BY matriculation_no DESC LIMIT 1";
+		$rs = db_query($sql, $search, $search);
+		$row = db_fetch_array($rs);
+		if ($row):
+			$last_index = intval($row['last_index']);
+		else:
+			$last_index = 0;
+		endif;
+
+		// Increment the matno index which is the 010 in VUG/ACC/08/010 for instance
+		$matindex = $last_index + 1;
+		$mat_number = sprintf("%s%03d", $search, $matindex);
 
     $t_id = make_transaction($form);
     ////////////////matriculation number /////////////////
-    $mat_number = "VUG". vsprintf("%04d", array($_SESSION['student']['data']->student_id)) ;
+    //$mat_number = "VUG". vsprintf("%04d", array($_SESSION['student']['data']->student_id)) ;
     // here to insert drupal_user
     $sql = "select * from {role} where name = '%s'";
     $q = db_query($sql, 'Student');
