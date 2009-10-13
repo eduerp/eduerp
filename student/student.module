@@ -1235,7 +1235,7 @@ function student_registration_form_submit($form, &$state) {
     $drupal_data = array(
       'mail' => $_SESSION['student']['data']->email_address,
       'pass' => $_SESSION['student']['data']->dob,
-      'name' => 'S'.$mat_number,
+      'name' => $mat_number,
       'roles' => array($f->rid),
       'init' => $_SESSION['student']['data']->email_address,
       'status' => 1
@@ -1285,7 +1285,7 @@ function student_registration_form_submit($form, &$state) {
     $message['body'] = veritas_student_receipt($f,TRUE) .'<tr>
     <th>Username:
     </th>
-    <td>S'. $mat_number .'
+    <td>'. $mat_number .'
     </td>
   </tr><tr>
     <th>Password:
