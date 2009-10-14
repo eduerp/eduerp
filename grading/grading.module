@@ -471,14 +471,15 @@ function _grading_ahah_stats() {
       gpa.field_program_ref_gpa_nid=p.nid AND
       p.field_department_name_value='%s' ORDER BY programme ASC";
   $programmerows = db_query($sql, $level, $session, $semester, $department);
-  if (!empty($programmerows)) {
-    $output .= '<tr><td colspan="2"><br /></td></tr>';
-    $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
-
-    while ($programmerow = db_fetch_object($programmerows)) {
-      $programmeenc = rawurlencode($programmerow->programme);
-      $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
+  $first = true;
+  while ($programmerow = db_fetch_object($programmerows)) {
+    if ($first) {
+      $output .= '<tr><td colspan="2"><br /></td></tr>';
+      $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
+      $first = false;
     }
+    $programmeenc = rawurlencode($programmerow->programme);
+    $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
   }
 
   $output .= '<tr><td colspan="2"><br /></td></tr>';
