@@ -1,0 +1,142 @@
+<?php
+
+/**
+ *  Implementation of hook_perm().
+ */
+function importstudents_perm() {
+  $perms = array();
+  $perms[] = 'import students';
+  return $perms;
+}
+
+
+function importstudents_menu() {
+  $items = array();
+
+  $items['importstudents/import'] = array(
+    'page callback' => '_importstudents',
+    'access arguments' => array('import students'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+function _importstudents() {
+  ob_start();
+
+  $file = fopen('admitted_student.csv','r');
+
+  if (empty($file)) {
+    echo 'File did not open';
+    return ob_get_clean();
+  }
+
+  echo '<table>';
+
+  $names = fgetcsv($file);
+
+  echo '<tr>';
+
+  $nameslist = $names;
+  unset($nameslist[0]);
+  unset($nameslist[16]);
+  unset($nameslist[17]);
+  unset($nameslist[18]);
+  unset($nameslist[26]);
+  unset($nameslist[44]);
+  foreach ($nameslist as $i => $field) {
+    echo "<td>{$field}</td>";
+  }
+  echo '</tr>';
+
+  while ($row = fgetcsv($file)) {
+    $rownamed = array();
+    foreach ($row as $i => $field) {
+      $rownamed[$names[$i]] = $field;
+    }
+
+    unset($rownamed['student_id']);
+    unset($rownamed['username']);
+    unset($rownamed['pwd']);
+    unset($rownamed['sponsor_name']);
+    unset($rownamed['sponsor_address']);
+    unset($rownamed['Admitted']);
+    $rownamed['user_type_id'] = 0;
+    $rownamed['pic_id'] = 0;
+    $rownamed['admitted'] = 0;
+    $rownamed['session_id'] = 0;
+    $rownamed['level_id'] = 2;
+
+    echo '<tr>';
+
+    $nameslist = '';
+    $datalist = '';
+    $addcomma = false;
+
+    foreach ($rownamed as $i => $field) {
+      echo "<td>{$field}</td>";
+
+      if ($addcomma) $nameslist .= ', ';
+      $nameslist .= $i;
+
+      if ($addcomma) $datalist .= ', ';
+      $datalist .= "'" . addslashes($field) . "'";
+
+      $addcomma = true;
+    }
+
+//  $existing = db_query("SELECT * FROM {admitted_student} WHERE matriculation_no='%s'", $rownamed['matriculation_no']);
+
+    if (!empty($existing)) {
+      echo '<td>...Skipping: ' . $rownamed['matriculation_no'] . '</td>';
+      continue;
+    }
+
+//  db_query('INSERT INTO {admitted_student} (' . $nameslist . ') VALUES (' . $datalist . ')');
+
+//  $last = db_query('SELECT LAST_INSERT_ID() AS last');
+//  $last = db_fetch_object($last);
+
+    $sql = "select * from {role} where name = '%s'";
+//  $q = db_query($sql, 'Student');
+//  $f = db_fetch_object($q);
+
+    if (empty($rownamed['middle_name'])) $rownamed['middle_name'] = '';
+//  $timezone = variable_get('date_default_timezone', 0);
+
+    $drupal_data = array(
+      'mail' => $rownamed['email_address'],
+      'pass' => $rownamed['dob'],
+      'name' => $rownamed['matriculation_no'],
+      'roles' => array($f->rid),
+      'init' => $rownamed['email_address'],
+      'status' => 1,
+      'profile_last_name' => $rownamed['last_name'],
+      'profile_first_name' => $rownamed['first_name'],
+      'profile_middle_name' => $rownamed['middle_name'],
+      'timezone' => $timezone
+    );
+
+//  $user = user_save(NULL, $drupal_data);
+
+//  db_query("UPDATE {admitted_student} SET user_id=%d, pwd=dob, user_type_id=%d WHERE student_id=%d", $user->uid, $last->last, $last->last);
+
+//select * from admitted_student where student_id=460;
+//+------------+--------------+------------------+-------------+------------+--------------+-------+--------+------------+-------------+-----------------+----------------+--------------+-------------+---------------+--------------------------+----------+------+--------------+---------------+------------+-------------+--------------------+------------------------+-------------------------+------------------------+-----------------+--------------------+---------------------------------------------+---------+--------+------------------+----------------+---------+--------+---------------+--------------+---------------+-----------------------------+------------+--------------+-----+--------+--------+----------+------------------+-------------+-----------------+--------------+---------------+------------+------------------+---------------+----------------+----------+---------+
+//| student_id | user_type_id | matriculation_no | first_name  | last_name  | middle_name  | title | gender | dob        | nationality | lkup_lga_origin | marital_status | religion     | telephone   | mobile_number | email_address            | username | pwd  | sponsor_name | mode_of_entry | jambno     | yearofentry | permanent_address1 | permanent_address_city | permanent_address_state | physical_health_status | sponsor_address | h_qualification1   | h_institution1                              | h_date1 | h_end1 | h_qualification2 | h_institution2 | h_date2 | h_end2 | mode_of_study | first_choice | second_choice | hobbies                     | disability | state_origin | nid | pic_id | subrel | admitted | signature_pic_id | maiden_name | contact_address | contact_city | contact_state | session_id | clearance_status | verify_status | clearance_date | level_id | user_id |
+//+------------+--------------+------------------+-------------+------------+--------------+-------+--------+------------+-------------+-----------------+----------------+--------------+-------------+---------------+--------------------------+----------+------+--------------+---------------+------------+-------------+--------------------+------------------------+-------------------------+------------------------+-----------------+--------------------+---------------------------------------------+---------+--------+------------------+----------------+---------+--------+---------------+--------------+---------------+-----------------------------+------------+--------------+-----+--------+--------+----------+------------------+-------------+-----------------+--------------+---------------+------------+------------------+---------------+----------------+----------+---------+
+//|        460 |            0 | VUG/POL/08/053   | chukwuebuka | chukwuneta | cyprian paul |     1 | male   | 1989-06-29 | 156         | 79              | single         | Christianity | 08027542062 | 08064585022   | manbishop4life@yahoo.com | NULL     | NULL | NULL         | UME           | 82000301cb |        2008 | 14b ngwa road      | Aba                    | 1                       | normal                 | NULL            | WASSCE MAY/JUN2007 | Christ the king catherdral secondary school | 1/2001  | 7/2007 |                  |                | 1/2001  | 1/2001 | Full_Time     |            7 |             7 | reading,chating & wrestling |            | 4            |   0 |     23 | 1      |        0 |                0 | NULL        | NULL            | NULL         | NULL          |          0 |             NULL |          NULL | NULL           |        2 |    NULL |
+//+------------+--------------+------------------+-------------+------------+--------------+-------+--------+------------+-------------+-----------------+----------------+--------------+-------------+---------------+--------------------------+----------+------+--------------+---------------+------------+-------------+--------------------+------------------------+-------------------------+------------------------+-----------------+--------------------+---------------------------------------------+---------+--------+------------------+----------------+---------+--------+---------------+--------------+---------------+-----------------------------+------------+--------------+-----+--------+--------+----------+------------------+-------------+-----------------+--------------+---------------+------------+------------------+---------------+----------------+----------+---------+
+//delete from admitted_student where student_id=460;
+
+    echo '<td>...Worked</td>';
+    echo '</tr>';
+return ob_get_clean();
+  }
+  echo '</table>';
+
+  return ob_get_clean();
+}
+?>
