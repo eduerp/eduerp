@@ -471,14 +471,15 @@ function _grading_ahah_stats() {
       gpa.field_program_ref_gpa_nid=p.nid AND
       p.field_department_name_value='%s' ORDER BY programme ASC";
   $programmerows = db_query($sql, $level, $session, $semester, $department);
-  if (!empty($programmerows)) {
-    $output .= '<tr><td colspan="2"><br /></td></tr>';
-    $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
-
-    while ($programmerow = db_fetch_object($programmerows)) {
-      $programmeenc = rawurlencode($programmerow->programme);
-      $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
+  $first = true;
+  while ($programmerow = db_fetch_object($programmerows)) {
+    if ($first) {
+      $output .= '<tr><td colspan="2"><br /></td></tr>';
+      $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
+      $first = false;
     }
+    $programmeenc = rawurlencode($programmerow->programme);
+    $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
   }
 
   $output .= '<tr><td colspan="2"><br /></td></tr>';
@@ -489,48 +490,36 @@ function _grading_ahah_stats() {
     FROM {content_type_program} p, {veritas_staff} vs, {users_roles} ur, {role} r
     WHERE p.field_department_name_value='%s' AND p.field_department_id_value=vs.department_id AND vs.user_id=ur.uid AND ur.rid=r.rid AND r.name='Dean'";
   $deanresult = db_query($sql, $department);
-  if (!empty($deanresult)) {
-    $dean_uid = '';
-    while ($dean = db_fetch_object($deanresult)) {
-      if ($dean_uid === '') $dean_uid = $dean->dean_uid;
-      else $dean_uid = $dean_uid . ',' . $dean->dean_uid;
-    }
+  $dean_uid = '';
+  while ($dean = db_fetch_object($deanresult)) {
+    if ($dean_uid === '') $dean_uid = $dean->dean_uid;
+    else $dean_uid = $dean_uid . ',' . $dean->dean_uid;
   }
-  else {
-    $dean_uid = 0;
-  }
+  if (empty($dean_uid)) $dean_uid = 0;
 
   // Find Registrar uid
   $sql = "SELECT ur.uid AS registrar_uid
     FROM {users_roles} ur, {role} r
     WHERE ur.rid=r.rid AND r.name='Registrar'";
   $registrarresult = db_query($sql);
-  if (!empty($registrarresult)) {
-    $registrar_uid = '';
-    while ($registrar = db_fetch_object($registrarresult)) {
-      if ($registrar_uid === '') $registrar_uid = $registrar->registrar_uid;
-      else $registrar_uid = $registrar_uid . ',' . $registrar->registrar_uid;
-    }
+  $registrar_uid = '';
+  while ($registrar = db_fetch_object($registrarresult)) {
+    if ($registrar_uid === '') $registrar_uid = $registrar->registrar_uid;
+    else $registrar_uid = $registrar_uid . ',' . $registrar->registrar_uid;
   }
-  else {
-    $registrar_uid = 0;
-  }
+  if (empty($registrar_uid)) $registrar_uid = 0;
 
   // Find VC uid
   $sql = "SELECT ur.uid AS vc_uid
     FROM {users_roles} ur, {role} r
     WHERE ur.rid=r.rid AND r.name='VC'";
   $vcresult = db_query($sql);
-  if (!empty($vcresult)) {
-    $vc_uid = '';
-    while ($vc = db_fetch_object($vcresult)) {
-      if ($vc_uid === '') $vc_uid = $vc->vc_uid;
-      else $vc_uid = $vc_uid . ',' . $vc->vc_uid;
-    }
+  $vc_uid = '';
+  while ($vc = db_fetch_object($vcresult)) {
+    if ($vc_uid === '') $vc_uid = $vc->vc_uid;
+    else $vc_uid = $vc_uid . ',' . $vc->vc_uid;
   }
-  else {
-    $vc_uid = 0;
-  }
+  if (empty($vc_uid)) $vc_uid = 0;
 
   $exams[1] = array('lock' => $summaryrow->ca1locked,  'gradestext' => 'Continuous Assessment 1', 'fieldtoapprove' => 'field_ca1locked_value',       'srcfield' => 'field_ca1_value', 'destfield' => 'field_ca1forstudent_value');
   $exams[2] = array('lock' => $summaryrow->ca2locked,  'gradestext' => 'Continuous Assessment 2', 'fieldtoapprove' => 'field_ca2locked_value',       'srcfield' => 'field_ca2_value', 'destfield' => 'field_ca2forstudent_value');
@@ -734,8 +723,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
     WHERE p.field_department_name_value='%s'
     LIMIT 1";
   $collegeresult = db_query($sql, $department);
-  if (!empty($collegeresult)) {
-    $collegerow = db_fetch_object($collegeresult);
+  if ($collegerow = db_fetch_object($collegeresult)) {
     $college = $collegerow->college;
   }
   else {
@@ -891,8 +879,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
     WHERE p.field_department_name_value='%s'
     LIMIT 1";
   $collegeresult = db_query($sql, $department);
-  if (!empty($collegeresult)) {
-    $collegerow = db_fetch_object($collegeresult);
+  if ($collegerow = db_fetch_object($collegeresult)) {
     $college = $collegerow->college;
   }
   else {
@@ -1059,8 +1046,7 @@ function approve_grades_vc_form_submit($form, &$form_state) {
     WHERE p.field_department_name_value='%s'
     LIMIT 1";
   $collegeresult = db_query($sql, $department);
-  if (!empty($collegeresult)) {
-    $collegerow = db_fetch_object($collegeresult);
+  if ($collegerow = db_fetch_object($collegeresult)) {
     $college = $collegerow->college;
   }
   else {
@@ -1107,14 +1093,13 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       gpa.field_program_ref_gpa_nid=p.nid AND
       p.field_department_name_value='%s'";
   $studentresult = db_query($sql, $level, $session, $semester, $department);
-  if (!empty($studentresult)) {
-    while ($student = db_fetch_object($studentresult)) {
-      $student_uid = $student->field_student_ref_gpa_uid;
+  while ($student = db_fetch_object($studentresult)) {
+    $student_uid = $student->field_student_ref_gpa_uid;
 
-      db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, '%s', '%s', %d)",
-       $user->uid, $student_uid, $gradestext, $department, 3);
-    }
+    db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, '%s', '%s', %d)",
+      $user->uid, $student_uid, $gradestext, $department, 3);
   }
+
 
   drupal_set_message('Approval Successfull');
   $_SESSION['eduerpvcapprovalform'] = NULL; // Just in case they somehow come back to the form
@@ -1376,14 +1361,15 @@ function _grading_ahah_stats_uni() {
       if ($queryvalue) $programmerows = db_query($sql, $level, $session, $semester, $queryvalue);
       else             $programmerows = db_query($sql, $level, $session, $semester);
 
-      if (!empty($programmerows)) {
-        $output .= '<tr><td colspan="5"><br /></td></tr>';
-        $output .= '<tr><td colspan="5">View Department Details (for level ' . $level . ')...</td></tr>';
-
-        while ($programmerow = db_fetch_object($programmerows)) {
-          $departmentenc = rawurlencode($programmerow->department);
-          $output .= '<tr><td colspan="5"><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->department . '</a></td></tr>';
+      $first = true;
+      while ($programmerow = db_fetch_object($programmerows)) {
+        if ($first) {
+          $output .= '<tr><td colspan="5"><br /></td></tr>';
+          $output .= '<tr><td colspan="5">View Department Details (for level ' . $level . ')...</td></tr>';
+          $first = false;
         }
+        $departmentenc = rawurlencode($programmerow->department);
+        $output .= '<tr><td colspan="5"><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->department . '</a></td></tr>';
       }
     }
   }

@@ -653,10 +653,7 @@ function create_cck_records($admitted_student, $reg_course_id, $data, $session_i
     rc.reg_course_id={$reg_course_id} AND
     rc.lecturer_id_alternate=vs.staff_id";
   $alternate_result = db_query($query);
-  if (!empty($alternate_result)) {
-    $alternate_row = db_fetch_object($alternate_result);
-  }
-  else $alternate_row->alternate_user_id = NULL;
+  if (!($alternate_row = db_fetch_object($alternate_result))) $alternate_row->alternate_user_id = NULL;
 
   // Get details of the student's home programme, department, college (as opposed to the course's)
   $query = "SELECT
@@ -1224,7 +1221,7 @@ function student_registration_form_submit($form, &$state) {
 		$q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.id=s.first_choice AND s.student_id=%d";
 		$rs = db_query($q, $_SESSION['student']['data']->student_id);
 		$program = db_fetch_array($rs);
-		
+
 		// Attempt to get the highest matno for the current session for the specified program
 		$search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session'), 2, 2));
 		$sql = "SELECT MID(matriculation_no, LENGTH('%s')+1, LENGTH(matriculation_no)) AS last_index FROM {admitted_student} WHERE matriculation_no RLIKE '%s[[:digit:]]+' ORDER BY matriculation_no DESC LIMIT 1";
@@ -1255,7 +1252,7 @@ function student_registration_form_submit($form, &$state) {
       'mail' => $_SESSION['student']['data']->email_address,
       'pass' => $_SESSION['student']['data']->dob,
       'name' => $mat_number,
-      'roles' => array($f->rid),
+      'roles' => array($f->rid => $f->rid),
       'init' => $_SESSION['student']['data']->email_address,
       'status' => 1
 
