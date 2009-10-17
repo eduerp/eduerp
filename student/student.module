@@ -217,7 +217,7 @@ function student_course_form1(&$obj) {
    $query = "SELECT   *  from  {registrable_course} rc where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
    $result = db_query($query);
    $min_max_credits = db_fetch_object($result);
-   $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+   $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
    $result = db_query($query);
    $rows = array();
    $core_html = "<tr>
@@ -366,7 +366,7 @@ function student_course_form2(&$obj) {
   $query ="SELECT   *  from  registrable_course rc where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
   $result = db_query($query);
   $min_max_credits = db_fetch_object($result);
-  $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+  $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
   $result = db_query($query);
   $rows = array();
   $core_html = "<tr>
