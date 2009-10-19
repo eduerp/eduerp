@@ -113,7 +113,7 @@ function _importstudents() {
     $existing = db_query("SELECT * FROM {admitted_student} WHERE matriculation_no='%s'", $rownamed['matriculation_no']);
 
     if (db_fetch_object($existing)) {
-      echo '<td>...Already Exists... Skipping: ' . $rownamed['matriculation_no'] . '</td>';
+      echo '<td>...Already Exists... Skipping: ' . $rownamed['matriculation_no'] . "u:{$existing->user_id} s:{$existing->student_id}</td>";
 
       $student[$rownamed['matriculation_no']]['user_id'] = $existing->user_id;
       $student[$rownamed['matriculation_no']]['student_id'] = $existing->student_id;
