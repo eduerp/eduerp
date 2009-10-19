@@ -464,9 +464,12 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
   }
 
   $student_gpa = get_cck_nid_i('student_gpa', 'field_session_id_gpa', $program_row->session_id, 'field_semester_id_gpa', $program_row->semester_id, 'field_level_id_gpa', $home_program_row->level_id, NULL, NULL, NULL, NULL, 'field_student_ref_gpa', $admitted_student->user_id);
+
+echo "<br>xyz uid: $admitted_student->user_id, home_program: $home_program, session_id: $program_row->session_id, session_name: $program_row->sess_name, semester_id: $program_row->semester_id, level_id: $home_program_row->level_id, level_name: $home_program_row->level_name</br>";
+
   if (empty($student_gpa)) {
 
-echo "xyz uid: $admitted_student->user_id, home_program: $home_program, session_id: $program_row->session_id, session_name: $program_row->sess_name, semester_id: $program_row->semester_id, level_id: $home_program_row->level_id, level_name: $home_program_row->level_name";
+echo "<br>EMPTYxyz uid: $admitted_student->user_id, home_program: $home_program, session_id: $program_row->session_id, session_name: $program_row->sess_name, semester_id: $program_row->semester_id, level_id: $home_program_row->level_id, level_name: $home_program_row->level_name</br>";
 
     // student_gpa CCK
     $node = new stdClass();
