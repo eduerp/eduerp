@@ -24,12 +24,12 @@ function student_menu() {
   //);
 
   $items['student/course'] = array(
-   //'title' => 'Student Course Registration Form',
+   'title' => 'Student Course Registration Form',
    'page callback' => 'drupal_get_form',
    'page arguments' => array('student_course_form'),
    'access arguments' => array('student course'),
-   //'type' => MENU_NORMAL_ITEM,
-   'type' => MENU_CALLBACK,
+   'type' => MENU_NORMAL_ITEM,
+   //'type' => MENU_CALLBACK,
   );
 
   $items['student/ajaxlga'] = array(
@@ -1218,7 +1218,7 @@ function student_registration_form_submit($form, &$state) {
 
   if ($state['storage']['step'] == 7) {
 		// Retrieve the program abbreviation
-		$q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.id=s.first_choice AND s.student_id=%d";
+		$q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.programme_id=s.first_choice AND s.student_id=%d";
 		$rs = db_query($q, $_SESSION['student']['data']->student_id);
 		$program = db_fetch_array($rs);
 
