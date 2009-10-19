@@ -263,13 +263,13 @@ function _importstudents() {
     }
 
     if ($student[$matriculation_no]['delete_grades']) {
-//      delete_student_grades($student[$rownamed['matriculation_no']]['user_id'], $session_id, $semester_id);
+//      delete_student_grades_i($student[$rownamed['matriculation_no']]['user_id'], $session_id, $semester_id);
       $student[$rownamed['matriculation_no']]['delete_grades'] = false;
     }
 
     $row->level_id = 1; // Last Year!
     $data['select_credit'] = 0;
-//    create_cck_records($row, $reg_course_id, $data, $session_id);
+//    create_cck_records_i($row, $reg_course_id, $data, $session_id);
 
     echo '</tr>';
   }
@@ -279,7 +279,7 @@ function _importstudents() {
 }
 
 
-function create_cck_records($admitted_student, $reg_course_id, $data, $session_id) {
+function create_cck_records_i($admitted_student, $reg_course_id, $data, $session_id) {
 
   if (empty($admitted_student->middle_name)) {
     $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name;
@@ -570,7 +570,7 @@ function get_cck_nid($ccktype, $fieldname1, $value1, $fieldname2, $value2, $fiel
 }
 
 
-function delete_student_grades($uid, $session_id, $semester_id) {
+function delete_student_grades_i($uid, $session_id, $semester_id) {
   $field = content_database_info(content_fields('field_session_id', 'course_instance'));
   $table_course_instance = $field['table'];
   $where = 'ci.' . $field['columns']['value']['column'] . "='$session_id'";
