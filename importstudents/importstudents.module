@@ -278,7 +278,7 @@ function _importstudents() {
 
     $row->level_id = 1; // Last Year!
     $data['select_credit'] = 0;
-    create_cck_records_i($row, $reg_course_id, $data, $session_id);
+    create_cck_records_i($row, $reg_course_id, $data, $session_id, $ca1, $ca2, $ca3, $ca4, $exam);
 
     echo '</tr>';
   }
@@ -288,7 +288,7 @@ function _importstudents() {
 }
 
 
-function create_cck_records_i($admitted_student, $reg_course_id, $data, $session_id) {
+function create_cck_records_i($admitted_student, $reg_course_id, $data, $session_id, $ca1, $ca2, $ca3, $ca4, $exam) {
 
   if (empty($admitted_student->middle_name)) {
     $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name;
@@ -507,23 +507,23 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $node->field_mat_no[0]['uid']                  = $admitted_student->user_id;
     $node->field_course_instance[0]['nid']         = $course_instance;
     $node->field_student_gpa[0]['nid']             = $student_gpa;
-    $node->field_ca1[0]['value']                   = 0;
-    $node->field_ca1forstudent[0]['value']         = 0;
-    $node->field_ca1locked[0]['value']             = 0;
-    $node->field_ca2[0]['value']                   = 0;
-    $node->field_ca2forstudent[0]['value']         = 0;
-    $node->field_ca2locked[0]['value']             = 0;
-    $node->field_ca3[0]['value']                   = 0;
-    $node->field_ca3forstudent[0]['value']         = 0;
-    $node->field_ca3locked[0]['value']             = 0;
-    $node->field_ca4[0]['value']                   = 0;
-    $node->field_ca4forstudent[0]['value']         = 0;
-    $node->field_ca4locked[0]['value']             = 0;
-    $node->field_exam_score[0]['value']            = 0;
-    $node->field_examscoreforstudent[0]['value']   = 0;
-    $node->field_examscorelocked[0]['value']       = 0;
-    $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_totalscoreforstudent[0]['value']  = '-';
+    $node->field_ca1[0]['value']                   = $ca1;
+    $node->field_ca1forstudent[0]['value']         = $ca1;
+    $node->field_ca1locked[0]['value']             = 5;
+    $node->field_ca2[0]['value']                   = $ca2;
+    $node->field_ca2forstudent[0]['value']         = $ca2;
+    $node->field_ca2locked[0]['value']             = 5;
+    $node->field_ca3[0]['value']                   = $ca3;
+    $node->field_ca3forstudent[0]['value']         = $ca3;
+    $node->field_ca3locked[0]['value']             = 5;
+    $node->field_ca4[0]['value']                   = $ca4;
+    $node->field_ca4forstudent[0]['value']         = $ca4;
+    $node->field_ca4locked[0]['value']             = 5;
+    $node->field_exam_score[0]['value']            = $exam;
+    $node->field_examscoreforstudent[0]['value']   = $exam;
+    $node->field_examscorelocked[0]['value']       = 5;
+    $node->field_total_score[0]['value']           = $ca1 + $ca2 + $ca3 + $ca4 + $exam;
+    $node->field_totalscoreforstudent[0]['value']  = $ca1 + $ca2 + $ca3 + $ca4 + $exam;
     $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
     $node->field_gradeforstudent[0]['value']       = '-';
     $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
