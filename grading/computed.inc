@@ -4,7 +4,8 @@
 
 
 function calctotal($exam, $ca1, $ca2, $ca3, $ca4) {
-  $total = ($exam*60 + $ca1*10 + $ca2*10 + $ca3*10 + $ca4*10)/100.0;
+  //$total = ($exam*60 + $ca1*10 + $ca2*10 + $ca3*10 + $ca4*10)/100.0;
+  $total = $exam + $ca1 + $ca2 + $ca3 + $ca4;
   $total = (int)$total;
   return $total;
 }
