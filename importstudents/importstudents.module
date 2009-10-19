@@ -211,11 +211,6 @@ function _importstudents() {
     if (empty($exam)) $exam = 0;
     echo "<td>{$exam}</td>";
 
-    if (empty($student[$matriculation_no])) {
-		echo "<br />matriculation_no: $matriculation_no Missing from loaded students<br />";
-        return ob_get_clean();
-    }
-
     $query = "SELECT
       rc.reg_course_id,
       p.programme_id,
@@ -238,7 +233,7 @@ function _importstudents() {
     WHERE
       rc.programme_id=p.programme_id AND
       rc.course_id=c.course_id AND
-      c.course_code='%s',
+      c.course_code='%s' AND
       p.department_id=d.department_id AND
       d.college_id=co.college_id AND
       s.session_id={$session_id} AND
@@ -254,6 +249,12 @@ function _importstudents() {
     echo "<td>{$program_row->sess_name}</td>";
     echo "<td>{$program_row->semester_id}</td>";
     echo "<td>{$program_row->level_name}</td>";
+
+    if (empty($student[$matriculation_no])) {
+      echo "<td>matriculation_no: $matriculation_no Missing from loaded students</td>";
+      echo '</tr>';
+      continue;
+    }
 
     $query = "select * from {admitted_student} where student_id=%d";
     $result = db_query($query, $student[$matriculation_no]['student_id']);
