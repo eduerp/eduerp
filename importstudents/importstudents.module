@@ -261,6 +261,14 @@ function _importstudents() {
     $row =  db_fetch_object($result);
     if (!$row) {
       echo "<td>admitted_student NOT FOUND FOR {$student[$matriculation_no]['student_id']}</td>";
+      echo '</tr>';
+      continue;
+    }
+
+    if ($semester_id != $program_row->semester_id) {
+      echo "<td>semester_id ({$semester_id}) from grades != course semester_id ({$program_row->semester_id})</td>";
+      echo '</tr>';
+      continue;
     }
 
     if ($student[$matriculation_no]['delete_grades']) {
