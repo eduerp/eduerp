@@ -278,7 +278,7 @@ function _importstudents() {
 
     $row->level_id = 1; // Last Year!
     $data['select_credit'] = 0;
-//    create_cck_records_i($row, $reg_course_id, $data, $session_id);
+    create_cck_records_i($row, $reg_course_id, $data, $session_id);
 
     echo '</tr>';
   }
@@ -631,7 +631,7 @@ function delete_student_grades_i($uid, $session_id, $semester_id) {
   $where .= ' AND ' . $field['columns']['uid']['column'] . "=$uid";
 
   $sql = "SELECT nid FROM {{$table_student_gpa}} WHERE $where";
-echo "<br>XYZ{$sql}</br>";
+
   $result = db_query($sql);
 
   while ($row = db_fetch_object($result)) {
