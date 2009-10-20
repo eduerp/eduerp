@@ -1843,7 +1843,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $res = db_query($qry);
         if ($res && db_affected_rows()>0) {
           $_SESSION['staff']['msg']='Student status updated sucessfully.';
-          drupal_set_message('Student status updated sucessfully.');
+          drupal_set_message(sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance')));
           $userid = db_fetch_object(db_query("SELECT user_id FROM {admitted_student} WHERE student_id=%d", $_SESSION['staff']['stud_info']));
           $user_account = user_load($userid->user_id);
           veritas_add_role($user_account, 'Student');
