@@ -644,9 +644,9 @@ function _grading_ahah_stats() {
 
   $output .= '<tr><th valign="top" class="table-label" colspan="8">Approval Details for all Courses taken by Students in this Department...</th></tr>';
 
-  $output .= '<td valign="top" class="table-label">Course Approval URL</td>';
-  $output .= '<td valign="top" class="table-label">Programme Approval URL</td>';
-  $output .= '<td valign="top" class="table-label">Department Approval URL</td>';
+  $output .= '<td valign="top" class="table-label">Course URL</td>';
+  $output .= '<td valign="top" class="table-label">Programme</td>';
+  $output .= '<td valign="top" class="table-label">Department</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 1</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 2</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 3</td>';
@@ -680,8 +680,10 @@ function _grading_ahah_stats() {
     $departmentenc = rawurlencode($courserow->department);
 
     $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->coursecode . '</a></td>';
-    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
-    $output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
+    //$output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
+    $output .= '<td>' . $courserow->programme . '</td>';
+    //$output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
+    $output .= '<td>' . $courserow->department . '</td>';
 
     $approvals = array('Lecturer needs to approve Course', 'HOD needs to approve Programme', 'Dean needs to approve Department', 'Registrar needs to approve Department', 'VC needs to approve Department', 'Fully Approved');
     $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
