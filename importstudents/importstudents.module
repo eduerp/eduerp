@@ -522,12 +522,15 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $node->field_exam_score[0]['value']            = $exam;
     $node->field_examscoreforstudent[0]['value']   = $exam;
     $node->field_examscorelocked[0]['value']       = 5;
-    $node->field_total_score[0]['value']           = $ca1 + $ca2 + $ca3 + $ca4 + $exam;
-    $node->field_totalscoreforstudent[0]['value']  = $ca1 + $ca2 + $ca3 + $ca4 + $exam;
-    $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_gradeforstudent[0]['value']       = '-';
-    $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_gradepointforstudent[0]['value']  = '-';
+
+    require_once './' . drupal_get_path('module', 'veritas') . '/grading/computed.inc';
+
+    $node->field_total_score[0]['value']           = grade_total($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
+    $node->field_totalscoreforstudent[0]['value']  = grade_total($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
+    $node->field_grade[0]['value']                 = grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
+    $node->field_gradeforstudent[0]['value']       = grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
+    $node->field_gradepoint[0]['value']            = grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
+    $node->field_gradepointforstudent[0]['value']  = grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
     node_save($node);
   // }
 }
