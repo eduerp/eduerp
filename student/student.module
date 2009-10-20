@@ -3386,7 +3386,7 @@ function admit_student(&$form) {
      $where = " where student_id='". $_SESSION['student']['data']->student_id ."' ";
    }
    else {
-     $query =  "insert into {admitted_student} select * , '". $form[course1]['#post']['maiden'] ."','','','','','','','','',0 from student WHERE student_id= ". $_SESSION['student']['data']->student_id ;
+     $query =  "insert into {admitted_student} select * , '". $form[course1]['#post']['maiden'] ."','','','','','','','','',1 from student WHERE student_id= ". $_SESSION['student']['data']->student_id ;
      db_query($query);
      $modes = _student_mode_of_entries('level_id');
      $query = "update {admitted_student} set pwd = dob , level_id = '". $modes[$value['mode']] ."'";
