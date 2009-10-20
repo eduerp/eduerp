@@ -532,6 +532,8 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $node->field_gradepoint[0]['value']            = grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
     $node->field_gradepointforstudent[0]['value']  = grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score');
     node_save($node);
+
+    grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score'); // After node saved to trigger calculations
   // }
 }
 
