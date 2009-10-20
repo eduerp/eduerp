@@ -639,6 +639,62 @@ function _grading_ahah_stats() {
     $output .= '<a href="' . $base_url . '/grading/eduerpvcapprovalform">Click here to go to a Form for Approval of ' . $_SESSION['eduerpvcapprovalform']->gradestext . " for level $level</a>";
   }
 
+
+  $output = '<br /><br /><table class="body-table"><tbody>';
+
+  $output .= '<tr><th valign="top" class="table-label" colspan="8">Approval Details for all Courses taken by Students in this Department...</th></tr>';
+
+  $output .= '<td valign="top" class="table-label">Course Approval URL</td>';
+  $output .= '<td valign="top" class="table-label">Programme Approval URL</td>';
+  $output .= '<td valign="top" class="table-label">Department Approval URL</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 1</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 2</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 3</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 4</td>';
+  $output .= '<td valign="top" class="table-label">Semester Exam</td>';
+
+  $sql = "SELECT
+    ci.field_course_code_value AS coursecode, p0.field_programme_name_value AS programme, p0.field_department_name_value AS department,
+      MIN(sg.field_ca1locked_value) AS ca1l,
+      MIN(sg.field_ca2locked_value) AS ca2l,
+      MIN(sg.field_ca3locked_value) AS ca3l,
+      MIN(sg.field_ca4locked_value) AS ca4l,
+      MIN(sg.field_examscorelocked_value) AS examl
+    FROM {content_type_student_grades sg}, {content_type_course_instance} ci, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_program} p0
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_course_instance_nid=ci.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s' AND
+      ci.field_program_ref_course_nid=p0.nid
+    GROUP BY ci.field_course_code_value";
+  $courserows = db_query($sql, $level, $session, $semester, $department);
+  while ($courserow = db_fetch_object($courserows)) {
+    $output .= '<tr>';
+
+    $coursecodeenc = rawurlencode($courserow->coursecode);
+    $programmeenc = rawurlencode($courserow->programme);
+    $departmentenc = rawurlencode($courserow->$department);
+
+    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->coursecode . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
+
+    $approvals = array('Lecturer needs to approve Course', 'HOD needs to approve Programme', 'Dean needs to approve Department', 'Registrar needs to approve Department', 'VC needs to approve Department', 'Fully Approved');
+    $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->ca2l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->ca3l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->ca4l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->examl] . '</td>';
+
+    $output .= '</tr>';
+  }
+
+  $output .= '</tbody></table>';
+
   print drupal_to_js(array('data' => $output, 'status' => true));
 
   exit();
