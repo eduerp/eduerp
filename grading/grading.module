@@ -642,15 +642,16 @@ function _grading_ahah_stats() {
 
   $output .= '<br /><br /><table class="body-table"><tbody>';
 
-  $output .= '<tr><th valign="top" class="table-label" colspan="7">Approval Details for all Courses taken by Students in this Department...</th></tr>';
+  $output .= '<tr><th valign="top" class="table-label" colspan="8">Approval Details for all Courses taken by Students in this Department...</th></tr>';
 
   $output .= '<td valign="top" class="table-label">Course URL</td>';
+  $output .= '<td valign="top" class="table-label">Programme (for info only, HOD approves Programmes using URLs above)</td>';
+  $output .= '<td valign="top" class="table-label">Department (for info only, Department grades are approved on this page you are viewing)</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 1</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 2</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 3</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 4</td>';
   $output .= '<td valign="top" class="table-label">Semester Exam</td>';
-  $output .= '<td valign="top" class="table-label">Programme/Department (for info only, Department grades are approved on this page you are viewing and Programmes using URLs above)</td>';
 
   $sql = "SELECT
     ci.field_course_code_value AS coursecode, p0.field_programme_name_value AS programme, p0.field_department_name_value AS department,
@@ -679,17 +680,17 @@ function _grading_ahah_stats() {
     $departmentenc = rawurlencode($courserow->department);
 
     $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->coursecode . '</a></td>';
+    $output .= '<td>' . $courserow->programme . '</td>';
+    $output .= '<td>' . $courserow->department . '</td>';
+    //$output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
+    //$output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
 
-    $approvals = array('Lecturer needs to approve Course', 'HOD needs to approve Programme', 'Dean needs to approve Department', 'Registrar needs to approve Department', 'VC needs to approve Department', 'Fully Approved');
+    $approvals = array('Lecturer needs to Approve', 'Approved by Lecturer', 'Approved by HOD', 'Approved by Dean', 'Approved by  Registrar', 'Fully Approved');
     $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
     $output .= '<td>' . $approvals[$courserow->ca2l] . '</td>';
     $output .= '<td>' . $approvals[$courserow->ca3l] . '</td>';
     $output .= '<td>' . $approvals[$courserow->ca4l] . '</td>';
     $output .= '<td>' . $approvals[$courserow->examl] . '</td>';
-
-    $output .= '<td>' . $courserow->programme . '/' . $courserow->department . '</td>';
-    //$output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
-    //$output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
 
     $output .= '</tr>';
   }
