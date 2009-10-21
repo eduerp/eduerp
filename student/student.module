@@ -1242,7 +1242,9 @@ function student_registration_form_submit($form, &$state) {
     //$mat_number = "VUG". vsprintf("%04d", array($_SESSION['student']['data']->student_id)) ;
     // here to insert drupal_user
     $sql = "select * from {role} where name = '%s'";
-    $q = db_query($sql, 'Student');
+		// The registered student should be given the "Applicant" status and only promoted to "Student"
+		// when cleared.
+    $q = db_query($sql, 'Applicant');
     $f = db_fetch_object($q);
 
     if (empty($_SESSION['student']['data']->middle_name)) $_SESSION['student']['data']->middle_name = ''; // ALAN 20090830
