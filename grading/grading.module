@@ -462,14 +462,22 @@ function _grading_ahah_stats() {
   $output .= '<td valign="top">' . $summaryrow->sumnone . '</td>';
   $output .= '</tr>';
 
-  $sql = "SELECT DISTINCT p.field_programme_name_value AS programme
-    FROM {content_type_student_gpa} gpa, {content_type_program} p
+  $sql = "SELECT
+      p.field_programme_name_value AS programme,
+      MIN(sg.field_ca1locked_value) AS ca1l,
+      MIN(sg.field_ca2locked_value) AS ca2l,
+      MIN(sg.field_ca3locked_value) AS ca3l,
+      MIN(sg.field_ca4locked_value) AS ca4l,
+      MIN(sg.field_examscorelocked_value) AS examl
+    FROM {content_type_student_grades sg}, {content_type_student_gpa} gpa, {content_type_program} p
     WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s' ORDER BY programme ASC";
+      p.field_department_name_value='%s'
+    GROUP BY p.field_programme_name_value ORDER BY p.field_programme_name_value";
   $programmerows = db_query($sql, $level, $session, $semester, $department);
   $first = true;
   while ($programmerow = db_fetch_object($programmerows)) {
@@ -479,7 +487,20 @@ function _grading_ahah_stats() {
       $first = false;
     }
     $programmeenc = rawurlencode($programmerow->programme);
-    $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
+    $output .= '<tr>';
+    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td><td>';
+    if     ($programmerow->ca1l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
+    elseif ($programmerow->ca2l  == 1) $output .= 'Continuous Assessment 2 Ready for Approval by HOD';
+    elseif ($programmerow->ca3l  == 1) $output .= 'Continuous Assessment 3 Ready for Approval by HOD';
+    elseif ($programmerow->ca4l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
+    elseif ($programmerow->examl == 1) $output .= 'Semester Exam Ready for Approval by HOD';
+    elseif ($programmerow->ca1l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 1';
+    elseif ($programmerow->ca2l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 2';
+    elseif ($programmerow->ca3l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 3';
+    elseif ($programmerow->ca4l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 4';
+    elseif ($programmerow->examl == 0) $output .= 'Waiting on some Lecturer Approvals for Semester Exam';
+    else $output .= 'Approved by HOD';
+    $output .= '</td></tr>';
   }
 
   $output .= '<tr><td colspan="2"><br /></td></tr>';
@@ -638,6 +659,64 @@ function _grading_ahah_stats() {
     // $output .= drupal_get_form('approve_grades_vc_form');
     $output .= '<a href="' . $base_url . '/grading/eduerpvcapprovalform">Click here to go to a Form for Approval of ' . $_SESSION['eduerpvcapprovalform']->gradestext . " for level $level</a>";
   }
+
+
+  $output .= '<br /><br /><table class="body-table"><tbody>';
+
+  $output .= '<tr><th valign="top" class="table-label" colspan="8">Approval Details for all Courses taken by Students in this Department...</th></tr>';
+
+  $output .= '<td valign="top" class="table-label">Course URL</td>';
+  $output .= '<td valign="top" class="table-label">Programme (for info only, HOD approves Programmes using URLs above)</td>';
+  $output .= '<td valign="top" class="table-label">Department (for info only, Department grades are approved on this page you are viewing)</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 1</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 2</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 3</td>';
+  $output .= '<td valign="top" class="table-label">Continuous Assessment 4</td>';
+  $output .= '<td valign="top" class="table-label">Semester Exam</td>';
+
+  $sql = "SELECT
+    ci.field_course_code_value AS coursecode, p0.field_programme_name_value AS programme, p0.field_department_name_value AS department,
+      MIN(sg.field_ca1locked_value) AS ca1l,
+      MIN(sg.field_ca2locked_value) AS ca2l,
+      MIN(sg.field_ca3locked_value) AS ca3l,
+      MIN(sg.field_ca4locked_value) AS ca4l,
+      MIN(sg.field_examscorelocked_value) AS examl
+    FROM {content_type_student_grades sg}, {content_type_course_instance} ci, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_program} p0
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_course_instance_nid=ci.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s' AND
+      ci.field_program_ref_course_nid=p0.nid
+    GROUP BY ci.field_course_code_value ORDER BY ci.field_course_code_value";
+  $courserows = db_query($sql, $level, $session, $semester, $department);
+  while ($courserow = db_fetch_object($courserows)) {
+    $output .= '<tr>';
+
+    $coursecodeenc = rawurlencode($courserow->coursecode);
+    $programmeenc = rawurlencode($courserow->programme);
+    $departmentenc = rawurlencode($courserow->department);
+
+    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->coursecode . '</a></td>';
+    $output .= '<td>' . $courserow->programme . '</td>';
+    $output .= '<td>' . $courserow->department . '</td>';
+    //$output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
+    //$output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
+
+    $approvals = array('Lecturer needs to Approve', 'Approved by Lecturer', 'Approved by HOD', 'Approved by Dean', 'Approved by  Registrar', 'Fully Approved');
+    $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->ca2l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->ca3l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->ca4l] . '</td>';
+    $output .= '<td>' . $approvals[$courserow->examl] . '</td>';
+
+    $output .= '</tr>';
+  }
+
+  $output .= '</tbody></table>';
 
   print drupal_to_js(array('data' => $output, 'status' => true));
 
