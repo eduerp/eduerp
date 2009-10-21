@@ -16,6 +16,14 @@ function student_menu() {
    'access arguments' => array('student admit'),
    'type' => MENU_NORMAL_ITEM,
   );
+  $items['student/payment'] = array(
+   'title' => 'Student Fee Payment',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('student_fee_payment_form'),
+   'access arguments' => array('student course'),
+   'type' => MENU_NORMAL_ITEM,
+  );
+
   //$items['studentreg/login'] = array(
   //'page callback' => 'drupal_get_form',
   //'page arguments' => array('register_student_login_form'),
@@ -211,150 +219,158 @@ function student_courses() {
 }
 
 function student_course_form1(&$obj) {
-   $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
-   $result = db_query($query);
-   $row =  db_fetch_object($result);
-   $query = "SELECT   *  from  {registrable_course} rc where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
-   $result = db_query($query);
-   $min_max_credits = db_fetch_object($result);
-   $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
-   $result = db_query($query);
-   $rows = array();
-   $core_html = "<tr>
-       <th>
-        Course Code
-       </th>
-       <th>
-        Course Title
-       </th>
-       <th>
-        Course Description
-       </th>
-       <th>
-        Semester
-       </th>
-       <th>
-        Credit Load
-       </th>
-      </tr>";
+	// Check if the student has paid his/her fees for this session
+	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
+	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
+	if ($rs && ($row = db_fetch_object($rs))) {
+		 $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
+		 $result = db_query($query);
+		 $row =  db_fetch_object($result);
+		 $query = "SELECT   *  from  {registrable_course} rc where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+		 $result = db_query($query);
+		 $min_max_credits = db_fetch_object($result);
+		 $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+		 $result = db_query($query);
+		 $rows = array();
+		 $core_html = "<tr>
+				 <th>
+					Course Code
+				 </th>
+				 <th>
+					Course Title
+				 </th>
+				 <th>
+					Course Description
+				 </th>
+				 <th>
+					Semester
+				 </th>
+				 <th>
+					Credit Load
+				 </th>
+				</tr>";
 
-   $elective_html = "<tr>
-        <th>
+		 $elective_html = "<tr>
+					<th>
 
-       </th>
-       <th>
-        Course Code
-       </th>
-       <th>
-        Course Title
-       </th>
-       <th>
+				 </th>
+				 <th>
+					Course Code
+				 </th>
+				 <th>
+					Course Title
+				 </th>
+				 <th>
 
-        Course Description
-       </th>
-       <th>
-        Semester
-       </th>
-       <th>
-        Credit Load
-       </th>
-      </tr>";
-   while ($row = db_fetch_object($result)) {
-      if ($row->course_type == 1) {
-         $core_html .= '<tr>
-       <td>
-        '.$row->course_code.'
-       </td>
-       <td>
-        '.$row->course_title.'
-       </td>
-       <td>
-        '.$row->course_description.'
-       </td>
-       <td>
-        '.$row->semester.'
-       </td>
-       <td>
-        '.$row->credit_load.'
-       </td>
-      </tr>';
-        $form['courses']['corecourses['.$row->reg_course_id.']'] = array('#type' => 'hidden', '#value' => $row->reg_course_id);
-        $selected_load += $row->credit_load;
-      }
-      else {
+					Course Description
+				 </th>
+				 <th>
+					Semester
+				 </th>
+				 <th>
+					Credit Load
+				 </th>
+				</tr>";
+		 while ($row = db_fetch_object($result)) {
+				if ($row->course_type == 1) {
+					 $core_html .= '<tr>
+				 <td>
+					'.$row->course_code.'
+				 </td>
+				 <td>
+					'.$row->course_title.'
+				 </td>
+				 <td>
+					'.$row->course_description.'
+				 </td>
+				 <td>
+					'.$row->semester.'
+				 </td>
+				 <td>
+					'.$row->credit_load.'
+				 </td>
+				</tr>';
+					$form['courses']['corecourses['.$row->reg_course_id.']'] = array('#type' => 'hidden', '#value' => $row->reg_course_id);
+					$selected_load += $row->credit_load;
+				}
+				else {
 
-        $elective_html .= ' <tr>
-        <td>
-        <input class="select_course" type="checkbox" name="electivecourses['. $row->reg_course_id .']" value='. $row->credit_load .' />
-       </td>
-                      <td>
-        '. $row->course_code .'
-       </td>
-       <td>
-        '. $row->course_title .'
-       </td>
-       <td>
-        '. $row->course_description .'
-       </td>
-       <td>
-        '. $row->semester .'
-       </td>
-       <td>
-        '. $row->credit_load  .'
-       </td>
-       </tr>
-       ';
-    }
-  $rows[$row->course_id] = $row->course_title;
-  }
-   $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
-   $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
-   $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td><span id="min_load">'. $min_max_credits->min_credit_load .'</span></td></tr>';
-   $credit_counter_html .= '<tr><th>Selected Credit Load</th><td><span id="selected_load">'. $selected_load .'</span></td></tr>';
-   $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
-   $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
-   $form['courses']['select_credit'] = array('#type'=>'hidden', '#value'=>$selected_load);
-   $script =<<<EOD
-    // For some reason, the following javascript gets rendered twice!
-    var counter = $selected_load;
-    $(function(){
-      // The following line was added to null the effect
-      // of the previous binding as a result of a repeat
-      // of the javascript.
-      $(".select_course").unbind();
-      $(".select_course").click(function(){
-        counter = parseInt($("#selected_load").text());
-        if(this.checked == true){
-          counter += parseInt(\$(this).val());
-          $("#selected_load").text(counter);
-        } else {
-          counter -= parseInt($(this).val());
-          $("#selected_load").text(counter);
-        }
-        $("#edit-select-credit-1").val(counter);
-      });
-      $("form").unbind();
-      $("form").submit( function() {
-        selected_load = parseInt($("#selected_load").text());
-        min_load = parseInt($("#min_load").text());
-        max_load = parseInt($("#max_load").text());
-        if (selected_load < min_load) {
-          alert("Please select enough courses to meet the minimum credit load requirement.");
-          return false;
-        }
-        if (selected_load > max_load) {
-          alert("Your credit load is higher than the recommended maximum credit load. Please shed off some courses.");
-          return false;
-        }
-        return true;
-      });
-   });
+					$elective_html .= ' <tr>
+					<td>
+					<input class="select_course" type="checkbox" name="electivecourses['. $row->reg_course_id .']" value='. $row->credit_load .' />
+				 </td>
+												<td>
+					'. $row->course_code .'
+				 </td>
+				 <td>
+					'. $row->course_title .'
+				 </td>
+				 <td>
+					'. $row->course_description .'
+				 </td>
+				 <td>
+					'. $row->semester .'
+				 </td>
+				 <td>
+					'. $row->credit_load  .'
+				 </td>
+				 </tr>
+				 ';
+			}
+		$rows[$row->course_id] = $row->course_title;
+		}
+		 $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
+		 $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
+		 $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td><span id="min_load">'. $min_max_credits->min_credit_load .'</span></td></tr>';
+		 $credit_counter_html .= '<tr><th>Selected Credit Load</th><td><span id="selected_load">'. $selected_load .'</span></td></tr>';
+		 $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
+		 $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
+		 $form['courses']['select_credit'] = array('#type'=>'hidden', '#value'=>$selected_load);
+		 $script =<<<EOD
+			// For some reason, the following javascript gets rendered twice!
+			var counter = $selected_load;
+			$(function(){
+				// The following line was added to null the effect
+				// of the previous binding as a result of a repeat
+				// of the javascript.
+				$(".select_course").unbind();
+				$(".select_course").click(function(){
+					counter = parseInt($("#selected_load").text());
+					if(this.checked == true){
+						counter += parseInt(\$(this).val());
+						$("#selected_load").text(counter);
+					} else {
+						counter -= parseInt($(this).val());
+						$("#selected_load").text(counter);
+					}
+					$("#edit-select-credit-1").val(counter);
+				});
+				$("form").unbind();
+				$("form").submit( function() {
+					selected_load = parseInt($("#selected_load").text());
+					min_load = parseInt($("#min_load").text());
+					max_load = parseInt($("#max_load").text());
+					if (selected_load < min_load) {
+						alert("Please select enough courses to meet the minimum credit load requirement.");
+						return false;
+					}
+					if (selected_load > max_load) {
+						alert("Your credit load is higher than the recommended maximum credit load. Please shed off some courses.");
+						return false;
+					}
+					return true;
+				});
+		 });
 EOD;
-  drupal_add_js($script,'inline','header', FALSE, FALSE);
-  $form['courses']['core'] = array('#type' => 'item', '#value' => $core_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
-  $form['courses']['elective'] = array('#type' => 'item', '#value' => $elective_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
-  $form['courses']['loadcounter'] = array('#type' => 'item', '#value' => $credit_counter_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
-  $form['courses']['submit'] = array('#id'=>'edit-next' , '#type'=>"submit" , '#value'=>'Submit');
+		drupal_add_js($script,'inline','header', FALSE, FALSE);
+		$form['courses']['core'] = array('#type' => 'item', '#value' => $core_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
+		$form['courses']['elective'] = array('#type' => 'item', '#value' => $elective_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
+		$form['courses']['loadcounter'] = array('#type' => 'item', '#value' => $credit_counter_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
+		$form['courses']['submit'] = array('#id'=>'edit-next' , '#type'=>"submit" , '#value'=>'Submit');
+	}
+	else {
+		drupal_goto('student/payment');
+	}
   return $form;
 }
 
@@ -972,6 +988,63 @@ function student_login_form(&$obj){
 
 function student_login_form_submit(&$obj) {
   drupal_goto('student/registration2');
+}
+
+function student_fee_payment_form(&$obj) {
+	// Check if the student has paid his/her fees for this session
+	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
+	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
+	if ($rs && ($row = db_fetch_object($rs))) {
+		drupal_goto('student/course');
+	}
+
+	// Generate the form?
+	return _student_fee_payment_form1($obj);
+}
+
+function student_fee_payment_form_validate($form, &$state){
+	// Validate the payment information
+	$values = $state['values'];
+	$query = "select * from {payment} where refno = '%s' and paid=0 ";
+	$result = db_query($query, $values['rno']);
+	$data = db_fetch_object($result);
+	if (!$data) {
+		form_set_error('rno', "Teller  No  not valid.");
+	}
+	else {
+	 //if($data->cr < 200000){
+	 //form_set_error('rno',"Amount less then 200000 is not accepted.");
+	//}
+	}
+}
+
+function student_fee_payment_form_submit($form, &$state) {
+	$t_id = make_transaction($form);
+	drupal_goto('veritas/receipt/'. $t_id .'/student/');
+}
+
+function _student_fee_payment_form1($obj) {
+   $amt = variable_get('veritas_student_regfees1', '200000');
+   $amt = number_format($amt, 2);
+   $form['fees'] = array('#type' => 'fieldset', '#title' => 'Registration Fees');
+   $form['fees']['rno'] = array(
+      '#type' => 'textfield',
+      '#size' => 45,
+      '#title' => 'TELLER NUMBER',
+      '#prefix' => '<table border="1" align="center"><tr><td><table colspan="2" cellspan="2" align="center"><caption>BANK PAYMENT INFORMATION</caption><tr><td>',
+      '#suffix' => '</td></tr>',
+      '#required' => TRUE
+   );
+   $form['fees']['cno'] = array(
+     '#type' => 'textfield',
+     '#size' => 45,
+     '#title' => 'NAME',
+     '#prefix' => '<tr><td>',
+     '#suffix' => '</td></tr></table></td></tr></table>',
+     '#required' => TRUE
+  );
+   $form['submit'] = array('#id' => 'submit', '#value' => 'Pay', '#type' => 'submit');
+   return $form;
 }
 
 function student_registration_form(&$obj) {
@@ -3289,9 +3362,12 @@ function add_exam_detail($form) {
 }
 
 function make_transaction($form) {
+	// Get the current session_id
+	$q = "SELECT session_id FROM {session} WHERE sess_name='%s'";
+	$current_session = db_fetch_array(db_query($q, variable_get('veritas_current_session', '')));
 
-  $query = "select receipt_no from {admitted_transaction} WHERE student_id ='%s' and trans_type='sfee' order by transaction_id desc ";
-  $result = db_query($query, $_SESSION['student']['data']->student_id);
+  $query = "SELECT at.receipt_no FROM {admitted_transaction} at INNER JOIN {session} s ON s.session_id=at.session_id WHERE at.student_id=%d AND at.trans_type='sfee' AND s.sess_name='%s' ORDER BY transaction_id DESC";
+  $result = db_query($query, $_SESSION['student']['data']->student_id, variable_get('veritas_current_session', ''));
   $data = db_result($result);
   if (!$data) {
     $update = TRUE;
@@ -3306,15 +3382,15 @@ function make_transaction($form) {
   $query = "select * from {payment} where refno = '%s'";
   $result = db_query($query, $form['fees']['rno']['#post']['rno']);
   $data = db_fetch_object($result);
-  $query = "insert into {admitted_transaction} set student_id ='%s' , receipt_no='%s' , payment_code='%s', trans_amount='%s', bank_code='%s',trans_type='sfee' , trans_time=now()";
-  db_query($query, $_SESSION['student']['data']->student_id, $receipt_no, $form['fees']['rno']['#post']['rno'], $data->cr, $form['fees']['rno']['#post']['rno']);
+  $query = "INSERT INTO {admitted_transaction} SET student_id=%d, receipt_no='%s', payment_code='%s', trans_amount='%s', bank_code='%s', trans_type='sfee', trans_time=now(), session_id=%d";
+  db_query($query, $_SESSION['student']['data']->student_id, $receipt_no, $form['fees']['rno']['#post']['rno'], $data->cr, $form['fees']['rno']['#post']['rno'], $current_session['session_id']);
   $trid = db_last_insert_id('admitted_transaction', 'transaction_id');
   if ($update) {
     $receipt_no = vsprintf("%06d", array($trid)) ."-1";
     $query = "update {admitted_transaction} set receipt_no='%s' where transaction_id='%s'";
     $result = db_query($query, $receipt_no, $trid);
   }
-  $mat_number = "VUG". vsprintf("%04d", array($_SESSION['student']['data']->student_id)) ;
+  $mat_number = vsprintf("%s", array($_SESSION['student']['data']->matriculation_no)) ;
   $query = "update {payment} set paid = 1 , description = '%s' where refno = '%s'";
   $result = db_query($query, $mat_number, $form['fees']['rno']['#post']['rno']);
   return $trid;
@@ -4006,7 +4082,7 @@ function student_user($type, &$edit, &$user, $category = NULL){
 
   switch($type){
     case 'login':
-      $query ="select * from admitted_student where user_id = ".$user->uid;
+      $query ="select * from {admitted_student} where user_id = ".$user->uid;
       $result = db_query($query);
       if ($data = db_fetch_object($result)) {
         unset($_SESSION['student']);

@@ -1832,7 +1832,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
         if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
         }
@@ -1842,7 +1842,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry = "update {admitted_student} set clearance_status=1, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
         if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           drupal_set_message(sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance')));
           $userid = db_fetch_object(db_query("SELECT user_id FROM {admitted_student} WHERE student_id=%d", $_SESSION['staff']['stud_info']));
           $user_account = user_load($userid->user_id);
@@ -1855,7 +1855,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry = "update {admitted_student} set clearance_status=0, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
         if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
         }
@@ -1865,7 +1865,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry = "update {admitted_student} set verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
         if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
         }
@@ -1875,13 +1875,14 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry = "update {admitted_student} set verify_status=0, clearance_date='" . $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res = db_query($qry);
         if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
         }
       }
       if ($results1['cleared'] == 'yes' && $results['result'] == 'no') {
-        drupal_set_message('Students can only be cleared when their datas are verified');
+          $_SESSION['staff']['msg']= sprintf('Students can only be cleared when their data are verified. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
+        drupal_set_message(sprintf('Students can only be cleared when their data are verified. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance')));
       }
     }
     if (veritas_has_role($user, 'Registrar')) {
@@ -1890,7 +1891,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry_rej = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt1 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res_rej = db_query($qry_rej);
         if ($res_rej && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
         }
@@ -1900,7 +1901,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         $qry_acc = "update {admitted_student} set clearance_status=2, clearance_date='". $dt2 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
         $res_acc = db_query($qry_acc);
         if ($res_acc && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']='Student status updated sucessfully.';
+          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
           //drupal_set_message('Student status updated sucessfully.');
           drupal_goto('staff/cleared');
         }
@@ -1913,11 +1914,11 @@ function staff_begin_clearance_form_validate($form, &$state) {
     /* Code adding started on 27/02/2009 for student clearance main page. */
 function staff_begin_clearance_form2(&$obj) {
   if (isset($_SESSION['staff']['jamb'])) {
-    $qry = "select * from {admitted_student} where (jambno='%s') AND (verify_status != 1 AND clearance_status != 1)";
+    $qry = "select * from {admitted_student} where (jambno='%s') AND verify_status != 1 AND clearance_status != 1";
     $res = db_query($qry, $_SESSION['staff']['jamb']);
   }
   else {
-    $qry = "select * from {admitted_student} where (matriculation_no='%s') AND (verify_status != 1 AND clearance_status != 1)";
+    $qry = "select * from {admitted_student} where (matriculation_no='%s') AND verify_status != 1 AND clearance_status != 1";
     $res = db_query($qry, $_SESSION['staff']['mat']);
   }
   if ($res && ($result=db_fetch_object($res))) {
