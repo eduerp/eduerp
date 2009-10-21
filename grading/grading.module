@@ -462,6 +462,7 @@ function _grading_ahah_stats() {
   $output .= '<td valign="top">' . $summaryrow->sumnone . '</td>';
   $output .= '</tr>';
 
+//DEL[[[ OLD GOOD
   $sql = "SELECT DISTINCT p.field_programme_name_value AS programme
     FROM {content_type_student_gpa} gpa, {content_type_program} p
     WHERE
@@ -480,6 +481,48 @@ function _grading_ahah_stats() {
     }
     $programmeenc = rawurlencode($programmerow->programme);
     $output .= '<tr><td colspan="2"><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td></tr>';
+  }
+
+//DEL UP]]]
+  $sql = "SELECT
+      p.field_programme_name_value AS programme,
+      MIN(sg.field_ca1locked_value) AS ca1l,
+      MIN(sg.field_ca2locked_value) AS ca2l,
+      MIN(sg.field_ca3locked_value) AS ca3l,
+      MIN(sg.field_ca4locked_value) AS ca4l,
+      MIN(sg.field_examscorelocked_value) AS examl
+    FROM {content_type_student_grades sg}, {content_type_student_gpa} gpa, {content_type_program} p
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_name_value='%s' AND
+    GROUP BY p.field_programme_name_value ORDER BY p.field_programme_name_value";
+  $programmerows = db_query($sql, $level, $session, $semester, $department);
+  $first = true;
+  while ($programmerow = db_fetch_object($programmerows)) {
+    if ($first) {
+      $output .= '<tr><td colspan="2"><br /></td></tr>';
+      $output .= '<tr><td colspan="2">View Programme Details...</td></tr>';
+      $first = false;
+    }
+    $programmeenc = rawurlencode($programmerow->programme);
+    $output .= '<tr>';
+    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td><td>';
+    if     ($programmerow->ca1l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
+    elseif ($programmerow->ca2l  == 1) $output .= 'Continuous Assessment 2 Ready for Approval by HOD';
+    elseif ($programmerow->ca3l  == 1) $output .= 'Continuous Assessment 3 Ready for Approval by HOD';
+    elseif ($programmerow->ca4l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
+    elseif ($programmerow->examl == 1) $output .= 'Semester Exam Ready for Approval by HOD';
+    elseif ($programmerow->ca1l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 1';
+    elseif ($programmerow->ca2l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 2';
+    elseif ($programmerow->ca3l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 3';
+    elseif ($programmerow->ca4l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 4';
+    elseif ($programmerow->examl == 0) $output .= 'Waiting on some Lecturer Approvals for Semester Exam';
+    else $output .= 'Approved by HOD';
+    $output .= '</td></tr>';
   }
 
   $output .= '<tr><td colspan="2"><br /></td></tr>';
