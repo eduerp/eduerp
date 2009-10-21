@@ -669,7 +669,7 @@ function _grading_ahah_stats() {
       gpa.field_program_ref_gpa_nid=p.nid AND
       p.field_department_name_value='%s' AND
       ci.field_program_ref_course_nid=p0.nid
-    GROUP BY ci.field_course_code_value";
+    GROUP BY ci.field_course_code_value ORDER BY ci.field_course_code_value";
   $courserows = db_query($sql, $level, $session, $semester, $department);
   while ($courserow = db_fetch_object($courserows)) {
     $output .= '<tr>';
