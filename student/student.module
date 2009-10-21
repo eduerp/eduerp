@@ -1223,7 +1223,7 @@ function student_registration_form_submit($form, &$state) {
 		$program = db_fetch_array($rs);
 
 		// Attempt to get the highest matno for the current session for the specified program
-		$search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session'), 2, 2));
+		$search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
 		$sql = "SELECT MID(matriculation_no, LENGTH('%s')+1, LENGTH(matriculation_no)) AS last_index FROM {admitted_student} WHERE matriculation_no RLIKE '%s[[:digit:]]+' ORDER BY matriculation_no DESC LIMIT 1";
 		$rs = db_query($sql, $search, $search);
 		$row = db_fetch_array($rs);
@@ -1349,7 +1349,7 @@ function student_registration_form_submit($form, &$state) {
       add_exam_detail($form);
    }
    if ($state['storage']['step'] == 1) {
-     admit_student($form);
+     admit_student($state);
    }
    if ($state['clicked_button']['#id'] == 'edit-previous') {
       $state['storage']['step']--;
@@ -3376,9 +3376,9 @@ function add_accomodation($form) {
     db_query($query .$where, $_SESSION['student']['data']->student_id,$form['accomodation_type']['#post']['hostel'],$form['accomodation_type']['#post']['college'],    $form['accomodation_type']['#post']['department_id']);
 }
 
-function admit_student(&$form) {
+function admit_student(&$state) {
 
-   $value = $form['#parameters'][1]['values'];
+	 $value = $state['storage']['values'][1];
    $query = "select * from {admitted_student} where student_id = '". $_SESSION['student']['data']->student_id ."'";
    $result = db_query($query);
    if (db_result($result)) {
@@ -3395,11 +3395,11 @@ function admit_student(&$form) {
      return;
   }
   $modes = _student_mode_of_entries('level_id');
-  $data = sprintf(" set yearofentry ='%s' , student_id='%s' , mode_of_entry = '%s' , jambno='%s' , title='%s' , last_name = '%s' , first_name='%s' , middle_name = '%s' , gender = '%s' , marital_status = '%s' , maiden_name = '%s' , nationality= '%s' , state_origin = '%s' ,lkup_lga_origin = '%s' , permanent_address1 = '%s' , permanent_address_city='%s', permanent_address_state = '%s' ,  contact_address ='%s' , contact_city = '%s' , contact_state='%s' , telephone = '%s' , mobile_number='%s' , email_address='%s' ,dob = '%s' , level_id='%s'
+  $data = sprintf(" set yearofentry ='%s' , student_id='%s' , mode_of_entry = '%s' , jambno='%s' , title='%s' , last_name = '%s' , first_name='%s' , middle_name = '%s' , gender = '%s' , marital_status = '%s' , maiden_name = '%s' , nationality= '%s' , state_origin = '%s' ,lkup_lga_origin = '%s' , permanent_address1 = '%s' , permanent_address_city='%s', permanent_address_state = '%s' ,  contact_address ='%s' , contact_city = '%s' , contact_state='%s' , telephone = '%s' , mobile_number='%s' , email_address='%s' ,dob = '%s' , level_id=%d
 
    ", $_SESSION['student']['data']->yearofentry , $_SESSION['student']['data']->student_id , $value['mode'] , $value['jam'] , $value['title'] , $value['lname'] , $value['fname'] , $value['mname'] , $value['sex'] , $value['mar'] , $value['maiden'] , $value['nat'] , $value['state'], $value['lga'], $value['address1'], $value['city'], $value['astate'], $value['caddress1'] , $value['ccity'], $value['castate'], $value['tel1'], $value['tel2'], $value['email'] ,$value['dob'],$modes[$value['mode']]);
    $query = $query . $data . $where;
-   db_query($query);
+	 db_query($query);
 }
 
 function student_add($uid, $val, $f) {
@@ -3873,7 +3873,6 @@ function _student_ahah_render($fields, $name) {
 function file_save_upload_name($source, $validators = array('file_validate_extensions'=>array('jpeg','jpg','gif','png')), $dest = FALSE, $replace = FILE_EXISTS_RENAME,$filename=null) {
   global $user;
   static $upload_cache;
-
   // Add in our check of the the file name length.
   $validators['file_validate_name_length'] = array();
 

@@ -1,4 +1,5 @@
 <?php
+
 function veritas_menu() {
   $items['veritas/receipt'] = array (
     'page callback' => 'veritas_view_receipt',
@@ -567,7 +568,6 @@ function veritas_receipt($f) {
     }
 
   function veritas_student_receipt(& $f, $isprint = false) {
-
     ob_start();
 
     $query = "select * , ah.name hostel_name, at.name hostel_type  from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join college c  on c.college_id = asa.college_id inner join department d on d.department_id = asa.department_id where asa.student_id = '%s' ";
@@ -599,7 +599,7 @@ function veritas_receipt($f) {
         	<th><b>Department : </b></th><td colspan="2" align="left"><?=$f->hostel_data->department_name;?></td>
         </tr>
         <tr>
-        	<th><b>MAT. NO :</b></th><td colspan="2" align="left"><b>VUG<?=vsprintf("%04d", array($f->student_id));?></b></td>
+        	<th><b>MAT. NO :</b></th><td colspan="2" align="left"><b><?=vsprintf("%s", array($f->student_data['matriculation_no']));?></b></td>
         </tr>
         <tr>
         	<th><b>SESSION : </b></th>
