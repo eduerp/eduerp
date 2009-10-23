@@ -4092,8 +4092,6 @@ function student_user($type, &$edit, &$user, $category = NULL){
     case 'login':
       // Each time a user logs in, all previous session variables should be reset
 			unset($_SESSION['student']);
-      unset($_SESSION['veritas']);
-      unset($_SESSION['staff']);
       $query ="select * from {admitted_student} where user_id = ".$user->uid;
       $result = db_query($query);
       if ($data = db_fetch_object($result)) {
