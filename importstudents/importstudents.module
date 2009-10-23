@@ -65,10 +65,11 @@ function _importstudents() {
     unset($rownamed['Admitted']);
     $rownamed['user_type_id'] = 0;
     $rownamed['pic_id'] = 0;
-    $rownamed['admitted'] = 0;
+    $rownamed['admitted'] = 1;
     $rownamed['session_id'] = 0;
     $rownamed['level_id'] = 2;
     $rownamed['clearance_status'] = 1;
+    $rownamed['verify_status'] = 1;
 
     echo '<tr>';
 
@@ -152,7 +153,7 @@ function _importstudents() {
 
     db_query("UPDATE {admitted_student} SET user_id=%d, pwd=dob, user_type_id=%d WHERE student_id=%d", $user->uid, $last->last, $last->last);
 
-    db_query('INSERT INTO {admitted_transaction} (student_id) VALUES (' . $last->last . ')');
+    //db_query('INSERT INTO {admitted_transaction} (student_id) VALUES (' . $last->last . ')');
 
     $student[$rownamed['matriculation_no']]['user_id'] = $user->uid;
     $student[$rownamed['matriculation_no']]['student_id'] = $last->last;
