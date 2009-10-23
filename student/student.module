@@ -2228,18 +2228,19 @@ function _student_registration_form2($state) {
      '#type' => 'fieldset',
      '#title' => '<b>SPONSOR</b>',
      '#collapsible' => TRUE,
-     '#description' => '(please fill if sponsor is different from next of kin)'
    );
    $form['sponsor']['title'] = array(
     '#type' => 'select',
     '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
     '#title' => 'Title', '#default_value' => '',
+    '#required' => TRUE,
     '#default_value' => $_POST['title'],
    );
    $form['sponsor']['sname'] = array(
      '#type' => 'textfield',
      '#size' => 45,
      '#title' => 'Name',
+     '#required' => TRUE,
      '#default_value' => $_POST['sname'],
    );
    $form['sponsor']['sadd'] = array(
@@ -2265,6 +2266,7 @@ function _student_registration_form2($state) {
      '#type' => 'textfield',
      '#size' => 25,
      '#title' => 'Mobile',
+     '#required' => TRUE,
      '#default_value' => $_POST['smobile'],
    );
   // if(is_array($obj[storage][values][2]))
@@ -3451,7 +3453,7 @@ function add_kin($form) {
            city = '". $form['kin']['title']['#post']['scity'] ."' ,
            telephone = '". $form['kin']['title']['#post']['stel'] ."' ,
            mobile = '". $form['kin']['title']['#post']['smobile'] ."' ,
-           student_id = '". $_SESSION['student']['data']->student_id ."'. $where
+           student_id = '". $_SESSION['student']['data']->student_id ."' $where
         ";
       db_query($query);
    }
