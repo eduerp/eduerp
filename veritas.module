@@ -151,20 +151,21 @@ function veritas_view_receipt() {
     if (arg(2)) {
       $t_id = (int) arg(2);
       if (!$t_id) {
-        drupal_set_message(t("Transaction id not found"));
+        drupal_set_message(t("Transaction not found"));
         drupal_goto("veritas/error");
       }
     }
     //echo sprintf("select * from admitted_transaction where transaction_id=%d ",$t_id);
-    $sql = "SELECT at. * , sum( at2.trans_amount ) AS total_amount
-        FROM admitted_transaction at
-        INNER JOIN admitted_transaction at2 ON at.student_id = at2.student_id
-        AND at.transaction_id =%d
+    $sql = "SELECT at.* , sum(at2.trans_amount) AS total_amount
+        FROM admitted_transaction at, admitted_transaction at2
+        WHERE at.student_id = at2.student_id
+        AND at.session_id = at2.session_id
+        AND at.transaction_id=%d
         GROUP BY at.student_id";
     $q = db_query($sql, $t_id);
     $f = db_fetch_object($q);
     $type = $f->trans_type;
-    $rc = db_query("select * from admitted_student where student_id=%d", $f->student_id);
+    $rc = db_query("SELECT `as`.*, p.programme_name, d.department_name, c.college_name FROM {admitted_student} `as`, {college} c, {department} d, {programme} p WHERE p.programme_id=as.first_choice AND d.department_id=p.department_id AND c.college_id=d.college_id AND as.student_id=%d", $f->student_id);
     $fc = db_fetch_array($rc);
     $f->name = $name = $fc[first_name] . ' ' . $fc[middle_name] . ' ' . $fc[last_name];
 
@@ -570,7 +571,7 @@ function veritas_receipt($f) {
   function veritas_student_receipt(& $f, $isprint = false) {
     ob_start();
 
-    $query = "select * , ah.name hostel_name, at.name hostel_type  from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join college c  on c.college_id = asa.college_id inner join department d on d.department_id = asa.department_id where asa.student_id = '%s' ";
+    $query = "select *, ah.name hostel_name, at.name hostel_type  from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join college c  on c.college_id = asa.college_id inner join department d on d.department_id = asa.department_id where asa.student_id = '%s' ";
     //echo  sprintf($query,$_SESSION['student']['data']->student_id);
     $result = db_query($query, $_SESSION['student']['data']->student_id);
     $data = db_fetch_object($result);
@@ -593,10 +594,10 @@ function veritas_receipt($f) {
         	<th>Name:</th><td colspan="2" align="left"><?=$f->name?></td>
         </tr>
         <tr>
-        	<th><b>College : </b></th><td colspan="2" align="left"><?=$f->hostel_data->college_name;?></td>
+        	<th><b>College : </b></th><td colspan="2" align="left"><?=$f->student_data['college_name'];?></td>
         </tr>
           <tr>
-        	<th><b>Department : </b></th><td colspan="2" align="left"><?=$f->hostel_data->department_name;?></td>
+        	<th><b>Department : </b></th><td colspan="2" align="left"><?=$f->student_data['department_name']; ?></td>
         </tr>
         <tr>
         	<th><b>MAT. NO :</b></th><td colspan="2" align="left"><b><?=vsprintf("%s", array($f->student_data['matriculation_no']));?></b></td>
@@ -620,91 +621,36 @@ function veritas_receipt($f) {
         	<th colspan="3"><b>Fee Item: </b></th>
         </tr>
          <tr>
-        	<td>Acceptance Fee:</td><td>
-              NGN <? echo (($f->total_amount - 100000 ) < 0)? $f->total_amount : 100000  ;   ?>
-          </td>
+        	<td>Acceptance Fee:</td><td>NGN 100,000.00</td>
         </tr>
-        <?php
-
-
-    $remaining_amt = $f->total_amount - 100000;
-    if ($remaining_amt < 0) {
-      $remaining_amt = 0;
-      $out_standing = 100000 - $f->total_amount;
-    }
-?>
          <tr>
-        	<td>Accommodation Fee :</td><td>NGN <?php  echo (($remaining_amt - $f->hostel_data->cost ) < 0)? $remaining_amt :  $f->hostel_data->cost ;   ?></td>
+        	<td>Accommodation Fee:</td><td>NGN <?php echo number_format(floatval(@$f->hostel_data->cost), 2); ?></td>
         </tr>
-        <?
-
-
-    $prev_amt = $remaining_amt;
-    $remaining_amt = $remaining_amt -str_replace(",", "", $f->hostel_data->cost);
-    if ($remaining_amt < 0) {
-
-      $remaining_amt = 0;
-      $f->hostel_data->cost;
-      $out_standing = $out_standing + (str_replace(",", "", $f->hostel_data->cost) - $prev_amt);
-      $f->hostel_data->cost - $prev_amt;
-
-    }
-?>
-        
-        
         <tr>
-        	<td>Tuition Balance :</td><td>NGN <?php  echo (($remaining_amt - 150000)<0)? $remaining_amt : 150000 ;   ?></td>
+        	<td>Tuition Fee:</td><td>NGN 150,000.00</td>
         </tr>
-       <?
-
-
-    $prev_amt = $remaining_amt;
-    $remaining_amt = $remaining_amt -150000;
-    if ($remaining_amt < 0) {
-
-      $remaining_amt = 0;
-      $out_standing = $out_standing + (150000 - $prev_amt);
-
-    }
-?>
         <?php
+          if ($f->hostel_data->college_id == 1) {
+            $amt = 45000;
+          } else {
+            $amt = 50000;
+          }
 
-
-    if ($f->hostel_data->college_id == 1) {
-
-      $amt = 45000;
-
-    } else {
-
-      $amt = 50000;
-
-    }
-?> 
+          $paid = $f->total_amount;
+          $outstanding = 100000 + 150000 + floatval(@$f->hostel_data->cost) + $amt;
+          $outstanding -= $paid;
+        ?> 
         <tr>
-        	<td>Other:</td><td>NGN <?php  echo (($remaining_amt - $amt)<0)? $remaining_amt : $amt ;   ?></td>
+        	<td>Other:</td><td>NGN <?php  echo number_format(floatval($amt), 2); ?></td>
         </tr>
-       <?
-
-
-    $prev_amt = $remaining_amt;
-    $remaining_amt = $remaining_amt - $amt;
-    if ($remaining_amt < 0) {
-
-      $remaining_amt = 0;
-      $out_standing = $out_standing + ($amt - $prev_amt);
-
-    } else {
-      $out_standing = $out_standing + ($amt - $prev_amt);
-      $out_standing = 0;
-    }
-?>  
         <tr>
-        	<td><b>Total Outstanding  Amount :</b></td><td>NGN <?php  echo $out_standing ; ?></td>
+        	<td><b>Total Amount Paid:</b></td><td>NGN <?php echo number_format(floatval($paid), 2); ?></td>
         </tr>
-    	
+        <tr>
+        	<td><b>Total Amount Outstanding:</b></td><td>NGN <?php echo number_format(floatval($outstanding), 2); ?></td>
+        </tr>
     </table>
    </body>
-   
    </html>
 <?
 
@@ -931,8 +877,8 @@ function veritas_receipt($f) {
     $f = db_fetch_object($r);
 
     if ($f->refno) {
-      $name2 = preg_replace('/[\s]*$/', '', $name2);
-      $description = preg_replace('/[\s]*$/', '', $f->description);
+      $name2 = trim($name2);
+      $description = trim($f->description);
       $s = preg_match("/$name2\$/i", $description);
       /*
       if(!$s){    //strstr(strtoupper($f->description),strtoupper($name2))===false){
