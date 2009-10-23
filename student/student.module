@@ -1975,13 +1975,14 @@ function _student_reg_form1(&$obj) {
    $form['address']['tel1'] = array(
      '#type' => 'textfield',
      '#size' => 25,
-     '#required' => TRUE,
+     '#required' => FALSE,
      '#title' => 'Telephone',
      '#default_value' => $_POST['tel1'],
     );
    $form['address']['tel2'] = array(
      '#type' => 'textfield',
      '#size' =>25,
+     '#required' => TRUE,
      '#title' => 'Mobile',
      '#default_value' => $_POST['tel2'],
     );
@@ -2347,7 +2348,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#type' => 'ccdt',
       '#name' => 'dst1',
       '#title' => 'DATE STARTED',
-      '#ccdt_attribute' => array(2001, date('Y')),
+      '#ccdt_attribute' => array(1970, date('Y')),
       '#prefix' => '<table><tr><td>',
       '#suffix' => '</td>',
       '#default_value' => $_POST['dst1'],
@@ -2356,7 +2357,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#type' => 'ccdt',
       '#name' => 'den1',
       '#title' => 'DATE ENDED',
-      '#ccdt_attribute' => array(2001, date('Y')),
+      '#ccdt_attribute' => array(1970, date('Y')),
       '#prefix' => '<td>',
       '#suffix' => '</td></tr></table>',
       '#default_value' => $_POST['den1'],
@@ -3205,7 +3206,15 @@ function student_reg_form_validate($form, &$state) {
               form_set_error('cno', 'Invalid payment details');
               return;
            }
-           $s = veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');
+           /**
+            * Etranzact
+           $s = veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');*/
+
+           /**
+            * Bank Payment
+            */
+           $s = veritas_bank_pay($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');
+
        }
        else {
            form_set_error('method', 'Choose payment method');
