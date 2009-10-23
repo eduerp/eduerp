@@ -3001,11 +3001,11 @@ function student_registration_form_validate($form, &$state) {
      if (!$data) {
         form_set_error('rno', "Teller  No  not valid.");
      }
-     else {
-       //if($data->cr < 200000){
-       //form_set_error('rno',"Amount less then 200000 is not accepted.");
-      //}
-     }
+    else {
+      if ($data->cr < 50000) {
+        form_set_error('rno',"Amount less than 50,000 is not accepted.");
+      }
+    }
   }
   if ($state['storage']['step'] == 3) {
      $values = $state['values'];
