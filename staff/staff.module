@@ -646,7 +646,7 @@ function staff_course_assign_form1(&$obj) {
     '#attributes' => array(
       'style' => 'width:100px'),
     '#required' => TRUE,
-    '#form_panel_col' => 2,
+    '#form_panel_col' => 1,
     '#form_panel_row' => 2);
   $form['level_id'] = array(
     '#type' => 'select',
@@ -654,7 +654,7 @@ function staff_course_assign_form1(&$obj) {
     '#title' => 'Level',
     '#required' => TRUE,
     '#ahah' => array('path' => 'staff/ajax/course', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'courses'),
-    '#form_panel_col' => 3,
+    '#form_panel_col' => 2,
     '#form_panel_row' => 2);
   $form['course_id'] = array(
     '#type' => 'select',
@@ -666,28 +666,49 @@ function staff_course_assign_form1(&$obj) {
     '#suffix' => "</div>",
     '#required' => TRUE,
     '#disabled' => TRUE,
-    '#form_panel_col' => 4,
+    '#form_panel_col' => 3,
     '#form_panel_row' => 2);
   $form['course_type_id'] = array(
     '#type' => 'select',
     '#options' => array( 1 => 'Core', 2 => 'Elective'),
     '#title' => 'Course Type',
     '#required' => TRUE,
-    '#form_panel_col' => 5,
+    '#form_panel_col' => 4,
     '#form_panel_row' => 2);
   $form['staff_id'] = array(
     '#type' => 'select',
     '#options' => lecturer(),
     '#title' => 'Lecturer',
     '#required' => TRUE ,
-    '#form_panel_col' => 6,
+    '#form_panel_col' => 5,
     '#form_panel_row' => 2);
+  $form['min_credit_load'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Min Credit',
+    '#required' => TRUE,
+    '#default_value' => ($_SESSION['staff']['min_load']) ? $_SESSION['staff']['min_load'] : "",
+    '#size' => 10,
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 3);
+  $form['max_credit_load'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Max Credit',
+    '#required' => TRUE,
+    '#default_value' => ($_SESSION['staff']['max_load']) ? $_SESSION['staff']['max_load'] : "",
+    '#size' => 10,
+    '#form_panel_col' => 2,
+    '#form_panel_row' => 3);
   $form['jambsubn'] = array(
     '#id' => 'edit-next',
     '#value' => 'Add',
     '#type' => 'submit',
-    '#form_panel_col' => 9,
-    '#form_panel_row' => 2);
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 4);
+  $form['sep'] = array(
+    '#type' => 'item',
+    '#value' => '',
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 5);
   return $form;
 }
 function course_assign_list() {
@@ -720,8 +741,10 @@ EOD;
 }
 function staff_course_assign_form1_submit(&$form, &$state) {
   $values = $state['values'];
-  $query = "INSERT INTO {registrable_course} SET course_id=%d, programme_id=%d, level_id=%d, course_type=%d, lecturer_id=%d";
-  db_query($query, $values['course_id'], $values['programme_id'], $values['level_id'], $values['course_type_id'], $values['staff_id']);
+  $query = "INSERT INTO {registrable_course} SET course_id=%d, programme_id=%d, level_id=%d, course_type=%d, lecturer_id=%d, min_credit_load=%d, max_credit_load=%d";
+  db_query($query, $values['course_id'], $values['programme_id'], $values['level_id'], $values['course_type_id'], $values['staff_id'], $values['min_credit_load'], $values['max_credit_load']);
+  $_SESSION['staff']['max_load'] = $values['max_credit_load'];
+  $_SESSION['staff']['min_load'] = $values['min_credit_load'];
   drupal_set_message("Registable Course Created");
   drupal_goto("staff/registrablecourse");
 }
