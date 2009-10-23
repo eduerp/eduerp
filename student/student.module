@@ -1538,7 +1538,7 @@ function _student_reg_form3($state) {
     '#type' => 'ccdt',
     '#name' => 'dst1',
     '#title' => 'DATE STARTED',
-    '#ccdt_attribute' => array(2001,date('Y')),
+    '#ccdt_attribute' => array(1970,date('Y')),
     '#prefix' => '<table><tr><td>',
     '#suffix' => '</td>'
   );
@@ -1546,7 +1546,7 @@ function _student_reg_form3($state) {
     '#type' => 'ccdt',
     '#name' => 'den1',
     '#title' => 'DATE ENDED',
-    '#ccdt_attribute' => array(2001, date('Y')),
+    '#ccdt_attribute' => array(1970, date('Y')),
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>'
   );
@@ -1566,7 +1566,7 @@ function _student_reg_form3($state) {
      '#type' => 'ccdt',
      '#name' => 'dst2',
      '#title' => 'DATE STARTED',
-     '#ccdt_attribute' => array(2001, date('Y')),
+     '#ccdt_attribute' => array(1970, date('Y')),
      '#prefix' => '<table><tr><td>',
      '#suffix' => '</td>'
    );
@@ -1574,7 +1574,7 @@ function _student_reg_form3($state) {
      '#type' => 'ccdt',
      '#name' => 'den2',
      '#title' => 'DATE ENDED',
-     '#ccdt_attribute' => array(2001, date('Y')),
+     '#ccdt_attribute' => array(1970, date('Y')),
      '#prefix' => '<td>',
      '#suffix' => '</td></tr></table>'
    );
@@ -1975,13 +1975,14 @@ function _student_reg_form1(&$obj) {
    $form['address']['tel1'] = array(
      '#type' => 'textfield',
      '#size' => 25,
-     '#required' => TRUE,
+     '#required' => FALSE,
      '#title' => 'Telephone',
      '#default_value' => $_POST['tel1'],
     );
    $form['address']['tel2'] = array(
      '#type' => 'textfield',
      '#size' =>25,
+     '#required' => TRUE,
      '#title' => 'Mobile',
      '#default_value' => $_POST['tel2'],
     );
@@ -2227,18 +2228,19 @@ function _student_registration_form2($state) {
      '#type' => 'fieldset',
      '#title' => '<b>SPONSOR</b>',
      '#collapsible' => TRUE,
-     '#description' => '(please fill if sponsor is different from next of kin)'
    );
    $form['sponsor']['title'] = array(
     '#type' => 'select',
     '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
     '#title' => 'Title', '#default_value' => '',
+    '#required' => TRUE,
     '#default_value' => $_POST['title'],
    );
    $form['sponsor']['sname'] = array(
      '#type' => 'textfield',
      '#size' => 45,
      '#title' => 'Name',
+     '#required' => TRUE,
      '#default_value' => $_POST['sname'],
    );
    $form['sponsor']['sadd'] = array(
@@ -2264,6 +2266,7 @@ function _student_registration_form2($state) {
      '#type' => 'textfield',
      '#size' => 25,
      '#title' => 'Mobile',
+     '#required' => TRUE,
      '#default_value' => $_POST['smobile'],
    );
   // if(is_array($obj[storage][values][2]))
@@ -2347,7 +2350,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#type' => 'ccdt',
       '#name' => 'dst1',
       '#title' => 'DATE STARTED',
-      '#ccdt_attribute' => array(2001, date('Y')),
+      '#ccdt_attribute' => array(1970, date('Y')),
       '#prefix' => '<table><tr><td>',
       '#suffix' => '</td>',
       '#default_value' => $_POST['dst1'],
@@ -2356,7 +2359,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
       '#type' => 'ccdt',
       '#name' => 'den1',
       '#title' => 'DATE ENDED',
-      '#ccdt_attribute' => array(2001, date('Y')),
+      '#ccdt_attribute' => array(1970, date('Y')),
       '#prefix' => '<td>',
       '#suffix' => '</td></tr></table>',
       '#default_value' => $_POST['den1'],
@@ -2377,7 +2380,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#type' => 'ccdt',
      '#name' => 'dst2',
      '#title' => 'DATE STARTED',
-     '#ccdt_attribute' => array(2001, date('Y')),
+     '#ccdt_attribute' => array(1970, date('Y')),
      '#prefix' => '<table><tr><td>',
      '#suffix' => '</td>',
    );
@@ -2385,7 +2388,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
      '#type' => 'ccdt',
      '#name' => 'den2',
      '#title' => 'DATE ENDED',
-     '#ccdt_attribute' => array(2001, date('Y')),
+     '#ccdt_attribute' => array(1970, date('Y')),
      '#prefix' => '<td>',
      '#suffix' => '</td></tr></table>'
    );
@@ -2998,11 +3001,11 @@ function student_registration_form_validate($form, &$state) {
      if (!$data) {
         form_set_error('rno', "Teller  No  not valid.");
      }
-     else {
-       //if($data->cr < 200000){
-       //form_set_error('rno',"Amount less then 200000 is not accepted.");
-      //}
-     }
+    else {
+      if ($data->cr < 50000) {
+        form_set_error('rno',"Amount less than 50,000 is not accepted.");
+      }
+    }
   }
   if ($state['storage']['step'] == 3) {
      $values = $state['values'];
@@ -3205,7 +3208,15 @@ function student_reg_form_validate($form, &$state) {
               form_set_error('cno', 'Invalid payment details');
               return;
            }
-           $s = veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');
+           /**
+            * Etranzact
+           $s = veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');*/
+
+           /**
+            * Bank Payment
+            */
+           $s = veritas_verify_bankpay($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');
+
        }
        else {
            form_set_error('method', 'Choose payment method');
@@ -3442,7 +3453,7 @@ function add_kin($form) {
            city = '". $form['kin']['title']['#post']['scity'] ."' ,
            telephone = '". $form['kin']['title']['#post']['stel'] ."' ,
            mobile = '". $form['kin']['title']['#post']['smobile'] ."' ,
-           student_id = '". $_SESSION['student']['data']->student_id ."'. $where
+           student_id = '". $_SESSION['student']['data']->student_id ."' $where
         ";
       db_query($query);
    }
