@@ -225,11 +225,11 @@ function student_course_form1(&$obj) {
 	if ($rs && ($row = db_fetch_object($rs))) {
 		 $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
 		 $result = db_query($query);
-		 $row =  db_fetch_object($result);
-		 $query = "SELECT   *  from  {registrable_course} rc where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+		 $row_student =  db_fetch_object($result);
+		 $query = "SELECT   *  from  {registrable_course} rc where rc.level_id = ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
 		 $result = db_query($query);
 		 $min_max_credits = db_fetch_object($result);
-		 $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+		 $query = "SELECT * from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
 		 $result = db_query($query);
 		 $rows = array();
 		 $core_html = "<tr>
@@ -272,7 +272,7 @@ function student_course_form1(&$obj) {
 				 </th>
 				</tr>";
 		 while ($row = db_fetch_object($result)) {
-				if ($row->course_type == 1) {
+				if ($row->course_type == 1 && $row->level_id == $row_student->level_id) {
 					 $core_html .= '<tr>
 				 <td>
 					'.$row->course_code.'
@@ -377,12 +377,12 @@ EOD;
 function student_course_form2(&$obj) {
   $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
   $result = db_query($query);
-  $row =  db_fetch_object($result);
-  $query = "select * from {course} where prog_id=". $row->first_choice ." and level_level_id = ". $row->level_id;
-  $query ="SELECT   *  from  registrable_course rc where rc.level_id = ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+  $row_student =  db_fetch_object($result);
+  $query = "select * from {course} where prog_id=". $row_student->first_choice ." and level_level_id = ". $row_student->level_id;
+  $query ="SELECT * from  registrable_course rc where rc.level_id = ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
   $result = db_query($query);
   $min_max_credits = db_fetch_object($result);
-  $query = "SELECT   *  from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row->level_id ."  and rc.programme_id=". $row->first_choice ;
+  $query = "SELECT * from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
   $result = db_query($query);
   $rows = array();
   $core_html = "<tr>
@@ -425,7 +425,7 @@ function student_course_form2(&$obj) {
   $elective_course = array_keys($obj['storage'][1]['electivecourse']);
 
   while ($row = db_fetch_object($result)) {
-    if ($row->course_type == 1) {
+    if ($row->course_type == 1 && ($row->level_id == $row_student->level_id)) {
       $core_html .= '<tr>
        <td>
         '. $row->course_code .'
@@ -446,15 +446,15 @@ function student_course_form2(&$obj) {
       $form['courses']['corecourses['.$row->reg_course_id.']'] = array('#type'=>'hidden', '#value'=>$row->reg_course_id);
       $selected_load += $row->credit_load;
     }
-    else {
+    else if ($row->course_type == 2) {
       if (in_array($row->reg_course_id,$elective_course)) {
         $checked = "checked";
         $selected_load += $row->credit_load;
-    }
-    else {
-      $checked = '';
-    }
-    $elective_html .= ' <tr>
+			}
+			else {
+				$checked = '';
+			}
+				$elective_html .= '<tr>
        <td>
        <input class="select_course" readonly type="checkbox" '.$checked.' name="electivecourses['. $row->reg_course_id .']" value='. $row->credit_load .' />
        </td>
@@ -475,9 +475,9 @@ function student_course_form2(&$obj) {
        </td>
        </tr>
        ';
-    }
-    $rows[$row->course_id] = $row->course_title;
-  }
+		}
+		$rows[$row->course_id] = $row->course_title;
+	}
 
   $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
   $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
@@ -1344,6 +1344,10 @@ function student_registration_form_submit($form, &$state) {
     $user = user_save(user_load($_SESSION['student']['data']->student_id), $drupal_data);
     $query = "update {admitted_student} set matriculation_no ='". $mat_number ."' , user_id='". $user->uid ."' where student_id ='". $_SESSION['student']['data']->student_id ."'";
     db_query($query);
+		// Also update the mat no in the student table
+		$query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
+		db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
+
   /////////////////////////////////////////////////////
     $sql = "select * from {admitted_transaction} where transaction_id=%d";
     $sql = "SELECT at. * , sum( at2.trans_amount ) AS total_amount
@@ -1512,7 +1516,8 @@ function student_reg_form(&$obj) {
   else if ($st == 4)
     return _student_reg_form4($obj);
   else if($st == 5)
-    return _student_reg_form5_etranzact($obj);
+		// Fee payment - to switch to entranzact, append _etranzact to the function name
+    return _student_reg_form5($obj);
 }
 
 function _student_reg_form3($state) {
@@ -3282,6 +3287,8 @@ function student_reg_form_submit($form,&$state){
        drupal_set_message('Registration cannot be done . please contract admin');
        drupal_goto('veritas/error');
     }
+    // At this point, we should null the session info
+    unset($_SESSION);
   }
 }
 
@@ -3347,6 +3354,7 @@ function add_exam_detail($form) {
      }
   }
   if ($values['nos'] > 1) {
+			$query = "insert into {admitted_ext_exam_record} set exam_date = '%s' , exam_center_name = '%s' , exam_number='%s' , exam_body='%s' , exam_student_id = '%s' " ;
       $edate2 = $values['edate2']['year'] ."-". $values['edate2']['month'] ."-". $values['edate2']['day'];
       db_query( $query , $edate2  , $values['ec2'] , $values['eno2'] , $values['ebd2'] , $_SESSION['student']['data']->student_id);
       $eid = db_last_insert_id('admitted_ext_exam_record', 'ext_exam_record_id');
@@ -4082,12 +4090,13 @@ function student_user($type, &$edit, &$user, $category = NULL){
 
   switch($type){
     case 'login':
+      // Each time a user logs in, all previous session variables should be reset
+			unset($_SESSION['student']);
+      unset($_SESSION['veritas']);
+      unset($_SESSION['staff']);
       $query ="select * from {admitted_student} where user_id = ".$user->uid;
       $result = db_query($query);
       if ($data = db_fetch_object($result)) {
-        unset($_SESSION['student']);
-        unset($_SESSION['veritas']);
-        unset($_SESSION['staff']);
         $_SESSION['student']['id'] = $data->student_id;
         $_SESSION['student']['data'] = $data;
       }
