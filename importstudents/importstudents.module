@@ -57,6 +57,7 @@ function _importstudents() {
       $rownamed[$names[$i]] = $field;
     }
 
+	$old_student_id = $rownamed['student_id'];
     unset($rownamed['student_id']);
     unset($rownamed['username']);
     unset($rownamed['pwd']);
@@ -117,7 +118,7 @@ function _importstudents() {
       echo '<td>...Already Exists... Skipping: ' . $rownamed['matriculation_no'] . "u:{$existing->user_id} s:{$existing->student_id}</td>";
 
       $student[$rownamed['matriculation_no']]['user_id'] = $existing->user_id;
-      $student[$rownamed['matriculation_no']]['student_id'] = $existing->student_id;
+      $student[$rownamed['matriculation_no']]['student_id'] = $existing->user_id;
       $student[$rownamed['matriculation_no']]['delete_grades'] = true;
 
       echo '</tr>';
@@ -149,14 +150,26 @@ function _importstudents() {
       'timezone' => $timezone
     );
 
-    $user = user_save(NULL, $drupal_data);
-
-    db_query("UPDATE {admitted_student} SET user_id=%d, pwd=dob, user_type_id=%d WHERE student_id=%d", $user->uid, $last->last, $last->last);
+$user->uid = 99999;
+//    $user = user_save(NULL, $drupal_data);
+//
+//    db_query("UPDATE {admitted_student} SET student_id=%d, user_id=%d, pwd=dob, user_type_id=%d WHERE student_id=%d", $user->uid, $user->uid, $user->uid, $last->last);
+//
+//    db_query("UPDATE admitted_next_of_kin          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_sponsor              SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_student_accomodation SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_transaction          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE lkup_lga                      SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE next_of_kin                   SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE student                       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE student_medical_details       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE ext_exam_record               SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_ext_exam_record      SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
 
     //db_query('INSERT INTO {admitted_transaction} (student_id) VALUES (' . $last->last . ')');
 
     $student[$rownamed['matriculation_no']]['user_id'] = $user->uid;
-    $student[$rownamed['matriculation_no']]['student_id'] = $last->last;
+    $student[$rownamed['matriculation_no']]['student_id'] = $user->uid;
     $student[$rownamed['matriculation_no']]['delete_grades'] = true;
 
 
@@ -169,6 +182,7 @@ function _importstudents() {
 
     echo '<td>...Worked</td>';
     echo '</tr>';
+break;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   }
   echo '</table>';
 
@@ -212,45 +226,6 @@ function _importstudents() {
     if (empty($exam)) $exam = 0;
     echo "<td>{$exam}</td>";
 
-    $query = "SELECT
-      rc.reg_course_id,
-      p.programme_id,
-      p.programme_name,
-      p.department_id,
-      c.course_id,
-      c.course_code,
-      c.course_title,
-      c.credit_load,
-      c.semester AS semester_id,
-      d.department_name,
-      d.college_id,
-      co.college_name,
-      co.college_abbreviation,
-      s.session_id,
-      s.sess_name,
-      l.level_id,
-      l.level_name
-    FROM {registrable_course} rc, {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l
-    WHERE
-      rc.programme_id=p.programme_id AND
-      rc.course_id=c.course_id AND
-      c.course_code='%s' AND
-      p.department_id=d.department_id AND
-      d.college_id=co.college_id AND
-      s.session_id={$session_id} AND
-      rc.level_id=l.level_id";
-    $program_result = db_query($query, $course);
-    $program_row = db_fetch_object($program_result);
-    $program_row->user_id = NULL; //No Lecturer
-    $reg_course_id = $program_row->reg_course_id;
-    echo "<td>{$program_row->reg_course_id}</td>";
-    echo "<td>{$program_row->programme_name}</td>";
-    echo "<td>{$program_row->department_name}</td>";
-    echo "<td>{$program_row->college_name}</td>";
-    echo "<td>{$program_row->sess_name}</td>";
-    echo "<td>{$program_row->semester_id}</td>";
-    echo "<td>{$program_row->level_name}</td>";
-
     if (empty($student[$matriculation_no])) {
       echo "<td>matriculation_no: $matriculation_no Missing from loaded students</td>";
       echo '</tr>';
@@ -266,72 +241,8 @@ function _importstudents() {
       continue;
     }
 
-    if ($semester_id != $program_row->semester_id) {
-      echo "<td>semester_id ({$semester_id}) from grades != course semester_id ({$program_row->semester_id})</td>";
-      echo '</tr>';
-      continue;
-    }
+    $programme_id = $row->first_choice;
 
-    if ($student[$matriculation_no]['delete_grades']) {
-      delete_student_grades_i($student[$matriculation_no]['user_id'], $session_id, $semester_id);
-      $student[$matriculation_no]['delete_grades'] = false;
-    }
-
-    $row->level_id = 1; // Last Year!
-    $data['select_credit'] = 0;
-    create_cck_records_i($row, $reg_course_id, $data, $session_id, $ca1, $ca2, $ca3, $ca4, $exam);
-
-    echo '</tr>';
-  }
-  echo '</table>';
-
-  return ob_get_clean();
-}
-
-
-function create_cck_records_i($admitted_student, $reg_course_id, $data, $session_id, $ca1, $ca2, $ca3, $ca4, $exam) {
-
-  if (empty($admitted_student->middle_name)) {
-    $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name;
-  }
-  else {
-    $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name . ' ' . $admitted_student->middle_name;
-  }
-
-  // Get details of the course's programme, department, college
-  $query = "SELECT
-    p.programme_id,
-    p.programme_name,
-    p.department_id,
-    c.course_id,
-    c.course_code,
-    c.course_title,
-    c.credit_load,
-    c.semester AS semester_id,
-    d.department_name,
-    d.college_id,
-    co.college_name,
-    co.college_abbreviation,
-    s.session_id,
-    s.sess_name,
-    l.level_id,
-    l.level_name,
-    vs.user_id
-  FROM {registrable_course} rc, {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l, {veritas_staff} vs
-  WHERE
-    rc.reg_course_id={$reg_course_id} AND
-    rc.programme_id=p.programme_id AND
-    rc.course_id=c.course_id AND
-    p.department_id=d.department_id AND
-    d.college_id=co.college_id AND
-    s.session_id={$session_id} AND
-    rc.level_id=l.level_id AND
-    rc.lecturer_id=vs.staff_id";
-  $program_result = db_query($query);
-  $program_row = db_fetch_object($program_result);
-
-  if (empty($program_row)) {
-    // Behave gracefully if there is no lecturer_id (could have used LEFT JOIN above, but would have involved retest)
     $query = "SELECT
       p.programme_id,
       p.programme_name,
@@ -349,48 +260,90 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
       s.sess_name,
       l.level_id,
       l.level_name
-    FROM {registrable_course} rc, {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l
+    FROM {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l
     WHERE
-      rc.reg_course_id={$reg_course_id} AND
-      rc.programme_id=p.programme_id AND
-      rc.course_id=c.course_id AND
+      p.programme_id={$programme_id} AND
+      c.course_code='%s' AND
       p.department_id=d.department_id AND
       d.college_id=co.college_id AND
       s.session_id={$session_id} AND
-      rc.level_id=l.level_id";
+      l.level_id=1";
+    $program_result = db_query($query, $course);
+    $program_row = db_fetch_object($program_result);
+    $program_row->user_id = NULL; //No Lecturer
+    $course_id = $program_row->course_id;
+    echo "<td>{$program_row->course_id}</td>";
+    echo "<td>{$program_row->programme_name}</td>";
+    echo "<td>{$program_row->department_name}</td>";
+    echo "<td>{$program_row->college_name}</td>";
+    echo "<td>{$program_row->sess_name}</td>";
+    echo "<td>{$program_row->semester_id}</td>";
+    echo "<td>{$program_row->level_name}</td>";
+
+    if ($semester_id != $program_row->semester_id) {
+      echo "<td>semester_id ({$semester_id}) from grades != course semester_id ({$program_row->semester_id})</td>";
+      echo '</tr>';
+      continue;
+    }
+
+    if ($student[$matriculation_no]['delete_grades']) {
+      delete_student_grades_i($student[$matriculation_no]['user_id'], $session_id, $semester_id);
+      $student[$matriculation_no]['delete_grades'] = false;
+    }
+
+    $row->level_id = 1; // Last Year!
+    $data['select_credit'] = 0;
+    create_cck_records_i($row, $course_id, $data, $session_id, $ca1, $ca2, $ca3, $ca4, $exam);
+
+    echo '</tr>';
+  }
+  echo '</table>';
+
+  return ob_get_clean();
+}
+
+
+function create_cck_records_i($admitted_student, $course_id, $data, $session_id, $ca1, $ca2, $ca3, $ca4, $exam) {
+
+  $programme_id = $admitted_student->first_choice;
+
+  if (empty($admitted_student->middle_name)) {
+    $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name;
+  }
+  else {
+    $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name . ' ' . $admitted_student->middle_name;
+  }
+
+    $query = "SELECT
+      p.programme_id,
+      p.programme_name,
+      p.department_id,
+      c.course_id,
+      c.course_code,
+      c.course_title,
+      c.credit_load,
+      c.semester AS semester_id,
+      d.department_name,
+      d.college_id,
+      co.college_name,
+      co.college_abbreviation,
+      s.session_id,
+      s.sess_name,
+      l.level_id,
+      l.level_name
+    FROM {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l
+    WHERE
+      p.programme_id={$programme_id} AND
+      c.course_id={$course_id} AND
+      p.department_id=d.department_id AND
+      d.college_id=co.college_id AND
+      s.session_id={$session_id} AND
+      l.level_id=1";
     $program_result = db_query($query);
     $program_row = db_fetch_object($program_result);
     $program_row->user_id = NULL;
-  }
 
-  // Find Alternate Lecturer uid
-  $query = "SELECT vs.user_id AS alternate_user_id
-  FROM {registrable_course} rc, {veritas_staff} vs
-  WHERE
-    rc.reg_course_id={$reg_course_id} AND
-    rc.lecturer_id_alternate=vs.staff_id";
-  $alternate_result = db_query($query);
-  if (!($alternate_row = db_fetch_object($alternate_result))) $alternate_row->alternate_user_id = NULL;
-
-  // Get details of the student's home programme, department, college (as opposed to the course's)
-  $query = "SELECT
-    p.programme_id,
-    p.programme_name,
-    p.department_id,
-    d.department_name,
-    d.college_id,
-    co.college_name,
-    co.college_abbreviation,
-    l.level_id,
-    l.level_name
-  FROM {programme} p, {department} d, {college} co, {level} l
-  WHERE
-    p.programme_id={$admitted_student->first_choice} AND
-    p.department_id=d.department_id AND
-    d.college_id=co.college_id AND
-    l.level_id={$admitted_student->level_id}";
-  $home_program_result = db_query($query);
-  $home_program_row = db_fetch_object($home_program_result);
+  $alternate_row->alternate_user_id = NULL;
 
   $program = get_cck_nid_i('program', 'field_programme_id', $program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   if (empty($program)) {
@@ -412,28 +365,6 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $node->field_college_abbreviation[0]['value']  = $program_row->college_abbreviation;
     node_save($node);
     $program = $node->nid;
-  }
-
-  $home_program = get_cck_nid_i('program', 'field_programme_id', $home_program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-  if (empty($home_program)) {
-    // program CCK
-    $node = new stdClass();
-    $node->type                                    = 'program';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = $home_program_row->programme_name;
-    $node->field_programme_id[0]['value']          = $home_program_row->programme_id;
-    $node->field_programme_name[0]['value']        = $home_program_row->programme_name;
-    $node->field_department_id[0]['value']         = $home_program_row->department_id;
-    $node->field_department_name[0]['value']       = $home_program_row->department_name;
-    $node->field_college_id[0]['value']            = $home_program_row->college_id;
-    $node->field_college_name[0]['value']          = $home_program_row->college_name;
-    $node->field_college_abbreviation[0]['value']  = $home_program_row->college_abbreviation;
-    node_save($node);
-    $home_program = $node->nid;
   }
 
   $course_instance = get_cck_nid_i('course_instance', 'field_course_id', $program_row->course_id, 'field_session_id', $program_row->session_id, 'field_semester_id', $program_row->semester_id, 'field_level_id', $program_row->level_id, NULL, NULL, NULL, NULL);
@@ -464,7 +395,7 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $course_instance = $node->nid;
   }
 
-  $student_gpa = get_cck_nid_i('student_gpa', 'field_session_id_gpa', $program_row->session_id, 'field_semester_id_gpa', $program_row->semester_id, 'field_level_id_gpa', $home_program_row->level_id, NULL, NULL, NULL, NULL, 'field_student_ref_gpa', $admitted_student->user_id);
+  $student_gpa = get_cck_nid_i('student_gpa', 'field_session_id_gpa', $program_row->session_id, 'field_semester_id_gpa', $program_row->semester_id, 'field_level_id_gpa', $program_row->level_id, NULL, NULL, NULL, NULL, 'field_student_ref_gpa', $admitted_student->user_id);
   if (empty($student_gpa)) {
     // student_gpa CCK
     $node = new stdClass();
@@ -476,7 +407,7 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $node->comment                                 = 0;
     $node->title                                   = $studentname . ' - ' . $program_row->sess_name . ' - ' . $program_row->semester_id;
     $node->field_student_ref_gpa[0]['uid']         = $admitted_student->user_id;
-    $node->field_program_ref_gpa[0]['nid']         = $home_program; // No longer GPA for Program but for whole semester's courses
+    $node->field_program_ref_gpa[0]['nid']         = $program; // No longer GPA for Program but for whole semester's courses
     $node->field_gpa[0]['value']                   = '-';
     $node->field_gpaforstudent[0]['value']         = '-';
     $node->field_cgpa[0]['value']                  = '-';
@@ -487,15 +418,12 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     $node->field_sess_name_gpa[0]['value']         = $program_row->sess_name;
     $node->field_semester_id_gpa[0]['value']       = $program_row->semester_id;
     $node->field_semester_name_gpa[0]['value']     = $program_row->semester_id;
-    $node->field_level_id_gpa[0]['value']          = $home_program_row->level_id;
-    $node->field_level_name_gpa[0]['value']        = $home_program_row->level_name;
+    $node->field_level_id_gpa[0]['value']          = $program_row->level_id;
+    $node->field_level_name_gpa[0]['value']        = $program_row->level_name;
     node_save($node);
     $student_gpa = $node->nid;
   }
 
-  // Will never exist, because previously deleted.
-  // $student_grades = get_cck_nid_i('student_grades', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'field_course_instance', $course_instance, 'field_mat_no', $admitted_student->user_id);
-  // if (empty($student_grades)) {
     // student_grades CCK
     $node = new stdClass();
     $node->type                                    = 'student_grades';
@@ -535,7 +463,6 @@ function create_cck_records_i($admitted_student, $reg_course_id, $data, $session
     node_save($node);
 
     grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $admitted_student->user_id, $course_instance, 'field_exam_score'); // After node saved to trigger calculations
-  // }
 }
 
 
