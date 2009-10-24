@@ -712,13 +712,13 @@ function staff_course_assign_form1(&$obj) {
   return $form;
 }
 function course_assign_list() {
-  $query = "SELECT p.field_programme_name_value AS programme_name, l.level_name, c.course_title, vs.staff_first_name, vs.staff_last_name, rc.*
+  $query = "SELECT p.programme_name AS programme_name, l.level_name, c.course_title, vs.staff_first_name, vs.staff_last_name, rc.*
     from registrable_course rc
-    inner join content_type_program p on p.field_programme_id_value = rc.programme_id
+    inner join programme p on p.programme_id = rc.programme_id
     inner join level l on l.level_id = rc.level_id
     inner join course c on rc.course_id = c.course_id
     left join veritas_staff vs on vs.staff_id = rc.lecturer_id
-    WHERE p.field_department_id_value = %d
+    WHERE p.department_id = %d
 ";
   $r=db_query($query, $_SESSION['staff']['data']->department_id);
   $html .= "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
@@ -757,7 +757,7 @@ function lecturer() {
 }
 function staff_prg() {
   $titles[''] = "";
-  $sql = "SELECT DISTINCT field_programme_name_value AS name, field_programme_id_value AS id FROM {content_type_program} WHERE field_department_id_value=%d ORDER BY name ASC";
+  $sql = "SELECT DISTINCT programme_name AS name, programme_id AS id FROM {programme} WHERE department_id=%d ORDER BY name ASC";
   $rows = db_query($sql, $_SESSION['staff']['data']->department_id);
   while ($row = db_fetch_object($rows)) {
     $titles[$row->id] = $row->name;
