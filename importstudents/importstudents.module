@@ -165,6 +165,7 @@ function _importstudents() {
     db_query("UPDATE student_medical_details       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
     db_query("UPDATE ext_exam_record               SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
     db_query("UPDATE admitted_ext_exam_record      SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
+    db_query("UPDATE transaction                   SET user_type_id=%d    WHERE user_type_id=%d",    $user->uid, $old_student_id);
 
     //db_query('INSERT INTO {admitted_transaction} (student_id) VALUES (' . $last->last . ')');
 
@@ -182,7 +183,6 @@ function _importstudents() {
 
     echo "<td>...Worked uid: {$user->uid} (old student_id: {$old_student_id})</td>";
     echo '</tr>';
-break;//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   }
   echo '</table>';
 return ob_get_clean();/////////////////////////
