@@ -1262,7 +1262,7 @@ function _student_registration_form1(&$obj) {
   $form['other_details']['tel1'] = array(
     '#type' => 'textfield',
     '#size' => 25,
-    '#required' => TRUE,
+    '#required' => FALSE,
     '#title' => 'Landline',
     '#default_value' => $_SESSION['student']['data']->telephone
   );
@@ -3360,7 +3360,7 @@ function add_exam_detail($form) {
      if ($values[$subject] != "" && $values[$subject] > 0) {
         $subject  = $values[$subject];
         $grade  = $values[$grade];
-        $query = "insert {admitted_ext_exam_detail} set ext_exam_record_id = '%s' , subject_id='%s' , grade_id='%s' ";
+        $query = "insert {admitted_ext_exam_detail} set ext_exam_record_id=%d, subject_id=%d, grade_id=%d";
         db_query($query, $eid, $subject, $grade);
      }
   }
@@ -3370,10 +3370,10 @@ function add_exam_detail($form) {
       db_query( $query , $edate2  , $values['ec2'] , $values['eno2'] , $values['ebd2'] , $_SESSION['student']['data']->student_id);
       $eid = db_last_insert_id('admitted_ext_exam_record', 'ext_exam_record_id');
       for ($i = 1; $i <= 9; $i++) {
-         $subject = "s1". $i;
-         $grade = "g1". $i;
+         $subject = "s2". $i;
+         $grade = "g2". $i;
          if (isset($values[$subject]) && $values[$subject] != "" && $values[$subject] > 0) {
-             $query = "insert {admitted_ext_exam_detail} set ext_exam_record_id = '%s' , subject_id='%s' , grade_id='%s' ";
+             $query = "insert {admitted_ext_exam_detail} set ext_exam_record_id=%d, subject_id=%d, grade_id=%d";
              db_query($query, $eid, $values[$subject], $values[$grade]);
          }
       }
@@ -3422,40 +3422,28 @@ function add_kin($form) {
   if (FALSE !== db_result($result)) {
      $query = " update ";
      $where = " where student_id = '". $_SESSION['student']['data']->student_id ."' ";
+     $query .=  " {admitted_next_of_kin} set title='%s', name='%s', relationship='%s', address1='%s', city='%s', telephone='%s', mobile='%s', student_id=%d". $where;
   }
   else{
     $query = "insert into ";
+    $query .=  "{admitted_next_of_kin} set title='%s', name='%s', relationship='%s', address1='%s', city='%s', telephone='%s', mobile='%s', student_id=%d";
   }
-  $query .=  " {admitted_next_of_kin} set
-    title = '". $form['kin']['title']['#post']['title'] ."' ,
-    name  = '". db_escape_string($form['kin']['title']['#post']['kname']) ."',
-    relationship = '". $form['kin']['title']['#post']['krel'] ."' ,
-    address1 = '". $form['kin']['title']['#post']['kadd'] ."' ,
-    city = '". $form['kin']['title']['#post']['kcity'] ."' ,
-    telephone = '". $form['kin']['title']['#post']['ktel'] ."' ,
-    mobile = '". $form['kin']['title']['#post']['kmobile'] ."' ,
-    student_id = '". $_SESSION['student']['data']->student_id ."'
-    ". $where;
-    db_query($query);
+    db_query($query, $form['kin']['title']['#post']['title'], $form['kin']['title']['#post']['kname'], 
+            $form['kin']['title']['#post']['krel'], $form['kin']['title']['#post']['kadd'], $form['kin']['title']['#post']['kcity'],
+            $form['kin']['title']['#post']['ktel'], $form['kin']['title']['#post']['kmobile'], $_SESSION['student']['data']->student_id);
     if ($form['kin']['title']['#post']['sname'] != "") {
       $query = "select * from admitted_sponsor where student_id = '". $_SESSION['student']['data']->student_id ."'";
       $result = db_query($query);
       if (FALSE !== db_result($result)) {
          $query = " update ";
          $where = " where student_id = '". $_SESSION['student']['data']->student_id ."' ";
+         $query .=  " {admitted_sponsor} SET name='%s', address1='%s', city='%s', telephone='%s', mobile='%s', student_id = %d $where";
       }
       else {
          $query = "insert into ";
+         $query .=  " {admitted_sponsor} SET name='%s', address1='%s', city='%s', telephone='%s', mobile='%s', student_id = %d";
       }
-      $query .=  " admitted_sponsor set
-           name  = '". db_escape_string($form['kin']['title']['#post']['sname']) ."',
-           address1 = '". $form['kin']['title']['#post']['sadd'] ."' ,
-           city = '". $form['kin']['title']['#post']['scity'] ."' ,
-           telephone = '". $form['kin']['title']['#post']['stel'] ."' ,
-           mobile = '". $form['kin']['title']['#post']['smobile'] ."' ,
-           student_id = '". $_SESSION['student']['data']->student_id ."' $where
-        ";
-      db_query($query);
+      db_query($query, $form['kin']['title']['#post']['sname'], $form['kin']['title']['#post']['sadd'], $form['kin']['title']['#post']['scity'], $form['kin']['title']['#post']['stel'], $form['kin']['title']['#post']['smobile'], $_SESSION['student']['data']->student_id);
    }
 }
 function add_accomodation($form) {
@@ -3465,12 +3453,13 @@ function add_accomodation($form) {
    if (FALSE !== db_result($result)) {
       $query = " update ";
       $where = " where student_id = '". $_SESSION['student']['data']->student_id ."' ";
+      $query .= " {admitted_student_accomodation} set student_id='%s' , hostel_id='%s',college_id='%s' , department_id='%s'" . $where;
     }
     else {
       $query = "insert into ";
+      $query .= " {admitted_student_accomodation} set student_id='%s' , hostel_id='%s',college_id='%s' , department_id='%s'" ;
     }
-    $query =  $query ." {admitted_student_accomodation} set student_id='%s' , hostel_id='%s',college_id='%s' , department_id='%s'" ;
-    db_query($query .$where, $_SESSION['student']['data']->student_id,$form['accomodation_type']['#post']['hostel'],$form['accomodation_type']['#post']['college'],    $form['accomodation_type']['#post']['department_id']);
+    db_query($query, $_SESSION['student']['data']->student_id,$form['accomodation_type']['#post']['hostel'],$form['accomodation_type']['#post']['college'], $form['accomodation_type']['#post']['department_id']);
 }
 
 function admit_student(&$state) {
