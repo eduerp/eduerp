@@ -150,21 +150,21 @@ function _importstudents() {
       'timezone' => $timezone
     );
 
-$user->uid = 99999;
-//    $user = user_save(NULL, $drupal_data);
-//
-//    db_query("UPDATE {admitted_student} SET student_id=%d, user_id=%d, pwd=dob, user_type_id=%d WHERE student_id=%d", $user->uid, $user->uid, $user->uid, $last->last);
-//
-//    db_query("UPDATE admitted_next_of_kin          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE admitted_sponsor              SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE admitted_student_accomodation SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE admitted_transaction          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE lkup_lga                      SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE next_of_kin                   SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE student                       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE student_medical_details       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
-//    db_query("UPDATE ext_exam_record               SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
-//    db_query("UPDATE admitted_ext_exam_record      SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
+
+    $user = user_save(NULL, $drupal_data);
+
+    db_query("UPDATE {admitted_student} SET student_id=%d, user_id=%d, pwd=dob, user_type_id=%d WHERE student_id=%d", $user->uid, $user->uid, $user->uid, $last->last);
+
+    db_query("UPDATE admitted_next_of_kin          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE admitted_sponsor              SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE admitted_student_accomodation SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE admitted_transaction          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE lkup_lga                      SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE next_of_kin                   SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE student                       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE student_medical_details       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+    db_query("UPDATE ext_exam_record               SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
+    db_query("UPDATE admitted_ext_exam_record      SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
 
     //db_query('INSERT INTO {admitted_transaction} (student_id) VALUES (' . $last->last . ')');
 
