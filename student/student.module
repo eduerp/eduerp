@@ -3573,11 +3573,11 @@ CREATE TABLE `student` (
   $a['fname'], $a['lname'], $a['mname'], $a['title'],
   $a['sex'], $a['dob1'], $a['nat'], $a['lga'], $a['mar'], $a['rel'],
   $a['tel1'], $a['tel2'], $a['email'],
-  'sponsorname' , $a['mode'] ,$a['jam'] ,date('Y'),
+  $b['sname'] , $a['mode'] ,$a['jam'] ,date('Y'),
   $a['address1'] , $a['city'] ,$a['astate'],
   $c['q1'], $c['in1'], $c['dst1a'], $c['dena'],
-  $c['q2'], $c['in2'], $c['dst2a'], $c[denb],
-   $d['physical'],'aponsoradd',
+  $c['q2'], $c['in2'], $c['dst2a'], $c['denb'],
+   $d['physical'],$b['sadd'],
   $a['mods'], $a['hob'], $d['disability'], $a['state'], $f, $a['subrel'], $b['course1'], $b['course2']);
  //$sid=db_last_insert_id('student','student_id');
    db_query("insert into {next_of_kin} set student_id='%s',name='%s',relationship='%s',
@@ -3595,12 +3595,12 @@ CREATE TABLE `student` (
    }
    if ($c['nos'] == 2) {
       $ed1 = $c['edate2']['year'] .'-'. $c['edate2']['month'] .'-'. $c['edate2']['day'];
-      db_query("insert into {ext_exam_record}  set exam_date='%s',exam_center_name='%s',exam_body='%s',exam_student_id='%s',exam_number='%s'"
+      db_query("insert into {ext_exam_record} set exam_date='%s',exam_center_name='%s',exam_body='%s',exam_student_id='%s',exam_number='%s'"
 , $ed1, $c['ec2'], $c['ebd2'], $uid, $c['eno2']);
       $eid = db_last_insert_id('ext_exam_record', 'ext_exam_record_id');
       for ($i = 1; $i <= 9; $i++) {
-         $s = "s1$i";
-         $g = "g1$i";
+         $s = "s2$i";
+         $g = "g2$i";
          if ($c[$s])
            db_query("insert into {ext_exam_detail} set ext_exam_record_id=%d,subject_id='%s',grade_id='%s'", $eid , $c[$s], $c[$g]);
       }
