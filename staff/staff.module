@@ -1949,30 +1949,27 @@ function staff_begin_clearance_form2(&$obj) {
     $qry1 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
     $res1 = db_query($qry1, $result->student_id);
     if ($res1 && ($result1=db_fetch_object($res1))) {
-      $qry2 = "SELECT a . ext_exam_rec_id, a . exam_date, a . exam_center_name, a . exam_number, b . exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a . exam_body=b . exam_body_id WHERE a . exam_student_id='". $result->student_id ."'";
-      $res2 = db_query($qry2);
-      $result2 = db_fetch_object($res2);
-      $query3 = " SELECT *
-        FROM admitted_ext_exam_record er
-        LEFT JOIN admitted_ext_exam_detail ed ON ed . ext_exam_record_id = er . ext_exam_rec_id
-        where er . exam_student_id = '". $result->student_id ."' order by er . ext_exam_rec_id " ;
-      $r=db_query($query3);
-      while ($f=db_fetch_object($r)) {
-        $prev_subjects = $data[$f->ext_exam_rec_id]['subjects'] ;
-        $data[$f->ext_exam_rec_id] = array(
-          'exam_body ' => $f->exam_body,
-          'exam_date' => $f->exam_date,
-          'exam_center_name' => $f->exam_center_name,
-          'exam_number' => $f->exam_number,
-          'exam_body' => $f->exam_body,
+      $qry2 = "SELECT a.ext_exam_rec_id, a.exam_body, a.exam_date, a.exam_center_name, a.exam_number, b.exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a.exam_body=b.exam_body_id WHERE a.exam_student_id=%d";
+      $res2 = db_query($qry2, $result->student_id);
+      
+      $data_key = array();
+      while ($result2 = db_fetch_object($res2)) {
+        $data[$result2->ext_exam_rec_id] = array(
+          'exam_body' => $result2->exam_body,
+          'exam_date' => $result2->exam_date,
+          'exam_center_name' => $result2->exam_center_name,
+          'exam_number' => $result2->exam_number,
         );
-        $data_key = array();
-        $data[$f->ext_exam_rec_id]['subjects'] = $prev_subjects ;
-        $data[$f->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
-        if (!in_array($f->ext_exam_rec_id, $data_key)) {
-          $data_key[] = $f->ext_exam_rec_id;
+        $query3 = "SELECT * FROM admitted_ext_exam_detail WHERE ext_exam_record_id=%d";
+        $r=db_query($query3, $result2->ext_exam_rec_id);
+        while ($f=db_fetch_object($r)) {
+          $data[$result2->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
+          if (!in_array($result2->ext_exam_rec_id, $data_key)) {
+            $data_key[] = $result2->ext_exam_rec_id;
+          }
         }
       }
+
       $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
       $res4 = db_query($qry4);
       $result4 = db_fetch_object($res4);
@@ -2300,7 +2297,7 @@ function staff_begin_clearance_form2(&$obj) {
   $form['nextofkin']['nofkin0'] = array(
     '#type' => 'item',
     '#title' => 'Next of Kin Name',
-    '#prefix' => '<table><tr><td>',
+    '#prefix' => '<table cellspacing="10" cellpadding="10"><tr><td>',
     '#suffix' => '</td>');
   $form['nextofkin']['nofkin1'] = array(
     '#type' => 'item',
@@ -2336,7 +2333,7 @@ function staff_begin_clearance_form2(&$obj) {
   $form['nextofkin']['sponsor1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->sponsor_name,
+    '#value' => $result7->name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   if ($result7->mobile != $result6->mobile) {
@@ -2480,7 +2477,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  unset($data[$data_key[0]]);
+//  unset($data[$data_key[0]]);
 //$form[fs]["m12"]=array('#value'=>'</table>');
 //ext_exam_rec_id  exam_date  exam_center_name  exam_number  exam_body  exam_student_id  ext_exam_record_id  subject_id  grade_id
   $form['fs2'] = array(
