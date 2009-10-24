@@ -156,7 +156,7 @@ function _staff_ajax() {
       // Delete this allocation
       $sql = "DELETE FROM {registrable_course} WHERE reg_course_id=%d";
       $rs = db_query($sql, $allocation_id);
-      
+
       if (db_affected_rows() > 0) echo "OK";
       else echo "FAIL";
       break;
@@ -556,7 +556,7 @@ function staff_view_form(&$obj) {
 }
 function staff_course_assign() {
   $delete_assignment_js =<<< EOD
-function delete_course(id) {  
+function delete_course(id) {
   if (confirm('Are you sure you want to delete this course assignment?')) {
     $.get('/staff/ajax/delete/'+id, function(data) { location.href='/staff/registrablecourse'; });
   }
@@ -743,6 +743,21 @@ function staff_course_assign_form1_submit(&$form, &$state) {
   $values = $state['values'];
   $query = "INSERT INTO {registrable_course} SET course_id=%d, programme_id=%d, level_id=%d, course_type=%d, lecturer_id=%d, min_credit_load=%d, max_credit_load=%d";
   db_query($query, $values['course_id'], $values['programme_id'], $values['level_id'], $values['course_type_id'], $values['staff_id'], $values['min_credit_load'], $values['max_credit_load']);
+
+  // If the corresponding course_instance exists, update the Lecturer. ALAN 20091024
+  $sql = "UPDATE {content_type_course_instance} ci, {current_session_semester} css, {course} c, {veritas_staff} vs
+    SET ci.field_lecturer_uid=vs.user_id
+    WHERE
+      ci.field_course_id_value=%d AND
+      ci.field_course_id_value=c.course_id AND
+      ci.field_session_id_value=css.session_id AND
+      css.id=1 AND
+      ci.field_semester_id_value=c.semester AND
+      ci.field_level_id_value=%d AND
+      vs.staff_id=%d AND
+      vs.user_id!=0";
+  db_query($sql, $values['course_id'], $values['level_id'], $values['staff_id']);
+
   $_SESSION['staff']['max_load'] = $values['max_credit_load'];
   $_SESSION['staff']['min_load'] = $values['min_credit_load'];
   drupal_set_message("Registable Course Created");
@@ -1464,7 +1479,7 @@ function staff_user($op, &$edit, &$account, $category) {
       $query ="select COUNT(*) AS count from `veritas_staff` where user_id = %d";
       $result = db_query($query, $account->uid);
 	    $rows = db_fetch_array($result);
-    
+
 	    if ($result && intval($rows['count']) > 0) {
         $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a . staff_type_id = b . staff_type_id left outer join veritas_staff_role as c on a . role_id=c . id  where a . user_id = '". $account->uid ."'");
 
@@ -1951,7 +1966,7 @@ function staff_begin_clearance_form2(&$obj) {
     if ($res1 && ($result1=db_fetch_object($res1))) {
       $qry2 = "SELECT a.ext_exam_rec_id, a.exam_body, a.exam_date, a.exam_center_name, a.exam_number, b.exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a.exam_body=b.exam_body_id WHERE a.exam_student_id=%d";
       $res2 = db_query($qry2, $result->student_id);
-      
+
       $data_key = array();
       while ($result2 = db_fetch_object($res2)) {
         $data[$result2->ext_exam_rec_id] = array(
