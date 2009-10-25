@@ -19,6 +19,12 @@ function importstudents_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['importstudents/fixadmitted'] = array(
+    'page callback' => '_fixadmitted',
+    'access arguments' => array('import students'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -585,5 +591,82 @@ function delete_student_grades_i($uid, $session_id, $semester_id) {
       search_wipe($node->nid, 'node');
     }
   }
+}
+
+
+function _fixadmitted() {
+  ob_start();
+
+  $sql = "select student_id, matriculation_no,first_name, last_name, middle_name, dob, email_address FROM student WHERE Admitted='Yes' AND student_id>=418 AND student_id<=604";
+  $studentresult = db_query($sql);
+
+  echo '<table>';
+
+  while ($studentrow = db_fetch_object($studentresult)) {
+
+	$old_student_id   = $studentrow[0];
+    $matriculation_no = $studentrow[1];
+    $first_name       = $studentrow[2];
+    $last_name        = $studentrow[3];
+    if (empty($studentrow[4])) {
+      $middle_name    = '';
+    }
+	else {
+      $middle_name    = $studentrow[4];
+    }
+    $dob              = $studentrow[5];
+    $email_address    = $studentrow[6];
+
+    echo '<tr>';
+
+    $sql = "select * from {role} where name = '%s'";
+    $q = db_query($sql, 'Student');
+    $f = db_fetch_object($q);
+
+    $timezone = variable_get('date_default_timezone', 0);
+
+    $drupal_data = array(
+      'mail' => $email_address,
+      'pass' => $dob,
+      'name' => $matriculation_no,
+      'roles' => array($f->rid => $f->rid),
+      'init' => $email_address,
+      'status' => 1,
+      'profile_last_name' => $last_name,
+      'profile_first_name' => $first_name,
+      'profile_middle_name' => $middle_name,
+      'timezone' => $timezone
+    );
+
+//    $user = user_save(NULL, $drupal_data);
+
+//    db_query("UPDATE admitted_next_of_kin          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_sponsor              SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_student_accomodation SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_transaction          SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE lkup_lga                      SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE next_of_kin                   SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+
+//    db_query("UPDATE student                       SET user_type_id=%d    WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE student                       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+
+//    db_query("UPDATE student_medical_details       SET student_id=%d      WHERE student_id     =%d", $user->uid, $old_student_id);
+//    db_query("UPDATE ext_exam_record               SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
+//    db_query("UPDATE admitted_ext_exam_record      SET exam_student_id=%d WHERE exam_student_id=%d", $user->uid, $old_student_id);
+//    db_query("UPDATE transaction                   SET user_type_id=%d    WHERE user_type_id=%d",    $user->uid, $old_student_id);
+
+    echo "<td>$old_student_id</td>";
+    echo "<td>$matriculation_no</td>";
+    echo "<td>$first_name</td>";
+    echo "<td>$last_name</td>";
+    echo "<td>$middle_name</td>";
+    echo "<td>$dob</td>";
+    echo "<td>$email_address</td>";
+    echo "<td>New uid: {$user->uid} (old student_id: {$old_student_id})</td>";
+    echo '</tr>';
+  }
+  echo '</table>';
+
+  return ob_get_clean();
 }
 ?>
