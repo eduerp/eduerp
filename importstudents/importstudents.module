@@ -604,18 +604,18 @@ function _fixadmitted() {
 
   while ($studentrow = db_fetch_object($studentresult)) {
 
-	$old_student_id   = $studentrow[0];
-    $matriculation_no = $studentrow[1];
-    $first_name       = $studentrow[2];
-    $last_name        = $studentrow[3];
-    if (empty($studentrow[4])) {
+	$old_student_id   = $studentrow->student_id;
+    $matriculation_no = $studentrow->matriculation_no;
+    $first_name       = $studentrow->first_name;
+    $last_name        = $studentrow->last_name;
+    if (empty($studentrow->middle_name)) {
       $middle_name    = '';
     }
 	else {
-      $middle_name    = $studentrow[4];
+      $middle_name    = $studentrow->middle_name;
     }
-    $dob              = $studentrow[5];
-    $email_address    = $studentrow[6];
+    $dob              = $studentrow->dob;
+    $email_address    = $studentrow->$email_address;
 
     echo '<tr>';
 
