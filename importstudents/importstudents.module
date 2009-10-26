@@ -686,7 +686,7 @@ function _fixpassword() {
   echo "<td>user_id</td><td>uid</td><td>dob</td><td>name</td><td>mail</td><td>first_name</td><td>last_name</td><td>middle_name</td><td>pass</td>";
   echo '</tr>';
 
-  $userlist = db_query("SELECT a.user_id, u.uid, a.dob, u.name, u.mail, a.first_name, a.last_name, a.middle_name, u.pass FROM admitted_student a, users u WHERE a.student_id<=745 AND a.student_id=u.uid ORDER BY a.student_id LIMIT 1");
+  $userlist = db_query("SELECT a.user_id, u.uid, a.dob, u.name, u.mail, a.first_name, a.last_name, a.middle_name, u.pass FROM admitted_student a, users u WHERE a.student_id<=745 AND a.student_id=u.uid ORDER BY a.student_id");
 
   while ($userrow = db_fetch_object($userlist)) {
 
