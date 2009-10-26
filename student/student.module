@@ -3480,10 +3480,12 @@ function admit_student(&$state) {
      db_query($query.$where);
      return;
   }
+  $dob_string = sprintf('%s-%s-%s', $value['dob']['year'], $value['dob']['month'], $value['dob']['day']);
+
   $modes = _student_mode_of_entries('level_id');
   $data = sprintf(" set yearofentry ='%s' , student_id='%s' , mode_of_entry = '%s' , jambno='%s' , title='%s' , last_name = '%s' , first_name='%s' , middle_name = '%s' , gender = '%s' , marital_status = '%s' , maiden_name = '%s' , nationality= '%s' , state_origin = '%s' ,lkup_lga_origin = '%s' , permanent_address1 = '%s' , permanent_address_city='%s', permanent_address_state = '%s' ,  contact_address ='%s' , contact_city = '%s' , contact_state='%s' , telephone = '%s' , mobile_number='%s' , email_address='%s' ,dob = '%s' , level_id=%d
 
-   ", $_SESSION['student']['data']->yearofentry , $_SESSION['student']['data']->student_id , $value['mode'] , $value['jam'] , $value['title'] , $value['lname'] , $value['fname'] , $value['mname'] , $value['sex'] , $value['mar'] , $value['maiden'] , $value['nat'] , $value['state'], $value['lga'], $value['address1'], $value['city'], $value['astate'], $value['caddress1'] , $value['ccity'], $value['castate'], $value['tel1'], $value['tel2'], $value['email'] ,$value['dob'],$modes[$value['mode']]);
+   ", $_SESSION['student']['data']->yearofentry , $_SESSION['student']['data']->student_id , $value['mode'] , $value['jam'] , $value['title'] , $value['lname'] , $value['fname'] , $value['mname'] , $value['sex'] , $value['mar'] , $value['maiden'] , $value['nat'] , $value['state'], $value['lga'], $value['address1'], $value['city'], $value['astate'], $value['caddress1'] , $value['ccity'], $value['castate'], $value['tel1'], $value['tel2'], $value['email'] ,$dob_string,$modes[$value['mode']]);
    $query = $query . $data . $where;
 	 db_query($query);
 }
