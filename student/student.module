@@ -1051,13 +1051,13 @@ function student_registration_form(&$obj) {
   if (!isset($_SESSION['student']['data']->student_id)) {
     drupal_goto('student/sign_in');
   }
-  $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
+  $query = "select * from {admitted_transaction} where student_id='". $_SESSION['student']['id'] ."'";
   $result = db_query($query);
-  if ($admitted = db_fetch_object($result)) {
-    $query = "select * from {admitted_transaction} where student_id='". $_SESSION['student']['id'] ."'";
+  if (db_fetch_array($result)) {
+    $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
     $result = db_query($query);
     $row =  db_fetch_object($result);
-    if ($admitted->clearance_status == '1' && $admitted->verify_status == '1' && $row) {
+    if ($row->clearance_status == '1') {
       drupal_goto('student/course');
     }
     else {
@@ -3437,7 +3437,7 @@ function add_kin($form) {
     $query = "insert into ";
     $query .=  "{admitted_next_of_kin} set title='%s', name='%s', relationship='%s', address1='%s', city='%s', telephone='%s', mobile='%s', student_id=%d";
   }
-    db_query($query, $form['kin']['title']['#post']['title'], $form['kin']['title']['#post']['kname'], 
+    db_query($query, $form['kin']['title']['#post']['title'], $form['kin']['title']['#post']['kname'],
             $form['kin']['title']['#post']['krel'], $form['kin']['title']['#post']['kadd'], $form['kin']['title']['#post']['kcity'],
             $form['kin']['title']['#post']['ktel'], $form['kin']['title']['#post']['kmobile'], $_SESSION['student']['data']->student_id);
     if ($form['kin']['title']['#post']['sname'] != "") {
