@@ -1053,7 +1053,7 @@ function student_registration_form(&$obj) {
   }
   $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
   $result = db_query($query);
-  if ($admitted = db_fetch_object($result)) {
+  if ($admitted = db_fetch_object($result) && !isset($obj['storage']['step'])) {
     $query = "select * from {admitted_transaction} where student_id='". $_SESSION['student']['id'] ."'";
     $result = db_query($query);
     $row =  db_fetch_object($result);
