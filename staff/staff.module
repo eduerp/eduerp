@@ -765,7 +765,7 @@ function staff_course_assign_form1_submit(&$form, &$state) {
 }
 function lecturer() {
   $titles['']="Select";
-  $r=db_query("select * from `veritas_staff` where department_id = ". $_SESSION['staff']['data']->department_id ." order by staff_first_name");
+  $r=db_query("select * from {veritas_staff} where department_id = %d order by staff_first_name", $_SESSION['staff']['data']->department_id);
     while ($f=db_fetch_object($r))
       $titles[$f->staff_id]=sprintf('%s %s', $f->staff_first_name, $f->staff_last_name);
   return  $titles;
