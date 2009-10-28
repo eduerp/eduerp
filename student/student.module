@@ -1293,116 +1293,126 @@ function student_registration_form_submit($form, &$state) {
     // First determine if this student has already registered before creating records
     $q = "SELECT * FROM {admitted_student} WHERE student_id=%d";
     $rs = db_query($q, $_SESSION['student']['data']->student_id);
-    if (db_fetch_array($rs)) {
-      // The student account exists hence just add to the list of payments
-      $t_id = make_transaction($form);
-      drupal_goto('veritas/receipt/'. $t_id .'/student/');
-    } else {
-      // Retrieve the program abbreviation
-      $q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.programme_id=s.first_choice AND s.student_id=%d";
-      $rs = db_query($q, $_SESSION['student']['data']->student_id);
-      $program = db_fetch_array($rs);
+    $admitted_student = db_fetch_array($rs);
+    
+    // Retrieve the program abbreviation
+    $q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.programme_id=s.first_choice AND s.student_id=%d";
+    $rs = db_query($q, $_SESSION['student']['data']->student_id);
+    $program = db_fetch_array($rs);
 
-      // Attempt to get the highest matno for the current session for the specified program
-      $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
-      $sql = "SELECT MID(matriculation_no, LENGTH('%s')+1, LENGTH(matriculation_no)) AS last_index FROM {admitted_student} WHERE matriculation_no RLIKE '%s[[:digit:]]+' ORDER BY matriculation_no DESC LIMIT 1";
-      $rs = db_query($sql, $search, $search);
-      $row = db_fetch_array($rs);
-      if ($row):
-        $last_index = intval($row['last_index']);
+    // Attempt to get the highest matno for the current session for the specified program
+    $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
+    $sql = "SELECT MID(matriculation_no, LENGTH('%s')+1, LENGTH(matriculation_no)) AS last_index FROM {admitted_student} WHERE matriculation_no RLIKE '%s[[:digit:]]+' ORDER BY matriculation_no DESC LIMIT 1";
+    $rs = db_query($sql, $search, $search);
+    $row = db_fetch_array($rs);
+    if ($row):
+      $last_index = intval($row['last_index']);
+    else:
+      $last_index = 0;
+    endif;
+
+    // Increment the matno index which is the 010 in VUG/ACC/08/010 for instance
+    $matindex = $last_index + 1;
+    // In order to prevent regenerating the matriculation number in an event
+    // that a student is refilling this form, we first check the current matriculation
+    // number if it matches by prefix with the newly generated one, then we use the
+    // former, if not, it is changed. Could be useful in cases where a student
+    // mistakenly chose the wrong program as first choice.
+    if ($admitted_student):
+      $search_pattern = str_replace('/', '\/', $search);
+      if (preg_match("/^$search_pattern.*/", $admitted_student['matriculation_no'])):
+        $mat_number = $admitted_student['matriculation_no'];
       else:
-        $last_index = 0;
+        $mat_number = sprintf("%s%03d", $search, $matindex);
       endif;
-
-      // Increment the matno index which is the 010 in VUG/ACC/08/010 for instance
-      $matindex = $last_index + 1;
+    else:
       $mat_number = sprintf("%s%03d", $search, $matindex);
+    endif;
 
-      $t_id = make_transaction($form);
-      ////////////////matriculation number /////////////////
-      //$mat_number = "VUG". vsprintf("%04d", array($_SESSION['student']['data']->student_id)) ;
-      // here to insert drupal_user
-      $sql = "select * from {role} where name = '%s'";
-      // The registered student should be given the "Applicant" status and only promoted to "Student"
-      // when cleared.
-      $q = db_query($sql, 'Applicant');
-      $f = db_fetch_object($q);
+    $t_id = make_transaction($form);
+    ////////////////matriculation number /////////////////
+    //$mat_number = "VUG". vsprintf("%04d", array($_SESSION['student']['data']->student_id)) ;
+    // here to insert drupal_user
+    $sql = "select * from {role} where name = '%s'";
+    // The registered student should be given the "Applicant" status and only promoted to "Student"
+    // when cleared.
+    $q = db_query($sql, 'Applicant');
+    $f = db_fetch_object($q);
 
-      if (empty($_SESSION['student']['data']->middle_name)) $_SESSION['student']['data']->middle_name = ''; // ALAN 20090830
-      $timezone = variable_get('date_default_timezone', 0); // ALAN 20090903
+    if (empty($_SESSION['student']['data']->middle_name)) $_SESSION['student']['data']->middle_name = ''; // ALAN 20090830
+    $timezone = variable_get('date_default_timezone', 0); // ALAN 20090903
 
-      $drupal_data = array(
-        'mail' => $_SESSION['student']['data']->email_address,
-        'pass' => $_SESSION['student']['data']->dob,
-        'name' => $mat_number,
-        'roles' => array($f->rid => $f->rid),
-        'init' => $_SESSION['student']['data']->email_address,
-        'status' => 1
+    $drupal_data = array(
+      'mail' => $_SESSION['student']['data']->email_address,
+      'pass' => $_SESSION['student']['data']->dob,
+      'name' => $mat_number,
+      'roles' => array($f->rid => $f->rid),
+      'init' => $_SESSION['student']['data']->email_address,
+      'status' => 1
 
-        // ALAN 20090830
-        ,
-        'profile_last_name' => $_SESSION['student']['data']->last_name,
-        'profile_first_name' => $_SESSION['student']['data']->first_name,
-        'profile_middle_name' => $_SESSION['student']['data']->middle_name,
-        'timezone' => $timezone
-        // END ALAN
-      );
+      // ALAN 20090830
+      ,
+      'profile_last_name' => $_SESSION['student']['data']->last_name,
+      'profile_first_name' => $_SESSION['student']['data']->first_name,
+      'profile_middle_name' => $_SESSION['student']['data']->middle_name,
+      'timezone' => $timezone
+      // END ALAN
+    );
 
-      // Instead of creating a new user account, replace the old one with the new data
-      $user = user_save(user_load($_SESSION['student']['data']->student_id), $drupal_data);
-      $query = "update {admitted_student} set matriculation_no ='". $mat_number ."' , user_id='". $user->uid ."' where student_id ='". $_SESSION['student']['data']->student_id ."'";
-      db_query($query);
-      // Also update the mat no in the student table
-      $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
-      db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
+    // Instead of creating a new user account, replace the old one with the new data
+    $user = user_save(user_load($_SESSION['student']['data']->student_id), $drupal_data);
+    $query = "update {admitted_student} set matriculation_no ='". $mat_number ."' , user_id='". $user->uid ."' where student_id ='". $_SESSION['student']['data']->student_id ."'";
+    db_query($query);
+    // Also update the mat no in the student table
+    $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
+    db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
 
-    /////////////////////////////////////////////////////
-      $sql = "select * from {admitted_transaction} where transaction_id=%d";
-      $sql = "SELECT at. * , sum( at2.trans_amount ) AS total_amount
-             FROM {admitted_transaction} at
-             INNER JOIN {admitted_transaction} at2 ON at.student_id = at2.student_id
-             AND at.transaction_id =%d
-             GROUP BY at.student_id";
-      $q = db_query($sql, $t_id);
-      $f = db_fetch_object($q);
-      $type = $f->trans_type;
-      $rc = db_query("select * from {admitted_student} where student_id=%d", $f->student_id);
-      $fc = db_fetch_array($rc);
+  /////////////////////////////////////////////////////
+    $sql = "select * from {admitted_transaction} where transaction_id=%d";
+    $sql = "SELECT at. * , sum( at2.trans_amount ) AS total_amount
+           FROM {admitted_transaction} at
+           INNER JOIN {admitted_transaction} at2 ON at.student_id = at2.student_id
+           AND at.transaction_id =%d
+           GROUP BY at.student_id";
+    $q = db_query($sql, $t_id);
+    $f = db_fetch_object($q);
+    $type = $f->trans_type;
+    $rc = db_query("select * from {admitted_student} where student_id=%d", $f->student_id);
+    $fc = db_fetch_array($rc);
 
-      //// ALAN 20090802
-      //$result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
-      //while ($row = db_fetch_array($result)) {
-      //  if ($row['name'] === 'profile_last_name') {
-      //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['last_name']);
-      //  }
-      //  elseif ($row['name'] === 'profile_first_name') {
-      //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['first_name']);
-      //  }
-      //  elseif (($row['name'] === 'profile_middle_name') && !empty($fc['middle_name'])) {
-      //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['middle_name']);
-      //  }
-      //}
-      //// END ALAN
+    //// ALAN 20090802
+    //$result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
+    //while ($row = db_fetch_array($result)) {
+    //  if ($row['name'] === 'profile_last_name') {
+    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['last_name']);
+    //  }
+    //  elseif ($row['name'] === 'profile_first_name') {
+    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['first_name']);
+    //  }
+    //  elseif (($row['name'] === 'profile_middle_name') && !empty($fc['middle_name'])) {
+    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['middle_name']);
+    //  }
+    //}
+    //// END ALAN
 
-      $f->name = $name = $fc['first_name'] .' '. $fc['middle_name'] .' '. $fc['last_name'];
-      $f->student_data = $fc;
-      $message = drupal_mail('student', 'receipt', $_SESSION['student']['data']->email_address, language_default(), array(), NULL, FALSE);
-      $message['body'] = veritas_student_receipt($f,TRUE) .'<tr>
-      <th>Username:
-      </th>
-      <td>'. $mat_number .'
-      </td>
-    </tr><tr>
-      <th>Password:
-      </th>
-      <td>'. $_SESSION['student']['data']->dob .'
-      </td>
-    </tr>';
-      $message['subject'] = 'Transaction Receipt';
-      $message['headers'] = array_merge($message['headers'], array( 'MIME-Version'  => '1.0', 'Content-Type'  => 'text/html; charset=UTF-8'));
-      drupal_mail_send($message);
-      drupal_goto('veritas/receipt/'. $t_id .'/student/');
-    }
+    $f->name = $name = $fc['first_name'] .' '. $fc['middle_name'] .' '. $fc['last_name'];
+    $f->student_data = $fc;
+    $message = drupal_mail('student', 'receipt', $_SESSION['student']['data']->email_address, language_default(), array(), NULL, FALSE);
+    $message['body'] = veritas_student_receipt($f,TRUE) .'<tr>
+    <th>Username:
+    </th>
+    <td>'. $mat_number .'
+    </td>
+  </tr><tr>
+    <th>Password:
+    </th>
+    <td>'. $_SESSION['student']['data']->dob .'
+    </td>
+  </tr>';
+    $message['subject'] = 'Transaction Receipt';
+    $message['headers'] = array_merge($message['headers'], array( 'MIME-Version'  => '1.0', 'Content-Type'  => 'text/html; charset=UTF-8'));
+    drupal_mail_send($message);
+    drupal_goto('veritas/receipt/'. $t_id .'/student/');
   }
   if ($state['storage']['step'] == 6) {
     //$pic=file_save_upload_name('pic',array(),file_directory_path().'/student_pic',false,$_SESSION['student']['data']->jambno);
