@@ -1302,8 +1302,8 @@ function student_registration_form_submit($form, &$state) {
 
     // Attempt to get the highest matno for the current session for the specified program
     $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
-    $sql = "SELECT MID(matriculation_no, LENGTH('%s')+1, LENGTH(matriculation_no)) AS last_index FROM {admitted_student} WHERE matriculation_no RLIKE '%s[[:digit:]]+' ORDER BY matriculation_no DESC LIMIT 1";
-    $rs = db_query($sql, $search, $search);
+    $sql = "SELECT MAX(SUBSTRING_INDEX(matriculation_no, '/', -1)) AS last_index FROM admitted_student WHERE matriculation_no RLIKE 'VUG/[[:alpha:]]+/[[:digit:]]+/[[:digit:]]+'";
+    $rs = db_query($sql);
     $row = db_fetch_array($rs);
     if ($row):
       $last_index = intval($row['last_index']);
