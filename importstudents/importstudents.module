@@ -31,6 +31,12 @@ function importstudents_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['importstudents/fixmatric'] = array(
+    'page callback' => '_fixmatric',
+    'access arguments' => array('import students'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -717,4 +723,89 @@ function _fixpassword() {
   echo '</table>';
   return ob_get_clean();
 }
+
+function _fixmatric() {
+  ob_start();
+
+  $sql = "SELECT student_id, matriculation_no, first_name, last_name, middle_name, dob, email_address, first_choice FROM {admitted_student} WHERE yearofentry=2009 AND matriculation_no=''";
+  $studentresult = db_query($sql);
+
+  echo '<table>';
+
+  while ($studentrow = db_fetch_object($studentresult)) {
+
+	  $student_id       = $studentrow->student_id;
+    $matriculation_no = $studentrow->matriculation_no;
+    $first_name       = $studentrow->first_name;
+    $last_name        = $studentrow->last_name;
+    if (empty($studentrow->middle_name)) {
+      $middle_name    = '';
+    }
+  	else {
+      $middle_name    = $studentrow->middle_name;
+    }
+    $dob              = $studentrow->dob;
+    $email_address    = $studentrow->email_address;
+
+    // Retrieve the program abbreviation
+    $q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.programme_id=s.first_choice AND s.student_id=%d";
+    $rs = db_query($q, $student_id);
+    $program = db_fetch_array($rs);
+
+    // Attempt to get the highest matno for the current session for the specified program
+    $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
+    $sql = "SELECT MAX(SUBSTRING_INDEX(matriculation_no, '/', -1)) AS last_index FROM admitted_student WHERE matriculation_no RLIKE 'VUG/[[:alpha:]]+/[[:digit:]]+/[[:digit:]]+'";
+    $rs = db_query($sql);
+    $row = db_fetch_array($rs);
+    if ($row):
+      $last_index = intval($row['last_index']);
+    else:
+      $last_index = 0;
+    endif;
+
+    // Increment the matno index which is the 010 in VUG/ACC/08/010 for instance
+    $matindex = $last_index + 1;
+
+    // Generate the matriculation numbers
+    $mat_number = sprintf("%s%03d", $search, $matindex);
+
+    echo '<tr>';
+
+    $sql = "select * from {role} where name = '%s'";
+    $q = db_query($sql, 'Student');
+    $f = db_fetch_object($q);
+
+    $timezone = variable_get('date_default_timezone', 0);
+
+    $drupal_data = array(
+      'mail' => $email_address,
+      'pass' => $dob,
+      'name' => $mat_number,
+      'roles' => array($f->rid => $f->rid),
+      'init' => $email_address,
+      'status' => 1,
+      'profile_last_name' => $last_name,
+      'profile_first_name' => $first_name,
+      'profile_middle_name' => $middle_name,
+      'timezone' => $timezone
+    );
+
+    $user = user_save(user_load($student_id), $drupal_data);
+
+    db_query("UPDATE admitted_student   SET matriculation_no='%s' WHERE student_id=%d", $mat_number, $student_id);
+    db_query("UPDATE student            SET matriculation_no='%s' WHERE student_id=%d", $mat_number, $student_id);
+
+    echo "<td>$old_student_id</td>";
+    echo "<td>$matriculation_no</td>";
+    echo "<td>$mat_number</td>";
+    echo "<td>$first_name</td>";
+    echo "<td>$last_name</td>";
+    echo "<td>$email_address</td>";
+    echo '</tr>';
+  }
+  echo '</table>';
+
+  return ob_get_clean();
+}
+
 ?>
