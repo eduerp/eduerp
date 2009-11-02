@@ -2136,7 +2136,7 @@ function _student_reg_form2($state) {
    $form['fc1']['course2'] = array(
      '#type' => 'select',
      '#default_value' => $_POST['course2'],
-     '#options' => _student_prg(),
+     '#options' => _student_prg(true),
      '#title' => 'Course',
      '#prefix' => '<div id="div-id-co2">',
      '#suffix' => '</div>',
@@ -3700,10 +3700,10 @@ function _student_dep(){
  return  $titles;
 
 }
-function _student_prg(){
-  static $titles;
+function _student_prg($zero_ok = false){
+  static $titles = array();
  if(!$titles){
-  $titles[0]="";
+  if ($zero_ok) $titles[0]="";
   $r=db_query("select * from programme order by programme_name");
   while($f=db_fetch_object($r))
   $titles[$f->programme_id]=$f->programme_name;
