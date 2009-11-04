@@ -88,4 +88,21 @@ function veritas_add_role($account, $role) {
   }
   return false;
 }
+
+/**
+ * Sets a particular role to a user's account
+ * @param object $account - the user object
+ * @param string $role - the role to set
+ * @return bool - true on success, else false
+ */
+function veritas_set_role($account, $role) {
+  $rid = _veritas_get_role_id($role);
+  if ($rid) {
+    $set_role = array($rid => _veritas_get_role($rid));
+    user_save($account, array('roles' => $set_role));
+    return true;
+  }
+  return false;
+}
+
 ?>
