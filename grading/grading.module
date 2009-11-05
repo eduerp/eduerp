@@ -1529,6 +1529,7 @@ function grading_student_details_form(&$obj) {
 
 function _grading_student_list() {
   $names = array();
+  $names[0] = '';
   $sql = "SELECT CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value, ' (', u.name, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid FROM users u, users_roles ur, role r, profile_fields pf0, profile_values pv0, profile_fields pf1, profile_values pv1, profile_fields pf2, profile_values pv2 WHERE u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND u.uid=pv0.uid AND pv0.fid=pf0.fid AND pf0.name='profile_last_name' AND u.uid=pv1.uid AND pv1.fid=pf1.fid AND pf1.name='profile_first_name' AND u.uid=pv2.uid AND pv2.fid=pf2.fid AND pf2.name='profile_middle_name' ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
@@ -1540,6 +1541,7 @@ function _grading_student_list() {
 
 function _grading_mat_list() {
   $names = array();
+  $names[0] = '';
   $sql = "SELECT CONCAT(u.name, ' (', pv0.value, ', ', pv1.value, ' ', pv2.value, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid FROM users u, users_roles ur, role r, profile_fields pf0, profile_values pv0, profile_fields pf1, profile_values pv1, profile_fields pf2, profile_values pv2 WHERE u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND u.uid=pv0.uid AND pv0.fid=pf0.fid AND pf0.name='profile_last_name' AND u.uid=pv1.uid AND pv1.fid=pf1.fid AND pf1.name='profile_first_name' AND u.uid=pv2.uid AND pv2.fid=pf2.fid AND pf2.name='profile_middle_name' ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
@@ -1625,8 +1627,8 @@ function _grading_ahah_studentdetails() {
 
   $output .= '<br /><br />';
 
-  $output = '<br /><table class="body-table"><tbody>';
-  $output .= '<tr><th valign="top" class="table-label" colspan="9">GPA for this Student</th></tr>';
+  $output .= '<br /><table class="body-table"><tbody>';
+  $output .= '<tr><th valign="top" class="table-label" colspan="9">GPAs for this Student</th></tr>';
 
   $output .= '<tr>';
   $output .= '<td valign="top" class="table-label">Programme</td>';
