@@ -94,6 +94,20 @@ function grading_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['grading/studentdetails'] = array(
+    'title'=>'Grading Student Details',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=> array('grading_student_details_form'),
+    'access arguments' => array('view grading'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['grading/ahahstudentdetails'] = array(
+    'page callback' => '_grading_ahah_studentdetails',
+    'access arguments' => array('view grading'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -1453,6 +1467,207 @@ function _grading_ahah_stats_uni() {
     }
   }
 
+  $output .= '</tbody></table>';
+
+  print drupal_to_js(array('data' => $output, 'status' => true));
+
+  exit();
+}
+
+
+function grading_student_details_form(&$obj) {
+
+  $form['studentname'] = array(
+    '#type' => 'select',
+    '#options' => _grading_student_list(),
+    '#title' => 'Student Name',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstudentdetails',
+      'wrapper' => 'studentdata_here',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      ),
+    '#required' => true
+    );
+
+  $form['studentmat'] = array(
+    '#type' => 'select',
+    '#options' => _grading_mat_list(),
+    '#title' => 'Student Matriculation Number',
+    '#ahah' =>array(
+      'event'   => 'change',
+      'path'    => 'grading/ahahstudentdetails',
+      'wrapper' => 'studentdata_here',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      ),
+    '#required' => true
+    );
+
+  $form['updatestudentbutton'] = array(
+    '#type' => 'button',
+    '#value' => "Show all of the selected Student's Courses",
+    '#ahah' => array(
+      'path'    => 'grading/ahahstudentdetails',
+      'wrapper' => 'studentdata_here',
+      'method'  => 'replace',
+      'effect'  => 'fade'
+      )
+    );
+
+  $form['studentdatahere'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div id="studentdata_here">',
+    '#value' => ' ',
+    '#suffix' => '</div>',
+    );
+
+  return $form;
+}
+
+
+function _grading_student_list() {
+  $names = array();
+  $sql = "SELECT CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value, ' (', u.name, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid FROM users u, users_roles ur, role r, profile_fields pf0, profile_values pv0, profile_fields pf1, profile_values pv1, profile_fields pf2, profile_values pv2 WHERE u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND u.uid=pv0.uid AND pv0.fid=pf0.fid AND pf0.name='profile_last_name' AND u.uid=pv1.uid AND pv1.fid=pf1.fid AND pf1.name='profile_first_name' AND u.uid=pv2.uid AND pv2.fid=pf2.fid AND pf2.name='profile_middle_name' ORDER BY name ASC";
+  $rows = db_query($sql);
+  while ($row = db_fetch_object($rows)) {
+    $names[$row->uid] = $row->name;
+  }
+  return $names;
+}
+
+
+function _grading_mat_list() {
+  $names = array();
+  $sql = "SELECT CONCAT(u.name, ' (', pv0.value, ', ', pv1.value, ' ', pv2.value, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid FROM users u, users_roles ur, role r, profile_fields pf0, profile_values pv0, profile_fields pf1, profile_values pv1, profile_fields pf2, profile_values pv2 WHERE u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND u.uid=pv0.uid AND pv0.fid=pf0.fid AND pf0.name='profile_last_name' AND u.uid=pv1.uid AND pv1.fid=pf1.fid AND pf1.name='profile_first_name' AND u.uid=pv2.uid AND pv2.fid=pf2.fid AND pf2.name='profile_middle_name' ORDER BY name ASC";
+  $rows = db_query($sql);
+  while ($row = db_fetch_object($rows)) {
+    $names[$row->uid] = $row->name;
+  }
+  return $names;
+}
+
+
+function grading_student_details_form_submit($form, &$state) {
+  drupal_set_message('Student: ' . $state['values']['studentname'] . '<br />');
+}
+
+
+function _grading_ahah_studentdetails() {
+  global $base_url;
+
+  if (empty($_POST['studentname']) && empty($_POST['studentmat'])) {
+    print drupal_to_js(array('data' => 'You must select either a Student Name or Matriculation Number', 'status' => true));
+    exit();
+  }
+  elseif (!empty($_POST['studentname'])) $uid = (int)$_POST['studentname'];
+  else                                   $uid = (int)$_POST['studentmat'];
+
+  $output = '<br /><table class="body-table"><tbody>';
+  $output .= '<tr><th valign="top" class="table-label" colspan="14">Courses for this Student</th></tr>';
+
+  $output .= '<tr>';
+  $output .= '<td valign="top" class="table-label">Course</td>';
+  $output .= '<td valign="top" class="table-label">Programme</td>';
+  $output .= '<td valign="top" class="table-label">Department</td>';
+  $output .= '<td valign="top" class="table-label">Session</td>';
+  $output .= '<td valign="top" class="table-label">Semester</td>';
+  $output .= '<td valign="top" class="table-label">Level</td>';
+  $output .= '<td valign="top" class="table-label">CA1</td>';
+  $output .= '<td valign="top" class="table-label">CA2</td>';
+  $output .= '<td valign="top" class="table-label">CA3</td>';
+  $output .= '<td valign="top" class="table-label">CA4</td>';
+  $output .= '<td valign="top" class="table-label">Exam</td>';
+  $output .= '<td valign="top" class="table-label">Total</td>';
+  $output .= '<td valign="top" class="table-label">Grade</td>';
+  $output .= '<td valign="top" class="table-label">Comment</td>';
+  $output .= '</tr>';
+
+  $sql = "SELECT ci.field_course_code_value AS coursecode, p.field_programme_name_value AS programme, p.field_department_name_value AS department, ci.field_sess_name_value AS session, ci.field_semester_name_value AS semester, ci.field_level_name_value AS level,
+      sg.field_ca1_value AS ca1,
+      sg.field_ca2_value AS ca2,
+      sg.field_ca3_value AS ca3,
+      sg.field_ca4_value AS ca4,
+      sg.field_exam_score_value AS exam,
+      sg.field_total_score_value AS total,
+      sg.field_grade_value AS grade,
+      sg.field_comment_grades_value AS comment
+    FROM content_type_student_grades sg, content_type_course_instance ci, content_type_program p
+    WHERE sg.field_mat_no_uid=%d AND sg.field_course_instance_nid=ci.nid AND ci.field_program_ref_course_nid=p.nid ORDER BY session ASC, semester ASC, code ASC";
+  $rows = db_query($sql, $uid);
+  while ($row = db_fetch_object($rows)) {
+    $coursecodeenc = rawurlencode($row->coursecode);
+    $programmeenc = rawurlencode($row->programme);
+    $departmentenc = rawurlencode($row->department);
+    $sessionenc = rawurlencode($row->session);
+
+    $output .= '<tr>';
+    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->coursecode . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$row->level}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->programme . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$row->level}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->department . '</a></td>';
+    $output .= "<td>{$row->session}</td>";
+    $output .= "<td>{$row->semester}</td>";
+    $output .= "<td>{$row->level}</td>";
+    $output .= "<td>{$row->ca1}</td>";
+    $output .= "<td>{$row->ca2}</td>";
+    $output .= "<td>{$row->ca3}</td>";
+    $output .= "<td>{$row->ca4}</td>";
+    $output .= "<td>{$row->exam}</td>";
+    $output .= "<td>{$row->total}</td>";
+    $output .= "<td>{$row->grade}</td>";
+    $output .= '<td>';
+    if (!empty($row->comment)) echo check_plain($row->comment);
+    $output .= '</td>';
+    $output .= '</tr>';
+  }
+  $output .= '</tbody></table>';
+
+  $output .= '<br /><br />';
+
+  $output = '<br /><table class="body-table"><tbody>';
+  $output .= '<tr><th valign="top" class="table-label" colspan="9">GPA for this Student</th></tr>';
+
+  $output .= '<tr>';
+  $output .= '<td valign="top" class="table-label">Programme</td>';
+  $output .= '<td valign="top" class="table-label">Department</td>';
+  $output .= '<td valign="top" class="table-label">Session</td>';
+  $output .= '<td valign="top" class="table-label">Semester</td>';
+  $output .= '<td valign="top" class="table-label">Level</td>';
+  $output .= '<td valign="top" class="table-label">Credit Load Registered</td>';
+  $output .= '<td valign="top" class="table-label">Credit Load Completed</td>';
+  $output .= '<td valign="top" class="table-label">GPA</td>';
+  $output .= '<td valign="top" class="table-label">cGPA</td>';
+  $output .= '</tr>';
+
+  $sql = "SELECT p.field_programme_name_value AS programme, p.field_department_name_value AS department,
+      g.field_sess_name_gpa_value AS session,
+      g.field_semester_name_gpa_value AS semester,
+      g.field_level_name_gpa_value AS level,
+      g.field_credit_load_registered_value AS credit_load_registered,
+      g.field_credit_load_completed_value AS credit_load_completed,
+      g.field_gpa_value AS gpa,
+      g.field_cgpa_value AS cgpa
+    FROM content_type_student_gpa g, content_type_program p
+    WHERE field_student_ref_gpa_uid=%d AND g.field_program_ref_gpa_nid=p.nid ORDER BY session ASC, semester ASC, programme ASC";
+  $rows = db_query($sql, $uid);
+  while ($row = db_fetch_object($rows)) {
+    $programmeenc = rawurlencode($row->programme);
+    $departmentenc = rawurlencode($row->department);
+    $sessionenc = rawurlencode($row->session);
+
+    $output .= '<tr>';
+    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$row->level}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->programme . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$row->level}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->department . '</a></td>';
+    $output .= "<td>{$row->session}</td>";
+    $output .= "<td>{$row->semester}</td>";
+    $output .= "<td>{$row->level}</td>";
+    $output .= "<td>{$row->credit_load_registered}</td>";
+    $output .= "<td>{$row->credit_load_completed}</td>";
+    $output .= "<td>{$row->gpa}</td>";
+    $output .= "<td>{$row->cgpa}</td>";
+    $output .= '</tr>';
+  }
   $output .= '</tbody></table>';
 
   print drupal_to_js(array('data' => $output, 'status' => true));
