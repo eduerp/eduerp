@@ -1596,7 +1596,7 @@ function _grading_ahah_studentdetails() {
       sg.field_grade_value AS grade,
       sg.field_comment_grades_value AS comment
     FROM content_type_student_grades sg, content_type_course_instance ci, content_type_program p
-    WHERE sg.field_mat_no_uid=%d AND sg.field_course_instance_nid=ci.nid AND ci.field_program_ref_course_nid=p.nid ORDER BY session ASC, semester ASC, code ASC";
+    WHERE sg.field_mat_no_uid=%d AND sg.field_course_instance_nid=ci.nid AND ci.field_program_ref_course_nid=p.nid ORDER BY session ASC, semester ASC, coursecode ASC";
   $rows = db_query($sql, $uid);
   while ($row = db_fetch_object($rows)) {
     $coursecodeenc = rawurlencode($row->coursecode);
