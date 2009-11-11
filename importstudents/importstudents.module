@@ -819,6 +819,7 @@ function _testprofile() {
   ob_start();
 
   $sql = "SELECT
+    a.student_id,
     t.title_name,
     a.gender,
     a.dob,
@@ -851,37 +852,39 @@ function _testprofile() {
     LEFT JOIN programme p ON a.first_choice=p.programme_id
     LEFT JOIN level lev ON a.level_id=lev.level_id
     LEFT JOIN department d ON p.department_id=d.department_id
-    LEFT JOIN college co ON d.college_id=co.college_id
-  WHERE student_id=%d";
-  $admitteds = db_query($sql, 652);
-  $admitted = db_fetch_array($admitteds);
+    LEFT JOIN college co ON d.college_id=co.college_id";
+  $admitteds = db_query($sql);
+  while ($admitted = db_fetch_array($admitteds)) {
 
-  $addprofile = array();
-  foreach ($admitted as $key => $value) {
-    $profile_key = 'profile_' . $key;
+    echo '>>>>>>>>>>>>>>student_id: ' . $admitted['student_id'] . '<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<br />';
+    $addprofile = array();
+    foreach ($admitted as $key => $value) {
+      $profile_key = 'profile_' . $key;
 
-    if ($key === 'dob') {
-      $addprofile[$profile_key] = array(
-          'year'  => (int)substr($value, 0, 4),
-          'month' => (int)substr($value, 5, 2),
-          'day'   => (int)substr($value, 8, 2)
-        );
-      echo $key . ': ' . $value . '<br />';
-    }
-    else {
-      if (is_null($value)) {
-        $addprofile[$profile_key] = '';
+      if ($key === 'dob') {
+        $addprofile[$profile_key] = array(
+            'year'  => (int)substr($value, 0, 4),
+            'month' => (int)substr($value, 5, 2),
+            'day'   => (int)substr($value, 8, 2)
+          );
+        echo $key . ': ' . $value . '<br />';
       }
       else {
-        $addprofile[$profile_key] = $value;
+        if (is_null($value)) {
+          $addprofile[$profile_key] = '';
+        }
+        else {
+          $addprofile[$profile_key] = $value;
+        }
+        echo $key . ': ' . $addprofile[$profile_key] . '<br />';
       }
-      echo $key . ': ' . $addprofile[$profile_key] . '<br />';
     }
-  }
 
-  $userforprofile = new stdClass;
-  $userforprofile->uid = 652;
-  profile_save_profile($addprofile, $userforprofile, 'eduerp');
+    $userforprofile = new stdClass;
+    $userforprofile->uid = $admitted['student_id'];
+    profile_save_profile($addprofile, $userforprofile, 'eduerp');
+break;
+  }
 
   return ob_get_clean();
 }
