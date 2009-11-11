@@ -857,16 +857,26 @@ function _testprofile() {
   $admitted = db_fetch_array($admitteds);
 
   $addprofile = array();
-  foreach($admitted as $key => $value) {
+  foreach ($admitted as $key => $value) {
     $profile_key = 'profile_' . $key;
-    if (is_null($value)) {
-      $addprofile[$profile_key] = '';
+
+    if ($key === 'dob') {
+      $addprofile[$profile_key] = array(
+          'year'  => substr($value, 0, 4),
+          'month' => substr($value, 4, 2),
+          'day'   => substr($value, 6, 2)
+        );
+      echo $key . ': ' . $value . '<br />';
     }
     else {
-      $addprofile[$profile_key] = $value;
+      if (is_null($value)) {
+        $addprofile[$profile_key] = '';
+      }
+      else {
+        $addprofile[$profile_key] = $value;
+      }
+      echo $key . ': ' . $addprofile[$profile_key] . '<br />';
     }
-
-    echo $key . ': ' . $addprofile[$profile_key] . '<br />';
   }
 
   $userforprofile = new stdClass;
