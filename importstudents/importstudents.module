@@ -820,6 +820,9 @@ function _testprofile() {
 
   $sql = "SELECT
     a.student_id,
+    a.last_name,
+    a.first_name,
+    a.middle_name,
     t.title_name,
     a.gender,
     a.dob,
@@ -880,9 +883,9 @@ function _testprofile() {
       }
     }
 
-    $userforprofile = new stdClass;
-    $userforprofile->uid = $admitted['student_id'];
-    profile_save_profile($addprofile, $userforprofile, 'eduerp');
+    require_once './' . drupal_get_path('module', 'veritas') . '/student/student_eduerp_profile.inc';
+    save_student_eduerp_profile($admitted['student_id']);
+break;
   }
 
   return ob_get_clean();
