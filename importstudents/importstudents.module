@@ -37,6 +37,12 @@ function importstudents_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['importstudents/testprofile'] = array(
+    'page callback' => '_testprofile',
+    'access arguments' => array('import students'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -808,4 +814,60 @@ function _fixmatric() {
   return ob_get_clean();
 }
 
+
+function _testprofile() {
+  ob_start();
+
+  $sql = "SELECT
+    t.title_name,
+    a.gender,
+    a.dob,
+    c.country_name,
+    l.lga_name,
+    s0.state_name AS state_name_origin,
+    a.permanent_address1,
+    a.permanent_address_city,
+    s.state_name AS permanent_address_state,
+    a.mobile_number,
+    a.marital_status,
+    a.religion,
+    a.jambno,
+    a.mode_of_entry,
+    a.mode_of_study,
+    a.yearofentry,
+    a.level_id,
+    lev.level_name,
+    a.first_choice,
+    p.programme_name,
+    d.department_name,
+    co.college_name
+  FROM
+    admitted_student a
+    LEFT JOIN title t ON a.title=t.title_id
+    LEFT JOIN country c ON a.nationality=c.country_id
+    LEFT JOIN lga l ON a.lkup_lga_origin=l.lga_id
+    LEFT JOIN state s ON a.permanent_address_state=s.state_id
+    LEFT JOIN state s0 ON a.state_origin=s0.state_id
+    LEFT JOIN programme p ON a.first_choice=p.programme_id
+    LEFT JOIN level lev ON a.level_id=lev.level_id
+    LEFT JOIN department d ON p.department_id=d.department_id
+    LEFT JOIN college co ON d.college_id=co.college_id
+  WHERE student_id=%d";
+  $admitteds = db_query($sql, 652);
+  $admitted = db_fetch_array($admitteds);
+
+  $addprofile = new stdClass;
+  foreach($admitted as $key => $value) {
+    if (is_null($value)) {
+      $addprofile->$('profile_' . $key) = '';
+    }
+    else {
+      $addprofile->$('profile_' . $key) = $value;
+    }
+
+    echo $key . ': ' . $addprofile->$('profile_' . $key) . '<br />';
+  }
+
+  return ob_get_clean();
+}
 ?>
