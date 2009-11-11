@@ -869,6 +869,10 @@ function _testprofile() {
     echo $key . ': ' . $addprofile->$profile_key . '<br />';
   }
 
+  $userforprofile = new stdClass;
+  $userforprofile->uid = 652;
+  profile_save_profile($addprofile, $userforprofile, 'eduerp');
+
   return ob_get_clean();
 }
 ?>
