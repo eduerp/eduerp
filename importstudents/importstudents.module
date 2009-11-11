@@ -858,14 +858,15 @@ function _testprofile() {
 
   $addprofile = new stdClass;
   foreach($admitted as $key => $value) {
+    $profile_key = 'profile_' . $key;
     if (is_null($value)) {
-      $addprofile->$('profile_' . $key) = '';
+      $addprofile->$profile_key = '';
     }
     else {
-      $addprofile->$('profile_' . $key) = $value;
+      $addprofile->$profile_key = $value;
     }
 
-    echo $key . ': ' . $addprofile->$('profile_' . $key) . '<br />';
+    echo $key . ': ' . $addprofile->$profile_key . '<br />';
   }
 
   return ob_get_clean();
