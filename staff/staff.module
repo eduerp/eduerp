@@ -1218,9 +1218,6 @@ function staff_registration_form_submit(&$form, &$state) {
 
       // ALAN 20090830
       ,
-      'profile_last_name' => $data[1]['lastname'],
-      'profile_first_name' => $data[1]['firstname'],
-      'profile_middle_name' => $data[1]['middlename'],
       'timezone' => $timezone
       // END ALAN
       );
@@ -1328,6 +1325,12 @@ user_id ='%s'
       $data[3]['kin_email'],
       $staff_id
       );
+
+    // ALAN 20091112
+    require_once './' . drupal_get_path('module', 'veritas') . '/staff/staff_eduerp_profile.inc';
+    save_staff_eduerp_profile($user->uid);
+    // END ALAN
+
     drupal_goto('staff/registration/success');
   }
   if ($state['clicked_button']['#id'] == 'edit-previous') {

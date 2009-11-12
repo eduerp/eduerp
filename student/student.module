@@ -1294,7 +1294,7 @@ function student_registration_form_submit($form, &$state) {
     $q = "SELECT * FROM {admitted_student} WHERE student_id=%d";
     $rs = db_query($q, $_SESSION['student']['data']->student_id);
     $admitted_student = db_fetch_array($rs);
-    
+
     // Retrieve the program abbreviation
     $q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.programme_id=s.first_choice AND s.student_id=%d";
     $rs = db_query($q, $_SESSION['student']['data']->student_id);
@@ -1352,9 +1352,6 @@ function student_registration_form_submit($form, &$state) {
 
       // ALAN 20090830
       ,
-      'profile_last_name' => $_SESSION['student']['data']->last_name,
-      'profile_first_name' => $_SESSION['student']['data']->first_name,
-      'profile_middle_name' => $_SESSION['student']['data']->middle_name,
       'timezone' => $timezone
       // END ALAN
     );
@@ -1366,6 +1363,11 @@ function student_registration_form_submit($form, &$state) {
     // Also update the mat no in the student table
     $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
     db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
+
+    // ALAN 20091112
+    require_once './' . drupal_get_path('module', 'veritas') . '/student/student_eduerp_profile.inc';
+    save_student_eduerp_profile($user->uid);
+    // END ALAN
 
   /////////////////////////////////////////////////////
     $sql = "select * from {admitted_transaction} where transaction_id=%d";
@@ -1379,22 +1381,6 @@ function student_registration_form_submit($form, &$state) {
     $type = $f->trans_type;
     $rc = db_query("select * from {admitted_student} where student_id=%d", $f->student_id);
     $fc = db_fetch_array($rc);
-
-    //// ALAN 20090802
-    //$result = db_query("SELECT * FROM {profile_fields} WHERE name IN ('profile_last_name', 'profile_first_name', 'profile_middle_name')");
-    //while ($row = db_fetch_array($result)) {
-    //  if ($row['name'] === 'profile_last_name') {
-    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['last_name']);
-    //  }
-    //  elseif ($row['name'] === 'profile_first_name') {
-    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['first_name']);
-    //  }
-    //  elseif (($row['name'] === 'profile_middle_name') && !empty($fc['middle_name'])) {
-    //    db_query("INSERT INTO {profile_values} (fid, uid, value) VALUES (%d, %d, '%s')", $row->fid, $user->uid, $fc['middle_name']);
-    //  }
-    //}
-    //// END ALAN
-
     $f->name = $name = $fc['first_name'] .' '. $fc['middle_name'] .' '. $fc['last_name'];
     $f->student_data = $fc;
     $message = drupal_mail('student', 'receipt', $_SESSION['student']['data']->email_address, language_default(), array(), NULL, FALSE);
