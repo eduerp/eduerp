@@ -887,6 +887,47 @@ function _testprofile() {
     save_student_eduerp_profile($admitted['student_id']);
   }
 
+
+  $sql = "SELECT
+    a.user_id,
+    a.staff_last_name AS last_name,
+    a.staff_first_name AS first_name,
+    a.staff_middle_name AS middle_name,
+    a.dob
+  FROM
+    veritas_staff a";
+
+  $admitteds = db_query($sql);
+  while ($admitted = db_fetch_array($admitteds)) {
+
+    echo '>>>>>>>>>>>>>>staff user_id: ' . $admitted['user_id'] . '<<<<<<<<<<<<<<<<<<<<<<<<<<STAFF<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<br />';
+    $addprofile = array();
+    foreach ($admitted as $key => $value) {
+      $profile_key = 'profile_' . $key;
+
+      if ($key === 'dob') {
+        $addprofile[$profile_key] = array(
+            'year'  => (int)substr($value, 0, 4),
+            'month' => (int)substr($value, 5, 2),
+            'day'   => (int)substr($value, 8, 2)
+          );
+        echo $key . ': ' . $value . '<br />';
+      }
+      else {
+        if (is_null($value)) {
+          $addprofile[$profile_key] = '';
+        }
+        else {
+          $addprofile[$profile_key] = $value;
+        }
+        echo $key . ': ' . $addprofile[$profile_key] . '<br />';
+      }
+    }
+
+    require_once './' . drupal_get_path('module', 'veritas') . '/staff/staff_eduerp_profile.inc';
+    save_staff_eduerp_profile($admitted['user_id']);
+  }
+
   return ob_get_clean();
 }
 ?>
