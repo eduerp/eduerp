@@ -6,9 +6,9 @@
 function save_staff_eduerp_profile($uid) {
   $sql = "SELECT
     a.user_id,
-    a.staff_last_name AS last_name,
-    a.staff_first_name AS first_name,
-    a.staff_middle_name AS middle_name,
+    CONCAT(UCASE(LEFT(a.staff_last_name, 1)), LCASE(SUBSTRING(a.staff_last_name, 2))) AS last_name,
+    CONCAT(UCASE(LEFT(a.staff_first_name, 1)), LCASE(SUBSTRING(a.staff_first_name, 2))) AS first_name,
+    CONCAT(UCASE(LEFT(a.staff_middle_name, 1)), LCASE(SUBSTRING(a.staff_middle_name, 2))) AS middle_name,
     a.dob
   FROM
     veritas_staff a

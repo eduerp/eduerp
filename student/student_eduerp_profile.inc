@@ -6,9 +6,9 @@
 function save_student_eduerp_profile($uid) {
   $sql = "SELECT
     a.student_id,
-    a.last_name,
-    a.first_name,
-    a.middle_name,
+    CONCAT(UCASE(LEFT(a.last_name, 1)), LCASE(SUBSTRING(a.last_name, 2))) AS last_name,
+    CONCAT(UCASE(LEFT(a.first_name, 1)), LCASE(SUBSTRING(a.first_name, 2))) AS first_name,
+    CONCAT(UCASE(LEFT(a.middle_name, 1)), LCASE(SUBSTRING(a.middle_name, 2))) AS middle_name,
     t.title_name,
     a.gender,
     a.dob,
