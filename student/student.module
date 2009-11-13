@@ -1000,11 +1000,12 @@ function student_login_form_submit(&$obj) {
 
 function student_fee_payment_form(&$obj) {
 	// Check if the student has paid his/her fees for this session
-	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
-	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
-	if ($rs && ($row = db_fetch_object($rs))) {
-		drupal_goto('student/course');
-	}
+// ALAN 20091113 Allow multiple Payments, Tim's code should handle multiple payments
+//	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
+//	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
+//	if ($rs && ($row = db_fetch_object($rs))) {
+//		drupal_goto('student/course');
+//	}
 
 	// Generate the form?
 	return _student_fee_payment_form1($obj);
