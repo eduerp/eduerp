@@ -85,11 +85,18 @@ function student_menu() {
     'type' => MENU_CALLBACK,
  );
 
- $items['student/ajaxcourse'] = array(
-  'page callback' => '_student_add_course',
+  $items['student/ajaxcourse'] = array(
+    'page callback' => '_student_add_course',
     'access arguments' => array('student register'),
     'type' => MENU_CALLBACK,
  );
+
+ $items['student/liststudents'] = array(
+    'title' => 'List Students',
+    'page callback' => 'liststudents',
+    'access arguments' => array('student list students'),
+    'type' => MENU_NORMAL_ITEM,
+  );
 
   return $items;
 }
@@ -100,7 +107,7 @@ function register_student_logout() {
 }
 
 function student_perm() {
-  return array('student new', 'student register', 'student registercourse', 'student admit', 'student course');
+  return array('student new', 'student register', 'student registercourse', 'student admit', 'student course',  'student list students');
 }
 
 function change_pasword_success(&$obj) {
