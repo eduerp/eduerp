@@ -83,17 +83,18 @@ function student_menu() {
     'page callback' => 'change_pasword_success',
     'access arguments' => array('student register'),
     'type' => MENU_CALLBACK,
- );
+  );
 
   $items['student/ajaxcourse'] = array(
     'page callback' => '_student_add_course',
     'access arguments' => array('student register'),
     'type' => MENU_CALLBACK,
- );
+  );
 
- $items['student/liststudents'] = array(
+  $items['student/liststudents'] = array(
     'title' => 'List Students',
-    'page callback' => 'liststudents',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('liststudents'),
     'access arguments' => array('student list students'),
     'type' => MENU_NORMAL_ITEM,
   );
