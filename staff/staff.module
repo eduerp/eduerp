@@ -99,6 +99,13 @@ function staff_menu() {
     'access arguments' => array('student data'),
     'type' => MENU_CALLBACK,
   );
+  $items['staff/sa_viewstudent']=array(
+    'title' => 'View Student',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sa_view_student_form'),
+    'access arguments' => array('sa student'),
+    'type' => MENU_CALLBACK,
+  );
   $items['staff/cleared']=array(
     'page callback' => 'staff_cleared_student',
     'access arguments' => array('staff clearance'),
@@ -212,7 +219,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data');
+  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student');
 }
 
 function staff_assign_role_form_submit($form,&$state) {
@@ -1463,6 +1470,15 @@ function view_student_form(&$obj) {
     return view_student_form1($obj);
   else if ($st == 2)
     return view_student_form2($obj);
+}
+function sa_view_student_form(&$obj) {
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st == 1 or $st == 3)
+    return sa_view_student_form1($obj);
+  else if ($st == 2)
+    return sa_view_student_form2($obj);
 }
 /*Function that validates staff login.*/
 function staff_login_form_validate($form, &$states) {
@@ -3255,7 +3271,7 @@ function view_student_form1(&$obj) {
   if (isset($_SESSION['staff']['jamb'])) {
     unset($_SESSION['staff']['jamb']);
   }
-  $form['#title'] = t('Begin Clearance');
+  $form['#title'] = t('Search Student');
   $form['matno'] = array(
     '#title' => 'Matriculation No .',
     '#type' => 'textfield',
@@ -4028,3 +4044,501 @@ function view_student_form2(&$obj) {
 function validate_always_true($element, &$form_state){
   // Defined to provide a means of suppressing certain validation errors
 }
+function sa_view_student_form1(&$obj) {
+  if (isset($_SESSION['staff']['mat'])) {
+    unset($_SESSION['staff']['mat']);
+  }
+  if (isset($_SESSION['staff']['jamb'])) {
+    unset($_SESSION['staff']['jamb']);
+  }
+  $form['#title'] = t('Search Student');
+  $form['matno'] = array(
+    '#title' => 'Matriculation No .',
+    '#type' => 'textfield',
+    '#default_value' => $_POST['matno'],
+    '#size' => 20);
+  $form['lbl_or'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Or');
+  $form['lbl_or']['jambno'] = array(
+    '#title' => 'JAMB No .',
+    '#default_value' => $_POST['jambno'],
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['submit'] = array(
+    '#value' => 'Next',
+    '#type' => 'submit',
+    '#id' => 'edit-next');
+  return $form;
+}
+function sa_view_student_form_submit($form, &$state) {
+  if ($state['clicked_button']['#id'] == 'edit-previous') {
+    $state['storage']['step']--;
+    return;
+  }
+  elseif ($state['clicked_button']['#id'] == 'edit-next') {
+    $state['storage']['values'][$state['storage']['step']]=$state['values'];
+    // Prevent the counter from going beyond 2
+    $state['storage']['step'] = (++$state['storage']['step'] > 2) ? 1 : $state['storage']['step'];
+    $state['#rebuild']=TRUE;
+  }
+  else
+    return;
+}
+function sa_view_student_form_validate($form, &$state) {
+  global $user;
+
+  if ($state['storage']['step'] == 1) {
+    $values=$form['lbl_or']['#post'];
+    $jambno=$values['jambno'];
+    if ($form['#post']['matno'] != '' && $jambno!='') {
+      drupal_set_message('Please enter either Matriculation no or JAMB no.');
+    }
+    else {
+      if ($jambno != '' && $form['#post']['matno']=='') {
+        $qry = "select * from {admitted_student} where jambno='%s'";
+        $res = db_query($qry, $jambno);
+        if ($res && ($result = db_fetch_object($res))) {
+          $_SESSION['staff']['mat']=$result->matriculation_no;
+          $_SESSION['staff']['jamb']=$jambno;
+        }
+        else {
+          form_set_error('jambno', "Jamb number not valid.");
+        }
+      }
+      else {
+        $qry = "select * from {admitted_student} where matriculation_no='%s'";
+        $res = db_query($qry, $form['#post']['matno']);
+        if ($res && ($result = db_fetch_object($res))) {
+          $_SESSION['staff']['mat']=$result->matriculation_no;
+        }
+        else {
+          form_set_error('matno', "Matriculation number not valid.");
+        }
+      }
+    }
+  }
+}
+function sa_view_student_form2(&$obj) {
+  if (isset($_SESSION['staff']['jamb'])) {
+    $qry = "select * from {admitted_student} where jambno='%s'";
+    $res = db_query($qry, $_SESSION['staff']['jamb']);
+  }
+  else {
+    $qry = "select * from {admitted_student} where matriculation_no='%s'";
+    $res = db_query($qry, $_SESSION['staff']['mat']);
+  }
+  if ($res && ($result=db_fetch_object($res))) {
+    $_SESSION['staff']['stud_info']=$result->student_id;
+
+    $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
+    $res4 = db_query($qry4);
+    $result4 = db_fetch_object($res4);
+    $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
+    $res5 = db_query($qry5);
+    $result5 = db_fetch_object($res5);
+    $qry7 = "select * from `admitted_sponsor` where student_id='". $result->student_id ."'";
+    $res7 = db_query($qry7);
+    $result7 = db_fetch_object($res7);
+    $qry8 = "SELECT ah.name as `name`, at.name as `type` FROM `accomodation_hostels` ah, `accomodation_types` at, `admitted_student_accomodation` asa WHERE asa.student_id=%d AND ah.id=asa.hostel_id AND at.id=ah.accomodation_type_id";
+    $res8 = db_query($qry8, $result->student_id);
+    $result8 = db_fetch_object($res8);
+  }
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Admission Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['extra']['college0'] = array(
+    '#type' => 'item',
+    '#title' => 'College',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['college1'] = array(
+    '#type' => 'item',
+    '#value' => $result4->college_abbreviation,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['dept0'] = array(
+    '#type' => 'item',
+    '#title' => 'Department',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['dept1'] = array(
+    '#type' => 'item',
+    '#value' => $result4->department_name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['programme0'] = array(
+    '#type' => 'item',
+    '#title' => 'Programme',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['programme1'] = array(
+    '#type' => 'item',
+    '#value' => $result4->programme_name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['extra']['study_mode0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mode of Study',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['study_mode1'] = array(
+    '#type' => 'item',
+    '#value' => $result->mode_of_study,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['space14'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['extra']['entry_mode0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mode of Entry',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['entry_mode1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->mode_of_entry,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['sess0'] = array(
+    '#type' => 'item',
+    '#title' => 'SESSION',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['sess1'] = array(
+    '#type' => 'item',
+    '#value' => $result5->sess_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>',
+    '#size' => 15);
+  $form['personal'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Personal Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['personal']['img_lbl0'] = array(
+    '#type' => 'item',
+    '#title' => 'Student Image',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['img_lbl1'] = array(
+    '#value' => '<img src="'. load_image() .'" width="200" />',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space11'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['img_sig0'] = array(
+    '#type' => 'item',
+    '#title' => 'Student Signature',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['img_sig1'] = array(
+    '#value' => '<img src="'. load_signature() .'" width="300" />',
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['matno0'] = array(
+    '#type' => 'item',
+    '#title' => 'Matriculation No.',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['matno1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->matriculation_no,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space0'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['jambno0'] = array(
+    '#type' => 'item',
+    '#title' => 'JAMB No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['jambno1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->jambno,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['fname0'] = array(
+    '#type' => 'item',
+    '#title' => 'First Name',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['fname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->first_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space1'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Middle Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->middle_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space2'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['lname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Last Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->last_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['dob0'] = array(
+    '#type' => 'item',
+    '#title' => 'Date of Birth',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['dob1'] = array(
+    '#type' => 'item',
+    '#value' => $result->dob,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space7'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['hobbies0'] = array(
+    '#type' => 'item',
+    '#title' => 'Hobbies',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['hobbies1'] = array(
+    '#type' => 'item',
+    '#value' => $result->hobbies,
+    '#prefix' => '<td colspan="4">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['gender0'] = array(
+    '#type' => 'item',
+    '#title' => 'Gender',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['gender1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->gender,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space3'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['origin0'] = array(
+    '#type' => 'item',
+    '#title' => 'State Of Origin',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['origin1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#default_value' => $result->state_origin,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['lga0'] = array(
+    '#type' => 'item',
+    '#title' => 'LGA Of Origin',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['lga1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_lga(),
+    '#default_value' => $result->lkup_lga_origin,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['space4'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus0'] = array(
+    '#type' => 'item',
+    '#title' => 'Marital Status',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus1'] = array(
+    '#type' => 'item',
+    '#value' => $result->marital_status,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['address0'] = array(
+    '#type' => 'item',
+    '#title' => 'Permanent Address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['address1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result->permanent_address1,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space5'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['city0'] = array(
+    '#type' => 'item',
+    '#title' => 'City',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['city1'] = array(
+    '#type' => 'item',
+    '#value' => $result->permanent_address_city,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['state0'] = array(
+    '#type' => 'item',
+    '#title' => 'State',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['state1'] = array(
+    '#type' => 'select',
+    '#options' => veritas_states(),
+    '#default_value' => $result->permanent_address_state,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['space6'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['mobile0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mobile No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile1'] = array(
+    '#type' => 'item',
+    '#value' => $result->mobile_number,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['email0'] = array(
+    '#type' => 'item',
+    '#title' => 'E-mail address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['email1'] = array(
+    '#type' => 'item',
+    '#value' => $result->email_address,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['space15'] = array(
+    '#type' => 'item',
+    '#prefix' => '<td>&nbsp;',
+    '#suffix' => '</td>');
+  $form['personal']['health0'] = array(
+    '#type' => 'item',
+    '#title' => 'Health Status',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['health1'] = array(
+    '#type' => 'item',
+    '#value' => $result->physical_health_status,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['nextofkin'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Sponsor Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['nextofkin']['sponsor0'] = array(
+    '#type' => 'item',
+    '#title' => 'Sponsor',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['nextofkin']['sponsor1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result7->name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  if ($result7->mobile != $result6->mobile) {
+    $form['nextofkin']['smobile0'] = array(
+      '#type' => 'item',
+      '#title' => 'Mobile',
+      '#prefix' => '<td>',
+      '#suffix' => '</td>');
+    $form['nextofkin']['smobile1'] = array(
+      '#type' => 'item',
+      '#size' => 20,
+      '#value' => $result7->mobile,
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr></table>');
+  }
+  else {
+    $form['nextofkin']['smobile0'] = array(
+      '#type' => 'item',
+      '#title' => 'Mobile',
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr></table>');
+  }
+  $form['accomodation'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Accomodation Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['accomodation']['hostelname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Hostel Name',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['accomodation']['hostelname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result8->name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['accomodation']['hosteltype0'] = array(
+    '#type' => 'item',
+    '#title' => 'Hostel Type',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['accomodation']['hosteltype1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result8->type,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['submit'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Continue',
+    '#type' => 'submit');
+  $form['#multistep']=TRUE;
+  $form['#redirect']=FALSE;
+  return $form;
+}
+
