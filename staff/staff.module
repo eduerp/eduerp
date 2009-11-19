@@ -908,7 +908,7 @@ function staff_registration_form2(&$obj) {
 function staff_banks() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Select";
+    $titles = array();
     $r=db_query("select * from `veritas_bank`  order by name");
     while ($f = db_fetch_object($r))
       $titles[$f->id]=$f->name;
@@ -918,7 +918,7 @@ function staff_banks() {
 function staff_roles() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Select";
+    $titles = array();
     $r=db_query("select * from `veritas_staff_role` order by name");
     while ($f=db_fetch_object($r))
       $titles[$f->id]=$f->name;
@@ -928,7 +928,7 @@ function staff_roles() {
 function salary_grade() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Select";
+    $titles = array();
     $r=db_query("select * from `veritas_salary_grade`  order by salary_grade_level");
     while ($f=db_fetch_object($r))
       $titles[$f->id]=$f->salary_grade_level;
@@ -938,7 +938,7 @@ function salary_grade() {
 function staff_type() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Staff Type";
+    $titles = array();
     $r=db_query("select * from `veritas_staff_type`  order by staff_type_name");
     while ($f=db_fetch_object($r))
       $titles[$f->staff_type_id]=$f->staff_type_name;
@@ -948,7 +948,7 @@ function staff_type() {
 function employment_type() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Employment Type";
+    $titles = array();
     $r=db_query("select * from `veritas_employment_type`  order by name");
     while ($f=db_fetch_object($r))
       $titles[$f->id]=$f->name;
@@ -958,7 +958,7 @@ function employment_type() {
 function staff_position() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Position";
+    $titles = array();
     $r=db_query("select * from `veritas_staff_position`  order by name");
     while ($f=db_fetch_object($r))
       $titles[$f->id]=$f->name;
@@ -968,7 +968,7 @@ function staff_position() {
 function department() {
   static $titles;
   if (!$titles) {
-    $titles[0]="Not Applicable";
+    $titles = array();
     $r=db_query("select * from `department`  order by department_name");
     while ($f=db_fetch_object($r))
       $titles[$f->department_id]=$f->department_name;
