@@ -99,6 +99,13 @@ function staff_menu() {
     'access arguments' => array('student data'),
     'type' => MENU_CALLBACK,
   );
+  $items['staff/viewstaff']=array(
+    'title' => 'View Staff',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('view_staff_form'),
+    'access arguments' => array('staff data'),
+    'type' => MENU_CALLBACK,
+  );
   $items['staff/sa_viewstudent']=array(
     'title' => 'View Student',
     'page callback' => 'drupal_get_form',
@@ -219,7 +226,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student');
+  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student', 'staff data');
 }
 
 function staff_assign_role_form_submit($form,&$state) {
@@ -1026,7 +1033,7 @@ function staff_registration_form1(&$obj) {
     '#type' => 'select',
     '#options' => veritas_states(),
     '#required' => TRUE,
-    '#title' => 'State Of Origin(Only for nigeria)',
+    '#title' => 'State Of Origin (Only for Nigeria)',
     '#ahah' => array(
     'event' => 'change',
     '#default_value' => $_POST['state'],
@@ -1470,6 +1477,15 @@ function view_student_form(&$obj) {
     return view_student_form1($obj);
   else if ($st == 2)
     return view_student_form2($obj);
+}
+function view_staff_form(&$obj) {
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st == 1 or $st == 3)
+    return view_staff_form1($obj);
+  else if ($st == 2)
+    return view_staff_form2($obj);
 }
 function sa_view_student_form(&$obj) {
   if (!$obj['storage']['step'])
@@ -4531,6 +4547,416 @@ function sa_view_student_form2(&$obj) {
     '#type' => 'item',
     '#size' => 20,
     '#value' => $result8->type,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['submit'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Continue',
+    '#type' => 'submit');
+  $form['#multistep']=TRUE;
+  $form['#redirect']=FALSE;
+  return $form;
+}
+function view_staff_form1(&$obj) {
+  if (isset($_SESSION['staff']['staff_no'])) {
+    unset($_SESSION['staff']['staff_no']);
+  }
+  $form['#title'] = t('Search Staff');
+  $form['staff_no'] = array(
+    '#title' => 'Staff No.',
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['lbl_or'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Or');
+  $form['lbl_or']['user_id'] = array(
+    '#title' => 'Staff Name',
+    '#type' => 'select',
+    '#options' => _get_staff_list());
+  $form['submit'] = array(
+    '#value' => 'Next',
+    '#type' => 'submit',
+    '#id' => 'edit-next');
+  return $form;
+}
+function _get_staff_list() {
+  $q = "SELECT user_id, staff_last_name, staff_first_name FROM veritas_staff";
+  $rs = db_query($q);
+  $staff_list = array(0 => "Select One");
+
+  while ($row = db_fetch_object($rs)) {
+    $staff_list[$row->user_id] = sprintf("%s %s", trim($row->staff_last_name), trim($row->staff_first_name));
+  }
+
+  return $staff_list;
+}
+function view_staff_form_submit($form, &$state) {
+  if ($state['clicked_button']['#id'] == 'edit-previous') {
+    $state['storage']['step']--;
+    return;
+  }
+  elseif ($state['clicked_button']['#id'] == 'edit-next') {
+    $state['storage']['values'][$state['storage']['step']]=$state['values'];
+    // Prevent the counter from going beyond 2
+    $state['storage']['step'] = (++$state['storage']['step'] > 2) ? 1 : $state['storage']['step'];
+    $state['#rebuild']=TRUE;
+  }
+  else
+    return;
+}
+function view_staff_form_validate($form, &$state) {
+  global $user;
+
+  if ($state['storage']['step'] == 1) {
+    $values=$form['lbl_or']['#post'];
+    $staff_no=$values['staff_no'];
+    if ($staff_no != '' && !$form['#post']['user_id']) {
+      $qry = "select * from {veritas_staff} where staff_no='%s'";
+      $res = db_query($qry, $staff_no);
+      if ($res && ($result = db_fetch_object($res))) {
+        $_SESSION['staff']['staff_no']=$result->staff_no;
+        $_SESSION['staff']['user_id']=$result->user_id;
+      }
+      else {
+        form_set_error('staff_no', "Staff number is not valid.");
+      }
+    }
+    else {
+      $qry = "select * from {veritas_staff} where user_id=%d";
+      $res = db_query($qry, $form['#post']['user_id']);
+      if ($res && ($result = db_fetch_object($res))) {
+        $_SESSION['staff']['user_id'] = $result->user_id;
+      }
+      else {
+        form_set_error('user_id', "Please select a staff from the list or enter the Staff Number.");
+      }
+    }
+  }
+}
+function view_staff_form2(&$obj) {
+  if (isset($_SESSION['staff']['user_id'])) {
+    $qry = "select * from {veritas_staff} where user_id=%d";
+    $res = db_query($qry, $_SESSION['staff']['user_id']);
+  }
+  else {
+    $qry = "select * from {veritas_staff} where staff_no='%s'";
+    $res = db_query($qry, $_SESSION['staff']['staff_no']);
+  }
+  if ($res && ($result=db_fetch_object($res))) {
+    $_SESSION['staff']['staff_info']=$result->user_id;
+    // TODO: fix the remaining queries
+    $q = "SELECT 
+    st.staff_type_name AS staff_type, 
+    vsp.name AS staff_position, 
+    vsg.amount AS salary, 
+    vsg.salary_grade_level AS grade_level, 
+    vs.appointment_date, 
+    vet.name AS employment_type, 
+    vs.staff_title, 
+    vs.staff_last_name, 
+    vs.staff_first_name, 
+    vs.staff_middle_name, 
+    vs.dob, vs.nationality, 
+    c.country_name AS country, 
+    s.state_name AS state, 
+    l.lga_name AS lga, 
+    vs.gender, 
+    vs.marital_status, 
+    vs.staff_maiden_name, 
+    vs.permanent_home_address, 
+    vs.permanent_city_address, 
+    vs.tel, 
+    vs.gsm, 
+    vs.gsm2, 
+    vs.university_email,
+    b.name AS bank_name, 
+    vs.account_id
+    FROM 
+    veritas_bank b,
+    lga l, 
+    veritas_staff_type st, 
+    veritas_staff vs, 
+    veritas_staff_position vsp, 
+    veritas_salary_grade vsg, 
+    veritas_employment_type vet, 
+    country c, 
+    state s 
+    WHERE s.state_id=vs.state 
+    AND l.lga_id=vs.lga 
+    AND b.id = vs.bank_id 
+    AND vet.id=employment_type_id 
+    AND c.country_id=vs.nationality 
+    AND vsg.id=vs.grade_level_id 
+    AND vsp.id=vs.position_id 
+    AND st.staff_type_id=vs.staff_type_id 
+    AND vs.user_id=%d";
+    $rs = db_query($q, $_SESSION['staff']['staff_info']);
+    $result2 = db_fetch_object($rs);
+  }
+  
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Staff Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['extra']['staff_no0'] = array(
+    '#type' => 'item',
+    '#title' => 'Staff No.',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['staff_no1'] = array(
+    '#type' => 'item',
+    '#value' => $result->staff_no,
+    '#size' => 20,
+    '#prefix' => '<td colspan="5">',
+    '#suffix' => '</td></tr>');
+  $form['extra']['type0'] = array(
+    '#type' => 'item',
+    '#title' => 'Staff Type',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['type1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->staff_type,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['posn0'] = array(
+    '#type' => 'item',
+    '#title' => 'Staff Position',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['posn1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->staff_position,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['grade0'] = array(
+    '#type' => 'item',
+    '#title' => 'Grade Level',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['grade1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->grade_level,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['extra']['salary0'] = array(
+    '#type' => 'item',
+    '#title' => 'Staff Salary',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['salary1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->salary,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['employ_type0'] = array(
+    '#type' => 'item',
+    '#title' => 'Employment Type',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['employ_type1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result2->employment_type,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['appt_date0'] = array(
+    '#type' => 'item',
+    '#title' => 'Appointment Date',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['appt_date1'] = array(
+    '#type' => 'item',
+    '#value' => date('jS F, Y', strtotime($result2->appointment_date)),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>',
+    '#size' => 15);
+  $form['personal'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Personal Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['personal']['fname0'] = array(
+    '#type' => 'item',
+    '#title' => 'First Name',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['fname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result2->staff_first_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Middle Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result2->staff_middle_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Last Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result2->staff_last_name,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['dob0'] = array(
+    '#type' => 'item',
+    '#title' => 'Date of Birth',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['dob1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->dob,
+    '#prefix' => '<td colspan="5">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['gender0'] = array(
+    '#type' => 'item',
+    '#title' => 'Gender',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['gender1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => ucfirst($result2->gender),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['origin0'] = array(
+    '#type' => 'item',
+    '#title' => 'State Of Origin',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['origin1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->state,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>',
+    '#attributes' => array('disabled' => 'disabled'));
+  $form['personal']['lga0'] = array(
+    '#type' => 'item',
+    '#title' => 'LGA Of Origin',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lga1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->lga,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['mstatus0'] = array(
+    '#type' => 'item',
+    '#title' => 'Marital Status',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus1'] = array(
+    '#type' => 'item',
+    '#value' => ucfirst($result->marital_status),
+    '#size' => 20,
+    '#prefix' => '<td colspan="5">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['address0'] = array(
+    '#type' => 'item',
+    '#title' => 'Permanent Address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['address1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $result2->permanent_home_address,
+    '#prefix' => '<td colspan="5">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['city0'] = array(
+    '#type' => 'item',
+    '#title' => 'City',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['city1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->permanent_city_address,
+    '#size' => 20,
+    '#prefix' => '<td colspan="5">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['tel0'] = array(
+    '#type' => 'item',
+    '#title' => 'Tel. No.',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['tel1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->tel,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile0'] = array(
+    '#type' => 'item',
+    '#title' => 'GSM No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->gsm,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile20'] = array(
+    '#type' => 'item',
+    '#title' => 'GSM No.(2)',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile21'] = array(
+    '#type' => 'item',
+    '#value' => $result2->gsm2,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['email0'] = array(
+    '#type' => 'item',
+    '#title' => 'E-mail address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['email1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->university_email,
+    '#size' => 20,
+    '#prefix' => '<td colspan="6">',
+    '#suffix' => '</td></tr></table>');
+  $form['payment'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Payment Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['payment']['bank0'] = array(
+    '#type' => 'item',
+    '#title' => 'Bank Name',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['payment']['bank1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->bank_name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['acct0'] = array(
+    '#type' => 'item',
+    '#title' => 'Account Number',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['acct1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->account_id,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>');
   $form['submit'] = array(
