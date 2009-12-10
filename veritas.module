@@ -112,6 +112,19 @@ function veritas_mail_receipt($f, $email, $name, $img) {
     'Content-Type' => 'text/html; charset=UTF-8'
   ));
   drupal_mail_send($message);
+
+  // We should send a copy of the emailed receipt to the bursar
+  // I know it's bad practice to hardcode certain parameters but I don't want this failing
+  // if there's no configured parameter for veritas_bursars_email
+  $admin_message = drupal_mail('veritas', 'receipt', variable_get('veritas_bursars_email', 'oparaei@veritas.edu.ng'), language_default(), array (), null, false);
+  $admin_message[body] = veritas_print_receipt($f, $img);
+  $admin_message[subject] = 'Transaction Receipt';
+  $admin_message[headers] = array_merge($admin_message[headers], array (
+    'MIME-Version' => '1.0',
+    'Content-Type' => 'text/html; charset=UTF-8'
+  ));
+  drupal_mail_send($admin_message);
+
   ///echo htmlspecialchars($message[body]);
   if ($f->trans_type == 'cfee') {
     $message = drupal_mail('veritas', 'preqbid', $email, language_default(), array (), null, false);
@@ -307,26 +320,26 @@ function veritas_admin_settings() {
     '#title' => 'Student Registration Fees',
     '#default_value' => variable_get('veritas_student_regfees', '100')
   );
-  $form[veritas_logo] = array (
+  $form['veritas_logo'] = array (
     '#type' => 'textfield',
     '#title' => 'logo image',
     '#description' => 'logo Used for sending mails.logo to be ftpd  and stored . enter the relative url from which the image is accessed.eg. http://yourdrupalinstallation/images/logo.png then enter here images/logo.png  ',
     '#default_value' => variable_get('veritas_logo', '')
   );
-  $form[veritas_tender_node] = array (
+  $form['veritas_tender_node'] = array (
     '#type' => 'textfield',
     '#size' => 6,
     '#title' => 'Tender Node ID',
     '#description' => 'You must create this node where tender documents are stored. it is the tender link.input its id here.if you leave it blank contractors will get error when trying to access the tender link',
     '#default_value' => variable_get('veritas_tender_node', '')
   );
-  $form[veritas_lot_upload_cost] = array (
+  $form['veritas_lot_upload_cost'] = array (
     '#type' => 'textfield',
     '#size' => 6,
     '#title' => 'Tender Upload cost',
     '#default_value' => variable_get('veritas_lot_upload_cost', 1000)
   );
-  $form[veritas_tender_adminuser] = array (
+  $form['veritas_tender_adminuser'] = array (
     '#type' => 'textfield',
     '#size' => 25,
     '#title' => 'Tender Admin Username',
@@ -397,6 +410,13 @@ function veritas_admin_settings() {
     '#default_value' => variable_get('veritas_allow_course_registrations', '1'),
     '#description' => t('This switch determines whether students are allowed to register for courses'),
     '#tree' => TRUE,
+  );
+
+  $form['veritas_bursars_email'] = array(
+    '#type' => 'textfield',
+    '#size' => 25,
+    '#title' => "Bursar's Email Address",
+    '#default_value' => variable_get('veritas_bursars_email', '')
   );
 
   return system_settings_form($form);
