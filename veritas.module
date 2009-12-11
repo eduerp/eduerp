@@ -644,7 +644,7 @@ function veritas_receipt($f) {
         	<td>Acceptance Fee:</td><td>NGN 100,000.00</td>
         </tr>
          <tr>
-        	<td>Accommodation Fee:</td><td>NGN <?php echo number_format(floatval(@$f->hostel_data->cost), 2); ?></td>
+        	<td>Accommodation Fee:</td><td>NGN <?php echo number_format(floatval(str_replace(',', '', @$f->hostel_data->cost)), 2); ?></td>
         </tr>
         <tr>
         	<td>Tuition Fee:</td><td>NGN 150,000.00</td>
@@ -666,7 +666,7 @@ function veritas_receipt($f) {
 
           $paid = $f->total_amount;
           $total_paid = floatval($trans_history->total_amount);
-          $outstanding = 100000 + 150000 + floatval(@$f->hostel_data->cost) + $amt;
+          $outstanding = 100000 + 150000 + floatval(str_replace(',', '', @$f->hostel_data->cost)) + $amt;
           $outstanding -= $total_paid;
         ?> 
         <tr>
