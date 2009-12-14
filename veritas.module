@@ -116,7 +116,7 @@ function veritas_mail_receipt($f, $email, $name, $img) {
   // We should send a copy of the emailed receipt to the bursar
   // I know it's bad practice to hardcode certain parameters but I don't want this failing
   // if there's no configured parameter for veritas_bursars_email
-  $admin_message = drupal_mail('veritas', 'receipt', variable_get('veritas_bursars_email', 'oparaei@veritas.edu.ng'), language_default(), array (), null, false);
+  $admin_message = drupal_mail('veritas', 'receipt', variable_get('veritas_bursars_email', 'bursar@veritas.edu.ng'), language_default(), array (), null, false);
   $admin_message[body] = veritas_print_receipt($f, $img);
   $admin_message[subject] = 'Transaction Receipt';
   $admin_message[headers] = array_merge($admin_message[headers], array (
@@ -284,7 +284,7 @@ function veritas_lga() {
 function veritas_table_head($str, $head) {
 
 }
-function veritas_states() {
+function veritas_states($state_id = 0) {
   static $ritles;
   if (!$titles) {
     $titles[0] = '';
@@ -292,7 +292,7 @@ function veritas_states() {
     while ($f = db_fetch_object($r))
       $titles[$f->state_id] = $f->state_name;
   }
-  return $titles;
+  return ($state_id) ? $titles[$state_id] : $titles;
 
 }
 function veritas_admin_settings() {

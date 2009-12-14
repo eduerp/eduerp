@@ -120,6 +120,19 @@ function staff_menu() {
     'access arguments' => array('sa student'),
     'type' => MENU_CALLBACK,
   );
+  $items['staff/studentpayments']=array(
+    'title' => 'View Student Payments',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('view_student_payments_form'),
+    'access arguments' => array('student payments'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['staff/download_studentpayments']=array(
+    'title' => 'Download Student Payments',
+    'page callback' => 'download_student_payments',
+    'access arguments' => array('student payments'),
+    'type' => MENU_CALLBACK,
+  );
   $items['staff/cleared']=array(
     'page callback' => 'staff_cleared_student',
     'access arguments' => array('staff clearance'),
@@ -233,7 +246,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student', 'staff data', 'staff search');
+  return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student', 'staff data', 'staff search', 'student payments');
 }
 
 function staff_assign_role_form_submit($form,&$state) {
@@ -1511,6 +1524,15 @@ function search_staff_form(&$obj) {
     return search_staff_form1($obj);
   else if ($st == 2)
     return search_staff_form2($obj);
+}
+function view_student_payments_form(&$obj) {
+  if (!$obj['storage']['step'])
+    $obj['storage']['step']=1;
+  $st=$obj['storage']['step'];
+  if ($st == 1 or $st == 3)
+    return view_student_payments_form1($obj);
+  else if ($st == 2)
+    return view_student_payments_form2($obj);
 }
 /*Function that validates staff login.*/
 function staff_login_form_validate($form, &$states) {
@@ -5476,4 +5498,609 @@ function _staff_rel($id = 0) {
   }
   return ($id) ? $titles[$id] : $titles;
 }
+function view_student_payments_form1(&$obj) {
+  if (isset($_SESSION['staff']['mat'])) {
+    unset($_SESSION['staff']['mat']);
+  }
+  if (isset($_SESSION['staff']['jamb'])) {
+    unset($_SESSION['staff']['jamb']);
+  }
+  $form['#title'] = t('Search Student');
+  $form['matno'] = array(
+    '#title' => 'Matriculation No .',
+    '#type' => 'textfield',
+    '#default_value' => $_POST['matno'],
+    '#size' => 20);
+  $form['lbl_or'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Or');
+  $form['lbl_or']['jambno'] = array(
+    '#title' => 'JAMB No .',
+    '#default_value' => $_POST['jambno'],
+    '#type' => 'textfield',
+    '#size' => 20);
+  $form['submit'] = array(
+    '#value' => 'Next',
+    '#type' => 'submit',
+    '#id' => 'edit-next');
+  $form['download'] = array(
+    '#type' => 'markup',
+    '#value' => '<input ' . drupal_attributes(array('type' => 'button', 'value' => 'Download Payments Data', 'onclick' => "location.href='".url('staff/download_studentpayments')."';")) . "/>");
+  return $form;
+}
+function view_student_payments_form_submit($form, &$state) {
+  if ($state['clicked_button']['#id'] == 'edit-previous') {
+    $state['storage']['step']--;
+    return;
+  }
+  elseif ($state['clicked_button']['#id'] == 'edit-next') {
+    $state['storage']['values'][$state['storage']['step']]=$state['values'];
+    // Prevent the counter from going beyond 2
+    $state['storage']['step'] = (++$state['storage']['step'] > 2) ? 1 : $state['storage']['step'];
+    $state['#rebuild']=TRUE;
+  }
+  else
+    return;
+}
+function view_student_payments_form_validate($form, &$state) {
+  global $user;
 
+  if ($state['storage']['step'] == 1) {
+    $values=$form['lbl_or']['#post'];
+    $jambno=$values['jambno'];
+    if ($form['#post']['matno'] != '' && $jambno!='') {
+      drupal_set_message('Please enter either Matriculation no or JAMB no.');
+    }
+    else {
+      if ($jambno != '' && $form['#post']['matno']=='') {
+        $qry = "select * from {admitted_student} where jambno='%s'";
+        $res = db_query($qry, $jambno);
+        if ($res && ($result = db_fetch_object($res))) {
+          $_SESSION['staff']['mat']=$result->matriculation_no;
+          $_SESSION['staff']['jamb']=$jambno;
+        }
+        else {
+          form_set_error('jambno', "Jamb number not valid.");
+        }
+      }
+      else {
+        $qry = "select * from {admitted_student} where matriculation_no='%s'";
+        $res = db_query($qry, $form['#post']['matno']);
+        if ($res && ($result = db_fetch_object($res))) {
+          $_SESSION['staff']['mat']=$result->matriculation_no;
+        }
+        else {
+          form_set_error('matno', "Matriculation number not valid.");
+        }
+      }
+    }
+  }
+}
+function view_student_payments_form2(&$obj) {
+  if (isset($_SESSION['staff']['jamb'])) {
+    $qry = "select * from {admitted_student} where jambno='%s'";
+    $res = db_query($qry, $_SESSION['staff']['jamb']);
+  }
+  else {
+    $qry = "select * from {admitted_student} where matriculation_no='%s'";
+    $res = db_query($qry, $_SESSION['staff']['mat']);
+  }
+  if ($res && ($result=db_fetch_object($res))) {
+    $_SESSION['staff']['stud_info']=$result->student_id;
+    $results = student_payment_data($result->student_id);
+    $debtor_prefix = "DEBTOR " . variable_get('veritas_current_session', '');
+
+    // Obtain transactions made this session
+    $q = "SELECT at.receipt_no, at.trans_amount, at.trans_time FROM {admitted_transaction} at, {session} s WHERE s.session_id=at.session_id AND at.student_id=%d AND s.sess_name='%s'";
+    $rs = db_query($q, $result->student_id, variable_get('veritas_current_session', ''));
+    $payments = array();
+    while ($row = db_fetch_array($rs)):
+      $payments[] = $row;
+    endwhile;
+  }
+  $form['extra'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Admission Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['extra']['college0'] = array(
+    '#type' => 'item',
+    '#title' => 'College',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['college1'] = array(
+    '#type' => 'item',
+    '#value' => $results['admission_college'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['dept0'] = array(
+    '#type' => 'item',
+    '#title' => 'Department',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['dept1'] = array(
+    '#type' => 'item',
+    '#value' => $results['admission_department'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['programme0'] = array(
+    '#type' => 'item',
+    '#title' => 'Programme',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['programme1'] = array(
+    '#type' => 'item',
+    '#value' => $results['admission_programme'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['extra']['study_mode0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mode of Study',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['extra']['study_mode1'] = array(
+    '#type' => 'item',
+    '#value' => $results['admission_mode_of_study'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['entry_mode0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mode of Entry',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['entry_mode1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['admission_mode_of_entry'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['entry_year0'] = array(
+    '#type' => 'item',
+    '#title' => 'Year of Study',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['extra']['entry_year1'] = array(
+    '#type' => 'item',
+    '#value' => $results['admission_year_of_study'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>',
+    '#size' => 15);
+  $form['personal'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Personal Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['personal']['matno0'] = array(
+    '#type' => 'item',
+    '#title' => 'Matriculation No.',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['matno1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['matriculation_no'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['jambno0'] = array(
+    '#type' => 'item',
+    '#title' => 'JAMB No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['jambno1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['jamb_no'],
+    '#prefix' => '<td colspan="3">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['fname0'] = array(
+    '#type' => 'item',
+    '#title' => 'First Name',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['fname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['first_name'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Middle Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['middle_name'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname0'] = array(
+    '#type' => 'item',
+    '#title' => 'Last Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['lname1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['last_name'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['personal']['dob0'] = array(
+    '#type' => 'item',
+    '#title' => 'Date of Birth',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['dob1'] = array(
+    '#type' => 'item',
+    '#value' => $results['birth_date'],
+    '#prefix' => '<td colspan="5">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['gender0'] = array(
+    '#type' => 'item',
+    '#title' => 'Gender',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['gender1'] = array(
+    '#type' => 'item',
+    '#size' => 20,
+    '#value' => $results['gender'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['origin0'] = array(
+    '#type' => 'item',
+    '#title' => 'State Of Origin',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['origin1'] = array(
+    '#type' => 'item',
+    '#value' => $results['state_of_origin'],
+    '#prefix' => '<td colspan="3">',
+    '#suffix' => '</td></tr>');
+  $form['personal']['mstatus0'] = array(
+    '#type' => 'item',
+    '#title' => 'Marital Status',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['personal']['mstatus1'] = array(
+    '#type' => 'item',
+    '#value' => $results['marital_status'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mobile No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['mobile1'] = array(
+    '#type' => 'item',
+    '#value' => $results['personal_mobile'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['email0'] = array(
+    '#type' => 'item',
+    '#title' => 'E-mail address',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['personal']['email1'] = array(
+    '#type' => 'item',
+    '#value' => $results['personal_email'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['sponsor'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Sponsor Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['sponsor']['sponsor0'] = array(
+    '#type' => 'item',
+    '#title' => 'Sponsor Name',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['sponsor1'] = array(
+    '#type' => 'item',
+    '#value' => $results['sponsor_name'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['tel0'] = array(
+    '#type' => 'item',
+    '#title' => 'Telephone No.',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['tel1'] = array(
+    '#type' => 'item',
+    '#value' => $results['sponsor_tel'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['mobile0'] = array(
+    '#type' => 'item',
+    '#title' => 'Mobile',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['mobile1'] = array(
+    '#type' => 'item',
+    '#value' => $results['sponsor_mobile'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['sponsor']['address0'] = array(
+    '#type' => 'item',
+    '#title' => 'Address',
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['address1'] = array(
+    '#type' => 'item',
+    '#value' => $results['sponsor_address'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['city0'] = array(
+    '#type' => 'item',
+    '#title' => 'City',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['sponsor']['city1'] = array(
+    '#type' => 'item',
+    '#value' => $results['sponsor_city'],
+    '#prefix' => '<td colspan="3">',
+    '#suffix' => '</td></tr></table>');
+  $form['hostel'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Accomodation Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['hostel']['hostel0'] = array(
+    '#type' => 'item',
+    '#title' => 'Hostel',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['hostel']['hotel1'] = array(
+    '#type' => 'item',
+    '#value' => $results['hostel_name'],
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['hostel']['type0'] = array(
+    '#type' => 'item',
+    '#title' => 'Space Type',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['hostel']['type1'] = array(
+    '#type' => 'item',
+    '#value' => $results['hostel_type'],
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  $form['payment'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Payment Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['payment']['accomodation0'] = array(
+    '#type' => 'item',
+    '#title' => $debtor_prefix . " ACCOMODATION",
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['payment']['accomodation1'] = array(
+    '#type' => 'item',
+    '#value' => number_format($results['debtor_accomodation'],2),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['tuition0'] = array(
+    '#type' => 'item',
+    '#title' => $debtor_prefix . " TUITION" ,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['tuition1'] = array(
+    '#type' => 'item',
+    '#value' => number_format($results['debtor_tuition'],2),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['payment']['others0'] = array(
+    '#type' => 'item',
+    '#title' => $debtor_prefix . " OTHER CHARGES",
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['payment']['others1'] = array(
+    '#type' => 'item',
+    '#value' => number_format($results['debtor_others'],2),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['total_session0'] = array(
+    '#type' => 'item',
+    '#title' => "TOTAL SESSION FEES PAYABLE",
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['total_session1'] = array(
+    '#type' => 'item',
+    '#value' => number_format($results['total_session_payable'], 2),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr>');
+  $form['payment']['previous_sessions0'] = array(
+    '#type' => 'item',
+    '#title' => variable_get('veritas_current_session', '') . " FEE DEBT B/F",
+    '#prefix' => '<tr><td>',
+    '#suffix' => '</td>');
+  $form['payment']['previous_sessions1'] = array(
+    '#type' => 'item',
+    '#value' => number_format($results['total_outstanding_payable'], 2),
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['total_paybal0'] = array(
+    '#type' => 'item',
+    '#title' => "TOTAL FEES PAYABLE",
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['total_payable1'] = array(
+    '#type' => 'item',
+    '#value' => number_format($results['total_session_payable'] + $results['total_outstanding_payable'], 2),
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
+  // Section for payments
+  $form['payment_history'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Payments History',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $output = "";
+  foreach ($payments as $payment):
+    $output .= sprintf("<tr><td>%s</td><td>%s</td><td>%s</td></tr>", $payment['trans_time'], $payment['receipt_no'], number_format($payment['trans_amount'], 2));
+  endforeach;
+  $form['payment_history']['history'] = array(
+    '#type' => 'item',
+    '#value' => $output,
+    '#prefix' => '<table><tr><th>Date</th><th>Receipt No.</th><th>Amount Paid</th></tr>',
+    '#suffix' => '</table>');
+  $form['submit'] = array(
+    '#id' => 'edit-next',
+    '#value' => 'Continue',
+    '#type' => 'submit');
+  $form['download'] = array(
+    '#type' => 'markup',
+    '#value' => '<input ' . drupal_attributes(array('type' => 'button', 'value' => 'Download Payments Data', 'onclick' => "location.href='".url('staff/download_studentpayments')."';")) . "/>");
+  $form['#multistep']=TRUE;
+  $form['#redirect']=FALSE;
+  return $form;
+}
+
+function student_payment_data($student_id) {
+  $res = db_query("SELECT * FROM {admitted_student} WHERE student_id=%d", $student_id);
+  $return = array();
+
+  if ($result = db_fetch_object($res)):
+    $return['first_name'] = $result->first_name;
+    $return['last_name'] = $result->last_name;
+    $return['middle_name'] = $result->middle_name;
+    $return['matriculation_no'] = $result->matriculation_no;
+    $return['jamb_no'] = $result->jambno;
+    $return['birth_date'] = $result->dob;
+    $return['gender'] = $result->gender;
+    $return['state_of_origin'] = veritas_states($result->state_origin);
+    $return['marital_status'] = $result->marital_status;
+    $return['personal_mobile'] = $result->mobile_number;
+    $return['personal_email'] = $result->email_address;
+
+    $qry2 = "SELECT a.programme_id, a.department_id, a.programme_name, b.department_name, c.college_abbreviation, c.college_name FROM `programme` AS a, `department` AS b, `college` c WHERE a.department_id=b.department_id AND b.college_id=c.college_id AND a.programme_id=%d";
+    $res2 = db_query($qry2, $result->first_choice);
+    $result2 = db_fetch_object($res2);
+
+    $return['admission_college'] = $result2->college_abbreviation;
+    $return['admission_department'] = $result2->department_name;
+    $return['admission_programme'] = $result2->programme_name;
+    $return['admission_mode_of_study'] = $result->mode_of_study;
+    $return['admission_mode_of_entry'] = $result->mode_of_entry;
+    $return['admission_year_of_study'] = $result->yearofentry;
+
+    $qry4 = "SELECT * FROM {admitted_sponsor} WHERE student_id=%d";
+    $res4 = db_query($qry4, $student_id);
+    $result4 = db_fetch_object($res4);
+    $return['sponsor_name'] = $result4->name;
+    $return['sponsor_tel'] = $result4->telephone;
+    $return['sponsor_mobile'] = $result4->mobile;
+    $return['sponsor_address'] = $result4->address1;
+    $return['sponsor_city'] = $result4->city;
+
+    $qry5 = "SELECT asa.college_id, ah.cost, ah.name, at.name AS type FROM admitted_student_accomodation asa, 
+    accomodation_types at, accomodation_hostels ah WHERE asa.student_id=%d AND ah.id=asa.hostel_id AND at.id=ah.accomodation_type_id";
+    $res5 = db_query($qry5, $result->student_id);
+    $result_accomodation = db_fetch_object($res5);
+    $return['hostel_name'] = $result_accomodation->name;
+    $return['hostel_type'] = $result_accomodation->type;
+
+
+    $qry6 = "SELECT sum(at.trans_amount) AS total_amount FROM admitted_transaction at, session s WHERE 
+    at.student_id = %d AND at.session_id = s.session_id AND s.sess_name = '%s'";
+    $res6 = db_query($qry6, $result->student_id, variable_get('veritas_current_session', ''));
+    $result_session_payment = db_fetch_object($res6);
+    $debtor_acceptance = 100000;
+    $debtor_accomodation = str_replace(',', '', $result_accomodation->cost);
+    $debtor_tuition = 150000;
+    $debtor_others = ($result_accomodation->college_id == 1) ? 45000 : 50000;
+    $total_debt = $debtor_acceptance + $debtor_accomodation + $debtor_tuition + $debtor_others;
+    $total_paid = $result_session_payment->total_amount;
+
+    if ($total_paid <= $debtor_acceptance):
+      $debtor_acceptance -= $total_paid;
+    elseif ($total_paid <= ($debtor_acceptance + $debtor_accomodation) && $total_paid > $debtor_acceptance):
+      $debtor_acceptance = 0;
+      $debtor_accomodation = ($debtor_acceptance + $debtor_accomodation) - $total_paid;
+    elseif ($total_paid <= ($debtor_acceptance + $debtor_accomodation + $debtor_tuition) && $total_paid > ($debtor_acceptance + $debtor_accomodation)):
+      $debtor_acceptance = $debtor_accomodation = 0;
+      $debtor_tuition = ($debtor_acceptance + $debtor_accomodation + $debtor_tuition) - $total_paid;
+    elseif ($total_paid <= ($debtor_acceptance + $debtor_accomodation + $debtor_tuition + $debtor_others) && $total_paid > ($debtor_acceptance + $debtor_accomodation + $debtor_tuition)):
+      $debtor_acceptance = $debtor_accomodation = $debtor_tuition = 0;
+      $debtor_others = ($debtor_acceptance + $debtor_accomodation + $debtor_tuition + $debtor_others) - $total_paid;
+    else:
+      $debtor_acceptance = $debtor_accomodation = $debtor_tuition = $debtor_others = 0;
+    endif;
+
+    $total_session_payable = $debtor_acceptance + $debtor_tuition + $debtor_accomodation + $debt_others;
+
+    // Calculate total amount owed from previous sessions omitting current session
+    // this is going to be a problem subsequently when payment fees change
+    $qry7 = "SELECT s.sess_name, SUM(at.trans_amount) AS total FROM admitted_transaction at, session s, session s2 WHERE at.student_id=%d AND at.session_id=s.session_id AND at.session_id != s2.session_id AND s2.sess_name='%s' GROUP BY at.session_id";
+    $res7 = db_query($qry7, $result->student_id, variable_get('veritas_current_session', ''));
+    $total_outstanding_previous_sessions = 0;
+    while ($result_payment = db_fetch_array($res7)):
+      $total_outstanding_previous_sessions += ($total_debt - $result_payment['total']);
+    endwhile;
+    $return['debtor_acceptance'] = $debtor_acceptance;
+    $return['debtor_accomodation'] = $debtor_accomodation;
+    $return['debtor_tuition'] = $debtor_tuition;
+    $return['debtor_others'] = $debtor_others;
+    $return['total_session_paid'] = $total_paid;
+    $return['total_session_payable'] = $total_session_payable;
+    $return['total_outstanding_payable'] = $total_outstanding_previous_sessions;
+  endif;
+
+  return $return;
+}
+
+function download_student_payments() {
+  // This function provides a means to download all payment data for students
+  $q = "SELECT student_id FROM {admitted_student}";
+  $rs = db_query($q);
+
+  header('Content-Type: text/csv');
+  header('Content-Disposition: attachment;filename=payments.csv');
+
+  echo "firstname,middlename,lastname,course_of_study,year_of_study,college,hostel,space_type,birth_date,gender,marital_status,";
+  echo "state_of_origin,student_telephone,student_email,sponsor_name,sponsor_address,sponsor_tel,sponsor_mobile,matriculation_no,jamb_no,";
+  echo "debtor_tuition,debtor_accomodation,debtor_others,total_session_debt,total_outstanding_debt,grand_total_debt\n";
+
+  while ($student_row = db_fetch_array($rs)):
+    $spd = student_payment_data($student_row['student_id']);
+    $output = sprintf("\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",\"%s\",%f,%f,%f,%f,%f,%f",
+      $spd['first_name'],
+      $spd['middle_name'],
+      $spd['last_name'],
+      $spd['admission_programme'],
+      $spd['admission_year_of_study'],
+      $spd['admission_college'],
+      $spd['hostel_name'],
+      $spd['hostel_type'],
+      $spd['birth_date'],
+      $spd['gender'],
+      $spd['marital_status'],
+      $spd['state_of_origin'],
+      $spd['personal_mobile'],
+      $spd['personal_email'],
+      $spd['sponsor_name'],
+      $spd['sponsor_address'],
+      $spd['sponsor_tel'],
+      $spd['sponsor_mobile'],
+      $spd['matriculation_no'],
+      $spd['jamb_no'],
+      $spd['debtor_tuition'],
+      $spd['debtor_accomodation'],
+      $spd['debtor_others'],
+      $spd['total_session_payable'],
+      $spd['total_outstanding_payable'],
+      $spd['total_session_payable'] + $spd['total_outstanding_payable']);
+    echo $output . "\n";
+  endwhile;
+}
