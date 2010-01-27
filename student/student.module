@@ -4091,7 +4091,8 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
 
     // If we made it this far it's safe to record this file in the database.
     $file->uid = $user->uid;
-    $file->status = FILE_STATUS_TEMPORARY;
+    // I think we want to make this permanent
+    $file->status = FILE_STATUS_PERMANENT;
     $file->timestamp = time();
     drupal_write_record('files', $file);
 
