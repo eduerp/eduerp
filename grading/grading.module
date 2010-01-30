@@ -108,6 +108,15 @@ function grading_menu() {
     'type' => MENU_CALLBACK,
   );
 
+// DEBUG/TEST ONLY
+  $items['grading/testgrants'] = array(
+    'title'=>'TEST GRANTS',
+    'page callback' => 'drupal_get_form',
+    'page arguments'=> array('grading_testgrants_form'),
+    'access arguments' => array('view grading'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   return $items;
 }
 
@@ -205,6 +214,117 @@ function grading_field_access($op, $field, $account, $node = NULL) {
       return FALSE;
    }
   return TRUE;
+}
+
+
+/**
+ * Implementation of hook_node_access_records().
+ */
+function grading_node_access_records($node) {
+  $grants = array();
+
+  if ($node->type === 'student_grades') {
+    $course_instance = $node->field_course_instance[0]['nid'];
+    $student_gpa     = $node->field_student_gpa[0]['nid'];
+
+    $sql = "SELECT
+      c.field_department_nid_nid AS course_department_id,
+      d_course.field_college_id_nid AS course_college_id,
+      p.field_department_id_nid AS student_department_id,
+      d_student.field_college_id_nid AS student_college_id
+    FROM
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {content_type_department} d_course,
+      {content_type_student_gpa} gpa,
+      {content_type_program} p,
+      {content_type_department} d_student
+    WHERE
+      ci.nid=%d AND
+      c.nid=ci.field_course_id_nid AND
+      d_course.nid=c.field_department_nid_nid AND
+      gpa.nid=%d AND
+      p.nid=gpa.field_program_ref_gpa_nid AND
+      d_student.nid=p.field_department_id_nid
+    LIMIT 1";
+    $result = db_query($sql, $course_instance, $student_gpa);
+
+    if ($row = db_fetch_object($result)) {
+
+//field_mat_no_uid=664 (first anyway)
+//ci.nid=3387
+//gpa.nid=3388 (first anyway)
+//program 3386
+//+----------------------+-------------------+-----------------------+--------------------+
+//| course_department_id | course_college_id | student_department_id | student_college_id |
+//+----------------------+-------------------+-----------------------+--------------------+
+//|                 4726 |              4725 |                  4726 |               4725 |
+//+----------------------+-------------------+-----------------------+--------------------+
+
+      $grants[] = array(
+        'realm' => 'student',
+        'gid' => $node->field_mat_no[0]['uid'],
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+
+      $grants[] = array(
+        'realm' => 'course_instance',
+        'gid' => $course_instance,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+
+      $grants[] = array(
+        'realm' => 'department',
+        'gid' => $row->course_department_id,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+
+      if ($row->course_department_id != $row->student_department_id) {
+        $grants[] = array(
+          'realm' => 'department',
+          'gid' => $row->student_department_id,
+          'grant_view' => TRUE,
+          'grant_update' => FALSE,
+          'grant_delete' => FALSE,
+          'priority' => 0,
+        );
+      }
+
+      $grants[] = array(
+        'realm' => 'college',
+        'gid' => $row->course_college_id,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+
+      if ($row->course_college_id != $row->student_college_id) {
+        $grants[] = array(
+          'realm' => 'college',
+          'gid' => $row->student_college_id,
+          'grant_view' => TRUE,
+          'grant_update' => FALSE,
+          'grant_delete' => FALSE,
+          'priority' => 0,
+        );
+      }
+    }
+    else {
+      error_log("Failed to find department and college records for student_grades $node->nid");
+    }
+  }
+
+  return $grants;
 }
 
 
@@ -1716,4 +1836,58 @@ function grading_cron() {
     db_query("DELETE FROM cron_notification WHERE approver_uid=%d AND student_uid=%d AND gradestext='%s' AND programme='%s'", $notification->approver_uid, $notification->student_uid, $notification->gradestext, $notification->programme);
   }
 }
+
+
+
+
+//TEST
+function grading_testgrants_form_form(&$obj) {
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Generate Test student_grades node for Grants Test');
+
+  return $form;
+}
+
+
+function grading_testgrants_form_form_submit($form, &$state) {
+    $node = new stdClass();
+    $node->type                                    = 'student_grades';
+    $node->uid                                     = 1;  // Admin
+    $node->status                                  = 1;  // Published
+    $node->promote                                 = 0;
+    $node->sticky                                  = 0;
+    $node->comment                                 = 0;
+    $node->title                                   = 'TEST FOR GRANTS';
+    $node->field_mat_no[0]['uid']                  = 664;
+    $node->field_course_instance[0]['nid']         = 3387;
+    $node->field_student_gpa[0]['nid']             = 3388;
+    $node->field_ca1[0]['value']                   = 0;
+    $node->field_ca1forstudent[0]['value']         = 0;
+    $node->field_ca1locked[0]['value']             = 0;
+    $node->field_ca2[0]['value']                   = 0;
+    $node->field_ca2forstudent[0]['value']         = 0;
+    $node->field_ca2locked[0]['value']             = 0;
+    $node->field_ca3[0]['value']                   = 0;
+    $node->field_ca3forstudent[0]['value']         = 0;
+    $node->field_ca3locked[0]['value']             = 0;
+    $node->field_ca4[0]['value']                   = 0;
+    $node->field_ca4forstudent[0]['value']         = 0;
+    $node->field_ca4locked[0]['value']             = 0;
+    $node->field_exam_score[0]['value']            = 0;
+    $node->field_examscoreforstudent[0]['value']   = 0;
+    $node->field_examscorelocked[0]['value']       = 0;
+    $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
+    $node->field_totalscoreforstudent[0]['value']  = '-';
+    $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
+    $node->field_gradeforstudent[0]['value']       = '-';
+    $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
+    $node->field_gradepointforstudent[0]['value']  = '-';
+    node_save($node);
+
+
+  drupal_set_message('Submitted<br />');
+}
+
+
+
 ?>
