@@ -222,7 +222,7 @@ function grading_field_access($op, $field, $account, $node = NULL) {
  */
 function grading_node_access_records($node) {
   $grants = array();
-
+error_log("HERE grading_node_access_records nid: {$node->nid}");
   if ($node->type === 'student_grades') {
     $course_instance = $node->field_course_instance[0]['nid'];
     $student_gpa     = $node->field_student_gpa[0]['nid'];
