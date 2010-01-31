@@ -219,6 +219,8 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
 /**
  * Implementation of hook_node_access_records().
+ *
+ * Called on node save to add permissions for the node
  */
 function grading_node_access_records($node) {
   $grants = array();
@@ -325,6 +327,33 @@ error_log("row found: {$row->course_department_id} {$row->course_college_id}");
       error_log("Failed to find department and college records for student_grades $node->nid");
     }
   }
+
+  return $grants;
+}
+
+
+/**
+ * Implementation of hook_node_grants().
+ *
+ * Called on node access to see if what permissions a user has
+ */
+function grading_node_grants($account, $op) {
+
+  $grants = array();
+
+  $grants['student'] = array($account->uid);
+
+//if I have rights to access grading for a course instance specify them here
+//select all ci for which I am a lecturer
+//  $grants['course_instance'] = array(nid,nid...);
+//
+//If I have rights to access grading for a department, specify it here
+//If I am a HOD, add my department here
+//  $grants['department'] = array(nid);
+//
+//If I have rights to access grading for a college, specify it here
+//If I am a Dean, add my college here
+//  $grants['college'] = array(nid);
 
   return $grants;
 }
