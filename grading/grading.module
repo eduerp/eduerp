@@ -224,11 +224,10 @@ function grading_field_access($op, $field, $account, $node = NULL) {
  */
 function grading_node_access_records($node) {
   $grants = array();
-error_log("HERE grading_node_access_records nid: {$node->nid} type: {$node->type}");
+
   if ($node->type === 'student_grades') {
     $course_instance = $node->field_course_instance[0]['nid'];
     $student_gpa     = $node->field_student_gpa[0]['nid'];
-error_log("course_instance: {$course_instance} student_gpa: {$student_gpa}");
 
     $sql = "SELECT
       c.field_department_nid_nid AS course_department_id,
@@ -253,18 +252,6 @@ error_log("course_instance: {$course_instance} student_gpa: {$student_gpa}");
     $result = db_query($sql, $course_instance, $student_gpa);
 
     if ($row = db_fetch_object($result)) {
-error_log("row found: {$row->course_department_id} {$row->course_college_id}");
-
-//field_mat_no_uid=664 (first anyway)
-//ci.nid=3387
-//gpa.nid=3388 (first anyway)
-//program 3386
-//+----------------------+-------------------+-----------------------+--------------------+
-//| course_department_id | course_college_id | student_department_id | student_college_id |
-//+----------------------+-------------------+-----------------------+--------------------+
-//|                 4726 |              4725 |                  4726 |               4725 |
-//+----------------------+-------------------+-----------------------+--------------------+
-
       $grants[] = array(
         'realm' => 'student',
         'gid' => $node->field_mat_no[0]['uid'],
@@ -327,6 +314,49 @@ error_log("row found: {$row->course_department_id} {$row->course_college_id}");
       error_log("Failed to find department and college records for student_grades $node->nid");
     }
   }
+  elseif ($node->type === 'student_gpa') {
+    $program = $node->field_program_ref_gpa[0]['nid'];
+
+    $sql = "SELECT
+      p.field_department_id_nid AS department_id,
+      d.field_college_id_nid AS college_id
+    FROM
+      {content_type_program} p,
+      {content_type_department} d
+    WHERE
+      p.nid=%d AND
+      d.nid=p.field_department_id_nid
+    LIMIT 1";
+    $result = db_query($sql, $program);
+
+    if ($row = db_fetch_object($result)) {
+      // Student never needs to see this directly, so will not be given rights
+      // Lecturers not allowed to see GPA directly
+
+      $grants[] = array(
+        'realm' => 'department',
+        'gid' => $row->department_id,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+
+      $grants[] = array(
+        'realm' => 'college',
+        'gid' => $row->college_id,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+    }
+    else {
+      error_log("Failed to find department and college records for student_gpa $node->nid");
+    }
+  }
+  //possible...
+  //else do grants for all other node types???
 
   return $grants;
 }
