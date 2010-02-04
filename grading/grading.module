@@ -375,27 +375,143 @@ function grading_node_access_records($node) {
  * Called on node access to see if what permissions a user has
  */
 function grading_node_grants($account, $op) {
+  static $grantsbyuid = array(); // Cache
 
   $grants = array();
 
+  if (empty($account->uid)) return $grants;
+
+  if (isset($grantsbyuid[$account->uid])) return $grantsbyuid[$account->uid];
+
+  $ci_nids = array();
+  $department_ids = array();
+  $college_ids = array();
+  $university = false;
+  $universityapproved = false;
+
+  $sql = "SELECT nid FROM {content_type_course_instance} WHERE field_lecturer_uid=%d OR field_lecturer_alternate_uid=%d";
+  $nids = db_query($sql, $account->uid, $account->uid);
+  while ($nid = db_fetch_object($nids)) {
+    $ci_nids[] = $nid->nid;
+  }
+
+  $sql = "SELECT * FROM {eduerp_roles} WHERE uid=%d";
+  $roles = db_query($sql, $account->uid);
+  while ($role = db_fetch_object($roles)) {
+
+    $viewdepartmentgrading = array('Head of Department', 'Department Examination Officer');
+    if (in_array($role->role, $viewdepartmentgrading)) $department_ids[] = $role->department_id;
+
+    $viewcollegegrading = array('Dean of College', 'College Examination Officer');
+    if (in_array($role->role, $viewcollegegrading)) $college_ids[] = $role->college_id;
+
+    $viewuniversitygrading = array('Registrar', 'Vice-Chancellor', 'University Examination Officer');
+    if (in_array($role->role, $viewuniversitygrading)) $university = true;
+
+    $viewuniversityapprovedgrading = array('Staff that can View Approved Grades');
+    if (in_array($role->role, $viewuniversityapprovedgrading)) $universityapproved = true;
+  }
+
+  // Student is allowed see own student_grades record (fields shown will be limited by grading_field_access() )
   $grants['student'] = array($account->uid);
 
-//if I have rights to access grading for a course instance specify them here
-//select all ci for which I am a lecturer
-//  $grants['course_instance'] = array(nid,nid...);
-//
-//If I have rights to access grading for a department, specify it here
-//If I am a HOD, add my department here
-//also "Departmental Examination Officer Role" or "Departmental Secretary Role".
-//  $grants['department'] = array(nid);
-//
-//If I have rights to access grading for a college, specify it here
-//If I am a Dean, add my college here
-//also "College Examination Officer Role" or "College Secretary Role".
-//  $grants['college'] = array(nid);
+  // user is a lecturer in these course_instance(s), so can see them
+  if (!empty($ci_nids)) {
+    $grants['course_instance'] = $ci_nids;
+  }
+
+  if (!empty($department_ids)) {
+    // This user has departmental role(s) that allows them to see in progress grading
+    $grants['department'] = array_unique($department_ids);
+  }
+
+  if (!empty($college_ids)) {
+    // This user has college role(s) that allows them to see in progress grading
+    $grants['college'] = array_unique($college_ids);
+  }
+
+  if ($university) {
+    // This user has a university role that allows them to see in progress grading
+    $grants['university'] = array(0); // This will match the nid=0, gid=0 system-wide grant
+
+    // Once off/Install SQL to allow this to work: INSERT INTO node_access (nid, gid, realm, grant_view, grant_update, grant_delete) VALUES (0, 0, 'university', 1, 0, 0);
+  }
+
+  if ($universityapproved) { // Could instead base this on the Drupal Staff role (if all such should be allowed)
+    // This user has a university role that allows them to see approved grading
+    $grants['universityapproved'] = array(0); // This will match the gid=0 node grant
+  }
+
+  $grantsbyuid[$account->uid] = $grants;
 
   return $grants;
+
+//  // I am not sure profile is guaranteed to be loaded, so I am accessing department_id profile field directly
+//  $sql = "SELECT pv.value AS department_id, d.field_college_id_nid AS college_id FROM {profile_fields} pf, {profile_values} pv, {content_type_department} d WHERE pv.uid=%d AND pv.fid=pf.fid AND pf.name='profile_department_id' AND pv.value=d.nid LIMIT 1";
+//  $nids = db_query($sql, $account->uid);
+//  while ($nid = db_fetch_object($nids)) {
+//    $department_ids[] = $nid->department_id;
+//    $college_ids[] = $nid->college_id;
+//  }
+//
+//  $rolenames = array();
+//  $sql = "SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.uid=%d AND ur.rid=r.rid";
+//  $roles = db_query($sql, $account->uid);
+//  while ($role = db_fetch_object($roles)) {
+//    $rolenames[] = $role->name;
+//  }
+//
+//  // Student is allowed see own student_grades record (fields shown will be limited by grading_field_access() )
+//  $grants['student'] = array($account->uid);
+//
+//  // user is a lecturer in these course_instance(s), so can see them
+//  if (!empty($ci_nids)) {
+//    $grants['course_instance'] = $ci_nids;
+//  }
+//
+//  $department_roles = array('HOD');
+//  //also "Departmental Examination Officer Role" or "Departmental Secretary Role"???
+//
+//  if (!empty(array_intersect($department_roles, $rolenames))) {
+//    // This user has a departmental role that allows them to see in progress grading
+//    if (!empty($department_ids)) {
+//      $grants['department'] = $department_ids;
+//    }
+//  }
+//
+//  $college_roles = array('Dean');
+//  //also "College Examination Officer Role" or "College Secretary Role"???
+//
+//  if (!empty(array_intersect($college_roles, $rolenames))) {
+//    // This user has a college role that allows them to see in progress grading
+//    if (!empty($college_ids)) {
+//      $grants['college'] = $college_ids;
+//    }
+//  }
+//
+//  $university_roles = array('VC', 'Registrar');
+//  if (!empty(array_intersect($university_roles, $rolenames))) {
+//    // This user has a university role that allows them to see in progress grading
+//    $grants['university'] = array(0); // This will match the nid=0, gid=0 system-wide grant
+//  }
+//
+//  if (!empty($department_ids)) {
+//    // This allows them to see approved grading
+//    $grants['departmentapproved'] = $department_ids;
+//  }
+//
+//  if (!empty($college_ids)) {
+//    // This allows them to see approved grading (currently redundant as they will have a grant for 'departmentapproved')
+//    $grants['collegeapproved'] = $college_ids;
+//  }
+//
+//  $university_roles = array('nondeptstaff1', 'nondeptstaff2');
+//  if (!empty(array_intersect($university_roles, $rolenames))) {
+//    // This user has a university role that allows them to see approved grading
+//    $grants['universityapproved'] = array(0); // This will match the gid=0 node grant
+//  }
 }
+
 
 
 function grading_stats_department_form(&$obj) {
