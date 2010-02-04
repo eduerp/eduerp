@@ -129,8 +129,8 @@ function grading_menu() {
 function grading_field_access($op, $field, $account, $node = NULL) {
   global $user;
   static $locked = array(); // Cache
-  static $sg_nids = array();
-  static $gpa_nids = array();
+//  static $sg_nids = array();
+//  static $gpa_nids = array();
 
   if (is_null($account)) {
     $account = $user;
@@ -143,42 +143,49 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
   switch ($op) {
     case 'view':
-      if (user_access('view grading', $account)) return TRUE; // ALL content types are treated as grading, if more are added these can be differentiated later
+      if (empty($node)) return TRUE; // I believe this is for the headings
 
-      if (empty($node)) return TRUE; // I belive this is for the headings
+      $sg_fields = array('field_ca1', 'field_ca2', 'field_ca3', 'field_ca4', 'field_exam_score', 'field_total_score', 'field_gradepoint', 'field_grade');
+      if (in_array('Student', $account->roles) && in_array($field['field_name'], $sg_fields)) return FALSE; // Student not allowed access these even though it will be for their own record!
 
-      // Allow these regardless
-      $ci_fields = array('field_course_code', 'field_course_title', 'field_credit_load', 'field_sess_name', 'field_semester_name');
-      if (in_array($field['field_name'], $ci_fields)) return TRUE;
+      return TRUE;
 
-      $sg_fields = array('field_ca1forstudent', 'field_ca2forstudent', 'field_ca3forstudent', 'field_ca4forstudent', 'field_examscoreforstudent', 'field_totalscoreforstudent', 'field_gradepointforstudent', 'field_gradeforstudent');
-      if (in_array($field['field_name'], $sg_fields)) {
-        if (empty($sg_nids)) { // Not cached...
-          // Find content that is for this user (assuming they are a student)
-          $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_mat_no_uid=%d";
-          $nids = db_query($sql, $account->uid);
-          while ($nid = db_fetch_object($nids)) {
-            $sg_nids[] = $nid->nid;
-          }
-        }
-        if (!empty($node->nid) && in_array($node->nid, $sg_nids)) return TRUE;
-      }
-
-      $gpa_fields = array('field_gpaforstudent', 'field_cgpaforstudent');
-      if (in_array($field['field_name'], $gpa_fields)) {
-        if (empty($gpa_nids)) {
-          $sql = "SELECT nid FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid=%d";
-          $nids = db_query($sql, $account->uid);
-          while ($nid = db_fetch_object($nids)) {
-            $gpa_nids[] = $nid->nid;
-          }
-        }
-        if (!empty($node->nid) && in_array($node->nid, $gpa_nids)) return TRUE;
-      }
-
-      return FALSE;
-      // return user_access($op .' '. $field['field_name'], $account);
-      // return TRUE; // Normal access control determines whether all the content can be viewed or not
+//      if (user_access('view grading', $account)) return TRUE; // ALL content types are treated as grading, if more are added these can be differentiated later
+//
+//      if (empty($node)) return TRUE; // I belive this is for the headings
+//
+//      // Allow these regardless
+//      $ci_fields = array('field_course_code', 'field_course_title', 'field_credit_load', 'field_sess_name', 'field_semester_name');
+//      if (in_array($field['field_name'], $ci_fields)) return TRUE;
+//
+//      $sg_fields = array('field_ca1forstudent', 'field_ca2forstudent', 'field_ca3forstudent', 'field_ca4forstudent', 'field_examscoreforstudent', 'field_totalscoreforstudent', 'field_gradepointforstudent', 'field_gradeforstudent');
+//      if (in_array($field['field_name'], $sg_fields)) {
+//        if (empty($sg_nids)) { // Not cached...
+//          // Find content that is for this user (assuming they are a student)
+//          $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_mat_no_uid=%d";
+//          $nids = db_query($sql, $account->uid);
+//          while ($nid = db_fetch_object($nids)) {
+//            $sg_nids[] = $nid->nid;
+//          }
+//        }
+//        if (!empty($node->nid) && in_array($node->nid, $sg_nids)) return TRUE;
+//      }
+//
+//      $gpa_fields = array('field_gpaforstudent', 'field_cgpaforstudent');
+//      if (in_array($field['field_name'], $gpa_fields)) {
+//        if (empty($gpa_nids)) {
+//          $sql = "SELECT nid FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid=%d";
+//          $nids = db_query($sql, $account->uid);
+//          while ($nid = db_fetch_object($nids)) {
+//            $gpa_nids[] = $nid->nid;
+//          }
+//        }
+//        if (!empty($node->nid) && in_array($node->nid, $gpa_nids)) return TRUE;
+//      }
+//
+//      return FALSE;
+//      // return user_access($op .' '. $field['field_name'], $account);
+//      // return TRUE; // Normal access control determines whether all the content can be viewed or not
 
     case 'edit':
       $editablegradingfields = array('field_ca1' => 1, 'field_ca2' => 1, 'field_ca3' => 1, 'field_ca4' => 1, 'field_exam_score' => 1, 'field_comment_grades' => 1);
