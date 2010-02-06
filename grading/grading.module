@@ -1500,6 +1500,140 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   }
 
 
+  // Make student_grades node viewable to those with permission 'departmentapproved' for this department
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT sg.nid, d.nid AS gid, 'departmentapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_grades node viewable to those with permission 'departmentapproved' for the department that owns the course (external course from a different department)
+  // != used to avoid some duplicates
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT sg.nid, d_course.nid AS gid, 'departmentapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM
+      {content_type_student_grades} sg,
+      {content_type_student_gpa} gpa,
+      {content_type_program} p,
+      {content_type_department} d,
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {content_type_department} d_course
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s' AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_course_id_nid=c.nid AND
+      c.field_department_nid_nid=d_course.nid AND
+      d.nid!=d_course.nid";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_grades node viewable to those with permission 'collegeapproved' for this college
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT sg.nid, d.field_college_id_nid AS gid, 'collegeapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_grades node viewable to those with permission 'collegeapproved' for the college that owns the course (external course from a different college)
+  // != used to avoid some duplicates
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT sg.nid, d_course.field_college_id_nid AS gid, 'collegeapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM
+      {content_type_student_grades} sg,
+      {content_type_student_gpa} gpa,
+      {content_type_program} p,
+      {content_type_department} d,
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {content_type_department} d_course
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s' AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_course_id_nid=c.nid AND
+      c.field_department_nid_nid=d_course.nid AND
+      d.field_college_id_nid!=d_course.field_college_id_nid";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_grades node viewable to those with permission 'universityapproved'
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT sg.nid, 0 AS gid, 'universityapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    WHERE
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_gpa node viewable to those with permission 'departmentapproved' for this department
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT gpa.nid, d.nid AS gid, 'departmentapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    WHERE
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_gpa node viewable to those with permission 'collegeapproved' for this college
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT gpa.nid, d.field_college_id_nid AS gid, 'collegeapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    WHERE
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+  // Make student_gpa node viewable to those with permission 'universityapproved'
+  $sql = "INSERT IGNORE INTO {node_access}
+    SELECT gpa.nid, 0 AS gid, 'universityapproved' AS realm, 1 AS grant_view, 0 AS grant_update, 0 AS grant_delete
+    FROM {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    WHERE
+      gpa.field_level_name_gpa_value='%s' AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value='%s' AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
+  db_query($sql, $level, $session, $semester, $department);
+
+
   drupal_set_message('Approval Successfull');
   $_SESSION['eduerpvcapprovalform'] = NULL; // Just in case they somehow come back to the form
 
