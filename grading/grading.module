@@ -362,8 +362,16 @@ function grading_node_access_records($node) {
       error_log("Failed to find department and college records for student_gpa $node->nid");
     }
   }
-  //possible...
-  //else do grants for all other node types???
+  else {
+    $grants[] = array(
+      'realm' => 'all',
+      'gid' => 0,
+      'grant_view' => TRUE,
+      'grant_update' => FALSE,
+      'grant_delete' => FALSE,
+      'priority' => 0,
+    );
+  }
 
   return $grants;
 }
