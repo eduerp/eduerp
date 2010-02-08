@@ -11,7 +11,7 @@ function veritas_menu() {
     'access callback' => 'veritas_verify_access',
     'type' => MENU_CALLBACK,
 
-    
+
   );
 
   $items['veritas/payments'] = array (
@@ -26,7 +26,7 @@ function veritas_menu() {
     ),
     'type' => MENU_NORMAL_ITEM,
 
-    
+
   );
 
   $items['veritas/error'] = array (
@@ -36,7 +36,7 @@ function veritas_menu() {
     ),
     'type' => MENU_CALLBACK,
 
-    
+
   );
   $items['ajax'] = array (
     'page callback' => 'veritas_ajax',
@@ -45,7 +45,7 @@ function veritas_menu() {
     ),
     'type' => MENU_CALLBACK,
 
-    
+
   );
 
   $items['admin/settings/veritas'] = array (
@@ -111,7 +111,7 @@ function veritas_mail_receipt($f, $email, $name, $img) {
     'MIME-Version' => '1.0',
     'Content-Type' => 'text/html; charset=UTF-8'
   ));
-  //drupal_mail_send($message);
+  drupal_mail_send($message);
 
   // We should send a copy of the emailed receipt to the bursar
   // I know it's bad practice to hardcode certain parameters but I don't want this failing
@@ -123,7 +123,7 @@ function veritas_mail_receipt($f, $email, $name, $img) {
     'MIME-Version' => '1.0',
     'Content-Type' => 'text/html; charset=UTF-8'
   ));
-  //drupal_mail_send($admin_message);
+  drupal_mail_send($admin_message);
 
   ///echo htmlspecialchars($message[body]);
   if ($f->trans_type == 'cfee') {
@@ -136,9 +136,9 @@ function veritas_mail_receipt($f, $email, $name, $img) {
         To
         $name
         Dear Sirs/Madams
-        Your pre-qualification form submission is now under review by Veritas University. 
+        Your pre-qualification form submission is now under review by Veritas University.
         If successful, Veritas University will contact you with further information about how you can bid for existing tenders.
-        Director of Works 
+        Director of Works
         Veritas University
         ";
     $message[subject] = 'Prequalification form submitted';
@@ -245,7 +245,7 @@ function veritas_view_receipt() {
     }
     else
     $img='';
-    
+
     veritas_mail_receipt($f,$img);
     */
     $f->name = $name;
@@ -390,7 +390,7 @@ function veritas_admin_settings() {
     '#options' => $sessions,
     '#tree' => TRUE,
   );
-  
+
   // Update semester settings
   $semester_update_sql = "UPDATE {current_session_semester} SET semester_id=%d";
   $rs = db_query($semester_update_sql, variable_get('veritas_current_semester', 1));
@@ -464,9 +464,9 @@ function veritas_user_save($type, $mail, $transid) {
   /*
   $data=$_SESSION[veritas_data];
   if(!is_array($data)){
-  watchdog('error','Session data lost for transactionID '.$transid,WATCHDOG_ERROR);	
+  watchdog('error','Session data lost for transactionID '.$transid,WATCHDOG_ERROR);
   drupal_goto(url('veritus/error'));
-  	
+
   }
   */
 
@@ -518,7 +518,7 @@ function veritas_error_page() {
 }
 
 function veritas_mail($key, & $message, $params) {
-  /*	
+  /*
   $message[headers] +=
   array( 'MIME-Version'  => '1.0',
     'Content-Type'  => 'text/html; charset=UTF-8');
@@ -529,7 +529,7 @@ function veritas_receipt($f) {
   global $user;
   ob_start();
 ?>
-<center><h3>VERITAS UNIVERSITY</h3>	
+<center><h3>VERITAS UNIVERSITY</h3>
 <div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
 <br/><br/>
 <table cellspacing="2" cellpadding="2">
@@ -668,7 +668,7 @@ function veritas_receipt($f) {
           $total_paid = floatval($trans_history->total_amount);
           $outstanding = 100000 + 150000 + floatval(str_replace(',', '', @$f->hostel_data->cost)) + $amt;
           $outstanding -= $total_paid;
-        ?> 
+        ?>
         <tr>
         	<td>Other:</td><td>NGN <?php  echo number_format(floatval($amt), 2); ?></td>
         </tr>
@@ -697,7 +697,7 @@ function veritas_receipt($f) {
 ?>
  <html>
  <body <?if($isprint){?>onload="window.print()"<?}?>>
-<center><h3>VERITAS UNIVERSITY</h3>	
+<center><h3>VERITAS UNIVERSITY</h3>
 <hr/>
 <div align="center"><?=$img ?></div>
 <hr/>
@@ -751,7 +751,7 @@ function veritas_receipt($f) {
 ?>
  <html>
  <body <?if($isprint){?>onload="window.print()"<?}?>>
-<center><h3>VERITAS UNIVERSITY</h3>	
+<center><h3>VERITAS UNIVERSITY</h3>
 <hr/>
 <div align="center"><?=$img ?></div>
 <hr/>
@@ -766,7 +766,7 @@ function veritas_receipt($f) {
     $i = 1;
     $lots = array ();
     while ($fx = db_fetch_object($r)) {
-?>                
+?>
 <tr><td <?if(!$isprint) {?>width="20" <?} ?>><?=$i++?></td><td <?if(!$isprint) {?>width="200" style="width:200px;"<? } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
 <?
 
@@ -957,7 +957,7 @@ function veritas_receipt($f) {
   function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $type) {
 
     //return veritas_verify_bankpay($rno,$cno,$amt,$descr,$transid,$name,$email,$type);
-    
+
     $uid = $user->uid;
 
     $r = db_query("SELECT * FROM transaction WHERE receipt_no='%s'", $rno);
@@ -1216,7 +1216,7 @@ function veritas_receipt($f) {
       '#attributes' => $element['#attributes'],
       '#options' => $options,
 
-      
+
     );
 
     $options = drupal_map_assoc(range(2008, 2012));
@@ -1229,7 +1229,7 @@ function veritas_receipt($f) {
       '#attributes' => $element['#attributes'],
       '#options' => $options,
 
-      
+
     );
 
     return $element;
@@ -1249,7 +1249,7 @@ function veritas_receipt($f) {
         )
       ),
 
-      
+
     );
   }
 
