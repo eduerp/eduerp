@@ -362,6 +362,9 @@ function grading_node_access_records($node) {
       error_log("Failed to find department and college records for student_gpa $node->nid");
     }
   }
+  elseif ($node->type === 'approval') {
+    // Should not be visible to everyone
+  }
   else {
     $grants[] = array(
       'realm' => 'all',
