@@ -1392,7 +1392,6 @@ function student_registration_form_submit($form, &$state) {
     $fc = db_fetch_array($rc);
     $f->name = $name = $fc['first_name'] .' '. $fc['middle_name'] .' '. $fc['last_name'];
     $f->student_data = $fc;
-/*  -- commenting out code for sending receipts --
     $message = drupal_mail('student', 'receipt', $_SESSION['student']['data']->email_address, language_default(), array(), NULL, FALSE);
     $message['body'] = veritas_student_receipt($f,TRUE) .'<tr>
     <th>Username:
@@ -1408,7 +1407,6 @@ function student_registration_form_submit($form, &$state) {
     $message['subject'] = 'Transaction Receipt';
     $message['headers'] = array_merge($message['headers'], array( 'MIME-Version'  => '1.0', 'Content-Type'  => 'text/html; charset=UTF-8'));
     drupal_mail_send($message);
-*/
     drupal_goto('veritas/receipt/'. $t_id .'/student/');
   }
   if ($state['storage']['step'] == 6) {
