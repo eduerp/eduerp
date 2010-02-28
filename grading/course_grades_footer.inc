@@ -121,7 +121,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     echo '<tr>';
     echo '<td valign="top" class="table-label">Continuous Assessment 1</td>';
     echo '<td valign="top">';
-    if     ($locks->alllocked1 == 0) echo 'Not Submitted';
+    if     ($locks->alllocked1 == 0) echo 'Not Submitted by Lecturer';
     elseif ($locks->alllocked1 == 1) echo 'All Submitted to HOD';
     elseif ($locks->alllocked1 >= 2) echo 'All Approved by HOD';
     echo '</td>';
@@ -132,7 +132,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     echo '<tr>';
     echo '<td valign="top" class="table-label">Continuous Assessment 2</td>';
     echo '<td valign="top">';
-    if     ($locks->alllocked2 == 0) echo 'Not Submitted';
+    if     ($locks->alllocked2 == 0) echo 'Not Submitted by Lecturer';
     elseif ($locks->alllocked2 == 1) echo 'All Submitted to HOD';
     elseif ($locks->alllocked2 >= 2) echo 'All Approved by HOD';
     echo '</td>';
@@ -143,7 +143,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     echo '<tr>';
     echo '<td valign="top" class="table-label">Continuous Assessment 3</td>';
     echo '<td valign="top">';
-    if     ($locks->alllocked3 == 0) echo 'Not Submitted';
+    if     ($locks->alllocked3 == 0) echo 'Not Submitted by Lecturer';
     elseif ($locks->alllocked3 == 1) echo 'All Submitted to HOD';
     elseif ($locks->alllocked3 >= 2) echo 'All Approved by HOD';
     echo '</td>';
@@ -154,7 +154,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     echo '<tr>';
     echo '<td valign="top" class="table-label">Continuous Assessment 4</td>';
     echo '<td valign="top">';
-    if     ($locks->alllocked4 == 0) echo 'Not Submitted';
+    if     ($locks->alllocked4 == 0) echo 'Not Submitted by Lecturer';
     elseif ($locks->alllocked4 == 1) echo 'All Submitted to HOD';
     elseif ($locks->alllocked4 >= 2) echo 'All Approved by HOD';
     echo '</td>';
@@ -163,7 +163,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   echo '<tr>';
   echo '<td valign="top" class="table-label">Exam Score</td>';
   echo '<td valign="top">';
-  if     ($locks->alllockede == 0) echo 'Not Submitted';
+  if     ($locks->alllockede == 0) echo 'Not Submitted by Lecturer';
   elseif ($locks->alllockede == 1) echo 'All Submitted to HOD';
   elseif ($locks->alllockede == 2) echo 'All Submitted to Dean';
   elseif ($locks->alllockede == 3) echo 'All Submitted to Registrar';
