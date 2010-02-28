@@ -213,6 +213,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     $lecturerequiv_uid_array[] = $lecturerequiv->lecturerequiv_uid;
   }
 
+  // Do we want to show the Approval form for the Lecturer
   if (empty($hod_uid)) {
     echo 'THERE IS NO HEAD OF DEPARTMENT ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED<br />';
   }
@@ -255,6 +256,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     }
   }
 
+  // Do we want to show the Unlock form for the HOD
   $hod_uid_array = explode(',', $hod_uid);
   if (in_array($user->uid, $hod_uid_array)) {
     $showform = FALSE;
@@ -294,6 +296,66 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
       }
     }
   }
+
+[[
+  $inroles = "'Dean of Faculty', 'Department Examination Officer', 'Faculty Examination Officer', 'University Examination Officer'";
+
+  $sql = "SELECT uid AS dean_uid
+    FROM {eduerp_roles}
+    WHERE (department_id=%d OR college_id=%d OR (department_id=0 AND college_id=0)) AND role IN ($inroles)";
+  $hodresult = db_query($sql, $staff->department_id, $staff->college_id);
+  $dean_uid = '';
+  while ($hod = db_fetch_object($hodresult)) {
+    if ($dean_uid === '') $dean_uid = $hod->dean_uid;
+    else $dean_uid = $dean_uid . ',' . $hod->dean_uid;
+  }
+  if (empty($dean_uid)) $dean_uid = 0;
+
+  // Do we want to show the Approval form for the HOD
+Need $dean_uid
+Need approve_grades_hod_form
+  if (empty($dean_uid)) {
+    echo 'THERE IS NO DEAN ASSIGNED FOR THIS FACULTY, ONE MUST BE ASSIGNED<br />';
+  }
+  elseif (in_array($user->uid, $hod_uid_array)) {
+    $showform = FALSE;
+    if     ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->alllocked1 == 1) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca1locked_value';
+      $eduerpapprovalform->gradestext = 'First set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->alllocked2 == 1) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca2locked_value';
+      $eduerpapprovalform->gradestext = 'Second set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->alllocked3 == 1) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca3locked_value';
+      $eduerpapprovalform->gradestext = 'Third set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->alllocked4 == 1) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca4locked_value';
+      $eduerpapprovalform->gradestext = 'Fourth set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($locks->alllockede == 1) {
+      $eduerpapprovalform->fieldtoapprove = 'field_examscorelocked_value';
+      $eduerpapprovalform->gradestext = 'Final Exam Grades';
+      $showform = TRUE;
+    }
+
+    if ($showform) {
+      if ($singlelecturer) {
+        echo drupal_get_form('approve_grades_hod_form');
+      }
+      else {
+        echo "YOU MUST CHOOSE A SPECIFIC LOCATION ABOVE IF YOU WANT TO APPROVE GRADES. CHOICES ARE...<br />";
+        listlocations($coursecode, $session, $semesterwhere, $locationwhere);
+      }
+    }
+  }
+]]
 }
 
 
