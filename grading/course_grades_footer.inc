@@ -214,7 +214,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   }
 
   if (empty($hod_uid)) {
-    echo 'THERE IS NO HEAD OF DEPARTMENT ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED';
+    echo 'THERE IS NO HEAD OF DEPARTMENT ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED<br />';
   }
   elseif ($user->uid == $staff->lecturer_uid || $user->uid == $staff->lecturer_alternate_uid || in_array($user->uid, $lecturerequiv_uid_array)) {
     $showform = FALSE;
@@ -250,24 +250,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
       }
       else {
         echo "YOU MUST CHOOSE A SPECIFIC LOCATION ABOVE IF YOU WANT TO APPROVE GRADES. CHOICES ARE...<br />";
-
-        $sql = "SELECT DISTINCT
-            ci.field_location_value AS location,
-            ci.field_lecturer_uid AS lecturer_uid
-          FROM {content_type_course} c, {content_type_course_instance} ci
-          WHERE
-            c.field_code_value='%s' AND
-            c.nid=ci.field_course_id_nid AND
-            ci.field_sess_name_value='%s'
-            $semesterwhere $locationwhere";
-        $locationresult = db_query($sql, $coursecode, $session);
-        while ($locationdetail = db_fetch_object($locationresult)) {
-          $lecturer_user = user_load($locationdetail->lecturer_uid);
-
-          echo "Location: $locationdetail->location (Lecturer: $lecturer_user->profile_first_name ";
-          if (!empty($lecturer_user->profile_middle_name)) echo $lecturer_user->profile_middle_name . ' ';
-          echo "$lecturer_user->profile_last_name)<br />";
-        }
+        listlocations($coursecode, $session, $semesterwhere, $locationwhere);
       }
     }
   }
@@ -307,24 +290,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
       }
       else {
         echo "YOU MUST CHOOSE A SPECIFIC LOCATION ABOVE IF YOU WANT TO UNLOCK GRADES. CHOICES ARE...<br />";
-
-        $sql = "SELECT DISTINCT
-            ci.field_location_value AS location,
-            ci.field_lecturer_uid AS lecturer_uid
-          FROM {content_type_course} c, {content_type_course_instance} ci
-          WHERE
-            c.field_code_value='%s' AND
-            c.nid=ci.field_course_id_nid AND
-            ci.field_sess_name_value='%s'
-            $semesterwhere $locationwhere";
-        $locationresult = db_query($sql, $coursecode, $session);
-        while ($locationdetail = db_fetch_object($locationresult)) {
-          $lecturer_user = user_load($locationdetail->lecturer_uid);
-
-          echo "Location: $locationdetail->location (Lecturer: $lecturer_user->profile_first_name ";
-          if (!empty($lecturer_user->profile_middle_name)) echo $lecturer_user->profile_middle_name . ' ';
-          echo "$lecturer_user->profile_last_name)<br />";
-        }
+        listlocations($coursecode, $session, $semesterwhere, $locationwhere);
       }
     }
   }
@@ -738,5 +704,26 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   }
 
   drupal_set_message('Unlocking successfull');
+}
+
+
+function listlocations($coursecode, $session, $semesterwhere, $locationwhere) {
+  $sql = "SELECT DISTINCT
+      ci.field_location_value AS location,
+      ci.field_lecturer_uid AS lecturer_uid
+    FROM {content_type_course} c, {content_type_course_instance} ci
+    WHERE
+      c.field_code_value='%s' AND
+      c.nid=ci.field_course_id_nid AND
+      ci.field_sess_name_value='%s'
+      $semesterwhere $locationwhere";
+  $locationresult = db_query($sql, $coursecode, $session);
+  while ($locationdetail = db_fetch_object($locationresult)) {
+    $lecturer_user = user_load($locationdetail->lecturer_uid);
+
+    echo "Location: $locationdetail->location (Lecturer: $lecturer_user->profile_first_name ";
+    if (!empty($lecturer_user->profile_middle_name)) echo $lecturer_user->profile_middle_name . ' ';
+    echo "$lecturer_user->profile_last_name)<br />";
+  }
 }
 ?>
