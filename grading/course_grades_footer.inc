@@ -319,28 +319,28 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   elseif (in_array($user->uid, $hod_uid_array)) {
     $showform = FALSE;
     if     ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->alllocked1 == 1) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca1locked_value';
-      $eduerpapprovalform->gradestext = 'First set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovehoda = 'field_ca1locked_value';
+      $eduerpapprovalform->gradestexthoda = 'First set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->alllocked2 == 1) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca2locked_value';
-      $eduerpapprovalform->gradestext = 'Second set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovehoda = 'field_ca2locked_value';
+      $eduerpapprovalform->gradestexthoda = 'Second set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->alllocked3 == 1) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca3locked_value';
-      $eduerpapprovalform->gradestext = 'Third set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovehoda = 'field_ca3locked_value';
+      $eduerpapprovalform->gradestexthoda = 'Third set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->alllocked4 == 1) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca4locked_value';
-      $eduerpapprovalform->gradestext = 'Fourth set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovehoda = 'field_ca4locked_value';
+      $eduerpapprovalform->gradestexthoda = 'Fourth set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($locks->alllockede == 1) {
-      $eduerpapprovalform->fieldtoapprove = 'field_examscorelocked_value';
-      $eduerpapprovalform->gradestext = 'Final Exam Grades';
+      $eduerpapprovalform->fieldtoapprovehoda = 'field_examscorelocked_value';
+      $eduerpapprovalform->gradestexthoda = 'Final Exam Grades';
       $showform = TRUE;
     }
 
@@ -360,28 +360,28 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   if (in_array($user->uid, $dean_uid_array)) {
     $showform = FALSE;
     if     ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->alllocked1 == 2) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca1locked_value';
-      $eduerpapprovalform->gradestext = 'First set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovedean = 'field_ca1locked_value';
+      $eduerpapprovalform->gradestextdean = 'First set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->alllocked2 == 2) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca2locked_value';
-      $eduerpapprovalform->gradestext = 'Second set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovedean = 'field_ca2locked_value';
+      $eduerpapprovalform->gradestextdean = 'Second set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->alllocked3 == 2) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca3locked_value';
-      $eduerpapprovalform->gradestext = 'Third set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovedean = 'field_ca3locked_value';
+      $eduerpapprovalform->gradestextdean = 'Third set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->alllocked4 == 2) {
-      $eduerpapprovalform->fieldtoapprove = 'field_ca4locked_value';
-      $eduerpapprovalform->gradestext = 'Fourth set of Continuous Assessment Grades';
+      $eduerpapprovalform->fieldtoapprovedean = 'field_ca4locked_value';
+      $eduerpapprovalform->gradestextdean = 'Fourth set of Continuous Assessment Grades';
       $showform = TRUE;
     }
     elseif ($locks->alllockede == 2) {
-      $eduerpapprovalform->fieldtoapprove = 'field_examscorelocked_value';
-      $eduerpapprovalform->gradestext = 'Final Exam Grades';
+      $eduerpapprovalform->fieldtoapprovedean = 'field_examscorelocked_value';
+      $eduerpapprovalform->gradestextdean = 'Final Exam Grades';
       $showform = TRUE;
     }
 
@@ -616,7 +616,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   $location          = $form_state['values']['location'];
   $number_of_ca      = $form_state['values']['number_of_ca'];
   $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
-  $gradestext        = $form_state['values']['gradestexthod'];
+  $gradestexthod        = $form_state['values']['gradestexthod'];
 
   if ($semester === 'All') $semesterwhere = '';
   else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
@@ -663,7 +663,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
 
   if (!empty($lecturer_uid)) $destination_user = user_load($lecturer_uid);
 
-  $subject = "$gradestext for $coursecode Unlocked by $name";
+  $subject = "$gradestexthod for $coursecode Unlocked by $name";
 
   $body = '';
   if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
@@ -672,7 +672,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
     $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
   }
 
-  $body .= "I have unlocked $gradestext for $coursecode\n\n";
+  $body .= "I have unlocked $gradestexthod for $coursecode\n\n";
   $body .= "URL: $course_url\n";
   $body .= "Department: $department\n";
   $body .= "Faculty: $college\n";
@@ -704,7 +704,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   $node->field_session1[0]['value']      = $session;
   $node->field_semester1[0]['value']     = $sem;
   $node->field_location1[0]['value']     = $loc;
-  $node->field_what_approved[0]['value'] = $gradestext;
+  $node->field_what_approved[0]['value'] = $gradestexthod;
   $node->field_action[0]['value']        = 'Unlocked by Head of Department';
   node_save($node);
 
@@ -718,7 +718,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   if (!empty($lecturer_alternate_uid)) $destination_user = user_load($lecturer_alternate_uid);
   else $destination_user = NULL;
 
-  $subject = "$gradestext for $coursecode Unlocked by $name";
+  $subject = "$gradestexthod for $coursecode Unlocked by $name";
 
   $body = '';
   if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
@@ -727,7 +727,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
     $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
   }
 
-  $body .= "I have unlocked $gradestext for $coursecode\n\n";
+  $body .= "I have unlocked $gradestexthod for $coursecode\n\n";
   $body .= "URL: $course_url\n";
   $body .= "Department: $department\n";
   $body .= "Faculty: $college\n";
@@ -770,10 +770,10 @@ function approve_grades_hod_form($form_state) {
   $form['location']       = array('#type' => 'value', '#value' => $eduerpapprovalform->location);
   $form['number_of_ca']   = array('#type' => 'value', '#value' => $eduerpapprovalform->number_of_ca);
   $form['ca_approved_onebyone'] = array('#type' => 'value', '#value' => $eduerpapprovalform->ca_approved_onebyone);
-  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprove);
-  $form['gradestext']     = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestext);
+  $form['fieldtoapprovehoda']   = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprovehoda);
+  $form['gradestexthoda']       = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestexthoda);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestexthoda . '.');
 
   return $form;
 }
@@ -790,7 +790,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
   global $user;
   global $base_url;
 
-  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
+  $fieldtoapprovehoda = $form_state['values']['fieldtoapprovehoda'];
   $comment        = $form_state['values']['comment'];
   $course_url     = $form_state['values']['course_url'];
   $hod_uid        = $form_state['values']['hod_uid'];
@@ -801,7 +801,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
   $location       = $form_state['values']['location'];
   $number_of_ca   = $form_state['values']['number_of_ca'];
   $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
-  $gradestext     = $form_state['values']['gradestext'];
+  $gradestexthoda = $form_state['values']['gradestexthoda'];
 
   if ($semester === 'All') $semesterwhere = '';
   else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
@@ -810,11 +810,11 @@ function approve_grades_hod_form_submit($form, &$form_state) {
   else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
 
   // Don't allow an exam score approved by the VC to be changed
-  if ($fieldtoapprove === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
+  if ($fieldtoapprovehoda === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
   else $protectVC = '';
 
   if ($ca_approved_onebyone) {
-    $setstatement = "SET sg.`{$fieldtoapprove}`='2'";
+    $setstatement = "SET sg.`{$fieldtoapprovehoda}`='2'";
   }
   else { // Approve CAs along with exam
     $setstatement = "
@@ -853,7 +853,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
     if (!empty($dean_uid_i)) $destination_user = user_load($dean_uid_i);
     else $destination_user = NULL;
 
-    $subject = "$gradestext for $coursecode Approved by $name";
+    $subject = "$gradestexthoda for $coursecode Approved by $name";
 
     $body = '';
     if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
@@ -862,7 +862,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
     }
 
-    $body .= "I have approved $gradestext for $coursecode\n\n";
+    $body .= "I have approved $gradestexthoda for $coursecode\n\n";
     $body .= "URL: $course_url\n";
     $body .= "Department: $department\n";
     $body .= "Faculty: $college\n";
@@ -895,7 +895,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $node->field_session1[0]['value']      = $session;
       $node->field_semester1[0]['value']     = $sem;
       $node->field_location1[0]['value']     = $loc;
-      $node->field_what_approved[0]['value'] = $gradestext;
+      $node->field_what_approved[0]['value'] = $gradestexthoda;
       $node->field_action[0]['value']        = 'Approved by HOD';
       node_save($node);
 
@@ -933,10 +933,10 @@ function approve_grades_dean_form($form_state) {
   $form['location']       = array('#type' => 'value', '#value' => $eduerpapprovalform->location);
   $form['number_of_ca']   = array('#type' => 'value', '#value' => $eduerpapprovalform->number_of_ca);
   $form['ca_approved_onebyone'] = array('#type' => 'value', '#value' => $eduerpapprovalform->ca_approved_onebyone);
-  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprove);
-  $form['gradestext']     = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestext);
+  $form['fieldtoapprovedean']   = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprovedean);
+  $form['gradestextdean']       = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestextdean);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestext . '.');
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestextdean . '.');
 
   return $form;
 }
@@ -953,17 +953,17 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   global $user;
   global $base_url;
 
-  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
-  $comment        = $form_state['values']['comment'];
-  $course_url     = $form_state['values']['course_url'];
-  $dean_uid       = $form_state['values']['dean_uid'];
-  $coursecode     = $form_state['values']['coursecode'];
-  $session        = $form_state['values']['session'];
-  $semester       = $form_state['values']['semester'];
-  $location       = $form_state['values']['location'];
-  $number_of_ca   = $form_state['values']['number_of_ca'];
+  $fieldtoapprovedean = $form_state['values']['fieldtoapprovedean'];
+  $comment            = $form_state['values']['comment'];
+  $course_url         = $form_state['values']['course_url'];
+  $dean_uid           = $form_state['values']['dean_uid'];
+  $coursecode         = $form_state['values']['coursecode'];
+  $session            = $form_state['values']['session'];
+  $semester           = $form_state['values']['semester'];
+  $location           = $form_state['values']['location'];
+  $number_of_ca       = $form_state['values']['number_of_ca'];
   $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
-  $gradestext     = $form_state['values']['gradestext'];
+  $gradestextdean     = $form_state['values']['gradestextdean'];
 
   if ($semester === 'All') $semesterwhere = '';
   else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
@@ -972,11 +972,11 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
 
   // Don't allow an exam score approved by the VC to be changed
-  if ($fieldtoapprove === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
+  if ($fieldtoapprovedean === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
   else $protectVC = '';
 
   if ($ca_approved_onebyone) {
-    $setstatement = "SET sg.`{$fieldtoapprove}`='3'";
+    $setstatement = "SET sg.`{$fieldtoapprovedean}`='3'";
   }
   else { // Approve CAs along with exam
     $setstatement = "
@@ -1008,7 +1008,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
     $name = "$user->profile_first_name {$middle}$user->profile_last_name";
   }
 
-  $subject = "$gradestext for $coursecode Approved by $name";
+  $subject = "$gradestextdean for $coursecode Approved by $name";
 
   $node = new stdClass();
   $node->type                            = 'approval';
@@ -1029,7 +1029,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   $node->field_session1[0]['value']      = $session;
   $node->field_semester1[0]['value']     = $sem;
   $node->field_location1[0]['value']     = $loc;
-  $node->field_what_approved[0]['value'] = $gradestext;
+  $node->field_what_approved[0]['value'] = $gradestextdean;
   $node->field_action[0]['value']        = 'Approved by Lecturer';
   node_save($node);
 
