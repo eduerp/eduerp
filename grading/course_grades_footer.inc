@@ -321,26 +321,36 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     if     ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->alllocked1 == 1) {
       $eduerpapprovalform->fieldtoapprovehoda = 'field_ca1locked_value';
       $eduerpapprovalform->gradestexthoda = 'First set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca1_value';
+      $eduerpapprovalform->destfield = 'field_ca1forstudent_value';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->alllocked2 == 1) {
       $eduerpapprovalform->fieldtoapprovehoda = 'field_ca2locked_value';
       $eduerpapprovalform->gradestexthoda = 'Second set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca2_value';
+      $eduerpapprovalform->destfield = 'field_ca2forstudent_value';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->alllocked3 == 1) {
       $eduerpapprovalform->fieldtoapprovehoda = 'field_ca3locked_value';
       $eduerpapprovalform->gradestexthoda = 'Third set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca3_value';
+      $eduerpapprovalform->destfield = 'field_ca3forstudent_value';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->alllocked4 == 1) {
       $eduerpapprovalform->fieldtoapprovehoda = 'field_ca4locked_value';
       $eduerpapprovalform->gradestexthoda = 'Fourth set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca4_value';
+      $eduerpapprovalform->destfield = 'field_ca4forstudent_value';
       $showform = TRUE;
     }
     elseif ($locks->alllockede == 1) {
       $eduerpapprovalform->fieldtoapprovehoda = 'field_examscorelocked_value';
       $eduerpapprovalform->gradestexthoda = 'Final Exam Grades';
+      $eduerpapprovalform->srcfield = 'NONE';
+      $eduerpapprovalform->destfield = 'NONE';
       $showform = TRUE;
     }
 
@@ -705,7 +715,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   $node->field_semester1[0]['value']     = $sem;
   $node->field_location1[0]['value']     = $loc;
   $node->field_what_approved[0]['value'] = $gradestexthod;
-  $node->field_action[0]['value']        = 'Unlocked by Head of Department';
+  $node->field_action[0]['value']        = 'Unlocked by HOD';
   node_save($node);
 
   if (!empty($destination_user)) {
@@ -772,6 +782,8 @@ function approve_grades_hod_form($form_state) {
   $form['ca_approved_onebyone'] = array('#type' => 'value', '#value' => $eduerpapprovalform->ca_approved_onebyone);
   $form['fieldtoapprovehoda']   = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprovehoda);
   $form['gradestexthoda']       = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestexthoda);
+  $form['srcfield']             = array('#type' => 'value', '#value' => $eduerpapprovalform->srcfield);
+  $form['destfield']            = array('#type' => 'value', '#value' => $eduerpapprovalform->destfield);
 
   $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestexthoda . '.');
 
@@ -802,6 +814,8 @@ function approve_grades_hod_form_submit($form, &$form_state) {
   $number_of_ca   = $form_state['values']['number_of_ca'];
   $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
   $gradestexthoda = $form_state['values']['gradestexthoda'];
+  $srcfield       = $form_state['values']['srcfield'];
+  $destfield      = $form_state['values']['destfield'];
 
   if ($semester === 'All') $semesterwhere = '';
   else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
@@ -834,6 +848,19 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       c.field_code_value='%s'
       $protectVC";
   db_query($sql, $session, $coursecode);
+
+  if ($srcfield != 'NONE') {
+    // Make the CAs visible to students
+    $setstatement = "SET sg.`{$destfield}`=sg.`{$srcfield}`";
+    $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+      $setstatement
+      WHERE
+        sg.field_course_instance_nid=ci.nid AND
+        ci.field_course_id_nid=c.nid AND
+        ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
+        c.field_code_value='%s'";
+    db_query($sql, $session, $coursecode);
+  }
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
@@ -910,6 +937,44 @@ function approve_grades_hod_form_submit($form, &$form_state) {
     }
   }
 
+  // Send e-mails to Students for CA only
+  if ($srcfield != 'NONE') {
+    $sql = "SELECT sg.field_mat_no_uid FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+      WHERE
+        sg.field_course_instance_nid=ci.nid AND
+        ci.field_course_id_nid=c.nid AND
+        ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
+        c.field_code_value='%s'";
+    $studentresult = db_query($sql, $session, $coursecode);
+
+    while ($student = db_fetch_object($studentresult)) {
+      $student_uid = $student->field_mat_no_uid;
+
+      $destination_user = user_load($student_uid);
+
+      $subject = "$gradestexthoda for $coursecode Approved by $name";
+
+      $body = '';
+      if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+        $middle = '';
+        if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
+        $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+      }
+      $body .= "I have approved $gradestexthoda for $coursecode\n\n";
+      $body .= "To view your grades go to $base_url/student\n";
+      $body .= "You will have to login first.\n\n";
+      $body .= "{$name}\n";
+
+      $message = drupal_mail('grading', 'notifystudent', $destination_user->mail, language_default(), array(), $user->mail, FALSE);
+      $message['subject'] = $subject;
+      $message['body'] = $body;
+      drupal_mail_send($message);
+
+      db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, '%s', '%s', %d)",
+        $user->uid, $student_uid, $gradestexthoda, '', 1);
+    }
+  }
+
   drupal_set_message('Approval successfull');
 }
 
@@ -976,7 +1041,12 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   else $protectVC = '';
 
   if ($ca_approved_onebyone) {
-    $setstatement = "SET sg.`{$fieldtoapprovedean}`='3'";
+    if ($srcfield != 'NONE') {
+      $setstatement = "SET sg.`{$fieldtoapprovedean}`='5'"; // This is a CA so make it fully approved
+    }
+    else {
+      $setstatement = "SET sg.`{$fieldtoapprovedean}`='3'";
+    }
   }
   else { // Approve CAs along with exam
     $setstatement = "
@@ -1030,7 +1100,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   $node->field_semester1[0]['value']     = $sem;
   $node->field_location1[0]['value']     = $loc;
   $node->field_what_approved[0]['value'] = $gradestextdean;
-  $node->field_action[0]['value']        = 'Approved by Lecturer';
+  $node->field_action[0]['value']        = 'Approved by Dean';
   node_save($node);
 
   drupal_set_message('Approval successfull');
