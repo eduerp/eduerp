@@ -297,8 +297,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
     }
   }
 
-[[
-  $inroles = "'Dean of Faculty', 'Department Examination Officer', 'Faculty Examination Officer', 'University Examination Officer'";
+  $inroles = "'Dean of Faculty', 'Faculty Examination Officer', 'University Examination Officer'";
 
   $sql = "SELECT uid AS dean_uid
     FROM {eduerp_roles}
@@ -311,9 +310,9 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   }
   if (empty($dean_uid)) $dean_uid = 0;
 
+  $eduerpapprovalform->dean_uid = $dean_uid;
+
   // Do we want to show the Approval form for the HOD
-Need $dean_uid
-Need approve_grades_hod_form
   if (empty($dean_uid)) {
     echo 'THERE IS NO DEAN ASSIGNED FOR THIS FACULTY, ONE MUST BE ASSIGNED<br />';
   }
@@ -355,7 +354,47 @@ Need approve_grades_hod_form
       }
     }
   }
-]]
+
+  // Do we want to show the Approval form for the Dean
+  $dean_uid_array = explode(',', $dean_uid);
+  if (in_array($user->uid, $dean_uid_array)) {
+    $showform = FALSE;
+    if     ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->alllocked1 == 2) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca1locked_value';
+      $eduerpapprovalform->gradestext = 'First set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->alllocked2 == 2) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca2locked_value';
+      $eduerpapprovalform->gradestext = 'Second set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->alllocked3 == 2) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca3locked_value';
+      $eduerpapprovalform->gradestext = 'Third set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->alllocked4 == 2) {
+      $eduerpapprovalform->fieldtoapprove = 'field_ca4locked_value';
+      $eduerpapprovalform->gradestext = 'Fourth set of Continuous Assessment Grades';
+      $showform = TRUE;
+    }
+    elseif ($locks->alllockede == 2) {
+      $eduerpapprovalform->fieldtoapprove = 'field_examscorelocked_value';
+      $eduerpapprovalform->gradestext = 'Final Exam Grades';
+      $showform = TRUE;
+    }
+
+    if ($showform) {
+      if ($singlelecturer) {
+        echo drupal_get_form('approve_grades_dean_form');
+      }
+      else {
+        echo "YOU MUST CHOOSE A SPECIFIC LOCATION ABOVE IF YOU WANT TO APPROVE GRADES. CHOICES ARE...<br />";
+        listlocations($coursecode, $session, $semesterwhere, $locationwhere);
+      }
+    }
+  }
 }
 
 
@@ -446,36 +485,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       $protectVC";
   db_query($sql, $session, $coursecode);
 
-  $sql = "SELECT
-      c.field_level_value AS level,
-      ci.field_semester_name_value AS sem,
-      ci.field_location_value AS loc,
-      d.field_department_name_value AS department,
-      co.field_college_name_value AS college
-    FROM {content_type_course_instance} ci, {content_type_course} c, {content_department_course} d, {content_type_college} co
-    WHERE
-      c.field_code_value='%s' AND
-      c.nid=ci.field_course_id_nid AND
-      ci.field_sess_name_value='%s'
-      $semesterwhere $locationwhere AND
-      c.field_department_nid_nid=d.nid AND
-      d.field_college_id_nid=co.nid
-    LIMIT 1";
-  $collegeresult = db_query($sql, $coursecode, $session);
-  if ($collegerow = db_fetch_object($collegeresult)) {
-    $level = $collegerow->level;
-    $sem = $collegerow->sem;
-    $loc =  $collegerow->loc;
-    $department = $collegerow->department;
-    $college = $collegerow->college;
-  }
-  else {
-    $level = '';
-    $sem = '';
-    $loc = '';
-    $department = '';
-    $college = '';
-  }
+  list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
   profile_load_profile($user);
 
@@ -640,36 +650,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
       $protectVC";
   db_query($sql, $session, $coursecode);
 
-  $sql = "SELECT
-      c.field_level_value AS level,
-      ci.field_semester_name_value AS sem,
-      ci.field_location_value AS loc,
-      d.field_department_name_value AS department,
-      co.field_college_name_value AS college
-    FROM {content_type_course_instance} ci, {content_type_course} c, {content_department_course} d, {content_type_college} co
-    WHERE
-      c.field_code_value='%s' AND
-      c.nid=ci.field_course_id_nid AND
-      ci.field_sess_name_value='%s'
-      $semesterwhere $locationwhere AND
-      c.field_department_nid_nid=d.nid AND
-      d.field_college_id_nid=co.nid
-    LIMIT 1";
-  $collegeresult = db_query($sql, $coursecode, $session);
-  if ($collegerow = db_fetch_object($collegeresult)) {
-    $level = $collegerow->level;
-    $sem = $collegerow->sem;
-    $loc = $collegerow->loc;
-    $department = $collegerow->department;
-    $college = $collegerow->college;
-  }
-  else {
-    $level = '';
-    $sem = '';
-    $loc = '';
-    $department = '';
-    $college = '';
-  }
+  list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
   profile_load_profile($user);
 
@@ -766,6 +747,319 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   }
 
   drupal_set_message('Unlocking successfull');
+}
+
+
+function approve_grades_hod_form($form_state) {
+  global $eduerpapprovalform;
+
+  $form['comment'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Enter a comment on the grades for the Dean.',
+    '#cols' => 80,
+    '#rows' => 5,
+    '#required' => TRUE
+  );
+
+  $form['course_url']     = array('#type' => 'value', '#value' => $eduerpapprovalform->course_url);
+  $form['hod_uid']        = array('#type' => 'value', '#value' => $eduerpapprovalform->hod_uid);
+  $form['dean_uid']       = array('#type' => 'value', '#value' => $eduerpapprovalform->dean_uid);
+  $form['coursecode']     = array('#type' => 'value', '#value' => $eduerpapprovalform->coursecode);
+  $form['session']        = array('#type' => 'value', '#value' => $eduerpapprovalform->session);
+  $form['semester']       = array('#type' => 'value', '#value' => $eduerpapprovalform->semester);
+  $form['location']       = array('#type' => 'value', '#value' => $eduerpapprovalform->location);
+  $form['number_of_ca']   = array('#type' => 'value', '#value' => $eduerpapprovalform->number_of_ca);
+  $form['ca_approved_onebyone'] = array('#type' => 'value', '#value' => $eduerpapprovalform->ca_approved_onebyone);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprove);
+  $form['gradestext']     = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestext);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestext . '.');
+
+  return $form;
+}
+
+
+function approve_grades_hod_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['comment'])) {
+    form_set_error('comment', 'You must enter a comment for the Dean!');
+  }
+}
+
+
+function approve_grades_hod_form_submit($form, &$form_state) {
+  global $user;
+  global $base_url;
+
+  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
+  $comment        = $form_state['values']['comment'];
+  $course_url     = $form_state['values']['course_url'];
+  $hod_uid        = $form_state['values']['hod_uid'];
+  $dean_uid       = $form_state['values']['dean_uid'];
+  $coursecode     = $form_state['values']['coursecode'];
+  $session        = $form_state['values']['session'];
+  $semester       = $form_state['values']['semester'];
+  $location       = $form_state['values']['location'];
+  $number_of_ca   = $form_state['values']['number_of_ca'];
+  $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
+  $gradestext     = $form_state['values']['gradestext'];
+
+  if ($semester === 'All') $semesterwhere = '';
+  else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
+
+  if ($location === 'All') $locationwhere = '';
+  else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
+
+  // Don't allow an exam score approved by the VC to be changed
+  if ($fieldtoapprove === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
+  else $protectVC = '';
+
+  if ($ca_approved_onebyone) {
+    $setstatement = "SET sg.`{$fieldtoapprove}`='2'";
+  }
+  else { // Approve CAs along with exam
+    $setstatement = "
+      SET sg.`field_ca1locked_value`='2',
+      SET sg.`field_ca2locked_value`='2',
+      SET sg.`field_ca3locked_value`='2',
+      SET sg.`field_ca4locked_value`='2',
+      SET sg.`field_examscorelocked_value`='2'";
+  }
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+    $setstatement
+    WHERE
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_course_id_nid=c.nid AND
+      ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
+      c.field_code_value='%s'
+      $protectVC";
+  db_query($sql, $session, $coursecode);
+
+  list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
+
+  profile_load_profile($user);
+
+  $name = '';
+  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+    $middle = '';
+    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
+    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+  }
+
+  $firsttime = TRUE;
+  $dean_uid_array = explode(',', $dean_uid);
+  foreach ($dean_uid_array as $dean_uid_i) {
+
+    if (!empty($dean_uid_i)) $destination_user = user_load($dean_uid_i);
+    else $destination_user = NULL;
+
+    $subject = "$gradestext for $coursecode Approved by $name";
+
+    $body = '';
+    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+      $middle = '';
+      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
+      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+    }
+
+    $body .= "I have approved $gradestext for $coursecode\n\n";
+    $body .= "URL: $course_url\n";
+    $body .= "Department: $department\n";
+    $body .= "Faculty: $college\n";
+    $body .= "Level: $level\n";
+    $body .= "Session: $session\n";
+    $body .= "Semester: $sem\n";
+    $body .= "Location: $loc\n\n";
+    $body .= "HOD's comment...\n";
+    $body .= str_replace('<br />', "\n", $comment);
+    $body .= "\n\n{$name}\n\n";
+
+    if ($firsttime) {
+      $node = new stdClass();
+      $node->type                            = 'approval';
+      $node->uid                             = 1;
+      $node->status                          = 1;
+      $node->promote                         = 0;
+      $node->sticky                          = 0;
+      $node->comment                         = 0;
+      $node->title                           = $subject;
+      $node->body                            = $comment;
+      $node->field_url[0]['value']           = $course_url;
+      $node->field_approver[0]['uid']        = $user->uid;
+      $node->field_destination[0]['value']   = $dean_uid;
+      $node->field_coursecode[0]['value']    = $coursecode;
+      $node->field_programme[0]['value']     = '';
+      $node->field_department1[0]['value']   = $department;
+      $node->field_college1[0]['value']      = $college;
+      $node->field_level1[0]['value']        = $level;
+      $node->field_session1[0]['value']      = $session;
+      $node->field_semester1[0]['value']     = $sem;
+      $node->field_location1[0]['value']     = $loc;
+      $node->field_what_approved[0]['value'] = $gradestext;
+      $node->field_action[0]['value']        = 'Approved by HOD';
+      node_save($node);
+
+      $firsttime = FALSE;
+    }
+
+    if (!empty($destination_user)) {
+      $message = drupal_mail('grading', 'approval', $destination_user->mail, language_default(), array(), $user->mail, FALSE);
+      $message['subject'] = $subject;
+      $message['body'] = $body;
+      drupal_mail_send($message);
+    }
+  }
+
+  drupal_set_message('Approval successfull');
+}
+
+
+function approve_grades_dean_form($form_state) {
+  global $eduerpapprovalform;
+
+  $form['comment'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Enter a comment on the grades for the Record.',
+    '#cols' => 80,
+    '#rows' => 5,
+    '#required' => TRUE
+  );
+
+  $form['course_url']     = array('#type' => 'value', '#value' => $eduerpapprovalform->course_url);
+  $form['dean_uid']       = array('#type' => 'value', '#value' => $eduerpapprovalform->dean_uid);
+  $form['coursecode']     = array('#type' => 'value', '#value' => $eduerpapprovalform->coursecode);
+  $form['session']        = array('#type' => 'value', '#value' => $eduerpapprovalform->session);
+  $form['semester']       = array('#type' => 'value', '#value' => $eduerpapprovalform->semester);
+  $form['location']       = array('#type' => 'value', '#value' => $eduerpapprovalform->location);
+  $form['number_of_ca']   = array('#type' => 'value', '#value' => $eduerpapprovalform->number_of_ca);
+  $form['ca_approved_onebyone'] = array('#type' => 'value', '#value' => $eduerpapprovalform->ca_approved_onebyone);
+  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprove);
+  $form['gradestext']     = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestext);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestext . '.');
+
+  return $form;
+}
+
+
+function approve_grades_dean_form_validate($form, &$form_state) {
+  if (empty($form_state['values']['comment'])) {
+    form_set_error('comment', 'You must enter a comment for the Record!');
+  }
+}
+
+
+function approve_grades_dean_form_submit($form, &$form_state) {
+  global $user;
+  global $base_url;
+
+  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
+  $comment        = $form_state['values']['comment'];
+  $course_url     = $form_state['values']['course_url'];
+  $dean_uid       = $form_state['values']['dean_uid'];
+  $coursecode     = $form_state['values']['coursecode'];
+  $session        = $form_state['values']['session'];
+  $semester       = $form_state['values']['semester'];
+  $location       = $form_state['values']['location'];
+  $number_of_ca   = $form_state['values']['number_of_ca'];
+  $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
+  $gradestext     = $form_state['values']['gradestext'];
+
+  if ($semester === 'All') $semesterwhere = '';
+  else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
+
+  if ($location === 'All') $locationwhere = '';
+  else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
+
+  // Don't allow an exam score approved by the VC to be changed
+  if ($fieldtoapprove === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
+  else $protectVC = '';
+
+  if ($ca_approved_onebyone) {
+    $setstatement = "SET sg.`{$fieldtoapprove}`='3'";
+  }
+  else { // Approve CAs along with exam
+    $setstatement = "
+      SET sg.`field_ca1locked_value`='3',
+      SET sg.`field_ca2locked_value`='3',
+      SET sg.`field_ca3locked_value`='3',
+      SET sg.`field_ca4locked_value`='3',
+      SET sg.`field_examscorelocked_value`='3'";
+  }
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+    $setstatement
+    WHERE
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_course_id_nid=c.nid AND
+      ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
+      c.field_code_value='%s'
+      $protectVC";
+  db_query($sql, $session, $coursecode);
+
+  list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
+
+  profile_load_profile($user);
+
+  $name = '';
+  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+    $middle = '';
+    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
+    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+  }
+
+  $subject = "$gradestext for $coursecode Approved by $name";
+
+  $node = new stdClass();
+  $node->type                            = 'approval';
+  $node->uid                             = 1;
+  $node->status                          = 1;
+  $node->promote                         = 0;
+  $node->sticky                          = 0;
+  $node->comment                         = 0;
+  $node->title                           = $subject;
+  $node->body                            = $comment;
+  $node->field_url[0]['value']           = $course_url;
+  $node->field_approver[0]['uid']        = $user->uid;
+  $node->field_coursecode[0]['value']    = $coursecode;
+  $node->field_programme[0]['value']     = '';
+  $node->field_department1[0]['value']   = $department;
+  $node->field_college1[0]['value']      = $college;
+  $node->field_level1[0]['value']        = $level;
+  $node->field_session1[0]['value']      = $session;
+  $node->field_semester1[0]['value']     = $sem;
+  $node->field_location1[0]['value']     = $loc;
+  $node->field_what_approved[0]['value'] = $gradestext;
+  $node->field_action[0]['value']        = 'Approved by Lecturer';
+  node_save($node);
+
+  drupal_set_message('Approval successfull');
+}
+
+
+findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere) {
+  $sql = "SELECT
+      c.field_level_value AS level,
+      ci.field_semester_name_value AS sem,
+      ci.field_location_value AS loc,
+      d.field_department_name_value AS department,
+      co.field_college_name_value AS college
+    FROM {content_type_course_instance} ci, {content_type_course} c, {content_department_course} d, {content_type_college} co
+    WHERE
+      c.field_code_value='%s' AND
+      c.nid=ci.field_course_id_nid AND
+      ci.field_sess_name_value='%s'
+      $semesterwhere $locationwhere AND
+      c.field_department_nid_nid=d.nid AND
+      d.field_college_id_nid=co.nid
+    LIMIT 1";
+  $collegeresult = db_query($sql, $coursecode, $session);
+  if ($collegerow = db_fetch_object($collegeresult)) {
+    return array($collegerow->level, $collegerow->sem, $collegerow->loc, $collegerow->department, $collegerow->college);
+  }
+  else {
+    return array('', '', '', '', '');
+  }
 }
 
 
