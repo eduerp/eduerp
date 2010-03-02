@@ -567,7 +567,7 @@ function grading_stats_department_form(&$obj) {
 function _grading_college_list_any() {
   $names = array();
   $names['0'] = '<Any>';
-  $sql = "SELECT DISTINCT field_college_name_value AS name FROM {content_type_program} ORDER BY name ASC";
+  $sql = "SELECT DISTINCT field_college_name_value AS name FROM {content_type_college} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->name] = $row->name;
@@ -578,7 +578,7 @@ function _grading_college_list_any() {
 
 function _grading_department_list() {
   $names = array();
-  $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
+  $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_department} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->name] = $row->name;
@@ -590,7 +590,7 @@ function _grading_department_list() {
 function _grading_department_list_any() {
   $names = array();
   $names['0'] = '<Any>';
-  $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_program} ORDER BY name ASC";
+  $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_department} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->name] = $row->name;
@@ -635,7 +635,7 @@ function _grading_semester_list() {
 
 function _grading_level_list() {
   $names = array();
-  $sql = "SELECT DISTINCT field_level_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
+  $sql = "SELECT DISTINCT field_level_value AS name FROM {content_type_course} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->name] = $row->name;
@@ -647,7 +647,7 @@ function _grading_level_list() {
 function _grading_level_list_any() {
   $names = array();
   $names['0'] = '<Any>';
-  $sql = "SELECT DISTINCT field_level_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
+  $sql = "SELECT DISTINCT field_level_value AS name FROM {content_type_course} ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->name] = $row->name;
