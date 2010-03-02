@@ -129,8 +129,6 @@ function grading_menu() {
 function grading_field_access($op, $field, $account, $node = NULL) {
   global $user;
   static $locked = array(); // Cache
-//  static $sg_nids = array();
-//  static $gpa_nids = array();
 
   if (is_null($account)) {
     $account = $user;
@@ -150,60 +148,67 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
       return TRUE;
 
-//      if (user_access('view grading', $account)) return TRUE; // ALL content types are treated as grading, if more are added these can be differentiated later
-//
-//      if (empty($node)) return TRUE; // I belive this is for the headings
-//
-//      // Allow these regardless
-//      $ci_fields = array('field_course_code', 'field_course_title', 'field_credit_load', 'field_sess_name', 'field_semester_name');
-//      if (in_array($field['field_name'], $ci_fields)) return TRUE;
-//
-//      $sg_fields = array('field_ca1forstudent', 'field_ca2forstudent', 'field_ca3forstudent', 'field_ca4forstudent', 'field_examscoreforstudent', 'field_totalscoreforstudent', 'field_gradepointforstudent', 'field_gradeforstudent');
-//      if (in_array($field['field_name'], $sg_fields)) {
-//        if (empty($sg_nids)) { // Not cached...
-//          // Find content that is for this user (assuming they are a student)
-//          $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_mat_no_uid=%d";
-//          $nids = db_query($sql, $account->uid);
-//          while ($nid = db_fetch_object($nids)) {
-//            $sg_nids[] = $nid->nid;
-//          }
-//        }
-//        if (!empty($node->nid) && in_array($node->nid, $sg_nids)) return TRUE;
-//      }
-//
-//      $gpa_fields = array('field_gpaforstudent', 'field_cgpaforstudent');
-//      if (in_array($field['field_name'], $gpa_fields)) {
-//        if (empty($gpa_nids)) {
-//          $sql = "SELECT nid FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid=%d";
-//          $nids = db_query($sql, $account->uid);
-//          while ($nid = db_fetch_object($nids)) {
-//            $gpa_nids[] = $nid->nid;
-//          }
-//        }
-//        if (!empty($node->nid) && in_array($node->nid, $gpa_nids)) return TRUE;
-//      }
-//
-//      return FALSE;
-//      // return user_access($op .' '. $field['field_name'], $account);
-//      // return TRUE; // Normal access control determines whether all the content can be viewed or not
-
     case 'edit':
       $editablegradingfields = array('field_ca1' => 1, 'field_ca2' => 1, 'field_ca3' => 1, 'field_ca4' => 1, 'field_exam_score' => 1, 'field_comment_grades' => 1);
       if (empty($editablegradingfields[$field['field_name']])) {
-		return FALSE; // No fields are editable except above ones
-        // return user_access($op .' '. $field['field_name'], $account);
+        return FALSE; // No fields are editable except above ones for student_grades
       }
 
       if (empty($node)) return FALSE;
 
       if (empty($locked)) { // Not cached...
-        // Retrieve the locked indicators for all fields for any student_grades in a course that has the current user as a lecturer.
-        // (After a number of years this could get big?)
-        // Another assumption made here is that none of the fields are reused in other tables so that Drupal will not store them in dedicated tables!
-        $sql = "SELECT sg.nid, field_ca1locked_value AS field_ca1, field_ca2locked_value AS field_ca2, field_ca3locked_value AS field_ca3, field_ca4locked_value AS field_ca4, field_examscorelocked_value AS field_exam_score
-          FROM {content_type_student_grades} sg, {content_type_course_instance} ci
-          WHERE sg.field_course_instance_nid=ci.nid AND (ci.field_lecturer_uid={$account->uid} OR ci.field_lecturer_alternate_uid={$account->uid})";
+        $locked[-1] = -1; // Mark as cached
 
+        // Retrieve the locked indicators for all fields for any student_grades that reference the same course and session as this student_grades node
+        // and the ci has the current user as a lecturer.
+        // Note the course_grades view only will ever show grades from one course and session at a time, so caching only needs these.
+        // Another assumption made here is that none of the fields are reused in other tables so that Drupal will not store them in dedicated tables!
+        $sql = "SELECT sg.nid, sg.field_ca1locked_value AS field_ca1, sg.field_ca2locked_value AS field_ca2, sg.field_ca3locked_value AS field_ca3, sg.field_ca4locked_value AS field_ca4, sg.field_examscorelocked_value AS field_exam_score
+          FROM
+            {content_type_student_grades} sgnode,
+            {content_type_student_grades} sg,
+            {content_type_course_instance} cinode,
+            {content_type_course_instance} ci,
+            {content_type_course} c
+          WHERE
+            sgnode.nid={$node->nid} AND
+            sgnode.field_course_instance_nid=cinode.nid AND
+            cinode.field_course_id_nid=c.nid AND
+            ci.field_course_id_nid=c.nid AND
+            sg.field_course_instance_nid=ci.nid AND
+            cinode.field_sess_name_value=ci.field_sess_name_value AND
+            (ci.field_lecturer_uid={$account->uid} OR ci.field_lecturer_alternate_uid={$account->uid})";
+        $result = db_query($sql);
+
+        while ($row = db_fetch_array($result)) {
+          $locked[$row['nid']] = $row;
+        }
+
+        // Retrieve the locked indicators for all fields for any student_grades that reference the same course and session as this student_grades node
+        // and the user has edit rights by being some kind of Examination Officer
+
+        $inroles = "'Department Examination Officer', 'Faculty Examination Officer', 'University Examination Officer'";
+
+        $sql = "SELECT DISTINCT sg.nid, sg.field_ca1locked_value AS field_ca1, sg.field_ca2locked_value AS field_ca2, sg.field_ca3locked_value AS field_ca3, sg.field_ca4locked_value AS field_ca4, sg.field_examscorelocked_value AS field_exam_score
+          FROM
+            {content_type_student_grades} sgnode,
+            {content_type_student_grades} sg,
+            {content_type_course_instance} cinode,
+            {content_type_course_instance} ci,
+            {content_type_course} c,
+            {content_type_department} d,
+            {eduerp_roles} er
+          WHERE
+            sgnode.nid={$node->nid} AND
+            sgnode.field_course_instance_nid=cinode.nid AND
+            cinode.field_course_id_nid=c.nid AND
+            ci.field_course_id_nid=c.nid AND
+            sg.field_course_instance_nid=ci.nid AND
+            cinode.field_sess_name_value=ci.field_sess_name_value AND
+            c.field_department_nid_nid=d.nid AND
+            (d.nid=er.department_id OR d.field_college_id_nid=er.college_id OR (er.department_id=0 AND er.college_id=0)) AND
+            er.role IN ($inroles) AND
+            er.uid={$account->uid}";
         $result = db_query($sql);
 
         while ($row = db_fetch_array($result)) {
@@ -456,71 +461,6 @@ function grading_node_grants($account, $op) {
   $grantsbyuid[$account->uid] = $grants;
 
   return $grants;
-
-//  // I am not sure profile is guaranteed to be loaded, so I am accessing department_id profile field directly
-//  $sql = "SELECT pv.value AS department_id, d.field_college_id_nid AS college_id FROM {profile_fields} pf, {profile_values} pv, {content_type_department} d WHERE pv.uid=%d AND pv.fid=pf.fid AND pf.name='profile_department_id' AND pv.value=d.nid LIMIT 1";
-//  $nids = db_query($sql, $account->uid);
-//  while ($nid = db_fetch_object($nids)) {
-//    $department_ids[] = $nid->department_id;
-//    $college_ids[] = $nid->college_id;
-//  }
-//
-//  $rolenames = array();
-//  $sql = "SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.uid=%d AND ur.rid=r.rid";
-//  $roles = db_query($sql, $account->uid);
-//  while ($role = db_fetch_object($roles)) {
-//    $rolenames[] = $role->name;
-//  }
-//
-//  // Student is allowed see own student_grades record (fields shown will be limited by grading_field_access() )
-//  $grants['student'] = array($account->uid);
-//
-//  // user is a lecturer in these course_instance(s), so can see them
-//  if (!empty($ci_nids)) {
-//    $grants['course_instance'] = $ci_nids;
-//  }
-//
-//  $department_roles = array('Head of Department');
-//  //also "Departmental Examination Officer Role" or "Departmental Secretary Role"???
-//
-//  if (!empty(array_intersect($department_roles, $rolenames))) {
-//    // This user has a departmental role that allows them to see in progress grading
-//    if (!empty($department_ids)) {
-//      $grants['department'] = $department_ids;
-//    }
-//  }
-//
-//  $college_roles = array('Dean of Faculty');
-//  //also "Faculty Examination Officer", "Faculty Examination Viewer" role...
-//
-//  if (!empty(array_intersect($college_roles, $rolenames))) {
-//    // This user has a college role that allows them to see in progress grading
-//    if (!empty($college_ids)) {
-//      $grants['college'] = $college_ids;
-//    }
-//  }
-//
-//  $university_roles = array('VC', 'Registrar');
-//  if (!empty(array_intersect($university_roles, $rolenames))) {
-//    // This user has a university role that allows them to see in progress grading
-//    $grants['university'] = array(0); // This will match the nid=0, gid=0 system-wide grant
-//  }
-//
-//  if (!empty($department_ids)) {
-//    // This allows them to see approved grading
-//    $grants['departmentapproved'] = $department_ids;
-//  }
-//
-//  if (!empty($college_ids)) {
-//    // This allows them to see approved grading (currently redundant as they will have a grant for 'departmentapproved')
-//    $grants['collegeapproved'] = $college_ids;
-//  }
-//
-//  $university_roles = array('nondeptstaff1', 'nondeptstaff2');
-//  if (!empty(array_intersect($university_roles, $rolenames))) {
-//    // This user has a university role that allows them to see approved grading
-//    $grants['universityapproved'] = array(0); // This will match the gid=0 node grant
-//  }
 }
 
 
