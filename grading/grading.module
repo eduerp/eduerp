@@ -1602,12 +1602,12 @@ function _grading_ahah_stats_uni() {
   elseif ($department !== 'All') {
     $title = 'DEPARTMENTAL';
     $queryvalue = $department;
-    $querywhere = "AND p.field_department_name_value='%s'";
+    $querywhere = "AND d.field_department_name_value='%s'";
   }
   elseif ($college !== 'All') {
     $title = 'FACULTY';
     $queryvalue = $college;
-    $querywhere = "AND p.field_college_name_value='%s'";
+    $querywhere = "AND co.field_college_name_value='%s'";
   }
   else {
     $title = 'UNIVERSITY';
@@ -1653,13 +1653,15 @@ function _grading_ahah_stats_uni() {
             MIN(sg.field_ca3locked_value) AS ca3l,
             MIN(sg.field_ca4locked_value) AS ca4l,
             MIN(sg.field_examscorelocked_value) AS examl
-          FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+          FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d, {content_type_college} co
           WHERE
             sg.field_student_gpa_nid=gpa.nid AND
             gpa.field_level_name_gpa_value='%s' AND
             gpa.field_sess_name_gpa_value='%s' AND
             gpa.field_semester_name_gpa_value='%s' AND
-            gpa.field_program_ref_gpa_nid=p.nid
+            gpa.field_program_ref_gpa_nid=p.nid AND
+            p.field_department_id_nid=d.nid AND
+            d.field_college_id_nid=co.nid
             {$querywhere}
           GROUP BY sg.field_mat_no_uid
         ) AS eachstudent";
@@ -1681,12 +1683,14 @@ function _grading_ahah_stats_uni() {
     if (($levelparm === All) || ($levelparm == $level)) {
 
       $sql = "SELECT DISTINCT p.field_department_name_value AS department
-        FROM {content_type_student_gpa} gpa, {content_type_program} p
+        FROM {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d, {content_type_college} co
         WHERE
           gpa.field_level_name_gpa_value='%s' AND
           gpa.field_sess_name_gpa_value='%s' AND
           gpa.field_semester_name_gpa_value='%s' AND
-          gpa.field_program_ref_gpa_nid=p.nid
+          gpa.field_program_ref_gpa_nid=p.nid AND
+          p.field_department_id_nid=d.nid AND
+          d.field_college_id_nid=co.nid
           {$querywhere}
           ORDER BY department ASC";
       if ($queryvalue) $programmerows = db_query($sql, $level, $session, $semester, $queryvalue);
