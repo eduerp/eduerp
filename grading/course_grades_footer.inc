@@ -971,7 +971,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       drupal_mail_send($message);
 
       db_query("INSERT INTO cron_notification (approver_uid, student_uid, gradestext, programme, instruction) VALUES (%d, %d, '%s', '%s', %d)",
-        $user->uid, $student_uid, $gradestexthoda, '', 1);
+        $user->uid, $student_uid, $gradestexthoda, $coursecode, 1);
     }
   }
 
