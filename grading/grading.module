@@ -937,7 +937,7 @@ function _grading_ahah_stats() {
     $programmeenc = rawurlencode($courserow->programme);
     $departmentenc = rawurlencode($courserow->department);
 
-    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->coursecode . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}&location=All" . '">' . $courserow->coursecode . '</a></td>';
     //$output .= '<td>' . $courserow->programme . '</td>';
     //$output .= '<td>' . $courserow->department . '</td>';
     $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
@@ -1826,7 +1826,14 @@ function _grading_ahah_studentdetails() {
   $output .= '<td valign="top" class="table-label">Comment</td>';
   $output .= '</tr>';
 
-  $sql = "SELECT ci.field_course_code_value AS coursecode, p.field_programme_name_value AS programme, p.field_department_name_value AS department, ci.field_sess_name_value AS session, ci.field_semester_name_value AS semester, ci.field_level_name_value AS level,
+  $sql = "SELECT
+      c.field_code_value AS coursecode,
+      p.field_programme_name_value AS programme,
+      d.field_department_name_value AS department,
+      ci.field_sess_name_value AS session,
+      ci.field_semester_name_value AS semester,
+      ci.field_location_value AS location,
+      gpa.field_level_name_gpa_value AS level,
       sg.field_ca1_value AS ca1,
       sg.field_ca2_value AS ca2,
       sg.field_ca3_value AS ca3,
@@ -1835,8 +1842,21 @@ function _grading_ahah_studentdetails() {
       sg.field_total_score_value AS total,
       sg.field_grade_value AS grade,
       sg.field_comment_grades_value AS comment
-    FROM content_type_student_grades sg, content_type_course_instance ci, content_type_program p
-    WHERE sg.field_mat_no_uid=%d AND sg.field_course_instance_nid=ci.nid AND ci.field_program_ref_course_nid=p.nid ORDER BY session ASC, semester ASC, coursecode ASC";
+    FROM
+      {content_type_student_grades} sg,
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {content_type_student_gpa} gpa,
+      {content_type_program} p,
+      {content_type_department} d
+    WHERE
+      sg.field_mat_no_uid=%d AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_course_id_nid=c.nid AND
+      sg.field_student_gpa_nid=gpa.nid AND
+      gpa.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid
+    ORDER BY session ASC, semester ASC, coursecode ASC";
   $rows = db_query($sql, $uid);
   while ($row = db_fetch_object($rows)) {
     $coursecodeenc = rawurlencode($row->coursecode);
@@ -1845,7 +1865,7 @@ function _grading_ahah_studentdetails() {
     $sessionenc = rawurlencode($row->session);
 
     $output .= '<tr>';
-    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->coursecode . '</a></td>';
+    $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$row->semester}&location={$row->location}" . '">' . $row->coursecode . '</a></td>';
     $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$row->level}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->programme . '</a></td>';
     $output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$row->level}&session={$sessionenc}&semester={$row->semester}" . '">' . $row->department . '</a></td>';
     $output .= "<td>{$row->session}</td>";
@@ -1880,7 +1900,9 @@ function _grading_ahah_studentdetails() {
   $output .= '<td valign="top" class="table-label">cGPA</td>';
   $output .= '</tr>';
 
-  $sql = "SELECT p.field_programme_name_value AS programme, p.field_department_name_value AS department,
+  $sql = "SELECT
+      p.field_programme_name_value AS programme,
+      d.field_department_name_value AS department,
       g.field_sess_name_gpa_value AS session,
       g.field_semester_name_gpa_value AS semester,
       g.field_level_name_gpa_value AS level,
@@ -1888,8 +1910,15 @@ function _grading_ahah_studentdetails() {
       g.field_credit_load_completed_value AS credit_load_completed,
       g.field_gpa_value AS gpa,
       g.field_cgpa_value AS cgpa
-    FROM content_type_student_gpa g, content_type_program p
-    WHERE field_student_ref_gpa_uid=%d AND g.field_program_ref_gpa_nid=p.nid ORDER BY session ASC, semester ASC, programme ASC";
+    FROM
+      {content_type_student_gpa} g,
+      {content_type_program} p,
+      {content_type_department} d
+    WHERE
+      field_student_ref_gpa_uid=%d AND
+      g.field_program_ref_gpa_nid=p.nid AND
+      p.field_department_id_nid=d.nid
+    ORDER BY session ASC, semester ASC, programme ASC";
   $rows = db_query($sql, $uid);
   while ($row = db_fetch_object($rows)) {
     $programmeenc = rawurlencode($row->programme);
