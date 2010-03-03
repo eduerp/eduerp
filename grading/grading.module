@@ -888,8 +888,8 @@ function _grading_ahah_stats() {
   $output .= '<tr><th valign="top" class="table-label" colspan="8">Approval Details for all Courses taken by Students in this Department...</th></tr>';
 
   $output .= '<td valign="top" class="table-label">Course URL</td>';
-  $output .= '<td valign="top" class="table-label">Programme (for info only, HOD approves Programmes using URLs under "View Programme Details" above)</td>';
-  $output .= '<td valign="top" class="table-label">Department (for info only, Department grades are approved using URL under "Departmental Grading Approval Status")</td>';
+  $output .= '<td valign="top" class="table-label">Student' . "'s Programme</td>";
+  //$output .= '<td valign="top" class="table-label">Student' . "'s Department</td>"; // All will point to current screen in any case!
   $output .= '<td valign="top" class="table-label">Continuous Assessment 1</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 2</td>';
   $output .= '<td valign="top" class="table-label">Continuous Assessment 3</td>';
@@ -897,25 +897,40 @@ function _grading_ahah_stats() {
   $output .= '<td valign="top" class="table-label">Semester Exam</td>';
 
   $sql = "SELECT
-    ci.field_course_code_value AS coursecode, p0.field_programme_name_value AS programme, p0.field_department_name_value AS department,
+      c.field_code_value AS coursecode,
+      p.field_programme_name_value AS programme,
       MIN(sg.field_ca1locked_value) AS ca1l,
       MIN(sg.field_ca2locked_value) AS ca2l,
       MIN(sg.field_ca3locked_value) AS ca3l,
       MIN(sg.field_ca4locked_value) AS ca4l,
       MIN(sg.field_examscorelocked_value) AS examl
-    FROM {content_type_student_grades sg}, {content_type_course_instance} ci, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_program} p0
+    FROM {content_type_student_grades sg}, {content_type_course_instance} ci, {content_type_course} c, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
       sg.field_course_instance_nid=ci.nid AND
+      ci.field_course_id_nid=c.nid AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s' AND
-      ci.field_program_ref_course_nid=p0.nid
-    GROUP BY ci.field_course_code_value ORDER BY ci.field_course_code_value";
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'
+    GROUP BY c.field_code_value, p.field_programme_name_value ORDER BY c.field_code_value, p.field_programme_name_value";
   $courserows = db_query($sql, $level, $session, $semester, $department);
   while ($courserow = db_fetch_object($courserows)) {
+
+    // Determine how CA should be treated (it might be possible to integrate this in the query above)
+    $sql = "SELECT cgw.number_of_ca, cgw.ca_approved_onebyone
+      FROM {course_grade_weightings} cgw, {content_type_course} c
+      WHERE
+        (cgw.course_id=c.nid AND c.field_code_value='%s') OR
+        cgw.course_id=0
+      ORDER BY cgw.course_id DESC";  // Select the course specific one (if any) first followed by the default one
+    $weightings = db_query($sql, $courserow->coursecode);
+    $row = db_fetch_object($weightings);
+    $number_of_ca = $row->number_of_ca;
+    $ca_approved_onebyone = $row->ca_approved_onebyone;
+
     $output .= '<tr>';
 
     $coursecodeenc = rawurlencode($courserow->coursecode);
@@ -923,16 +938,36 @@ function _grading_ahah_stats() {
     $departmentenc = rawurlencode($courserow->department);
 
     $output .= '<td><a href="' . $base_url . "/course?coursecode={$coursecodeenc}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->coursecode . '</a></td>';
-    $output .= '<td>' . $courserow->programme . '</td>';
-    $output .= '<td>' . $courserow->department . '</td>';
-    //$output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
+    //$output .= '<td>' . $courserow->programme . '</td>';
+    //$output .= '<td>' . $courserow->department . '</td>';
+    $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
     //$output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
 
-    $approvals = array('Lecturer needs to Approve', 'Approved by Lecturer', 'Approved by HOD', 'Approved by Dean', 'Approved by  Registrar', 'Fully Approved');
-    $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
-    $output .= '<td>' . $approvals[$courserow->ca2l] . '</td>';
-    $output .= '<td>' . $approvals[$courserow->ca3l] . '</td>';
-    $output .= '<td>' . $approvals[$courserow->ca4l] . '</td>';
+    $approvals = array('Lecturers need to Submit', 'Submitted by Lecturers', 'Approved by HOD', 'Approved by Dean', 'Approved by  Registrar', 'Fully Approved');
+    if ($ca_approved_onebyone && $number_of_ca >= 1) {
+      $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
+    }
+    else {
+      $output .= '<td></td>';
+    }
+    if ($ca_approved_onebyone && $number_of_ca >= 2) {
+      $output .= '<td>' . $approvals[$courserow->ca2l] . '</td>';
+    }
+    else {
+      $output .= '<td></td>';
+    }
+    if ($ca_approved_onebyone && $number_of_ca >= 3) {
+      $output .= '<td>' . $approvals[$courserow->ca3l] . '</td>';
+    }
+    else {
+      $output .= '<td></td>';
+    }
+    if ($ca_approved_onebyone && $number_of_ca >= 4) {
+      $output .= '<td>' . $approvals[$courserow->ca4l] . '</td>';
+    }
+    else {
+      $output .= '<td></td>';
+    }
     $output .= '<td>' . $approvals[$courserow->examl] . '</td>';
 
     $output .= '</tr>';
@@ -943,165 +978,6 @@ function _grading_ahah_stats() {
   print drupal_to_js(array('data' => $output, 'status' => true));
 
   exit();
-}
-
-
-// Put up form to allow Dean to approve grades (relevant locked fields will then become 3 (or 5 if this is a CA) (1 is lecturer approval, 2 is HOD approval)).
-
-function approve_grades_dean_form($form_state) {
-  $form['departmentname'] = array('#value' => '<b>Department: ' . $_SESSION['eduerpdeanapprovalform']->department . '</b>');
-
-  $form['comment'] = array(
-    '#type' => 'textarea',
-    '#title' => 'Enter a comment on the grades for the Registrar',
-    '#cols' => 80,
-    '#rows' => 5,
-    '#required' => TRUE
-  );
-
-  $form['department_url'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->department_url);
-  $form['dean_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->dean_uid);
-  $form['registrar_uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->registrar_uid);
-  $form['department'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->department);
-  $form['level'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->level);
-  $form['session'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->session);
-  $form['semester'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->semester);
-  $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->fieldtoapprove);
-  $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->gradestext);
-
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpdeanapprovalform']->gradestext . ' for level ' . $_SESSION['eduerpdeanapprovalform']->level);
-
-  return $form;
-}
-
-
-function approve_grades_dean_form_validate($form, &$form_state) {
-  if (empty($form_state['values']['comment'])) {
-    form_set_error('comment', 'You must enter a comment for the Registrar!');
-  }
-}
-
-
-function approve_grades_dean_form_submit($form, &$form_state) {
-  global $user;
-
-  $department     = $form_state['values']['department'];
-  $level          = $form_state['values']['level'];
-  $session        = $form_state['values']['session'];
-  $semester       = $form_state['values']['semester'];
-  $fieldtoapprove = $form_state['values']['fieldtoapprove'];
-  $comment        = $form_state['values']['comment'];
-  $department_url = $form_state['values']['department_url'];
-  $dean_uid       = $form_state['values']['dean_uid'];
-  $registrar_uid  = $form_state['values']['registrar_uid'];
-  $gradestext     = $form_state['values']['gradestext'];
-
-  if ($srcfield != 'NONE') {
-    $statetoset = '5'; // This is a CA so make it fully approved
-  }
-  else {
-    $statetoset = '3';
-  }
-
-  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
-    SET sg.`{$fieldtoapprove}`='{$statetoset}'
-    WHERE
-      sg.field_student_gpa_nid=gpa.nid AND
-      gpa.field_level_name_gpa_value='%s' AND
-      gpa.field_sess_name_gpa_value='%s' AND
-      gpa.field_semester_name_gpa_value='%s' AND
-      gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s'";
-
-  db_query($sql, $level, $session, $semester, $department);
-
-  $sql = "SELECT p.field_college_name_value AS college
-    FROM {content_type_program} p
-    WHERE p.field_department_name_value='%s'
-    LIMIT 1";
-  $collegeresult = db_query($sql, $department);
-  if ($collegerow = db_fetch_object($collegeresult)) {
-    $college = $collegerow->college;
-  }
-  else {
-    $college = '';
-  }
-
-  profile_load_profile($user);
-
-  $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
-    $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
-  }
-
-  $firsttime = TRUE;
-  $registrar_uid_array = explode(',', $registrar_uid);
-  foreach ($registrar_uid_array as $registrar_uid_i) {
-
-    if (!empty($registrar_uid_i)) $destination_user = user_load($registrar_uid_i);
-    else $destination_user = NULL;
-
-    $subject = "$gradestext for $department/$level/$session/$semester Approved by $name";
-
-    $body = '';
-    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
-      $middle = '';
-      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
-    }
-
-    $body .= "I have approved $gradestext\n\n";
-    $body .= "URL: $department_url\n";
-    $body .= "Department: $department\n";
-    $body .= "Faculty: $college\n";
-    $body .= "Level: $level\n";
-    $body .= "Session: $session\n";
-    $body .= "semester: $semester\n\n";
-    $body .= "Dean's comment...\n";
-    $body .= str_replace('<br />', "\n", $comment);
-    $body .= "\n\n{$name}\n";
-
-    if ($firsttime) {
-      $node = new stdClass();
-      $node->type                            = 'approval';
-      $node->uid                             = 1;
-      $node->status                          = 1;
-      $node->promote                         = 0;
-      $node->sticky                          = 0;
-      $node->comment                         = 0;
-      $node->title                           = $subject;
-      $node->body                            = $comment;
-      $node->field_url[0]['value']           = $department_url;
-      $node->field_approver[0]['uid']        = $user->uid;
-      $node->field_destination[0]['value']   = $registrar_uid;
-      $node->field_department1[0]['value']   = $department;
-      $node->field_college1[0]['value']      = $college;
-      $node->field_level1[0]['value']        = $level;
-      $node->field_session1[0]['value']      = $session;
-      $node->field_semester1[0]['value']     = $semester;
-      $node->field_what_approved[0]['value'] = $gradestext;
-      $node->field_action[0]['value']        = 'Approved by Dean';
-      node_save($node);
-
-      $firsttime = FALSE;
-    }
-
-    if (!empty($destination_user)) {
-      $message = drupal_mail('grading', 'approval', $destination_user->mail, language_default(), array(), $user->mail, FALSE);
-      $message['subject'] = $subject;
-      $message['body'] = $body;
-      drupal_mail_send($message);
-    }
-  }
-
-  drupal_set_message('Approval Successfull');
-  $_SESSION['eduerpdeanapprovalform'] = NULL; // Just in case they somehow come back to the form
-
-  $departmentenc = rawurlencode($department);
-  $sessionenc = rawurlencode($session);
-  drupal_goto('grading/stats', "department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}");
 }
 
 
