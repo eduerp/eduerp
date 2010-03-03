@@ -477,12 +477,12 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     $setstatement = "SET sg.`{$fieldtoapprove}`='1'";
   }
   else { // Approve CAs along with exam
-    $setstatement = "
-      SET sg.`field_ca1locked_value`='1',
-      SET sg.`field_ca2locked_value`='1',
-      SET sg.`field_ca3locked_value`='1',
-      SET sg.`field_ca4locked_value`='1',
-      SET sg.`field_examscorelocked_value`='1'";
+    $setstatement = "SET
+      sg.`field_ca1locked_value`='1',
+      sg.`field_ca2locked_value`='1',
+      sg.`field_ca3locked_value`='1',
+      sg.`field_ca4locked_value`='1',
+      sg.`field_examscorelocked_value`='1'";
   }
 
   $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
@@ -642,12 +642,12 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
     $setstatement = "SET sg.`{$fieldtoapprovehod}`='0'";
   }
   else {
-    $setstatement = "
-      SET sg.`field_ca1locked_value`='0',
-      SET sg.`field_ca2locked_value`='0',
-      SET sg.`field_ca3locked_value`='0',
-      SET sg.`field_ca4locked_value`='0',
-      SET sg.`field_examscorelocked_value`='0'";
+    $setstatement = "SET
+      sg.`field_ca1locked_value`='0',
+      sg.`field_ca2locked_value`='0',
+      sg.`field_ca3locked_value`='0',
+      sg.`field_ca4locked_value`='0',
+      sg.`field_examscorelocked_value`='0'";
   }
 
   $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
@@ -831,12 +831,12 @@ function approve_grades_hod_form_submit($form, &$form_state) {
     $setstatement = "SET sg.`{$fieldtoapprovehoda}`='2'";
   }
   else { // Approve CAs along with exam
-    $setstatement = "
-      SET sg.`field_ca1locked_value`='2',
-      SET sg.`field_ca2locked_value`='2',
-      SET sg.`field_ca3locked_value`='2',
-      SET sg.`field_ca4locked_value`='2',
-      SET sg.`field_examscorelocked_value`='2'";
+    $setstatement = "SET
+      sg.`field_ca1locked_value`='2',
+      sg.`field_ca2locked_value`='2',
+      sg.`field_ca3locked_value`='2',
+      sg.`field_ca4locked_value`='2',
+      sg.`field_examscorelocked_value`='2'";
   }
 
   $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
@@ -1049,12 +1049,12 @@ function approve_grades_dean_form_submit($form, &$form_state) {
     }
   }
   else { // Approve CAs along with exam
-    $setstatement = "
-      SET sg.`field_ca1locked_value`='3',
-      SET sg.`field_ca2locked_value`='3',
-      SET sg.`field_ca3locked_value`='3',
-      SET sg.`field_ca4locked_value`='3',
-      SET sg.`field_examscorelocked_value`='3'";
+    $setstatement = "SET
+      sg.`field_ca1locked_value`='3',
+      sg.`field_ca2locked_value`='3',
+      sg.`field_ca3locked_value`='3',
+      sg.`field_ca4locked_value`='3',
+      sg.`field_examscorelocked_value`='3'";
   }
 
   $sql = "UPDATE {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
