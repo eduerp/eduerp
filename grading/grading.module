@@ -810,111 +810,65 @@ function _grading_ahah_stats() {
   }
   if (empty($vc_uid)) $vc_uid = 0;
 
-  $exams[1] = array('lock' => $summaryrow->ca1locked,  'gradestext' => 'Continuous Assessment 1', 'fieldtoapprove' => 'field_ca1locked_value',       'srcfield' => 'field_ca1_value', 'destfield' => 'field_ca1forstudent_value');
-  $exams[2] = array('lock' => $summaryrow->ca2locked,  'gradestext' => 'Continuous Assessment 2', 'fieldtoapprove' => 'field_ca2locked_value',       'srcfield' => 'field_ca2_value', 'destfield' => 'field_ca2forstudent_value');
-  $exams[3] = array('lock' => $summaryrow->ca3locked,  'gradestext' => 'Continuous Assessment 3', 'fieldtoapprove' => 'field_ca3locked_value',       'srcfield' => 'field_ca3_value', 'destfield' => 'field_ca3forstudent_value');
-  $exams[4] = array('lock' => $summaryrow->ca4locked,  'gradestext' => 'Continuous Assessment 4', 'fieldtoapprove' => 'field_ca4locked_value',       'srcfield' => 'field_ca4_value', 'destfield' => 'field_ca4forstudent_value');
-  $exams[5] = array('lock' => $summaryrow->examlocked, 'gradestext' => 'Semester Exam',           'fieldtoapprove' => 'field_examscorelocked_value', 'srcfield' => 'NONE', 'destfield' => 'NONE');
-
-  $showdeanform = false;
   $showregistrarform = false;
   $showvcform = false;
 
   $output .= '<tr><td colspan="2"></td></tr>';
 
-  foreach ($exams as $exam) {
-    if ($exam['lock'] == 0) {
-      $output .= '<tr><td colspan="2">Waiting on some Lecturer Approvals for ' . $exam['gradestext'] . '</td></tr>';
-    }
-    elseif ($exam['lock'] == 1) {
-      $output .= '<tr><td colspan="2">Waiting on Head of Department to Approve ' . $exam['gradestext'] . ' for some Programmes</td></tr>';
-    }
-    elseif ($exam['lock'] == 2) {
-      $dean_uid_array = explode(',', $dean_uid);
-      if (in_array($user->uid, $dean_uid_array)) {
-        $showdeanform = true;
+  if ($summaryrow->examlocked == 0) {
+    $output .= '<tr><td colspan="2">Waiting on some Lecturer Submissions for Semester Exam</td></tr>';
+  }
+  elseif ($summaryrow->examlocked == 1) {
+    $output .= '<tr><td colspan="2">All Lecturers have Submitted Semester Exam Results</td></tr>';
+  }
+  elseif ($summaryrow->examlocked == 2) {
+    $output .= '<tr><td colspan="2">All HODs have Approved Semester Exam Results</td></tr>';
+  }
+  elseif ($summaryrow->examlocked == 3) {
+    $registrar_uid_array = explode(',', $registrar_uid);
+    if (in_array($user->uid, $registrar_uid_array)) {
+      $showregistrarform = true;
 
-        if ($exam['srcfield'] != 'NONE') { // if this is a CA, notification goes to VC also
-          if (empty($registrar_uid)) {
-            $registrar_uid = $vc_uid;
-          }
-          elseif (!empty($vc_uid)) {
-            $registrar_uid = $registrar_uid . ',' . $vc_uid;
-          }
-        }
-        $_SESSION['eduerpdeanapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
-        $_SESSION['eduerpdeanapprovalform']->dean_uid = $dean_uid;
-        $_SESSION['eduerpdeanapprovalform']->registrar_uid = $registrar_uid;
-        $_SESSION['eduerpdeanapprovalform']->department = $department;
-        $_SESSION['eduerpdeanapprovalform']->level = $level;
-        $_SESSION['eduerpdeanapprovalform']->session = $session;
-        $_SESSION['eduerpdeanapprovalform']->semester = $semester;
-        $_SESSION['eduerpdeanapprovalform']->gradestext = $exam['gradestext'];
-        $_SESSION['eduerpdeanapprovalform']->fieldtoapprove = $exam['fieldtoapprove'];
-        $_SESSION['eduerpdeanapprovalform']->srcfield = $exam['srcfield'];
-        $_SESSION['eduerpdeanapprovalform']->destfield = $exam['destfield'];
-      }
-      else {
-        $output .= '<tr><td colspan="2">Waiting on Dean to Approve ' . $exam['gradestext'] . '</td></tr>';
-      }
-      break;
+      $_SESSION['eduerpregistrarapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
+      $_SESSION['eduerpregistrarapprovalform']->registrar_uid = $registrar_uid;
+      $_SESSION['eduerpregistrarapprovalform']->vc_uid = $vc_uid;
+      $_SESSION['eduerpregistrarapprovalform']->department = $department;
+      $_SESSION['eduerpregistrarapprovalform']->level = $level;
+      $_SESSION['eduerpregistrarapprovalform']->session = $session;
+      $_SESSION['eduerpregistrarapprovalform']->semester = $semester;
+      $_SESSION['eduerpregistrarapprovalform']->gradestext = 'Semester Exam';
+      $_SESSION['eduerpregistrarapprovalform']->fieldtoapprove = 'field_examscorelocked_value';
     }
-    elseif ($exam['lock'] == 3) { // This is only for final exam, CAs go straight to state 5
-      $registrar_uid_array = explode(',', $registrar_uid);
-      if (in_array($user->uid, $registrar_uid_array)) {
-        $showregistrarform = true;
+    else {
+      $output .= '<tr><td colspan="2">All Deans have Approved Semester Exam Results</td></tr>';
+    }
+  }
+  elseif ($summaryrow->examlocked == 4) {
+    $vc_uid_array = explode(',', $vc_uid);
+    if (in_array($user->uid, $vc_uid_array)) {
+      $showvcform = true;
 
-        $_SESSION['eduerpregistrarapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
-        $_SESSION['eduerpregistrarapprovalform']->registrar_uid = $registrar_uid;
-        $_SESSION['eduerpregistrarapprovalform']->vc_uid = $vc_uid;
-        $_SESSION['eduerpregistrarapprovalform']->department = $department;
-        $_SESSION['eduerpregistrarapprovalform']->level = $level;
-        $_SESSION['eduerpregistrarapprovalform']->session = $session;
-        $_SESSION['eduerpregistrarapprovalform']->semester = $semester;
-        $_SESSION['eduerpregistrarapprovalform']->gradestext = $exam['gradestext'];
-        $_SESSION['eduerpregistrarapprovalform']->fieldtoapprove = $exam['fieldtoapprove'];
-        $_SESSION['eduerpregistrarapprovalform']->srcfield = $exam['srcfield'];
-        $_SESSION['eduerpregistrarapprovalform']->destfield = $exam['destfield'];
-      }
-      else {
-        $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Submitted to Registrar</td></tr>';
-      }
-      break;
+      $_SESSION['eduerpvcapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
+      $_SESSION['eduerpvcapprovalform']->vc_uid = $vc_uid;
+      $_SESSION['eduerpvcapprovalform']->department = $department;
+      $_SESSION['eduerpvcapprovalform']->level = $level;
+      $_SESSION['eduerpvcapprovalform']->session = $session;
+      $_SESSION['eduerpvcapprovalform']->semester = $semester;
+      $_SESSION['eduerpvcapprovalform']->gradestext = 'Semester Exam';
+      $_SESSION['eduerpvcapprovalform']->fieldtoapprove = 'field_examscorelocked_value';
     }
-    elseif ($exam['lock'] == 4) {
-      $vc_uid_array = explode(',', $vc_uid);
-      if (in_array($user->uid, $vc_uid_array)) {
-        $showvcform = true;
-
-        $_SESSION['eduerpvcapprovalform']->department_url = $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}";
-        $_SESSION['eduerpvcapprovalform']->vc_uid = $vc_uid;
-        $_SESSION['eduerpvcapprovalform']->department = $department;
-        $_SESSION['eduerpvcapprovalform']->level = $level;
-        $_SESSION['eduerpvcapprovalform']->session = $session;
-        $_SESSION['eduerpvcapprovalform']->semester = $semester;
-        $_SESSION['eduerpvcapprovalform']->gradestext = $exam['gradestext'];
-        $_SESSION['eduerpvcapprovalform']->fieldtoapprove = $exam['fieldtoapprove'];
-        $_SESSION['eduerpvcapprovalform']->srcfield = $exam['srcfield'];
-        $_SESSION['eduerpvcapprovalform']->destfield = $exam['destfield'];
-      }
-      else {
-        $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Submitted to Vice Chancellor</td></tr>';
-      }
-      break;
+    else {
+      $output .= '<tr><td colspan="2">Registrar has Approved Semester Exam Results</td></tr>';
     }
-    elseif ($exam['lock'] == 5) {
-      $output .= '<tr><td colspan="2">' . $exam['gradestext'] . ' Fully Approved</td></tr>';
-    }
+  }
+  elseif ($summaryrow->examlocked == 5) {
+    $output .= '<tr><td colspan="2">Semester Exam Results Fully Approved</td></tr>';
   }
 
   $output .= '</tbody></table>';
 
   if (empty($registrar_uid)) {
     $output .= 'THERE IS NO REGISTRAR, ONE MUST BE ASSIGNED';
-  }
-  elseif ($showdeanform) {
-    // $output .= drupal_get_form('approve_grades_dean_form');
-    $output .= '<a href="' . $base_url . '/grading/eduerpdeanapprovalform">Click here to go to a Form for Approval of ' . $_SESSION['eduerpdeanapprovalform']->gradestext . " for level $level</a>";
   }
   elseif (empty($vc_uid)) {
     $output .= 'THERE IS NO VICE CHANCELLOR, ONE MUST BE ASSIGNED';
@@ -1013,8 +967,6 @@ function approve_grades_dean_form($form_state) {
   $form['session'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->session);
   $form['semester'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->semester);
   $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->fieldtoapprove);
-  $form['srcfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->srcfield);
-  $form['destfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->destfield);
   $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpdeanapprovalform']->gradestext);
 
   $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpdeanapprovalform']->gradestext . ' for level ' . $_SESSION['eduerpdeanapprovalform']->level);
@@ -1038,8 +990,6 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   $session        = $form_state['values']['session'];
   $semester       = $form_state['values']['semester'];
   $fieldtoapprove = $form_state['values']['fieldtoapprove'];
-  $srcfield       = $form_state['values']['srcfield'];
-  $destfield      = $form_state['values']['destfield'];
   $comment        = $form_state['values']['comment'];
   $department_url = $form_state['values']['department_url'];
   $dean_uid       = $form_state['values']['dean_uid'];
@@ -1176,8 +1126,6 @@ function approve_grades_registrar_form($form_state) {
   $form['session'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->session);
   $form['semester'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->semester);
   $form['fieldtoapprove'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->fieldtoapprove);
-  $form['srcfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->srcfield);
-  $form['destfield'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->destfield);
   $form['gradestext'] = array('#type' => 'value', '#value' => $_SESSION['eduerpregistrarapprovalform']->gradestext);
 
   $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $_SESSION['eduerpregistrarapprovalform']->gradestext . ' for level ' . $_SESSION['eduerpregistrarapprovalform']->level);
@@ -1201,8 +1149,6 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
   $session        = $form_state['values']['session'];
   $semester       = $form_state['values']['semester'];
   $fieldtoapprove = $form_state['values']['fieldtoapprove'];
-  $srcfield       = $form_state['values']['srcfield'];
-  $destfield      = $form_state['values']['destfield'];
   $comment        = $form_state['values']['comment'];
   $department_url = $form_state['values']['department_url'];
   $registrar_uid  = $form_state['values']['registrar_uid'];
