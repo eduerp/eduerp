@@ -695,14 +695,15 @@ function _grading_ahah_stats() {
         MIN(sg.field_ca3locked_value) AS ca3l,
         MIN(sg.field_ca4locked_value) AS ca4l,
         MIN(sg.field_examscorelocked_value) AS examl
-      FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
+      FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
       WHERE
         sg.field_student_gpa_nid=gpa.nid AND
         gpa.field_level_name_gpa_value='%s' AND
         gpa.field_sess_name_gpa_value='%s' AND
         gpa.field_semester_name_gpa_value='%s' AND
         gpa.field_program_ref_gpa_nid=p.nid AND
-        p.field_department_name_value='%s'
+        p.field_department_id_nid=d.nid AND
+        d.field_department_name_value='%s'
       GROUP BY sg.field_mat_no_uid
     ) AS eachstudent";
 
@@ -740,14 +741,15 @@ function _grading_ahah_stats() {
       MIN(sg.field_ca3locked_value) AS ca3l,
       MIN(sg.field_ca4locked_value) AS ca4l,
       MIN(sg.field_examscorelocked_value) AS examl
-    FROM {content_type_student_grades sg}, {content_type_student_gpa} gpa, {content_type_program} p
+    FROM {content_type_student_grades sg}, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s'
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'
     GROUP BY p.field_programme_name_value ORDER BY p.field_programme_name_value";
   $programmerows = db_query($sql, $level, $session, $semester, $department);
   $first = true;
@@ -760,39 +762,32 @@ function _grading_ahah_stats() {
     $programmeenc = rawurlencode($programmerow->programme);
     $output .= '<tr>';
     $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $programmerow->programme . '</a></td><td>';
-    if     ($programmerow->ca1l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
-    elseif ($programmerow->ca2l  == 1) $output .= 'Continuous Assessment 2 Ready for Approval by HOD';
-    elseif ($programmerow->ca3l  == 1) $output .= 'Continuous Assessment 3 Ready for Approval by HOD';
-    elseif ($programmerow->ca4l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
-    elseif ($programmerow->examl == 1) $output .= 'Semester Exam Ready for Approval by HOD';
-    elseif ($programmerow->ca1l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 1';
-    elseif ($programmerow->ca2l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 2';
-    elseif ($programmerow->ca3l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 3';
-    elseif ($programmerow->ca4l  == 0) $output .= 'Waiting on some Lecturer Approvals for Continuous Assessment 4';
-    elseif ($programmerow->examl == 0) $output .= 'Waiting on some Lecturer Approvals for Semester Exam';
-    else $output .= 'Approved by HOD';
+    //if     ($programmerow->ca1l  == 1) $output .= 'Continuous Assessment 1 Ready for Approval by HOD';
+    //elseif ($programmerow->ca2l  == 1) $output .= 'Continuous Assessment 2 Ready for Approval by HOD';
+    //elseif ($programmerow->ca3l  == 1) $output .= 'Continuous Assessment 3 Ready for Approval by HOD';
+    //elseif ($programmerow->ca4l  == 1) $output .= 'Continuous Assessment 4 Ready for Approval by HOD';
+    if ($programmerow->examl == 1) $output .= 'All Lecturers have Submitted Semester Exam Results';
+    //elseif ($programmerow->ca1l  == 0) $output .= 'Waiting on some Lecturer Submissions for Continuous Assessment 1';
+    //elseif ($programmerow->ca2l  == 0) $output .= 'Waiting on some Lecturer Submissions for Continuous Assessment 2';
+    //elseif ($programmerow->ca3l  == 0) $output .= 'Waiting on some Lecturer Submissions for Continuous Assessment 3';
+    //elseif ($programmerow->ca4l  == 0) $output .= 'Waiting on some Lecturer Submissions for Continuous Assessment 4';
+    elseif ($programmerow->examl == 0) $output .= 'Waiting on some Lecturer Submissions for Semester Exam';
+    elseif ($programmerow->examl == 2) $output .= 'All HODs have Approved Semester Exam Results';
+    elseif ($programmerow->examl == 3) $output .= 'All Deans have Approved Semester Exam Results';
+    elseif ($programmerow->examl == 4) $output .= 'Registrar has Approved Semester Exam Results';
+    else $output .= 'Semester Exam Results Fully Approved';
     $output .= '</td></tr>';
   }
 
   $output .= '<tr><td colspan="2"><br /></td></tr>';
   $output .= '<tr><td colspan="2">Departmental Grading Approval Status...</td></tr>';
 
-  // Find Dean uid
-  $sql = "SELECT vs.user_id AS dean_uid
-    FROM {content_type_program} p, {veritas_staff} vs, {users_roles} ur, {role} r
-    WHERE p.field_department_name_value='%s' AND p.field_department_id_value=vs.department_id AND vs.user_id=ur.uid AND ur.rid=r.rid AND r.name='Dean'";
-  $deanresult = db_query($sql, $department);
-  $dean_uid = '';
-  while ($dean = db_fetch_object($deanresult)) {
-    if ($dean_uid === '') $dean_uid = $dean->dean_uid;
-    else $dean_uid = $dean_uid . ',' . $dean->dean_uid;
-  }
-  if (empty($dean_uid)) $dean_uid = 0;
-
   // Find Registrar uid
-  $sql = "SELECT ur.uid AS registrar_uid
-    FROM {users_roles} ur, {role} r
-    WHERE ur.rid=r.rid AND r.name='Registrar'";
+  $inroles = "'Registrar', 'University Examination Officer'";
+
+  $sql = "SELECT uid AS registrar_uid
+    FROM {eduerp_roles}
+    WHERE role IN ($inroles)";
   $registrarresult = db_query($sql);
   $registrar_uid = '';
   while ($registrar = db_fetch_object($registrarresult)) {
@@ -802,9 +797,11 @@ function _grading_ahah_stats() {
   if (empty($registrar_uid)) $registrar_uid = 0;
 
   // Find VC uid
-  $sql = "SELECT ur.uid AS vc_uid
-    FROM {users_roles} ur, {role} r
-    WHERE ur.rid=r.rid AND r.name='VC'";
+  $inroles = "'Vice-Chancellor', 'University Examination Officer'";
+
+  $sql = "SELECT uid AS vc_uid
+    FROM {eduerp_roles}
+    WHERE role IN ($inroles)";
   $vcresult = db_query($sql);
   $vc_uid = '';
   while ($vc = db_fetch_object($vcresult)) {
