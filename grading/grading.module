@@ -1031,21 +1031,33 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
   $vc_uid         = $form_state['values']['vc_uid'];
   $gradestext     = $form_state['values']['gradestext'];
 
-  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
-    SET sg.`{$fieldtoapprove}`='4'
+  // Don't allow an exam score approved by the VC to be changed
+  $protectVC = 'AND sg.field_examscorelocked_value < 5';
+
+  // Approve any CAs along with exam (if approved one by one, this might set a CA 5 to a 4, but this should not be a serious issue)
+  $setstatement = "SET
+    sg.`field_ca1locked_value`='4',
+    sg.`field_ca2locked_value`='4',
+    sg.`field_ca3locked_value`='4',
+    sg.`field_ca4locked_value`='4',
+    sg.`field_examscorelocked_value`='4'";
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    $setstatement
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s'";
-
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'
+      $protectVC";
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "SELECT p.field_college_name_value AS college
-    FROM {content_type_program} p
-    WHERE p.field_department_name_value='%s'
+  $sql = "SELECT co.field_college_name_value AS college
+    FROM {content_type_department} d, {content_type_college} co
+    WHERE d.field_department_name_value='%s' AND d.field_college_id_nid=co.nid
     LIMIT 1";
   $collegeresult = db_query($sql, $department);
   if ($collegerow = db_fetch_object($collegeresult)) {
@@ -1182,23 +1194,35 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   $vc_uid         = $form_state['values']['vc_uid'];
   $gradestext     = $form_state['values']['gradestext'];
 
-  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
-    SET
-      sg.`{$fieldtoapprove}`='5',
-      sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`,
-      sg.`field_totalscoreforstudent_value`=sg.`field_total_score_value`,
-      sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
-      sg.`field_gradeforstudent_value`=sg.`field_grade_value`
+  // Approve any CAs along with exam
+  $setstatement = "SET
+    sg.`field_ca1locked_value`='5',
+    sg.`field_ca2locked_value`='5',
+    sg.`field_ca3locked_value`='5',
+    sg.`field_ca4locked_value`='5',
+    sg.`field_examscorelocked_value`='5',
+    sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`,
+    sg.`field_ca1forstudent_value`=sg.`field_ca1_value`,
+    sg.`field_ca2forstudent_value`=sg.`field_ca2_value`,
+    sg.`field_ca3forstudent_value`=sg.`field_ca3_value`,
+    sg.`field_ca4forstudent_value`=sg.`field_ca4_value`,
+    sg.`field_totalscoreforstudent_value`=sg.`field_total_score_value`,
+    sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
+    sg.`field_gradeforstudent_value`=sg.`field_grade_value`";
+
+  $sql = "UPDATE {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+    $setstatement
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s'";
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_program} p
+  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     SET
       gpa.`field_gpaforstudent_value`=gpa.`field_gpa_value`,
       gpa.`field_cgpaforstudent_value`=gpa.`field_cgpa_value`
@@ -1207,12 +1231,13 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s'";
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "SELECT p.field_college_name_value AS college
-    FROM {content_type_program} p
-    WHERE p.field_department_name_value='%s'
+  $sql = "SELECT co.field_college_name_value AS college
+    FROM {content_type_department} d, {content_type_college} co
+    WHERE d.field_department_name_value='%s' AND d.field_college_id_nid=co.nid
     LIMIT 1";
   $collegeresult = db_query($sql, $department);
   if ($collegerow = db_fetch_object($collegeresult)) {
@@ -1254,13 +1279,14 @@ function approve_grades_vc_form_submit($form, &$form_state) {
   node_save($node);
 
   // Queue e-mails for Students
-  $sql = "SELECT field_student_ref_gpa_uid FROM {content_type_student_gpa} gpa, {content_type_program} p
+  $sql = "SELECT field_student_ref_gpa_uid FROM {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
-      p.field_department_name_value='%s'";
+      p.field_department_id_nid=d.nid AND
+      d.field_department_name_value='%s'";
   $studentresult = db_query($sql, $level, $session, $semester, $department);
   while ($student = db_fetch_object($studentresult)) {
     $student_uid = $student->field_student_ref_gpa_uid;
