@@ -15,6 +15,7 @@ function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
+[*] if repeat, $total = $exam;
   return (string)calctotal($exam, $ca1, $ca2, $ca3, $ca4);
 }
 
@@ -24,6 +25,7 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
   $total = calctotal($exam, $ca1, $ca2, $ca3, $ca4);
+[*] if repeat, $total = $exam;
   if ($total >= 70) $gp = 5;
   elseif ($total >= 60) $gp = 4;
   elseif ($total >= 50) $gp = 3;
@@ -65,8 +67,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
     db_query($sql);
 
-
-    $sql = "SELECT sg.field_gradepoint_value, ci.field_credit_load_value
+[*]    $sql = "SELECT sg.field_gradepoint_value, ci.field_credit_load_value
       FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course_instance} ci0
       WHERE sg.field_mat_no_uid={$uid} AND
         sg.field_course_instance_nid=ci.nid AND
@@ -79,6 +80,8 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
     $gpa = 0.0;
     $load = 0;
     while ($studentgrade = db_fetch_object($studentgrades)) {
+[*]      if repeat continue;
+
       if ($studentgrade->field_gradepoint_value === '-') {
         $missinggrades++;
       }
@@ -87,6 +90,8 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
         $load += $studentgrade->field_credit_load_value;
       }
     }
+
+[*] if load == 0 return
 
     $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_credit_load_completed_value={$load}
       WHERE field_student_ref_gpa_uid={$uid} AND
@@ -97,7 +102,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
 
     if (!$missinggrades && $load > 0.0) {
       $gpa = $gpa / $load;
-      $gpa = number_format($gpa, 2);
+Keep parallel not truncated; or dispaly code to trunc; OR DOES IT MAKE A DIFFERENCE?[*]      $gpa = number_format($gpa, 2);
 
       $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_gpa_value={$gpa}
         WHERE gpa.field_student_ref_gpa_uid={$uid} AND
@@ -119,7 +124,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       }
 
       if ($countsemesters) {
-        $cgpa = $cgpa / $countsemesters;
+compare spec? wrong??[*]        $cgpa = $cgpa / $countsemesters;
         $cgpa = number_format($cgpa, 2);
         $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value={$cgpa}
           WHERE gpa.field_student_ref_gpa_uid={$uid} AND
