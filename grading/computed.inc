@@ -3,10 +3,27 @@
 // Grade calculations
 
 
-function calctotal($exam, $ca1, $ca2, $ca3, $ca4) {
-  //$total = ($exam*60 + $ca1*10 + $ca2*10 + $ca3*10 + $ca4*10)/100.0;
-  $total = $exam + $ca1 + $ca2 + $ca3 + $ca4;
-  $total = (int)$total;
+function calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid) {
+  static $repeatbycinid = array(); // Cache
+
+  if (!isset($repeatbycinid[$course_instance_nid])) {
+
+    $sql = "SELECT field_repeat_value FROM {content_type_course_instance} WHERE nid={$course_instance_nid} LIMIT 1";
+    $repeats = db_query($sql);
+    $repeat = db_fetch_object($repeats);
+
+    $repeatbycinid[$course_instance_nid] = $repeat->field_repeat_value;
+  }
+
+  if ($repeatbycinid[$course_instance_nid]) { // This is a repeat exam with no CA
+    $total = (int)$exam;
+  }
+  else {
+    //$total = ($exam*60 + $ca1*10 + $ca2*10 + $ca3*10 + $ca4*10)/100.0;
+    $total = $exam + $ca1 + $ca2 + $ca3 + $ca4;
+    $total = (int)$total;
+  }
+
   return $total;
 }
 
@@ -15,8 +32,7 @@ function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
-[*] if repeat, $total = $exam;
-  return (string)calctotal($exam, $ca1, $ca2, $ca3, $ca4);
+  return (string)calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid);
 }
 
 
@@ -24,8 +40,8 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
-  $total = calctotal($exam, $ca1, $ca2, $ca3, $ca4);
-[*] if repeat, $total = $exam;
+  $total = calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid);
+
   if ($total >= 70) $gp = 5;
   elseif ($total >= 60) $gp = 4;
   elseif ($total >= 50) $gp = 3;
@@ -67,64 +83,69 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
     db_query($sql);
 
-[*]    $sql = "SELECT sg.field_gradepoint_value, ci.field_credit_load_value
+    $sql = "SELECT sg.field_gradepoint_value, c.field_creditload_value
       FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course_instance} ci0
-      WHERE sg.field_mat_no_uid={$uid} AND
+      WHERE
+        sg.field_mat_no_uid={$uid} AND
         sg.field_course_instance_nid=ci.nid AND
-        ci.field_session_id_value=ci0.field_session_id_value AND
-        ci.field_semester_id_value=ci0.field_semester_id_value AND
+        ci.field_course_id_nid=c.nid AND
+        ci.field_sess_name_value=ci0.field_sess_name_value AND
+        ci.field_semester_name_value=ci0.field_semester_name_value AND
+        ci.field_repeat_value=0 AND
         ci0.nid={$course_instance_nid}";
-
     $studentgrades = db_query($sql);
     $missinggrades = 0;
-    $gpa = 0.0;
+    $gptotal = 0.0;
     $load = 0;
     while ($studentgrade = db_fetch_object($studentgrades)) {
-[*]      if repeat continue;
 
       if ($studentgrade->field_gradepoint_value === '-') {
         $missinggrades++;
       }
       else {
-        $gpa += $studentgrade->field_gradepoint_value * $studentgrade->field_credit_load_value;
+        $gptotal += $studentgrade->field_gradepoint_value * $studentgrade->field_credit_load_value;
         $load += $studentgrade->field_credit_load_value;
       }
     }
 
-[*] if load == 0 return
+    if ($load === 0) return;
 
-    $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_credit_load_completed_value={$load}
-      WHERE field_student_ref_gpa_uid={$uid} AND
+    $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
+      SET gpa.field_credit_load_completed_value={$load}
+      WHERE
+        gpa.field_student_ref_gpa_uid={$uid} AND
         gpa.field_session_id_gpa_value=ci.field_session_id_value AND
         gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
         ci.nid={$course_instance_nid}";
     db_query($sql);
 
     if (!$missinggrades && $load > 0.0) {
-      $gpa = $gpa / $load;
-Keep parallel not truncated; or dispaly code to trunc; OR DOES IT MAKE A DIFFERENCE?[*]      $gpa = number_format($gpa, 2);
+      $gpa = $gptotal / $load;
+      $gpa = number_format($gpa, 2);
 
-      $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_gpa_value={$gpa}
+      $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
+        SET gpa.field_gpa_value={$gpa}, gpa.field_gptotal_value={$gptotal}
         WHERE gpa.field_student_ref_gpa_uid={$uid} AND
           gpa.field_session_id_gpa_value=ci.field_session_id_value AND
           gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
           ci.nid={$course_instance_nid}";
       db_query($sql);
 
-      $sql = "SELECT gpa.field_gpa_value FROM {content_type_student_gpa} gpa
+      $sql = "SELECT gpa.field_gptotal_value, gpa.field_credit_load_completed_value
+        FROM {content_type_student_gpa} gpa
         WHERE gpa.field_student_ref_gpa_uid={$uid}";
       $semestergpas = db_query($sql);
-      $cgpa = 0.0;
-      $countsemesters = 0;
+      $cgp   = 0.0;
+      $cload = 0.0;
       while ($semestergpa = db_fetch_object($semestergpas)) {
-        if ($semestergpa->field_gpa_value != '-') {
-          $cgpa += (float)$semestergpa->field_gpa_value;
-          $countsemesters++;
+        if ($semestergpa->field_gptotal_value != '-') {
+          $cgp   += (float)$semestergpa->field_gptotal_value;
+          $cload += (float)$semestergpa->field_credit_load_completed_value;
         }
       }
 
-      if ($countsemesters) {
-compare spec? wrong??[*]        $cgpa = $cgpa / $countsemesters;
+      if ($cload > 0.0) {
+        $cgpa = $cgp / $cload;
         $cgpa = number_format($cgpa, 2);
         $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value={$cgpa}
           WHERE gpa.field_student_ref_gpa_uid={$uid} AND
