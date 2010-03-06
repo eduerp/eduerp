@@ -98,7 +98,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
       c.field_department_nid_nid AS department_id,
       ci.field_lecturer_uid AS lecturer_uid,
       ci.field_lecturer_alternate_uid AS lecturer_alternate_uid,
-      ci.field_repeat_value AS repeat
+      ci.field_repeat_value AS repeatexam
     FROM {content_type_department} d, {content_type_course} c, {content_type_course_instance} ci
     WHERE
       d.nid=c.field_department_nid_nid AND
@@ -115,7 +115,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   if (empty($staff->lecturer_uid)) $staff->lecturer_uid = 0;
   if (empty($staff->lecturer_alternate_uid)) $staff->lecturer_alternate_uid = 0;
 
-  if ($staff->repeat) $number_of_ca = 0;
+  if ($staff->repeatexam) $number_of_ca = 0;
 
   if ($ca_approved_onebyone && $number_of_ca >= 1) {
     echo '<tr>';
