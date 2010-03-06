@@ -1107,7 +1107,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 }
 
 
-findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere) {
+function findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere) {
   $sql = "SELECT
       c.field_level_value AS level,
       ci.field_semester_name_value AS sem,
