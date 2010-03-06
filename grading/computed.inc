@@ -119,12 +119,13 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
         ci.nid={$course_instance_nid}";
     db_query($sql);
 
-    if (!$missinggrades && $load > 0.0) {
+    $missinggrades = 0; // Calculate GPA regardless of missing grades which will be ignored
+    if (!$missinggrades && $load > 0) {
       $gpa = $gptotal / $load;
       $gpa = number_format($gpa, 2);
 
       $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
-        SET gpa.field_gpa_value={$gpa}, gpa.field_gptotal_value={$gptotal}
+        SET gpa.field_gpa_value='{$gpa}', gpa.field_gptotal_value='{$gptotal}'
         WHERE gpa.field_student_ref_gpa_uid={$uid} AND
           gpa.field_session_id_gpa_value=ci.field_session_id_value AND
           gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
@@ -147,7 +148,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       if ($cload > 0.0) {
         $cgpa = $cgp / $cload;
         $cgpa = number_format($cgpa, 2);
-        $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value={$cgpa}
+        $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value='{$cgpa}'
           WHERE gpa.field_student_ref_gpa_uid={$uid} AND
             gpa.field_session_id_gpa_value=ci.field_session_id_value AND
             gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
