@@ -22,8 +22,8 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !emp
   $sql = "SELECT cgw.number_of_ca, cgw.ca_approved_onebyone
     FROM {course_grade_weightings} cgw, {content_type_course} c
     WHERE
-      (cgw.course_id=c.nid AND c.field_code_value='%s') OR
-      cgw.course_id=0
+      (cgw.course_id=c.nid OR cgw.course_id=0) AND
+      c.field_code_value='%s'
     ORDER BY cgw.course_id DESC";  // Select the course specific one (if any) first followed by the default one
   $weightings = db_query($sql, $coursecode);
   $row = db_fetch_object($weightings);
