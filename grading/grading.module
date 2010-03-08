@@ -231,6 +231,23 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
 
 /**
+ * Implementation of hook_views_pre_build().
+ *
+ * Called before view build... we remove unneeded columns from course_grades
+ */
+function grading_views_pre_build(&$view) {
+  if ($view->name=='course_grades') {
+
+    unset(
+      $view->display['default']->handler->options['fields']['field_ca2_value'],
+      $view->display['default']->handler->options['style_options']['columns']['field_ca2_value'],
+      $view->display['default']->handler->options['style_options']['info']['field_ca2_value']
+    );
+  }
+}
+
+
+/**
  * Implementation of hook_node_access_records().
  *
  * Called on node save to add permissions for the node
