@@ -237,12 +237,71 @@ function grading_field_access($op, $field, $account, $node = NULL) {
  */
 function grading_views_pre_build(&$view) {
   if ($view->name=='course_grades') {
-error_log("coursecode session: $_SESSION['views']['course_grades']['default']['coursecode'], coursecode POST: $_POST['coursecode']");
-    unset(
-      $view->display['default']->handler->options['fields']['field_ca2_value'],
-      $view->display['default']->handler->options['style_options']['columns']['field_ca2_value'],
-      $view->display['default']->handler->options['style_options']['info']['field_ca2_value']
-    );
+    if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !empty($_SESSION['views']['course_grades']['default']['session'])) {
+      $coursecode = $_SESSION['views']['course_grades']['default']['coursecode'];
+      $session = $_SESSION['views']['course_grades']['default']['session'];
+
+      if (empty($_SESSION['views']['course_grades']['default']['semester'])) $semester = 'All';
+      else $semester = $_SESSION['views']['course_grades']['default']['semester'];
+      if ($semester === 'All') $semesterwhere = '';
+      else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
+
+      if (empty($_SESSION['views']['course_grades']['default']['location'])) $location = 'All';
+      else $location = $_SESSION['views']['course_grades']['default']['location'];
+      if ($location === 'All') $locationwhere = '';
+      else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
+
+      $sql = "SELECT cgw.number_of_ca
+        FROM {course_grade_weightings} cgw, {content_type_course} c
+        WHERE
+          (cgw.course_id=c.nid OR cgw.course_id=0) AND
+          c.field_code_value='%s'
+        ORDER BY cgw.course_id DESC";  // Select the course specific one (if any) first followed by the default one
+      $weightings = db_query($sql, $coursecode);
+      $row = db_fetch_object($weightings);
+      $number_of_ca = $row->number_of_ca;
+
+      $sql = "SELECT DISTINCT ci.field_repeat_value AS repeatexam
+        FROM {content_type_course} c, {content_type_course_instance} ci
+        WHERE
+          c.field_code_value='%s' AND
+          c.nid=ci.field_course_id_nid AND
+          ci.field_sess_name_value='%s'
+          $semesterwhere $locationwhere";
+      $staffresult = db_query($sql, $coursecode, $session);
+      $staff = db_fetch_object($staffresult);
+
+      if ($staff->repeatexam) $number_of_ca = 0;
+
+      if ($number_of_ca < 1) {
+        unset(
+          $view->display['default']->handler->options['fields']['field_ca1_value'],
+          $view->display['default']->handler->options['style_options']['columns']['field_ca1_value'],
+          $view->display['default']->handler->options['style_options']['info']['field_ca1_value']
+        );
+      }
+      if ($number_of_ca < 2) {
+        unset(
+          $view->display['default']->handler->options['fields']['field_ca2_value'],
+          $view->display['default']->handler->options['style_options']['columns']['field_ca2_value'],
+          $view->display['default']->handler->options['style_options']['info']['field_ca2_value']
+        );
+      }
+      if ($number_of_ca < 3) {
+        unset(
+          $view->display['default']->handler->options['fields']['field_ca3_value'],
+          $view->display['default']->handler->options['style_options']['columns']['field_ca3_value'],
+          $view->display['default']->handler->options['style_options']['info']['field_ca3_value']
+        );
+      }
+      if ($number_of_ca < 4) {
+        unset(
+          $view->display['default']->handler->options['fields']['field_ca4_value'],
+          $view->display['default']->handler->options['style_options']['columns']['field_ca4_value'],
+          $view->display['default']->handler->options['style_options']['info']['field_ca4_value']
+        );
+      }
+    }
   }
 }
 
