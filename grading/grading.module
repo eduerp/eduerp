@@ -154,7 +154,7 @@ function grading_field_access($op, $field, $account, $node = NULL) {
         return FALSE; // No fields are editable except above ones for student_grades
       }
 
-      if (empty($node)) return FALSE;
+      if (empty($node->nid)) return FALSE;
 
       if (empty($locked)) { // Not cached...
         $locked[-1] = -1; // Mark as cached
