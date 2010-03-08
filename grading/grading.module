@@ -237,7 +237,7 @@ function grading_field_access($op, $field, $account, $node = NULL) {
  */
 function grading_views_pre_build(&$view) {
   if ($view->name=='course_grades') {
-
+error_log("coursecode session: $_SESSION['views']['course_grades']['default']['coursecode'], coursecode POST: $_POST['coursecode']");
     unset(
       $view->display['default']->handler->options['fields']['field_ca2_value'],
       $view->display['default']->handler->options['style_options']['columns']['field_ca2_value'],
