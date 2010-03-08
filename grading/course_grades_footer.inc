@@ -4,7 +4,10 @@
 global $user;
 global $base_url;
 
-if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !empty($_SESSION['views']['course_grades']['default']['session'])) {
+if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
+    !empty($_SESSION['views']['course_grades']['default']['session']) &&
+    !empty($_SESSION['views']['course_grades']['default']['semester'])) {
+
   $coursecode = $_SESSION['views']['course_grades']['default']['coursecode'];
   $session = $_SESSION['views']['course_grades']['default']['session'];
 

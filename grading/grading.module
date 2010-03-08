@@ -237,7 +237,10 @@ function grading_field_access($op, $field, $account, $node = NULL) {
  */
 function grading_views_pre_build(&$view) {
   if ($view->name=='course_grades') {
-    if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) && !empty($_SESSION['views']['course_grades']['default']['session'])) {
+    if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
+      !empty($_SESSION['views']['course_grades']['default']['session']) &&
+      !empty($_SESSION['views']['course_grades']['default']['semester'])) {
+
       $coursecode = $_SESSION['views']['course_grades']['default']['coursecode'];
       $session = $_SESSION['views']['course_grades']['default']['session'];
 
