@@ -231,15 +231,44 @@ function student_course_form1(&$obj) {
 	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
 	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
 	if ($rs && ($row = db_fetch_object($rs))) {
-		 $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
-		 $result = db_query($query);
-		 $row_student =  db_fetch_object($result);
-		 $query = "SELECT   *  from  {registrable_course} rc where rc.level_id = ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
-		 $result = db_query($query);
-		 $min_max_credits = db_fetch_object($result);
-		 $query = "SELECT * from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
-		 $result = db_query($query);
-		 $rows = array();
+
+    $student_user = user_load($_SESSION['student']['id']);
+
+    $semester = variable_get('veritas_current_semester', '');
+
+    $query = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
+    $result = db_query($query, $student_user->profile_first_choice, $student_user->profile_level_name, $semester);
+    $min_max_credits = db_fetch_object($result);
+
+    $query = "SELECT
+        pci.semester AS semester,
+        ci.nid AS reg_course_id,
+        ci.field_timetable_value AS timetable,
+        c.field_creditload_value AS credit_load,
+        c.field_code_value AS course_code,
+        c.field_coursetitle_value AS course_title,
+        c.field_course_description_value AS course_description,
+        c.field_prerequisite_codes_value AS prerequisite_codes,
+        pc.level AS level_id
+        pc.course_type AS course_type,
+      FROM
+        {program_course_instance} pci,
+        {content_type_course_instance} ci,
+        {content_type_course} c,
+        {program_course} pc
+      WHERE
+        pci.programme_id=%d,
+        pci.session='%s',
+        pci.semester='%s',
+        pci.course_instance_id=ci.nid,
+        ci.field_course_id_nid=c.nid,
+        c.nid=pc.course_id,
+        pci.semester=pc.semester,
+        pci.programme_id=pc.programme_id,
+        pc.level='%s'";
+    $result = db_query($query, $student_user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $student_user->profile_level_name);
+    $result = db_query($query);
+
 		 $core_html = "<tr>
 				 <th>
 					Course Code
@@ -280,7 +309,7 @@ function student_course_form1(&$obj) {
 				 </th>
 				</tr>";
 		 while ($row = db_fetch_object($result)) {
-				if ($row->course_type == 1 && $row->level_id == $row_student->level_id) {
+        if ($row->course_type == 1 && $row->level_id == $student_user->profile_level_name) {
 					 $core_html .= '<tr>
 				 <td>
 					'.$row->course_code.'
@@ -325,7 +354,6 @@ function student_course_form1(&$obj) {
 				 </tr>
 				 ';
 			}
-		$rows[$row->course_id] = $row->course_title;
 		}
 		 $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
 		 $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
@@ -383,16 +411,43 @@ EOD;
 }
 
 function student_course_form2(&$obj) {
-  $query = "select * from {admitted_student} where student_id='". $_SESSION['student']['id'] ."'";
-  $result = db_query($query);
-  $row_student =  db_fetch_object($result);
-  $query = "select * from {course} where prog_id=". $row_student->first_choice ." and level_level_id = ". $row_student->level_id;
-  $query ="SELECT * from  registrable_course rc where rc.level_id = ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
-  $result = db_query($query);
+  $student_user = user_load($_SESSION['student']['id']);
+
+  $semester = variable_get('veritas_current_semester', '');
+
+  $query = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
+  $result = db_query($query, $student_user->profile_first_choice, $student_user->profile_level_name, $semester);
   $min_max_credits = db_fetch_object($result);
-  $query = "SELECT * from {course} c inner join {registrable_course} rc on rc.course_id = c.course_id where rc.level_id <= ". $row_student->level_id ."  and rc.programme_id=". $row_student->first_choice ;
+
+  $query = "SELECT
+      pci.semester AS semester,
+      ci.nid AS reg_course_id,
+      ci.field_timetable_value AS timetable,
+      c.field_creditload_value AS credit_load,
+      c.field_code_value AS course_code,
+      c.field_coursetitle_value AS course_title,
+      c.field_course_description_value AS course_description,
+      c.field_prerequisite_codes_value AS prerequisite_codes,
+      pc.level AS level_id
+      pc.course_type AS course_type,
+    FROM
+      {program_course_instance} pci,
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {program_course} pc
+    WHERE
+      pci.programme_id=%d,
+      pci.session='%s',
+      pci.semester='%s',
+      pci.course_instance_id=ci.nid,
+      ci.field_course_id_nid=c.nid,
+      c.nid=pc.course_id,
+      pci.semester=pc.semester,
+      pci.programme_id=pc.programme_id,
+      pc.level='%s'";
+  $result = db_query($query, $student_user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $student_user->profile_level_name);
   $result = db_query($query);
-  $rows = array();
+
   $core_html = "<tr>
        <th>
         Course Code
@@ -433,7 +488,7 @@ function student_course_form2(&$obj) {
   $elective_course = array_keys($obj['storage'][1]['electivecourse']);
 
   while ($row = db_fetch_object($result)) {
-    if ($row->course_type == 1 && ($row->level_id == $row_student->level_id)) {
+    if ($row->course_type == 1 && ($row->level_id == $student_user->profile_level_name)) {
       $core_html .= '<tr>
        <td>
         '. $row->course_code .'
@@ -484,7 +539,6 @@ function student_course_form2(&$obj) {
        </tr>
        ';
 		}
-		$rows[$row->course_id] = $row->course_title;
 	}
 
   $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
@@ -966,7 +1020,13 @@ function delete_student_grades($uid, $session_id, $semester_id) {
 
 
 function student_course_form_validate($form, &$states) {
- $values = $states['values'];
+
+  if (empty($_SESSION['student']['id'])) { // ALAN
+      form_set_error('submitted[courses]', "Student id is not valid");
+      return;
+  }
+
+  $values = $states['values'];
   if ($state['storage']['step'] == 1) {
     if ($values['select_credit'] < $values['min_load'] || $values['select_credit'] > $values['max_load'] ) {
       form_set_error('submitted[courses]', "Specify Proper Credit Load");
