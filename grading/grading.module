@@ -1308,15 +1308,16 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_student_program} sp, {content_type_program} p, {content_type_department} d
     SET
       gpa.`field_gpaforstudent_value`=gpa.`field_gpa_value`,
-      gpa.`field_cgpaforstudent_value`=gpa.`field_cgpa_value`
+      sp.`field_cgpaforstudent_sp_value`=sp.`field_cgpa_sp_value`
     WHERE
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
+      gpa.field_student_program_ref_gpa_nid=sp.nid AND
       p.field_department_id_nid=d.nid AND
       d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
@@ -2000,14 +2001,16 @@ function _grading_ahah_studentdetails() {
       g.field_credit_load_registered_value AS credit_load_registered,
       g.field_credit_load_completed_value AS credit_load_completed,
       g.field_gpa_value AS gpa,
-      g.field_cgpa_value AS cgpa
+      sp.field_cgpa_sp_value AS cgpa
     FROM
       {content_type_student_gpa} g,
+      {content_type_student_program} sp,
       {content_type_program} p,
       {content_type_department} d
     WHERE
       field_student_ref_gpa_uid=%d AND
       g.field_program_ref_gpa_nid=p.nid AND
+      g.field_student_program_ref_gpa_nid=sp.nid AND
       p.field_department_id_nid=d.nid
     ORDER BY session ASC, semester ASC, programme ASC";
   $rows = db_query($sql, $uid);
