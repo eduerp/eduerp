@@ -778,6 +778,7 @@ function _grading_ahah_stats() {
       FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
       WHERE
         sg.field_student_gpa_nid=gpa.nid AND
+        sg.field_dropped_value=0 AND
         gpa.field_level_name_gpa_value='%s' AND
         gpa.field_sess_name_gpa_value='%s' AND
         gpa.field_semester_name_gpa_value='%s' AND
@@ -824,6 +825,7 @@ function _grading_ahah_stats() {
     FROM {content_type_student_grades sg}, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -987,6 +989,7 @@ function _grading_ahah_stats() {
     FROM {content_type_student_grades sg}, {content_type_course_instance} ci, {content_type_course} c, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       sg.field_course_instance_nid=ci.nid AND
       ci.field_course_id_nid=c.nid AND
       gpa.field_level_name_gpa_value='%s' AND
@@ -1126,6 +1129,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -1295,6 +1299,7 @@ function approve_grades_vc_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -1736,6 +1741,7 @@ function _grading_ahah_stats_uni() {
           FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d, {content_type_college} co
           WHERE
             sg.field_student_gpa_nid=gpa.nid AND
+            sg.field_dropped_value=0 AND
             gpa.field_level_name_gpa_value='%s' AND
             gpa.field_sess_name_gpa_value='%s' AND
             gpa.field_semester_name_gpa_value='%s' AND
@@ -1903,6 +1909,7 @@ function _grading_ahah_studentdetails() {
   $output .= '<td valign="top" class="table-label">Exam</td>';
   $output .= '<td valign="top" class="table-label">Total</td>';
   $output .= '<td valign="top" class="table-label">Grade</td>';
+  $output .= '<td valign="top" class="table-label">Dropped?</td>';
   $output .= '<td valign="top" class="table-label">Comment</td>';
   $output .= '</tr>';
 
@@ -1921,6 +1928,7 @@ function _grading_ahah_studentdetails() {
       sg.field_exam_score_value AS exam,
       sg.field_total_score_value AS total,
       sg.field_grade_value AS grade,
+      sg.field_dropped_value AS dropped,
       sg.field_comment_grades_value AS comment
     FROM
       {content_type_student_grades} sg,
@@ -1959,7 +1967,10 @@ function _grading_ahah_studentdetails() {
     $output .= "<td>{$row->total}</td>";
     $output .= "<td>{$row->grade}</td>";
     $output .= '<td>';
-    if (!empty($row->comment)) echo check_plain($row->comment);
+    if ($row->dropped) $output .=  'Dropped';
+    $output .= '</td>';
+    $output .= '<td>';
+    if (!empty($row->comment)) $output .=  check_plain($row->comment);
     $output .= '</td>';
     $output .= '</tr>';
   }

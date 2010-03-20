@@ -37,6 +37,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
   $sql = "SELECT field_grade_value, COUNT(*) AS count FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
     WHERE
       sg.field_course_instance_nid=ci.nid AND
+      sg.field_dropped_value=0 AND
       c.field_code_value='%s' AND
       ci.field_sess_name_value='%s'
       $semesterwhere $locationwhere AND
@@ -89,6 +90,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
     WHERE
       sg.field_course_instance_nid=ci.nid AND
+      sg.field_dropped_value=0 AND
       c.field_code_value='%s' AND
       ci.field_sess_name_value='%s'
       $semesterwhere $locationwhere AND
@@ -492,6 +494,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_course_instance_nid=ci.nid AND
+      sg.field_dropped_value=0 AND
       ci.field_course_id_nid=c.nid AND
       ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
       c.field_code_value='%s'
@@ -657,6 +660,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_course_instance_nid=ci.nid AND
+      sg.field_dropped_value=0 AND
       ci.field_course_id_nid=c.nid AND
       ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
       c.field_code_value='%s'
@@ -846,6 +850,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_course_instance_nid=ci.nid AND
+      sg.field_dropped_value=0 AND
       ci.field_course_id_nid=c.nid AND
       ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
       c.field_code_value='%s'
@@ -859,6 +864,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $setstatement
       WHERE
         sg.field_course_instance_nid=ci.nid AND
+        sg.field_dropped_value=0 AND
         ci.field_course_id_nid=c.nid AND
         ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
         c.field_code_value='%s'";
@@ -945,6 +951,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
     $sql = "SELECT sg.field_mat_no_uid FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
       WHERE
         sg.field_course_instance_nid=ci.nid AND
+        sg.field_dropped_value=0 AND
         ci.field_course_id_nid=c.nid AND
         ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
         c.field_code_value='%s'";
@@ -1064,6 +1071,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_course_instance_nid=ci.nid AND
+      sg.field_dropped_value=0 AND
       ci.field_course_id_nid=c.nid AND
       ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
       c.field_code_value='%s'

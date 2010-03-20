@@ -38,6 +38,7 @@ if (!empty($_SESSION['views']['gpa']['default']['programme']) &&
       FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p
       WHERE
         sg.field_student_gpa_nid=gpa.nid AND
+        sg.field_dropped_value=0 AND
         gpa.field_level_name_gpa_value='%s' AND
         gpa.field_sess_name_gpa_value='%s' AND
         gpa.field_semester_name_gpa_value='%s' AND
