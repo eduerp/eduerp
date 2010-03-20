@@ -468,11 +468,29 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
   $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
   $gradestext     = $form_state['values']['gradestext'];
 
-  if ($semester === 'All') $semesterwhere = '';
-  else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
+  if ($semester === 'All') {
+    $semesterwhere    = '';
+    $semesterwherea   = '';
+    $semesterwhereb   = '';
+    $semesterwheregpa = '';
+  }
+  else {
+    $semesterwhere    = 'AND ci.field_semester_name_value=' . (int)$semester;
+    $semesterwherea   = 'AND cia.field_semester_name_value=' . (int)$semester;
+    $semesterwhereb   = 'AND cib.field_semester_name_value=' . (int)$semester;
+    $semesterwheregpa = 'AND gpa.field_semester_name_gpa_value=' . (int)$semester;
+  }
 
-  if ($location === 'All') $locationwhere = '';
-  else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
+  if ($location === 'All') {
+    $locationwhere  = '';
+    $locationwherea = '';
+    $locationwhereb = '';
+  }
+  else {
+    $locationwhere  = 'AND ci.field_location_value=' . (int)$location;
+    $locationwherea = 'AND cia.field_location_value=' . (int)$location;
+    $locationwhereb = 'AND cib.field_location_value=' . (int)$location;
+  }
 
   // Don't allow an exam score approved by the VC to be changed
   if ($fieldtoapprove === 'field_examscorelocked_value') $protectVC = 'AND sg.field_examscorelocked_value < 5';
@@ -500,6 +518,158 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       c.field_code_value='%s'
       $protectVC";
   db_query($sql, $session, $coursecode);
+
+  if ($fieldtoapprove === 'field_examscorelocked_value') {
+    // Set the GPA for all students in this view
+    $sql = "UPDATE
+      {content_type_student_gpa} gpa,
+      (
+        SELECT
+          exams.field_mat_no_uid AS uid,
+          SUM(exams.gradepoint) AS gradepoints,
+          SUM(exams.field_creditload_value) AS totalload
+        FROM (
+          SELECT
+            IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
+            sg.field_mat_no_uid,
+            c.field_creditload_value
+          FROM
+            {content_type_student_grades} sg,
+            {content_type_course_instance} ci,
+            {content_type_course} c
+          WHERE
+            sg.field_mat_no_uid IN (
+              SELECT sga.field_mat_no_uid
+              FROM
+                {content_type_student_grades} sga,
+                {content_type_course_instance} cia,
+                {content_type_course} ca,
+              WHERE
+                sga.field_course_instance_nid=cia.nid AND
+                cia.field_course_id_nid=ca.nid AND
+                cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
+                ca.field_code_value='%s'
+            )
+            sg.field_course_instance_nid=ci.nid AND
+            sg.field_examscorelocked_value>0 AND
+            sg.field_dropped_value=0 AND
+            ci.field_course_id_nid=c.nid AND
+            ci.field_sess_name_value='%s' $semesterwhere
+          ) AS exams
+        GROUP BY exams.field_mat_no_uid
+      ) AS gpatoset
+    SET
+      gpa.field_gptotal_value=gpatoset.gradepoints,
+      gpa.field_credit_load_completed_value=gpatoset.totalload,
+      gpa.field_gpa_value=FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
+    WHERE
+      gpa.field_student_ref_gpa_uid=gpatoset.uid AND
+      gpa.field_sess_name_gpa_value='%s' $semesterwheregpa";
+    db_query($sql, $session, $coursecode, $session, $session);
+
+    // Set the cGPA for all students in this view
+    // ... Finds the grade for the most recent sitting of each course
+    // ... Sums them and saves result in the student_program found from the students's profile
+    $sql = "UPDATE
+      {content_type_student_program} sp,
+      {profile_fields} pf1,
+      {profile_values} pv1,
+      (
+        SELECT
+          exams.field_mat_no_uid AS uid,
+          SUM(exams.gradepoint) AS gradepoints,
+          SUM(exams.field_creditload_value) AS totalload
+        FROM (
+          SELECT
+            IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
+            sg.field_mat_no_uid,
+            CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
+            c.field_code_value,
+            c.field_creditload_value
+          FROM
+            {content_type_student_grades} sg,
+            {content_type_course_instance} ci,
+            {content_type_course} c,
+            {program_course} pc,
+            {profile_fields} pf,
+            {profile_values} pv
+          WHERE
+            sg.field_mat_no_uid IN (
+              SELECT sga.field_mat_no_uid
+              FROM
+                {content_type_student_grades} sga,
+                {content_type_course_instance} cia,
+                {content_type_course} ca,
+              WHERE
+                sga.field_course_instance_nid=cia.nid AND
+                cia.field_course_id_nid=ca.nid AND
+                cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
+                ca.field_code_value='%s'
+            )
+            sg.field_course_instance_nid=ci.nid AND
+            sg.field_examscorelocked_value>0 AND
+            sg.field_dropped_value=0 AND
+            ci.field_course_id_nid=c.nid AND
+            ci.field_course_id_nid=pc.course_id AND
+            pc.programme_id=pv.value AND
+            pf.name='profile_first_choice' AND
+            pf.fid=pv.fid AND
+            pv.uid=sg.field_mat_no_uid
+          ) AS exams
+        JOIN (
+          SELECT
+            sg0.field_mat_no_uid,
+            MAX(CONCAT(ci0.field_sess_name_value, ci0.field_semester_name_value, sg0.nid)) AS sess_sem0,
+            c0.field_code_value
+          FROM
+            {content_type_student_grades} sg0,
+            {content_type_course_instance} ci0,
+            {content_type_course} c0,
+            {program_course} pc0,
+            {profile_fields} pf0,
+            {profile_values} pv0
+          WHERE
+            sg0.field_mat_no_uid IN (
+              SELECT sgb.field_mat_no_uid
+              FROM
+                {content_type_student_grades} sgb,
+                {content_type_course_instance} cib,
+                {content_type_course} cb,
+              WHERE
+                sgb.field_course_instance_nid=cib.nid AND
+                cib.field_course_id_nid=cb.nid AND
+                cib.field_sess_name_value='%s' $semesterwhereb $locationwhereb AND
+                cb.field_code_value='%s'
+            )
+            sg0.field_course_instance_nid=ci0.nid AND
+            sg0.field_examscorelocked_value>0 AND
+            sg0.field_dropped_value=0 AND
+            ci0.field_course_id_nid=c0.nid AND
+            ci0.field_course_id_nid=pc0.course_id AND
+            pc0.programme_id=pv0.value AND
+            pf0.name='profile_first_choice' AND
+            pf0.fid=pv0.fid AND
+            pv0.uid=sg0.field_mat_no_uid
+          GROUP BY c0.field_code_value, sg0.field_mat_no_uid
+          ) AS most_recent_exam
+        ON
+          exams.field_code_value=most_recent_exam.field_code_value AND
+          exams.sess_sem=most_recent_exam.sess_sem0 AND
+          exams.field_mat_no_uid=most_recent_exam.field_mat_no_uid
+        GROUP BY exams.field_mat_no_uid
+      ) AS cgpatoset
+    SET
+      sp.field_gptotal_sp_value=cgpatoset.gradepoints,
+      sp.field_credit_load_completed_sp_value=cgpatoset.totalload,
+      sp.field_cgpa_sp_value=FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+    WHERE
+      sp.field_student_ref_sp_uid=cgpatoset.uid AND
+      sp.field_program_ref_sp_nid=pv.value AND
+      pf1.name='profile_first_choice' AND
+      pf1.fid=pv.fid AND
+      pv1.uid=cgpatoset.uid";
+    db_query($sql, $session, $coursecode, $session, $coursecode);
+  }
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
