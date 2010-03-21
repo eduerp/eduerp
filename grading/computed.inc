@@ -28,7 +28,7 @@ function calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid) {
 }
 
 
-function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
+function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
@@ -36,7 +36,7 @@ function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 }
 
 
-function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
+function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
@@ -49,13 +49,13 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
   elseif ($total >= 40) $gp = 1;
   else $gp = 0;
 
-  updatestudentgpa($gp, $uid, $course_instance_nid);
+  updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked);
 
   return (string)$gp;
 }
 
 
-function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
+function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
@@ -69,7 +69,7 @@ function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 }
 
 
-function updatestudentgpa($gp, $uid, $course_instance_nid) {
+function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked) {
   if (!empty($uid) && !empty($course_instance_nid)) {
 
     if     ($gp === 5) $grade = 'A';
