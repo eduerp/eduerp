@@ -128,7 +128,8 @@ function grading_menu() {
  */
 function grading_field_access($op, $field, $account, $node = NULL) {
   global $user;
-  static $locked = array(); // Cache
+  static $locked = array();               // Cache
+  static $editafterfinalapproval = FALSE; // Cache
 
   if (is_null($account)) {
     $account = $user;
@@ -215,6 +216,28 @@ function grading_field_access($op, $field, $account, $node = NULL) {
         while ($row = db_fetch_array($result)) {
           $locked[$row['nid']] = $row;
         }
+
+        // Can this user edit grades after final approval?
+        $inroles = "'University Examination Officer'";
+
+        $sql = "SELECT 1
+          FROM
+            {content_type_student_grades} sgnode,
+            {content_type_course_instance} cinode,
+            {content_type_course} c,
+            {content_type_department} d,
+            {eduerp_roles} er
+          WHERE
+            sgnode.nid={$node->nid} AND
+            sgnode.field_course_instance_nid=cinode.nid AND
+            cinode.field_course_id_nid=c.nid AND
+            c.field_department_nid_nid=d.nid AND
+            (d.nid=er.department_id OR d.field_college_id_nid=er.college_id OR (er.department_id=0 AND er.college_id=0)) AND
+            er.role IN ($inroles) AND
+            er.uid={$account->uid}
+          LIMIT 1";
+        $result = db_query($sql);
+        if (db_fetch_array($result)) $editafterfinalapproval = TRUE;
       }
 
       if ($field['field_name'] === 'field_comment_grades') $field['field_name'] = 'field_exam_score'; // Assume comment should not be edited if the exam_score is locked
@@ -224,6 +247,9 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
       // Check if this lock is empty
       if (empty($locked[$node->nid][$field['field_name']])) return TRUE;
+
+      if ($editafterfinalapproval && $locked[$node->nid][$field['field_name']] == 5) return TRUE;
+
       return FALSE;
    }
   return TRUE;
