@@ -128,7 +128,8 @@ function grading_menu() {
  */
 function grading_field_access($op, $field, $account, $node = NULL) {
   global $user;
-  static $locked = array(); // Cache
+  static $locked = array();               // Cache
+  static $editafterfinalapproval = FALSE; // Cache
 
   if (is_null($account)) {
     $account = $user;
@@ -215,6 +216,28 @@ function grading_field_access($op, $field, $account, $node = NULL) {
         while ($row = db_fetch_array($result)) {
           $locked[$row['nid']] = $row;
         }
+
+        // Can this user edit grades after final approval?
+        $inroles = "'University Examination Officer'";
+
+        $sql = "SELECT 1
+          FROM
+            {content_type_student_grades} sgnode,
+            {content_type_course_instance} cinode,
+            {content_type_course} c,
+            {content_type_department} d,
+            {eduerp_roles} er
+          WHERE
+            sgnode.nid={$node->nid} AND
+            sgnode.field_course_instance_nid=cinode.nid AND
+            cinode.field_course_id_nid=c.nid AND
+            c.field_department_nid_nid=d.nid AND
+            (d.nid=er.department_id OR d.field_college_id_nid=er.college_id OR (er.department_id=0 AND er.college_id=0)) AND
+            er.role IN ($inroles) AND
+            er.uid={$account->uid}
+          LIMIT 1";
+        $result = db_query($sql);
+        if (db_fetch_array($result)) $editafterfinalapproval = TRUE;
       }
 
       if ($field['field_name'] === 'field_comment_grades') $field['field_name'] = 'field_exam_score'; // Assume comment should not be edited if the exam_score is locked
@@ -224,6 +247,9 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
       // Check if this lock is empty
       if (empty($locked[$node->nid][$field['field_name']])) return TRUE;
+
+      if ($editafterfinalapproval && $locked[$node->nid][$field['field_name']] == 5) return TRUE;
+
       return FALSE;
    }
   return TRUE;
@@ -778,6 +804,7 @@ function _grading_ahah_stats() {
       FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
       WHERE
         sg.field_student_gpa_nid=gpa.nid AND
+        sg.field_dropped_value=0 AND
         gpa.field_level_name_gpa_value='%s' AND
         gpa.field_sess_name_gpa_value='%s' AND
         gpa.field_semester_name_gpa_value='%s' AND
@@ -824,6 +851,7 @@ function _grading_ahah_stats() {
     FROM {content_type_student_grades sg}, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -987,6 +1015,7 @@ function _grading_ahah_stats() {
     FROM {content_type_student_grades sg}, {content_type_course_instance} ci, {content_type_course} c, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       sg.field_course_instance_nid=ci.nid AND
       ci.field_course_id_nid=c.nid AND
       gpa.field_level_name_gpa_value='%s' AND
@@ -1126,6 +1155,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -1295,6 +1325,7 @@ function approve_grades_vc_form_submit($form, &$form_state) {
     $setstatement
     WHERE
       sg.field_student_gpa_nid=gpa.nid AND
+      sg.field_dropped_value=0 AND
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
@@ -1303,15 +1334,16 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
 
-  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d
+  $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_student_program} sp, {content_type_program} p, {content_type_department} d
     SET
       gpa.`field_gpaforstudent_value`=gpa.`field_gpa_value`,
-      gpa.`field_cgpaforstudent_value`=gpa.`field_cgpa_value`
+      sp.`field_cgpaforstudent_sp_value`=sp.`field_cgpa_sp_value`
     WHERE
       gpa.field_level_name_gpa_value='%s' AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value='%s' AND
       gpa.field_program_ref_gpa_nid=p.nid AND
+      gpa.field_student_program_ref_gpa_nid=sp.nid AND
       p.field_department_id_nid=d.nid AND
       d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
@@ -1736,6 +1768,7 @@ function _grading_ahah_stats_uni() {
           FROM {content_type_student_grades} sg, {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d, {content_type_college} co
           WHERE
             sg.field_student_gpa_nid=gpa.nid AND
+            sg.field_dropped_value=0 AND
             gpa.field_level_name_gpa_value='%s' AND
             gpa.field_sess_name_gpa_value='%s' AND
             gpa.field_semester_name_gpa_value='%s' AND
@@ -1903,6 +1936,7 @@ function _grading_ahah_studentdetails() {
   $output .= '<td valign="top" class="table-label">Exam</td>';
   $output .= '<td valign="top" class="table-label">Total</td>';
   $output .= '<td valign="top" class="table-label">Grade</td>';
+  $output .= '<td valign="top" class="table-label">Dropped?</td>';
   $output .= '<td valign="top" class="table-label">Comment</td>';
   $output .= '</tr>';
 
@@ -1921,6 +1955,7 @@ function _grading_ahah_studentdetails() {
       sg.field_exam_score_value AS exam,
       sg.field_total_score_value AS total,
       sg.field_grade_value AS grade,
+      sg.field_dropped_value AS dropped,
       sg.field_comment_grades_value AS comment
     FROM
       {content_type_student_grades} sg,
@@ -1959,7 +1994,10 @@ function _grading_ahah_studentdetails() {
     $output .= "<td>{$row->total}</td>";
     $output .= "<td>{$row->grade}</td>";
     $output .= '<td>';
-    if (!empty($row->comment)) echo check_plain($row->comment);
+    if ($row->dropped) $output .=  'Dropped';
+    $output .= '</td>';
+    $output .= '<td>';
+    if (!empty($row->comment)) $output .=  check_plain($row->comment);
     $output .= '</td>';
     $output .= '</tr>';
   }
@@ -1989,14 +2027,16 @@ function _grading_ahah_studentdetails() {
       g.field_credit_load_registered_value AS credit_load_registered,
       g.field_credit_load_completed_value AS credit_load_completed,
       g.field_gpa_value AS gpa,
-      g.field_cgpa_value AS cgpa
+      sp.field_cgpa_sp_value AS cgpa
     FROM
       {content_type_student_gpa} g,
+      {content_type_student_program} sp,
       {content_type_program} p,
       {content_type_department} d
     WHERE
       field_student_ref_gpa_uid=%d AND
       g.field_program_ref_gpa_nid=p.nid AND
+      g.field_student_program_ref_gpa_nid=sp.nid AND
       p.field_department_id_nid=d.nid
     ORDER BY session ASC, semester ASC, programme ASC";
   $rows = db_query($sql, $uid);

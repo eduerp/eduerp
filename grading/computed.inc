@@ -28,7 +28,7 @@ function calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid) {
 }
 
 
-function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
+function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
@@ -36,7 +36,7 @@ function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 }
 
 
-function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
+function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
@@ -49,13 +49,13 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
   elseif ($total >= 40) $gp = 1;
   else $gp = 0;
 
-  updatestudentgpa($gp, $uid, $course_instance_nid);
+  updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked);
 
   return (string)$gp;
 }
 
 
-function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $field_name = NULL) {
+function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
@@ -69,7 +69,7 @@ function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 }
 
 
-function updatestudentgpa($gp, $uid, $course_instance_nid) {
+function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked) {
   if (!empty($uid) && !empty($course_instance_nid)) {
 
     if     ($gp === 5) $grade = 'A';
@@ -83,79 +83,79 @@ function updatestudentgpa($gp, $uid, $course_instance_nid) {
       WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
     db_query($sql);
 
-    $sql = "SELECT sg.field_gradepoint_value, c.field_creditload_value
-      FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course_instance} ci0
-      WHERE
-        sg.field_mat_no_uid={$uid} AND
-        sg.field_course_instance_nid=ci.nid AND
-        ci.field_course_id_nid=c.nid AND
-        ci.field_sess_name_value=ci0.field_sess_name_value AND
-        ci.field_semester_name_value=ci0.field_semester_name_value AND
-        ci.field_repeat_value=0 AND
-        ci0.nid={$course_instance_nid}";
-    $studentgrades = db_query($sql);
-    $missinggrades = 0;
-    $gptotal = 0.0;
-    $load = 0;
-    while ($studentgrade = db_fetch_object($studentgrades)) {
-
-      if ($studentgrade->field_gradepoint_value === '-') {
-        $missinggrades++;
-      }
-      else {
-        $gptotal += $studentgrade->field_gradepoint_value * $studentgrade->field_credit_load_value;
-        $load += $studentgrade->field_credit_load_value;
-      }
-    }
-
-    if ($load === 0) return;
-
-    $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
-      SET gpa.field_credit_load_completed_value={$load}
-      WHERE
-        gpa.field_student_ref_gpa_uid={$uid} AND
-        gpa.field_session_id_gpa_value=ci.field_session_id_value AND
-        gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
-        ci.nid={$course_instance_nid}";
-    db_query($sql);
-
-    $missinggrades = 0; // Calculate GPA regardless of missing grades which will be ignored
-    if (!$missinggrades && $load > 0) {
-      $gpa = $gptotal / $load;
-      $gpa = number_format($gpa, 2);
-
-      $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
-        SET gpa.field_gpa_value='{$gpa}', gpa.field_gptotal_value='{$gptotal}'
-        WHERE gpa.field_student_ref_gpa_uid={$uid} AND
-          gpa.field_session_id_gpa_value=ci.field_session_id_value AND
-          gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
-          ci.nid={$course_instance_nid}";
-      db_query($sql);
-
-      $sql = "SELECT gpa.field_gptotal_value, gpa.field_credit_load_completed_value
-        FROM {content_type_student_gpa} gpa
-        WHERE gpa.field_student_ref_gpa_uid={$uid}";
-      $semestergpas = db_query($sql);
-      $cgp   = 0.0;
-      $cload = 0.0;
-      while ($semestergpa = db_fetch_object($semestergpas)) {
-        if ($semestergpa->field_gptotal_value != '-') {
-          $cgp   += (float)$semestergpa->field_gptotal_value;
-          $cload += (float)$semestergpa->field_credit_load_completed_value;
-        }
-      }
-
-      if ($cload > 0.0) {
-        $cgpa = $cgp / $cload;
-        $cgpa = number_format($cgpa, 2);
-        $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value='{$cgpa}'
-          WHERE gpa.field_student_ref_gpa_uid={$uid} AND
-            gpa.field_session_id_gpa_value=ci.field_session_id_value AND
-            gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
-            ci.nid={$course_instance_nid}";
-        db_query($sql);
-      }
-    }
+//    $sql = "SELECT sg.field_gradepoint_value, c.field_creditload_value
+//      FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course_instance} ci0
+//      WHERE
+//        sg.field_mat_no_uid={$uid} AND
+//        sg.field_course_instance_nid=ci.nid AND
+//        ci.field_course_id_nid=c.nid AND
+//        ci.field_sess_name_value=ci0.field_sess_name_value AND
+//        ci.field_semester_name_value=ci0.field_semester_name_value AND
+//        ci.field_repeat_value=0 AND
+//        ci0.nid={$course_instance_nid}";
+//    $studentgrades = db_query($sql);
+//    $missinggrades = 0;
+//    $gptotal = 0.0;
+//    $load = 0;
+//    while ($studentgrade = db_fetch_object($studentgrades)) {
+//
+//      if ($studentgrade->field_gradepoint_value === '-') {
+//        $missinggrades++;
+//      }
+//      else {
+//        $gptotal += $studentgrade->field_gradepoint_value * $studentgrade->field_credit_load_value;
+//        $load += $studentgrade->field_credit_load_value;
+//      }
+//    }
+//
+//    if ($load === 0) return;
+//
+//    $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
+//      SET gpa.field_credit_load_completed_value={$load}
+//      WHERE
+//        gpa.field_student_ref_gpa_uid={$uid} AND
+//        gpa.field_session_id_gpa_value=ci.field_session_id_value AND
+//        gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
+//        ci.nid={$course_instance_nid}";
+//    db_query($sql);
+//
+//    $missinggrades = 0; // Calculate GPA regardless of missing grades which will be ignored
+//    if (!$missinggrades && $load > 0) {
+//      $gpa = $gptotal / $load;
+//      $gpa = number_format($gpa, 2);
+//
+//      $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci
+//        SET gpa.field_gpa_value='{$gpa}', gpa.field_gptotal_value='{$gptotal}'
+//        WHERE gpa.field_student_ref_gpa_uid={$uid} AND
+//          gpa.field_session_id_gpa_value=ci.field_session_id_value AND
+//          gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
+//          ci.nid={$course_instance_nid}";
+//      db_query($sql);
+//
+//      $sql = "SELECT gpa.field_gptotal_value, gpa.field_credit_load_completed_value
+//        FROM {content_type_student_gpa} gpa
+//        WHERE gpa.field_student_ref_gpa_uid={$uid}";
+//      $semestergpas = db_query($sql);
+//      $cgp   = 0.0;
+//      $cload = 0.0;
+//      while ($semestergpa = db_fetch_object($semestergpas)) {
+//        if ($semestergpa->field_gptotal_value != '-') {
+//          $cgp   += (float)$semestergpa->field_gptotal_value;
+//          $cload += (float)$semestergpa->field_credit_load_completed_value;
+//        }
+//      }
+//
+//      if ($cload > 0.0) {
+//        $cgpa = $cgp / $cload;
+//        $cgpa = number_format($cgpa, 2);
+//        $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_course_instance} ci SET gpa.field_cgpa_value='{$cgpa}'
+//          WHERE gpa.field_student_ref_gpa_uid={$uid} AND
+//            gpa.field_session_id_gpa_value=ci.field_session_id_value AND
+//            gpa.field_semester_id_gpa_value=ci.field_semester_id_value AND
+//            ci.nid={$course_instance_nid}";
+//        db_query($sql);
+//      }
+//    }
   }
 }
 ?>
