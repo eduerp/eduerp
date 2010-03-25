@@ -554,7 +554,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             sg.field_examscorelocked_value>0 AND
             sg.field_dropped_value=0 AND
             ci.field_course_id_nid=c.nid AND
-            ci.field_sess_name_value='%s' $semesterwhere
+            ci.field_sess_name_value='%s' $semesterwhere AND
+            ci.field_repeat_value=0
           ) AS exams
         GROUP BY exams.field_mat_no_uid
       ) AS gpatoset
