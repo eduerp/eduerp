@@ -617,38 +617,31 @@ function student_course_form_submit($form,&$state){
     return;
 }
 
+
+// ALAN
+
 function add_student_courses($data) {
 
-  $query = "select * from {admitted_student} where student_id=%d";
-  $result = db_query($query, $_SESSION['student']['id']);
-  $row =  db_fetch_object($result);
-  //$query = "delete from {registered_course} where student_id=%d";
-  //$result = db_query($query, $_SESSION['student']['id']);
+  // $_SESSION['student']['id'] is being used as storage for the uid of the student who is being registered (which in the future may not be the current user)
+  // In the future this should be passed as a hidden/value form element in $data
+  $student_user = user_load($_SESSION['student']['id']);
 
-  // ALAN 20090902
-  $sql = "SELECT * FROM {current_session_semester} WHERE id=1";
-  $session_rows = db_query($sql);
-  $session_row = db_fetch_object($session_rows);
-  $session_id = $session_row->session_id;
-  $semester_id = $session_row->semester_id;
+  $session = variable_get('veritas_current_session', '');
 
-  delete_student_grades($row->user_id, $session_id, $semester_id); // Delete, for this Semester only! (For Veritas, other universities will be different.)
-  // END ALAN
+  // In the future this should not be used because the courses being selected could be for the 2nd semester but selected at the start of the 1st semester
+  // So this will need to be passed as a hidden/value form element in $data
+  $semester = variable_get('veritas_current_semester', '');
 
-  foreach ($data['corecourses'] as $key => $value ) {
-    //$query = "insert {registered_course} set registered_course_id=%d, student_id=%d, session_id=%d";
-    //db_query($query, $value, $_SESSION['student']['id'], $session_id);
-    create_cck_records($row, $value, $data, $session_id); // ALAN 20090804
+  delete_student_grades($student_user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
+
+  foreach ($data['corecourses'] as $key => $value) {
+    create_cck_records($student_user, $value, $data, $session);
   }
-  foreach($data['electivecourses'] as $key => $value ) {
-    //$query = "insert {registered_course} set registered_course_id=%d, student_id=%d, session_id=%d";
-    //db_query($query, $key, $_SESSION['student']['id'], $session_id);
-    create_cck_records($row, $key, $data, $session_id);   // ALAN 20090804
+  foreach ($data['electivecourses'] as $key => $value) {
+    create_cck_records($student_user, $key, $data, $session);
   }
 }
 
-
-// ALAN 20090804
 
 function create_cck_records($admitted_student, $reg_course_id, $data, $session_id) {
 
@@ -941,60 +934,17 @@ function get_cck_nid($ccktype, $fieldname1, $value1, $fieldname2, $value2, $fiel
 }
 
 
-function delete_student_grades($uid, $session_id, $semester_id) {
-  $field = content_database_info(content_fields('field_session_id', 'course_instance'));
-  $table_course_instance = $field['table'];
-  $where = 'ci.' . $field['columns']['value']['column'] . "='$session_id'";
-
-  $field = content_database_info(content_fields('field_semester_id', 'course_instance'));
-  $where .= ' AND ci.' . $field['columns']['value']['column'] . "='$semester_id'";
-
-  $field = content_database_info(content_fields('field_course_instance', 'student_grades'));
-  $table_student_grades = $field['table'];
-  $where .= ' AND sg.' . $field['columns']['nid']['column'] . "=ci.nid";
-
-  $field = content_database_info(content_fields('field_mat_no', 'student_grades'));
-  $where .= ' AND sg.' . $field['columns']['uid']['column'] . "=$uid";
-
-  $sql = "SELECT sg.nid FROM {{$table_course_instance}} ci, {{$table_student_grades}} sg WHERE $where";
+function delete_student_grades($uid, $session, $semester) {
+  $sql = "SELECT sg.nid
+    FROM {content_type_student_grades} sg, {content_type_course_instance} ci
+    WHERE
+      sg.field_mat_no_uid=%d AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_sess_name_value='%s' AND
+      ci.field_semester_name_value=%d";
   // Query is potentially slow, can add DB indices added on relevant columns
 
-  $result = db_query($sql);
-
-  while ($row = db_fetch_object($result)) {
-    // Copied from node_delete(), but want to bypass access control.
-    $node = node_load($row->nid);
-
-    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
-    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
-
-    // Call the node-specific callback (if any):
-    node_invoke($node, 'delete');
-    node_invoke_nodeapi($node, 'delete');
-
-    // Clear the page and block caches.
-    cache_clear_all();
-
-    // Remove this node from the search index if needed.
-    if (function_exists('search_wipe')) {
-      search_wipe($node->nid, 'node');
-    }
-  }
-
-  // Now remove 'student_gpa'
-  $field = content_database_info(content_fields('field_session_id_gpa', 'student_gpa'));
-  $table_student_gpa = $field['table'];
-  $where = $field['columns']['value']['column'] . "='$session_id'";
-
-  $field = content_database_info(content_fields('field_semester_id_gpa', 'student_gpa'));
-  $where .= ' AND ' . $field['columns']['value']['column'] . "='$semester_id'";
-
-  $field = content_database_info(content_fields('field_student_ref_gpa', 'student_gpa'));
-  $where .= ' AND ' . $field['columns']['uid']['column'] . "=$uid";
-
-  $sql = "SELECT nid FROM {{$table_student_gpa}} WHERE $where";
-
-  $result = db_query($sql);
+  $result = db_query($sql, $uid, $session, $semester);
 
   while ($row = db_fetch_object($result)) {
     // Copied from node_delete(), but want to bypass access control.
