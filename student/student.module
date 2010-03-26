@@ -242,7 +242,7 @@ function student_course_form1(&$obj) {
 
     $query = "SELECT
         pci.semester AS semester,
-        ci.nid AS reg_course_id,
+        ci.nid AS course_instance,
         ci.field_timetable_value AS timetable,
         c.field_creditload_value AS credit_load,
         c.field_code_value AS course_code,
@@ -327,14 +327,14 @@ function student_course_form1(&$obj) {
 					'.$row->credit_load.'
 				 </td>
 				</tr>';
-					$form['courses']['corecourses['.$row->reg_course_id.']'] = array('#type' => 'hidden', '#value' => $row->reg_course_id);
+					$form['courses']['corecourses['.$row->course_instance.']'] = array('#type' => 'hidden', '#value' => $row->course_instance);
 					$selected_load += $row->credit_load;
 				}
 				else {
 
 					$elective_html .= ' <tr>
 					<td>
-					<input class="select_course" type="checkbox" name="electivecourses['. $row->reg_course_id .']" value='. $row->credit_load .' />
+					<input class="select_course" type="checkbox" name="electivecourses['. $row->course_instance .']" value='. $row->credit_load .' />
 				 </td>
 												<td>
 					'. $row->course_code .'
@@ -421,7 +421,7 @@ function student_course_form2(&$obj) {
 
   $query = "SELECT
       pci.semester AS semester,
-      ci.nid AS reg_course_id,
+      ci.nid AS course_instance,
       ci.field_timetable_value AS timetable,
       c.field_creditload_value AS credit_load,
       c.field_code_value AS course_code,
@@ -506,11 +506,11 @@ function student_course_form2(&$obj) {
         '. $row->credit_load .'
        </td>
        </tr>';
-      $form['courses']['corecourses['.$row->reg_course_id.']'] = array('#type'=>'hidden', '#value'=>$row->reg_course_id);
+      $form['courses']['corecourses['.$row->course_instance.']'] = array('#type'=>'hidden', '#value'=>$row->course_instance);
       $selected_load += $row->credit_load;
     }
     else if ($row->course_type == 2) {
-      if (in_array($row->reg_course_id,$elective_course)) {
+      if (in_array($row->course_instance,$elective_course)) {
         $checked = "checked";
         $selected_load += $row->credit_load;
 			}
@@ -519,7 +519,7 @@ function student_course_form2(&$obj) {
 			}
 				$elective_html .= '<tr>
        <td>
-       <input class="select_course" readonly type="checkbox" '.$checked.' name="electivecourses['. $row->reg_course_id .']" value='. $row->credit_load .' />
+       <input class="select_course" readonly type="checkbox" '.$checked.' name="electivecourses['. $row->course_instance .']" value='. $row->credit_load .' />
        </td>
        <td>
         '. $row->course_code .'
@@ -635,302 +635,76 @@ function add_student_courses($data) {
   delete_student_grades($student_user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
 
   foreach ($data['corecourses'] as $key => $value) {
-    create_cck_records($student_user, $value, $data, $session);
+    create_cck_records($student_user, $value, $data, $session, $semester);
   }
   foreach ($data['electivecourses'] as $key => $value) {
-    create_cck_records($student_user, $key, $data, $session);
+    create_cck_records($student_user, $key, $data, $session, $semester);
   }
 }
 
 
-function create_cck_records($admitted_student, $reg_course_id, $data, $session_id) {
-
-  if (empty($admitted_student->middle_name)) {
-    $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name;
+function create_cck_records($student_user, $course_instance, $data, $session, $semester) {
+  $studentname = '';
+  if (!empty($student_user->profile_first_name) && !empty($student_user->profile_last_name)) {
+    $middle = '';
+    if (!empty($student_user->profile_middle_name)) $middle = ' ' . $student_user->profile_middle_name;
+    $studentname = "{$student_user->profile_last_name}, {$student_user->profile_first_name}{$middle}";
   }
-  else {
-    $studentname = $admitted_student->last_name . ', ' . $admitted_student->first_name . ' ' . $admitted_student->middle_name;
-  }
 
-  // Get details of the course's programme, department, college
-  $query = "SELECT
-    p.programme_id,
-    p.programme_name,
-    p.department_id,
-    c.course_id,
-    c.course_code,
-    c.course_title,
-    c.credit_load,
-    c.semester AS semester_id,
-    d.department_name,
-    d.college_id,
-    co.college_name,
-    co.college_abbreviation,
-    s.session_id,
-    s.sess_name,
-    l.level_id,
-    l.level_name,
-    vs.user_id
-  FROM {registrable_course} rc, {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l, {veritas_staff} vs
-  WHERE
-    rc.reg_course_id={$reg_course_id} AND
-    rc.programme_id=p.programme_id AND
-    rc.course_id=c.course_id AND
-    p.department_id=d.department_id AND
-    d.college_id=co.college_id AND
-    s.session_id={$session_id} AND
-    rc.level_id=l.level_id AND
-    rc.lecturer_id=vs.staff_id";
-  $program_result = db_query($query);
-  $program_row = db_fetch_object($program_result);
-
-  if (empty($program_row)) {
-    // Behave gracefully if there is no lecturer_id (could have used LEFT JOIN above, but would have involved retest)
-    $query = "SELECT
-      p.programme_id,
-      p.programme_name,
-      p.department_id,
-      c.course_id,
-      c.course_code,
-      c.course_title,
-      c.credit_load,
-      c.semester AS semester_id,
-      d.department_name,
-      d.college_id,
-      co.college_name,
-      co.college_abbreviation,
-      s.session_id,
-      s.sess_name,
-      l.level_id,
-      l.level_name
-    FROM {registrable_course} rc, {programme} p, {course} c, {college} co, {department} d, {session} s, {level} l
+  $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
     WHERE
-      rc.reg_course_id={$reg_course_id} AND
-      rc.programme_id=p.programme_id AND
-      rc.course_id=c.course_id AND
-      p.department_id=d.department_id AND
-      d.college_id=co.college_id AND
-      s.session_id={$session_id} AND
-      rc.level_id=l.level_id";
-    $program_result = db_query($query);
-    $program_row = db_fetch_object($program_result);
-    $program_row->user_id = NULL;
-  }
+      gpa.field_student_ref_gpa_uid=%d AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value=%d
+    LIMIT 1";
 
-  // Find Alternate Lecturer uid
-  $query = "SELECT vs.user_id AS alternate_user_id
-  FROM {registrable_course} rc, {veritas_staff} vs
-  WHERE
-    rc.reg_course_id={$reg_course_id} AND
-    rc.lecturer_id_alternate=vs.staff_id";
-  $alternate_result = db_query($query);
-  if (!($alternate_row = db_fetch_object($alternate_result))) $alternate_row->alternate_user_id = NULL;
+  $rows = db_query($sql, $student_user->uid, $session, $semester);
+  $row = db_fetch_object($rows);
+  $student_gpa = $row->student_gpa;
 
-  // Get details of the student's home programme, department, college (as opposed to the course's)
-  $query = "SELECT
-    p.programme_id,
-    p.programme_name,
-    p.department_id,
-    d.department_name,
-    d.college_id,
-    co.college_name,
-    co.college_abbreviation,
-    l.level_id,
-    l.level_name
-  FROM {programme} p, {department} d, {college} co, {level} l
-  WHERE
-    p.programme_id={$admitted_student->first_choice} AND
-    p.department_id=d.department_id AND
-    d.college_id=co.college_id AND
-    l.level_id={$admitted_student->level_id}";
-  $home_program_result = db_query($query);
-  $home_program_row = db_fetch_object($home_program_result);
+  node_load($student_gpa);
+  $node->field_gptotal[0]['value']               = '-';
+  $node->field_gpa[0]['value']                   = '-';
+  $node->field_gpaforstudent[0]['value']         = '-';
+  $node->field_credit_load_registered[0]['value']= $data['select_credit'];
+  $node->field_credit_load_completed[0]['value'] = 0;
+  node_save($node);
 
-  $program = get_cck_nid('program', 'field_programme_id', $program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-  if (empty($program)) {
-    // program CCK
-    $node = new stdClass();
-    $node->type                                    = 'program';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = $program_row->programme_name;
-    $node->field_programme_id[0]['value']          = $program_row->programme_id;
-    $node->field_programme_name[0]['value']        = $program_row->programme_name;
-    $node->field_department_id[0]['value']         = $program_row->department_id;
-    $node->field_department_name[0]['value']       = $program_row->department_name;
-    $node->field_college_id[0]['value']            = $program_row->college_id;
-    $node->field_college_name[0]['value']          = $program_row->college_name;
-    $node->field_college_abbreviation[0]['value']  = $program_row->college_abbreviation;
-    node_save($node);
-    $program = $node->nid;
-  }
-
-  $home_program = get_cck_nid('program', 'field_programme_id', $home_program_row->programme_id, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-  if (empty($home_program)) {
-    // program CCK
-    $node = new stdClass();
-    $node->type                                    = 'program';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = $home_program_row->programme_name;
-    $node->field_programme_id[0]['value']          = $home_program_row->programme_id;
-    $node->field_programme_name[0]['value']        = $home_program_row->programme_name;
-    $node->field_department_id[0]['value']         = $home_program_row->department_id;
-    $node->field_department_name[0]['value']       = $home_program_row->department_name;
-    $node->field_college_id[0]['value']            = $home_program_row->college_id;
-    $node->field_college_name[0]['value']          = $home_program_row->college_name;
-    $node->field_college_abbreviation[0]['value']  = $home_program_row->college_abbreviation;
-    node_save($node);
-    $home_program = $node->nid;
-  }
-
-  $course_instance = get_cck_nid('course_instance', 'field_course_id', $program_row->course_id, 'field_session_id', $program_row->session_id, 'field_semester_id', $program_row->semester_id, 'field_level_id', $program_row->level_id, NULL, NULL, NULL, NULL);
-  if (empty($course_instance)) {
-    // course_instance CCK
-    $node = new stdClass();
-    $node->type                                    = 'course_instance';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = $program_row->course_title . ' - ' . $program_row->sess_name . ' - ' . $program_row->semester_id . ' - ' . $program_row->level_name;
-    $node->field_course_id[0]['value']             = $program_row->course_id;
-    $node->field_course_code[0]['value']           = $program_row->course_code;
-    $node->field_course_title[0]['value']          = $program_row->course_title;
-    $node->field_program_ref_course[0]['nid']      = $program;
-    $node->field_credit_load[0]['value']           = $program_row->credit_load;
-    $node->field_lecturer[0]['uid']                = $program_row->user_id;
-    $node->field_lecturer_alternate[0]['uid']      = $alternate_row->alternate_user_id;
-    $node->field_session_id[0]['value']            = $program_row->session_id;
-    $node->field_sess_name[0]['value']             = $program_row->sess_name;
-    $node->field_semester_id[0]['value']           = $program_row->semester_id;
-    $node->field_semester_name[0]['value']         = $program_row->semester_id;
-    $node->field_level_id[0]['value']              = $program_row->level_id;
-    $node->field_level_name[0]['value']            = $program_row->level_name;
-    node_save($node);
-    $course_instance = $node->nid;
-  }
-
-  $student_gpa = get_cck_nid('student_gpa', 'field_session_id_gpa', $program_row->session_id, 'field_semester_id_gpa', $program_row->semester_id, 'field_level_id_gpa', $home_program_row->level_id, NULL, NULL, NULL, NULL, 'field_student_ref_gpa', $admitted_student->user_id);
-  if (empty($student_gpa)) {
-    // student_gpa CCK
-    $node = new stdClass();
-    $node->type                                    = 'student_gpa';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = $studentname . ' - ' . $program_row->sess_name . ' - ' . $program_row->semester_id;
-    $node->field_student_ref_gpa[0]['uid']         = $admitted_student->user_id;
-    $node->field_program_ref_gpa[0]['nid']         = $home_program; // No longer GPA for Program but for whole semester's courses
-    $node->field_gpa[0]['value']                   = '-';
-    $node->field_gpaforstudent[0]['value']         = '-';
-    $node->field_cgpa[0]['value']                  = '-';
-    $node->field_cgpaforstudent[0]['value']        = '-';
-    $node->field_credit_load_registered[0]['value']= $data['select_credit']; // For Veritas all the selected credit applies to this one Semester.
-    $node->field_credit_load_completed[0]['value'] = 0;
-    $node->field_session_id_gpa[0]['value']        = $program_row->session_id;
-    $node->field_sess_name_gpa[0]['value']         = $program_row->sess_name;
-    $node->field_semester_id_gpa[0]['value']       = $program_row->semester_id;
-    $node->field_semester_name_gpa[0]['value']     = $program_row->semester_id;
-    $node->field_level_id_gpa[0]['value']          = $home_program_row->level_id;
-    $node->field_level_name_gpa[0]['value']        = $home_program_row->level_name;
-    node_save($node);
-    $student_gpa = $node->nid;
-  }
-
-  // Will never exist, because previously deleted.
-  // $student_grades = get_cck_nid('student_grades', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 'field_course_instance', $course_instance, 'field_mat_no', $admitted_student->user_id);
-  // if (empty($student_grades)) {
-    // student_grades CCK
-    $node = new stdClass();
-    $node->type                                    = 'student_grades';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = $studentname;
-    $node->field_mat_no[0]['uid']                  = $admitted_student->user_id;
-    $node->field_course_instance[0]['nid']         = $course_instance;
-    $node->field_student_gpa[0]['nid']             = $student_gpa;
-    $node->field_ca1[0]['value']                   = 0;
-    $node->field_ca1forstudent[0]['value']         = 0;
-    $node->field_ca1locked[0]['value']             = 0;
-    $node->field_ca2[0]['value']                   = 0;
-    $node->field_ca2forstudent[0]['value']         = 0;
-    $node->field_ca2locked[0]['value']             = 0;
-    $node->field_ca3[0]['value']                   = 0;
-    $node->field_ca3forstudent[0]['value']         = 0;
-    $node->field_ca3locked[0]['value']             = 0;
-    $node->field_ca4[0]['value']                   = 0;
-    $node->field_ca4forstudent[0]['value']         = 0;
-    $node->field_ca4locked[0]['value']             = 0;
-    $node->field_exam_score[0]['value']            = 0;
-    $node->field_examscoreforstudent[0]['value']   = 0;
-    $node->field_examscorelocked[0]['value']       = 0;
-    $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_totalscoreforstudent[0]['value']  = '-';
-    $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_gradeforstudent[0]['value']       = '-';
-    $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_gradepointforstudent[0]['value']  = '-';
-    node_save($node);
-  // }
-}
-
-
-function get_cck_nid($ccktype, $fieldname1, $value1, $fieldname2, $value2, $fieldname3, $value3, $fieldname4, $value4, $fieldnamenid, $nid, $fieldnameuid, $uid) {
-  $where = '';
-  if (isset($fieldname1)) {
-    $field = content_database_info(content_fields($fieldname1, $ccktype));
-    $table1 = $field['table'];
-    $where .= ' AND t1.' . $field['columns']['value']['column'] . "='$value1'";
-  }
-  if (isset($fieldname2)) {
-    $field = content_database_info(content_fields($fieldname2, $ccktype));
-    $table1 = $field['table'];
-    $where .= ' AND t1.' . $field['columns']['value']['column'] . "='$value2'";
-  }
-  if (isset($fieldname3)) {
-    $field = content_database_info(content_fields($fieldname3, $ccktype));
-    $table1 = $field['table'];
-    $where .= ' AND t1.' . $field['columns']['value']['column'] . "='$value3'";
-  }
-  if (isset($fieldname4)) {
-    $field = content_database_info(content_fields($fieldname4, $ccktype));
-    $table1 = $field['table'];
-    $where .= ' AND t1.' . $field['columns']['value']['column'] . "='$value4'";
-  }
-
-  if (isset($fieldnamenid)) {
-    $field = content_database_info(content_fields($fieldnamenid, $ccktype));
-    $table1 = $field['table'];
-    $where .= ' AND t1.' . $field['columns']['nid']['column'] . "=$nid";
-  }
-  if (isset($fieldnameuid)) {
-    $field = content_database_info(content_fields($fieldnameuid, $ccktype));
-    $table1 = $field['table'];
-    $where .= ' AND t1.' . $field['columns']['uid']['column'] . "=$uid";
-  }
-
-  // Assumption made that all fields are in main CCK table.
-
-  $sql = "SELECT n.nid FROM {node} n, {{$table1}} t1 WHERE n.nid=t1.nid AND n.vid=t1.vid $where";
-  // These queries are potentially cumulatively slow, they should be cached and/or DB indices added on relevant columns
-
-  $result = db_query($sql);
-  $row = db_fetch_object($result);
-  if (!empty($row->nid)) return $row->nid;
-  return NULL;
+  // student_grades CCK
+  $node = new stdClass();
+  $node->type                                    = 'student_grades';
+  $node->uid                                     = 1;  // Admin
+  $node->status                                  = 1;  // Published
+  $node->promote                                 = 0;
+  $node->sticky                                  = 0;
+  $node->comment                                 = 0;
+  $node->title                                   = $studentname;
+  $node->field_mat_no[0]['uid']                  = $student_user->uid;
+  $node->field_course_instance[0]['nid']         = $course_instance;
+  $node->field_student_gpa[0]['nid']             = $student_gpa;
+  $node->field_ca1[0]['value']                   = 0;
+  $node->field_ca1forstudent[0]['value']         = 0;
+  $node->field_ca1locked[0]['value']             = 0;
+  $node->field_ca2[0]['value']                   = 0;
+  $node->field_ca2forstudent[0]['value']         = 0;
+  $node->field_ca2locked[0]['value']             = 0;
+  $node->field_ca3[0]['value']                   = 0;
+  $node->field_ca3forstudent[0]['value']         = 0;
+  $node->field_ca3locked[0]['value']             = 0;
+  $node->field_ca4[0]['value']                   = 0;
+  $node->field_ca4forstudent[0]['value']         = 0;
+  $node->field_ca4locked[0]['value']             = 0;
+  $node->field_exam_score[0]['value']            = 0;
+  $node->field_examscoreforstudent[0]['value']   = 0;
+  $node->field_examscorelocked[0]['value']       = 0;
+  $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_totalscoreforstudent[0]['value']  = '-';
+  $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_gradeforstudent[0]['value']       = '-';
+  $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_gradepointforstudent[0]['value']  = '-';
+  $node->field_dropped[0]['value']               = 0;
+  node_save($node);
 }
 
 
