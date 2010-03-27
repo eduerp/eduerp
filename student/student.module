@@ -3445,13 +3445,12 @@ function _student_rel() {
 }
 
 function _student_col(){
-
   static $titles;
-  if(!$titles) {
-    $titles[0]="";
-    $r = db_query("select * from {college}  order by college_name");
+  if (!$titles) {
+    $titles[0] = "";
+    $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} ORDER BY field_college_name_value");
     while ($f = db_fetch_object($r))
-      $titles[$f->college_id]=$f->college_name;
+      $titles[$f->nid] = $f->value;
   }
   return  $titles;
 }
@@ -3472,14 +3471,13 @@ function _student_religion() {
 
 function _student_dep(){
  static $titles;
- if(!$titles){
-  $titles[0]="";
-  $r=db_query("select * from department  order by department_name");
-  while($f=db_fetch_object($r))
-  $titles[$f->department_id]=$f->department_name;
+ if (!$titles){
+  $titles[0] = "";
+  $r = db_query("SELECT nid, field_department_name_value AS value FROM {content_type_department} ORDER BY field_department_name_value");
+  while ($f = db_fetch_object($r))
+    $titles[$f->nid] = $f->value;
  }
  return  $titles;
-
 }
 
 function _student_prg($zero_ok = false) {
@@ -3623,7 +3621,7 @@ jQuery.extend(Drupal.settings, { "basePath": "/veritas/", "ahah": { "": { "url":
   if ($x == 'department') {
     $title = 'Select Department';
     $college_id = (int)$_REQUEST['college'];
-    $r = db_query("select * from {department} where college_id='". $college_id ."'");
+    $r = db_query("SELECT nid AS department_id, field_department_name_value AS department_name from {content_type_department} where field_college_id_nid=%d", $college_id);
     $f = array();
     $f[] = 'Select Department';
     while ($s = db_fetch_object($r)) {

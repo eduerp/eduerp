@@ -595,7 +595,7 @@ function veritas_receipt($f) {
   function veritas_student_receipt(& $f, $isprint = false) {
     ob_start();
 
-    $query = "select *, ah.name hostel_name, at.name hostel_type  from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join college c  on c.college_id = asa.college_id inner join department d on d.department_id = asa.department_id where asa.student_id = '%s' ";
+    $query = "select *, ah.name hostel_name, at.name hostel_type, c.nid AS college_id from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join {content_type_college} c on c.nid = asa.college_id where asa.student_id = '%s' ";
     //echo  sprintf($query,$_SESSION['student']['data']->student_id);
     $result = db_query($query, $_SESSION['student']['data']->student_id);
     $data = db_fetch_object($result);
