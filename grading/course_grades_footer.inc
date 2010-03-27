@@ -1296,7 +1296,7 @@ function findcourseparameters($coursecode, $session, $semesterwhere, $locationwh
       ci.field_location_value AS loc,
       d.field_department_name_value AS department,
       co.field_college_name_value AS college
-    FROM {content_type_course_instance} ci, {content_type_course} c, {content_department_course} d, {content_type_college} co
+    FROM {content_type_course_instance} ci, {content_type_course} c, {content_type_department} d, {content_type_college} co
     WHERE
       c.field_code_value='%s' AND
       c.nid=ci.field_course_id_nid AND

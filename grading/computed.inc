@@ -223,7 +223,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $fi
           c.field_level_value AS level,
           d.field_department_name_value AS department,
           co.field_college_name_value AS college
-        FROM {content_type_course_instance} ci, {content_type_course} c, {content_department_course} d, {content_type_college} co
+        FROM {content_type_course_instance} ci, {content_type_course} c, {content_type_department} d, {content_type_college} co
         WHERE
           ci.nid=%d AND
           ci.field_course_id_nid=c.nid AND
