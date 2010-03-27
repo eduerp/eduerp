@@ -1089,7 +1089,7 @@ function student_registration_form_submit($form, &$state) {
     $admitted_student = db_fetch_array($rs);
 
     // Retrieve the program abbreviation
-    $q = "SELECT p.abbr FROM {programme} p, {student} s WHERE p.programme_id=s.first_choice AND s.student_id=%d";
+    $q = "SELECT p.field_programme_abbr_value AS abbr FROM {content_type_program} p, {student} s WHERE p.nid=s.first_choice AND s.student_id=%d";
     $rs = db_query($q, $_SESSION['student']['data']->student_id);
     $program = db_fetch_array($rs);
 
@@ -1860,8 +1860,9 @@ function _student_reg_form2($state) {
   }
 
   ', 'inline', 'header');
-   $result = db_query("Select * from {programme} where programme_id='". $_SESSION['student']['data']->first_choice ."'");
-   $data = db_fetch_array($result);
+   //Not used, why is it here?...
+   //$result = db_query("Select * from {programme} where programme_id='". $_SESSION['student']['data']->first_choice ."'");
+   //$data = db_fetch_array($result);
    $form['#cache'] = FALSE; //$data['department_id']
    $form['markx'] = array('#value' => '<b>JAMB DETAILS</b>');
    $form['fc'] = array(
@@ -2467,9 +2468,9 @@ function _student_registration_form5($obj) {
    drupal_add_js(array('ahah' => array($element['#id'] => $ahah_binding)), 'setting');
    $amt = variable_get('veritas_student_regfees', '1000');
    $amt = number_format($amt, 2);
-   $r = db_query("select * from {programme} p inner join {admitted_student} s on s.first_choice=p.programme_id inner join {department} d on d.department_id = p.department_id  where  s.first_choice = ". $_SESSION['student']['data']->first_choice);
+   $r = db_query("SELECT d.nid AS department_id, d.field_college_id_nid AS college_id from {content_type_program} p, {content_type_department} d WHERE p.nid=%d AND p.field_department_id_nid=d.nid", $_SESSION['student']['data']->first_choice);
    $f = db_fetch_object($r);
-   $r = db_query("select * from {department} where college_id='". $f->college_id ."'");
+   $r = db_query("SELECT nid AS department_id, field_department_name_value AS department_name FROM {content_type_department} WHERE field_college_id_nid=%d", $f->college_id);
    $departments[] = 'Select Department';
    while ($s = db_fetch_object($r)) {
      $departments[$s->department_id] = $s->department_name;
@@ -3032,11 +3033,12 @@ function student_reg_form_validate($form, &$state) {
 }
 
 function _student_check_course($col, $dep, $c) {
-  $rc = db_query("select p.programme_id,d.college_id,d.department_id from {programme} p inner join {department} d on(d.department_id=p.department_id) inner join {college} c  on (d.college_id=c.college_id) where p.programme_id=%d  ",$c);
-  $fc = db_fetch_object($rc);
-  if ($fc->department_id == $dep && $fc->college_id == $col && $col && $dep) {
-     return true;
-  }
+  // Does nothing
+  //$rc = db_query("select p.programme_id,d.college_id,d.department_id from {programme} p inner join {department} d on(d.department_id=p.department_id) inner join {college} c  on (d.college_id=c.college_id) where p.programme_id=%d  ",$c);
+  //$fc = db_fetch_object($rc);
+  //if ($fc->department_id == $dep && $fc->college_id == $col && $col && $dep) {
+  //   return true;
+  //}
   return true;
 }
 
@@ -3479,16 +3481,16 @@ function _student_dep(){
  return  $titles;
 
 }
-function _student_prg($zero_ok = false){
-  static $titles = array();
- if(!$titles){
-  if ($zero_ok) $titles[0]="";
-  $r=db_query("select * from programme order by programme_name");
-  while($f=db_fetch_object($r))
-  $titles[$f->programme_id]=$f->programme_name;
- }
- return  $titles;
 
+function _student_prg($zero_ok = false) {
+  static $titles = array();
+  if (!$titles) {
+    if ($zero_ok) $titles[0] = '';
+    $r = db_query("SELECT nid, field_programme_name_value AS value FROM {content_type_program} ORDER BY field_programme_name_value");
+    while ($f = db_fetch_object($r))
+      $titles[$f->nid] = $f->value;
+  }
+  return  $titles;
 }
 
 function _student_mode_of_entries($field=null){
@@ -3521,9 +3523,9 @@ function _student_add_course(){
     print drupal_to_js(array('data' => '', 'status' => FALSE));
   }
   $f = array();
-  $r = db_query("select * from programme where department_id=%d" , $x);
+  $r = db_query("SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d", $x);
   while ($s = db_fetch_object($r))
-    $f[$s->programme_id] = $s->programme_name;
+    $f[$s->nid] = $s->value;
   $form = array(
     '#type' => 'select',
     '#title' => 'COURSE',
@@ -3570,16 +3572,16 @@ function _student_add_dep() {
  $div = 'div-id-co1';
  $d = (int)$_POST[$x];
  $f = array();
- $r = db_query("select * from programme where department_id=%d" , $d);
+ $r = db_query("SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d", $d);
  $f[] = '';
- while($s = db_fetch_object($r))
-   $f[$s->programme_id] = $s->programme_name;
+ while ($s = db_fetch_object($r))
+   $f[$s->nid] = $s->value;
  $form = array(
     '#type' => 'select',
     '#title' => 'Course',
     '#options' => $f
   );
- $output = _student_ahah_render($form, $n);
+  $output = _student_ahah_render($form, $n);
   print drupal_to_js(array('data' => $output, 'status' => TRUE));
   exit();
 }

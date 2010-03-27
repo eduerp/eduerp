@@ -178,7 +178,11 @@ function veritas_view_receipt() {
     $q = db_query($sql, $t_id);
     $f = db_fetch_object($q);
     $type = $f->trans_type;
-    $rc = db_query("SELECT `as`.*, p.programme_name, d.department_name, c.college_name FROM {admitted_student} `as`, {college} c, {department} d, {programme} p WHERE p.programme_id=as.first_choice AND d.department_id=p.department_id AND c.college_id=d.college_id AND as.student_id=%d", $f->student_id);
+    $rc = db_query("
+      SELECT `as`.*, p.field_programme_name_value AS programme_name, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
+      FROM {admitted_student} `as`, {content_type_program} p, {content_type_department} d, {content_type_college} c
+      WHERE as.student_id=%d AND as.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid",
+      $f->student_id);
     $fc = db_fetch_array($rc);
     $f->name = $name = $fc[first_name] . ' ' . $fc[middle_name] . ' ' . $fc[last_name];
 
