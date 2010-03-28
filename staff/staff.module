@@ -813,10 +813,10 @@ function lecturer() {
 }
 function staff_prg() {
   $titles[''] = "";
-  $sql = "SELECT DISTINCT programme_name AS name, programme_id AS id FROM {programme} WHERE department_id=%d ORDER BY name ASC";
+  $sql = "SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d ORDER BY field_programme_name_value";
   $rows = db_query($sql, $_SESSION['staff']['data']->department_id);
   while ($row = db_fetch_object($rows)) {
-    $titles[$row->id] = $row->name;
+    $titles[$row->nid] = $row->value;
   }
   return $titles;
 }
@@ -828,11 +828,11 @@ function staff_level() {
   return  $titles;
 }
 function staff_course() {
-  $titles['']="";
+  $titles[''] = "";
   //$r=db_query("select * from `course` c inner join veritas_staff_department sd on sd.department_id=c.department_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by course_title");
-  $r = db_query("SELECT * FROM {course}");
-  while ($f=db_fetch_object($r))
-    $titles[$f->course_id]=$f->course_title;
+  $r = db_query("SELECT nid, field_coursetitle_value AS value FROM {content_type_course} ORDER BY field_coursetitle_value");
+  while ($f = db_fetch_object($r))
+    $titles[$f->nid] = $f->value;
   return  $titles;
 }
 function staff_registration_form(&$obj) {
@@ -3326,8 +3326,9 @@ function find_staff() {
 function find_dept() {
   $titles = array();
   $r = db_query("SELECT nid, field_department_name_value AS value FROM {content_type_department} ORDER BY field_department_name_value");
-  while ($f = db_fetch_object($r))
+  while ($f = db_fetch_object($r)) {
     $titles[$f->nid] = $f->value;
+  }
   return $titles;
 }
 function view_student_form1(&$obj) {
