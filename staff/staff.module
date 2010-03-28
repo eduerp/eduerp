@@ -755,23 +755,34 @@ function staff_course_assign_form1(&$obj) {
   return $form;
 }
 function course_assign_list() {
-  $query = "SELECT p.programme_name AS programme_name, l.level_name, c.course_title, vs.staff_first_name, vs.staff_last_name, rc.*
-    from registrable_course rc
-    inner join programme p on p.programme_id = rc.programme_id
-    inner join level l on l.level_id = rc.level_id
-    inner join course c on rc.course_id = c.course_id
-    left join veritas_staff vs on vs.staff_id = rc.lecturer_id
-    WHERE p.department_id = %d
-";
-  $r=db_query($query, $_SESSION['staff']['data']->department_id);
-  $html .= "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
+  $query = "
+    SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
+    FROM
+      (SELECT
+        pc.program_course_id,
+        pc.course_type,
+        pc.level AS level_name,
+        pc.lecturer_id AS uid,
+        p.field_programme_name_value AS programme_name,
+        c.field_coursetitle_value AS course_title
+      FROM program_course pc, {content_type_program} p, {content_type_course} c
+      WHERE pc.programme_id=p.nid AND pc.course_id=c.nid AND p.field_department_id_nid=%d
+      ) AS courses
+    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid
+    INNER JOIN {profile_fields} pf0 ON pv0.fid=pf0.fid AND pf0.name='profile_last_name'
+    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid
+    INNER JOIN {profile_fields} pf1 ON pv1.fid=pf1.fid AND pf1.name='profile_first_name'
+    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid
+    INNER JOIN {profile_fields} pf2 ON pv2.fid=pf2.fid AND pf2.name='profile_middle_name'";
+  $r = db_query($query, $_SESSION['staff']['data']->department_id);
+  $html = "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
     $course_type = array('1' => 'Core', 2 => 'Elective');
     $html .=<<<EOD
 <tr>
   <td>{$f->programme_name}</td><td>{$f->level_name}&nbsp;</td>
   <td>{$f->course_title}</td><td>{$course_type[$f->course_type]}</td>
-  <td>{$f->staff_first_name}</td>
+  <td>{$f->staff_name}</td>
   <td><input type="button" class="delete_btn" value="Delete" onClick="delete_course({$f->program_course_id});" /></td>
 </tr>
 EOD;
