@@ -1141,12 +1141,8 @@ function student_registration_form_submit($form, &$state) {
       'name' => $mat_number,
       'roles' => array($f->rid => $f->rid),
       'init' => $_SESSION['student']['data']->email_address,
-      'status' => 1
-
-      // ALAN 20090830
-      ,
+      'status' => 1,
       'timezone' => $timezone
-      // END ALAN
     );
 
     // Instead of creating a new user account, replace the old one with the new data
@@ -1157,12 +1153,44 @@ function student_registration_form_submit($form, &$state) {
     $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
     db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
 
-    // ALAN 20091112
     require_once './' . drupal_get_path('module', 'veritas') . '/student/student_eduerp_profile.inc';
     save_student_eduerp_profile($user->uid);
-    // END ALAN
 
-  /////////////////////////////////////////////////////
+    profile_load_profile($user);
+
+    $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+    $result = db_query($query, $user->uid, $user->profile_first_choice);
+    $row = db_fetch_object($result);
+
+    if (empty($row->nid)) {
+      // student_program CCK
+      $node = new stdClass();
+      $node->type    = 'student_program';
+      $node->uid     = 1;  // Admin
+      $node->status  = 1;  // Published
+      $node->promote = 0;
+      $node->sticky  = 0;
+      $node->comment = 0;
+    }
+    else {
+      $node = node_load($row->nid);
+    }
+
+    $name = '';
+    if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+      $middle = '';
+      if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
+      $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    }
+    $node->title                                      = "$name - {$user->profile_programme_name}";
+    $node->field_student_ref_sp[0]['uid']             = $user->uid;
+    $node->field_program_ref_sp[0]['nid']             = $user->profile_first_choice;
+    $node->field_cgpa_sp[0]['value']                  = '-';
+    $node->field_cgpaforstudent_sp[0]['value']        = '-';
+    $node->field_gptotal_sp[0]['value']               = '-';
+    $node->field_credit_load_completed_sp[0]['value'] = 0;
+    node_save($node);
+
     $sql = "select * from {admitted_transaction} where transaction_id=%d";
     $sql = "SELECT at. * , sum( at2.trans_amount ) AS total_amount
            FROM {admitted_transaction} at
