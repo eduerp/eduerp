@@ -172,11 +172,11 @@ function _staff_ajax() {
       $courses[""] = "";
 
       $program = $_POST['programme_id'];
-      $level = $_POST['level_id'];
+      $level = $_POST['level'];
 
       // Retrieve available courses that have not been assigned
       $sql = "SELECT c.nid AS course_id, c.field_coursetitle_value AS course_title FROM {content_type_course} c
-        WHERE c.nid NOT IN (SELECT pc.course_id FROM {program_course} pc, {level} l WHERE pc.programme_id=%d AND pc.level=l.level_name AND l.level_id=%d)
+        WHERE c.nid NOT IN (SELECT pc.course_id FROM {program_course} pc WHERE pc.programme_id=%d AND pc.level='%s' AND pc.historical=0)
         ORDER BY c.field_code_value ASC";
       $rs = db_query($sql, $program, $level);
       while ($row = db_fetch_object($rs)) {
@@ -691,7 +691,7 @@ function staff_course_assign_form1(&$obj) {
     '#required' => TRUE,
     '#form_panel_col' => 1,
     '#form_panel_row' => 2);
-  $form['level_id'] = array(
+  $form['level'] = array(
     '#type' => 'select',
     '#options' => staff_level(),
     '#title' => 'Level',
@@ -718,7 +718,7 @@ function staff_course_assign_form1(&$obj) {
     '#required' => TRUE,
     '#form_panel_col' => 4,
     '#form_panel_row' => 2);
-  $form['staff_id'] = array(
+  $form['user_id'] = array(
     '#type' => 'select',
     '#options' => lecturer(),
     '#title' => 'Lecturer',
@@ -765,8 +765,8 @@ function course_assign_list() {
         pc.lecturer_id AS uid,
         p.field_programme_name_value AS programme_name,
         c.field_coursetitle_value AS course_title
-      FROM program_course pc, {content_type_program} p, {content_type_course} c
-      WHERE pc.programme_id=p.nid AND pc.course_id=c.nid AND p.field_department_id_nid=%d
+      FROM {program_course} pc, {content_type_program} p, {content_type_course} c
+      WHERE pc.programme_id=p.nid AND pc.course_id=c.nid AND p.field_department_id_nid=%d AND pc.historical=0
       ) AS courses
     LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid
     INNER JOIN {profile_fields} pf0 ON pv0.fid=pf0.fid AND pf0.name='profile_last_name'
@@ -795,33 +795,31 @@ EOD;
 }
 function staff_course_assign_form1_submit(&$form, &$state) {
   $values = $state['values'];
-  $query = "INSERT INTO {registrable_course} SET course_id=%d, programme_id=%d, level_id=%d, course_type=%d, lecturer_id=%d, min_credit_load=%d, max_credit_load=%d";
-  db_query($query, $values['course_id'], $values['programme_id'], $values['level_id'], $values['course_type_id'], $values['staff_id'], $values['min_credit_load'], $values['max_credit_load']);
 
-  // If the corresponding course_instance exists, update the Lecturer. ALAN 20091024
-  $sql = "UPDATE {content_type_course_instance} ci, {current_session_semester} css, {course} c, {veritas_staff} vs
-    SET ci.field_lecturer_uid=vs.user_id
-    WHERE
-      ci.field_course_id_value=%d AND
-      ci.field_course_id_value=c.course_id AND
-      ci.field_session_id_value=css.session_id AND
-      css.id=1 AND
-      ci.field_semester_id_value=c.semester AND
-      ci.field_level_id_value=%d AND
-      vs.staff_id=%d AND
-      vs.user_id!=0";
-  db_query($sql, $values['course_id'], $values['level_id'], $values['staff_id']);
+  // Semester is 1 below here because the form does not support semester yet
+  $query = "SELECT program_course_id FROM {program_course} WHERE course_id=%d, programme_id=%d, level='%s', semester='%s'";
+  $result = db_query($query, $values['course_id'], $values['programme_id'], $values['level'], '1');
 
-  $_SESSION['staff']['max_load'] = $values['max_credit_load'];
-  $_SESSION['staff']['min_load'] = $values['min_credit_load'];
-  drupal_set_message("Registable Course Created");
+  if ($row = db_fetch_object($result)) {
+    $query = "UPDATE {program_course}
+      SET course_id=%d, programme_id=%d, level='%s', semester='%s', course_type=%d, lecturer_id=%d, historical=0
+      WHERE program_course_id=%d";
+    db_query($query, $values['course_id'], $values['programme_id'], $values['level'], '1', $values['course_type_id'], $values['user_id'], $row->program_course_id);
+  }
+  else {
+    $query = "INSERT INTO {program_course}
+      SET course_id=%d, programme_id=%d, level='%s', semester='%s', course_type=%d, lecturer_id=%d, historical=0";
+    db_query($query, $values['course_id'], $values['programme_id'], $values['level'], '1', $values['course_type_id'], $values['user_id']);
+  }
+
+  drupal_set_message("Course Added to Programme");
   drupal_goto("staff/registrablecourse");
 }
 function lecturer() {
   $titles['']="Select";
   $r=db_query("select * from {veritas_staff} where department_id = %d order by staff_first_name", $_SESSION['staff']['data']->department_id);
     while ($f=db_fetch_object($r))
-      $titles[$f->staff_id]=sprintf('%s %s', $f->staff_first_name, $f->staff_last_name);
+      $titles[$f->user_id] = sprintf('%s %s', $f->staff_first_name, $f->staff_last_name);
   return  $titles;
 }
 function staff_prg() {
@@ -837,7 +835,7 @@ function staff_level() {
   $titles['']="";
   $r=db_query("select * from `level` order by level_name");
     while ($f=db_fetch_object($r))
-      $titles[$f->level_id]=$f->level_name;
+      $titles[$f->level_name] = $f->level_name;
   return  $titles;
 }
 function staff_course() {
