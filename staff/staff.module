@@ -175,7 +175,9 @@ function _staff_ajax() {
       $level = $_POST['level_id'];
 
       // Retrieve available courses that have not been assigned
-      $sql = "SELECT * FROM {course} WHERE course_id NOT IN (SELECT course_id FROM {registrable_course} WHERE programme_id=%d AND level_id=%d) ORDER BY course_code ASC";
+      $sql = "SELECT c.nid AS course_id, c.field_coursetitle_value AS course_title FROM {content_type_course} c
+        WHERE c.nid NOT IN (SELECT pc.course_id FROM {program_course} pc, {level} l WHERE pc.programme_id=%d AND pc.level=l.level_name AND l.level_id=%d)
+        ORDER BY c.field_code_value ASC";
       $rs = db_query($sql, $program, $level);
       while ($row = db_fetch_object($rs)) {
         $courses[$row->course_id] = $row->course_title;
@@ -195,7 +197,7 @@ function _staff_ajax() {
       $allocation_id = arg(3);
 
       // Delete this allocation
-      $sql = "DELETE FROM {registrable_course} WHERE reg_course_id=%d";
+      $sql = "UPDATE {program_course} SET historical=1 WHERE program_course_id=%d";
       $rs = db_query($sql, $allocation_id);
 
       if (db_affected_rows() > 0) echo "OK";
@@ -770,7 +772,7 @@ function course_assign_list() {
   <td>{$f->programme_name}</td><td>{$f->level_name}&nbsp;</td>
   <td>{$f->course_title}</td><td>{$course_type[$f->course_type]}</td>
   <td>{$f->staff_first_name}</td>
-  <td><input type="button" class="delete_btn" value="Delete" onClick="delete_course({$f->reg_course_id});" /></td>
+  <td><input type="button" class="delete_btn" value="Delete" onClick="delete_course({$f->program_course_id});" /></td>
 </tr>
 EOD;
   }
