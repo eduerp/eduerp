@@ -28,20 +28,20 @@ function save_student_eduerp_profile($uid) {
     a.level_id,
     lev.level_name,
     a.first_choice,
-    p.programme_name,
-    d.department_name,
-    co.college_name
+    p.field_programme_name_value AS programme_name,
+    d.field_department_name_value AS department_name,
+    co.field_college_name_value AS college_name
   FROM
-    admitted_student a
-    LEFT JOIN title t ON a.title=t.title_id
-    LEFT JOIN country c ON a.nationality=c.country_id
-    LEFT JOIN lga l ON a.lkup_lga_origin=l.lga_id
-    LEFT JOIN state s ON a.permanent_address_state=s.state_id
-    LEFT JOIN state s0 ON a.state_origin=s0.state_id
-    LEFT JOIN programme p ON a.first_choice=p.programme_id
-    LEFT JOIN level lev ON a.level_id=lev.level_id
-    LEFT JOIN department d ON p.department_id=d.department_id
-    LEFT JOIN college co ON d.college_id=co.college_id
+    {admitted_student} a
+    LEFT JOIN {title} t ON a.title=t.title_id
+    LEFT JOIN {country} c ON a.nationality=c.country_id
+    LEFT JOIN {lga} l ON a.lkup_lga_origin=l.lga_id
+    LEFT JOIN {state} s ON a.permanent_address_state=s.state_id
+    LEFT JOIN {state} s0 ON a.state_origin=s0.state_id
+    LEFT JOIN {content_type_program} p ON a.first_choice=p.nid
+    LEFT JOIN {level} lev ON a.level_id=lev.level_id
+    LEFT JOIN {content_type_department} d ON p.field_department_id_nid=d.nid
+    LEFT JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
   WHERE a.student_id=%d";
   $admitteds = db_query($sql, $uid);
   $admitted = db_fetch_array($admitteds);

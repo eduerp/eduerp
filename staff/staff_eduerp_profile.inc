@@ -19,16 +19,16 @@ function save_staff_eduerp_profile($uid) {
     a.permanent_city_address AS permanent_address_city,
     a.gsm AS mobile_number,
     a.marital_status,
-    d.department_name,
-    co.college_name
+    d.field_department_name_value AS department_name,
+    co.field_college_name_value AS college_name
   FROM
-    veritas_staff a
-    LEFT JOIN title t ON a.staff_title=t.title_id
-    LEFT JOIN country c ON a.nationality=c.country_id
-    LEFT JOIN lga l ON a.lga=l.lga_id
-    LEFT JOIN state s0 ON a.state=s0.state_id
-    LEFT JOIN department d ON a.department_id=d.department_id
-    LEFT JOIN college co ON d.college_id=co.college_id
+    {veritas_staff} a
+    LEFT JOIN {title} t ON a.staff_title=t.title_id
+    LEFT JOIN {country} c ON a.nationality=c.country_id
+    LEFT JOIN {lga} l ON a.lga=l.lga_id
+    LEFT JOIN {state} s0 ON a.state=s0.state_id
+    LEFT JOIN {content_type_department} d ON a.department_id=d.nid
+    LEFT JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
   WHERE a.user_id=%d";
   $admitteds = db_query($sql, $uid);
   $admitted = db_fetch_array($admitteds);
@@ -78,9 +78,9 @@ function save_staff_eduerp_profile($uid) {
     st.staff_type_name AS staff_type,
     a.department_id
   FROM
-    veritas_staff a
-    LEFT JOIN veritas_employment_type ve ON a.employment_type_id=ve.id
-    LEFT JOIN veritas_staff_type st ON a.staff_type_id=st.staff_type_id
+    {veritas_staff} a
+    LEFT JOIN {veritas_employment_type} ve ON a.employment_type_id=ve.id
+    LEFT JOIN {veritas_staff_type} st ON a.staff_type_id=st.staff_type_id
   WHERE a.user_id=%d";
   $admitteds = db_query($sql, $uid);
   $admitted = db_fetch_array($admitteds);
