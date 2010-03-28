@@ -999,16 +999,18 @@ function staff_position() {
   }
   return  $titles;
 }
+
 function department() {
   static $titles;
   if (!$titles) {
     $titles = array();
-    $r=db_query("select * from `department`  order by department_name");
-    while ($f=db_fetch_object($r))
-      $titles[$f->department_id]=$f->department_name;
+    $r = db_query("SELECT nid, field_department_name_value AS value FROM {content_type_department} ORDER BY field_department_name_value");
+    while ($f = db_fetch_object($r))
+      $titles[$f->nid] = $f->value;
   }
   return  $titles;
 }
+
 function staff_registration_form1(&$obj) {
   $form['#attributes'] = array(
     'enctype' => "multipart/form-data");
@@ -2074,8 +2076,16 @@ function staff_begin_clearance_form2(&$obj) {
         }
       }
 
-      $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
-      $res4 = db_query($qry4);
+      $qry4 = "SELECT
+          p.nid AS p.programme_id,
+          field_programme_name_value AS programme_name,
+          d.nid AS department_id,
+          d.field_department_name_value AS department_name,
+          c.field_college_abbreviation_value AS college_abbreviation,
+          c.field_college_name_value AS college_name
+        FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
+        WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
+      $res4 = db_query($qry4, $result->first_choice);
       $result4 = db_fetch_object($res4);
       $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
       $res5 = db_query($qry5);
@@ -2841,7 +2851,10 @@ function staff_notcleared_student() {
     unset($_SESSION['staff']['mat']);
   }
   /*Query to fetch all the data's from student, department and college table.*/
-  $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d.college_id=c . college_id  WHERE a . clearance_status=2 ORDER BY a . last_name ASC";
+  $qry2 = "
+    SELECT `as`.*, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
+    FROM {admitted_student} `as`, {content_type_program} p, {content_type_department} d, {content_type_college} c
+    WHERE as.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid AND as.clearance_status=2 ORDER BY a.last_name ASC";
   $result2 = db_query($qry2);
   //echo db_error();
   if (!db_fetch_object($result2)) {
@@ -3295,10 +3308,10 @@ function add_registrar($form) {
   $result3 = $form['loginfo']['#post'];
 }
 function find_college() {
-  $qry="select * from `college`";
-  $res=db_query($qry);
-  while ($result=db_fetch_object($res)) {
-    $titles[$result->college_id]=$result->college_abbreviation;
+  $qry = "SELECT nid, field_college_abbreviation_value AS value FROM {content_type_college} ORDER BY field_college_abbreviation_value";
+  $res = db_query($qry);
+  while ($result = db_fetch_object($res)) {
+    $titles[$result->nid] = $result->value;
   }
   return $titles;
 }
@@ -3311,11 +3324,10 @@ function find_staff() {
   return $titles;
 }
 function find_dept() {
-  $qry="select * from `department`";
-  $res=db_query($qry);
-  while ($result=db_fetch_object($res)) {
-    $titles[$result->department_id]=$result->department_name;
-  }
+  $titles = array();
+  $r = db_query("SELECT nid, field_department_name_value AS value FROM {content_type_department} ORDER BY field_department_name_value");
+  while ($f = db_fetch_object($r))
+    $titles[$f->nid] = $f->value;
   return $titles;
 }
 function view_student_form1(&$obj) {
@@ -3428,8 +3440,16 @@ function view_student_form2(&$obj) {
         }
       }
 
-      $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
-      $res4 = db_query($qry4);
+      $qry4 = "SELECT
+          p.nid AS p.programme_id,
+          field_programme_name_value AS programme_name,
+          d.nid AS department_id,
+          d.field_department_name_value AS department_name,
+          c.field_college_abbreviation_value AS college_abbreviation,
+          c.field_college_name_value AS college_name
+        FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
+        WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
+      $res4 = db_query($qry4, $result->first_choice);
       $result4 = db_fetch_object($res4);
       $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
       $res5 = db_query($qry5);
@@ -4207,8 +4227,16 @@ function sa_view_student_form2(&$obj) {
   if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['stud_info']=$result->student_id;
 
-    $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
-    $res4 = db_query($qry4);
+    $qry4 = "SELECT
+        p.nid AS p.programme_id,
+        field_programme_name_value AS programme_name,
+        d.nid AS department_id,
+        d.field_department_name_value AS department_name,
+        c.field_college_abbreviation_value AS college_abbreviation,
+        c.field_college_name_value AS college_name
+      FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
+      WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
+    $res4 = db_query($qry4, $result->first_choice);
     $result4 = db_fetch_object($res4);
     $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
     $res5 = db_query($qry5);
@@ -4697,55 +4725,55 @@ function view_staff_form2(&$obj) {
   if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['staff_info']=$result->user_id;
     // TODO: fix the remaining queries
-    $q = "SELECT 
-    st.staff_type_name AS staff_type, 
-    vsp.name AS staff_position, 
-    vsg.amount AS salary, 
-    vsg.salary_grade_level AS grade_level, 
-    vs.appointment_date, 
-    vet.name AS employment_type, 
-    vs.staff_title, 
-    vs.staff_last_name, 
-    vs.staff_first_name, 
-    vs.staff_middle_name, 
-    vs.dob, vs.nationality, 
-    c.country_name AS country, 
-    s.state_name AS state, 
-    l.lga_name AS lga, 
-    vs.gender, 
-    vs.marital_status, 
-    vs.staff_maiden_name, 
-    vs.permanent_home_address, 
-    vs.permanent_city_address, 
-    vs.tel, 
-    vs.gsm, 
-    vs.gsm2, 
+    $q = "SELECT
+    st.staff_type_name AS staff_type,
+    vsp.name AS staff_position,
+    vsg.amount AS salary,
+    vsg.salary_grade_level AS grade_level,
+    vs.appointment_date,
+    vet.name AS employment_type,
+    vs.staff_title,
+    vs.staff_last_name,
+    vs.staff_first_name,
+    vs.staff_middle_name,
+    vs.dob, vs.nationality,
+    c.country_name AS country,
+    s.state_name AS state,
+    l.lga_name AS lga,
+    vs.gender,
+    vs.marital_status,
+    vs.staff_maiden_name,
+    vs.permanent_home_address,
+    vs.permanent_city_address,
+    vs.tel,
+    vs.gsm,
+    vs.gsm2,
     vs.university_email,
-    b.name AS bank_name, 
+    b.name AS bank_name,
     vs.account_id
-    FROM 
+    FROM
     veritas_bank b,
-    lga l, 
-    veritas_staff_type st, 
-    veritas_staff vs, 
-    veritas_staff_position vsp, 
-    veritas_salary_grade vsg, 
-    veritas_employment_type vet, 
-    country c, 
-    state s 
-    WHERE s.state_id=vs.state 
-    AND l.lga_id=vs.lga 
-    AND b.id = vs.bank_id 
-    AND vet.id=employment_type_id 
-    AND c.country_id=vs.nationality 
-    AND vsg.id=vs.grade_level_id 
-    AND vsp.id=vs.position_id 
-    AND st.staff_type_id=vs.staff_type_id 
+    lga l,
+    veritas_staff_type st,
+    veritas_staff vs,
+    veritas_staff_position vsp,
+    veritas_salary_grade vsg,
+    veritas_employment_type vet,
+    country c,
+    state s
+    WHERE s.state_id=vs.state
+    AND l.lga_id=vs.lga
+    AND b.id = vs.bank_id
+    AND vet.id=employment_type_id
+    AND c.country_id=vs.nationality
+    AND vsg.id=vs.grade_level_id
+    AND vsp.id=vs.position_id
+    AND st.staff_type_id=vs.staff_type_id
     AND vs.user_id=%d";
     $rs = db_query($q, $_SESSION['staff']['staff_info']);
     $result2 = db_fetch_object($rs);
   }
-  
+
   $form['extra'] = array(
     '#type' => 'fieldset',
     '#title' => 'Staff Information',
@@ -5097,31 +5125,31 @@ function search_staff_form2(&$obj) {
   if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['staff_info']=$result->user_id;
     // TODO: fix the remaining queries
-    $q = "SELECT 
-    st.staff_type_name AS staff_type, 
-    vsp.name AS staff_position, 
-    vsg.amount AS salary, 
-    vsg.salary_grade_level AS grade_level, 
-    vs.appointment_date, 
-    vet.name AS employment_type, 
-    vs.staff_title, 
-    vs.staff_last_name, 
-    vs.staff_first_name, 
-    vs.staff_middle_name, 
-    vs.dob, vs.nationality, 
-    c.country_name AS country, 
-    s.state_name AS state, 
-    l.lga_name AS lga, 
-    vs.gender, 
-    vs.marital_status, 
-    vs.staff_maiden_name, 
-    vs.permanent_home_address, 
-    vs.permanent_city_address, 
+    $q = "SELECT
+    st.staff_type_name AS staff_type,
+    vsp.name AS staff_position,
+    vsg.amount AS salary,
+    vsg.salary_grade_level AS grade_level,
+    vs.appointment_date,
+    vet.name AS employment_type,
+    vs.staff_title,
+    vs.staff_last_name,
+    vs.staff_first_name,
+    vs.staff_middle_name,
+    vs.dob, vs.nationality,
+    c.country_name AS country,
+    s.state_name AS state,
+    l.lga_name AS lga,
+    vs.gender,
+    vs.marital_status,
+    vs.staff_maiden_name,
+    vs.permanent_home_address,
+    vs.permanent_city_address,
     vs.temp_home_address,
     vs.temp_city_address,
-    vs.tel, 
-    vs.gsm, 
-    vs.gsm2, 
+    vs.tel,
+    vs.gsm,
+    vs.gsm2,
     vs.university_email,
     vs.personal_email,
     vsk.name AS kin_name,
@@ -5131,33 +5159,33 @@ function search_staff_form2(&$obj) {
     vsk.telephone AS kin_telephone,
     vsk.mobile AS kin_mobile,
     vsk.email AS kin_email,
-    b.name AS bank_name, 
+    b.name AS bank_name,
     vs.account_id
-    FROM 
+    FROM
     veritas_staff_kin vsk,
     veritas_bank b,
-    lga l, 
-    veritas_staff_type st, 
-    veritas_staff vs, 
-    veritas_staff_position vsp, 
-    veritas_salary_grade vsg, 
-    veritas_employment_type vet, 
-    country c, 
-    state s 
-    WHERE s.state_id=vs.state 
-    AND l.lga_id=vs.lga 
+    lga l,
+    veritas_staff_type st,
+    veritas_staff vs,
+    veritas_staff_position vsp,
+    veritas_salary_grade vsg,
+    veritas_employment_type vet,
+    country c,
+    state s
+    WHERE s.state_id=vs.state
+    AND l.lga_id=vs.lga
     AND vsk.staff_id = vs.staff_id
-    AND b.id = vs.bank_id 
-    AND vet.id=employment_type_id 
-    AND c.country_id=vs.nationality 
-    AND vsg.id=vs.grade_level_id 
-    AND vsp.id=vs.position_id 
-    AND st.staff_type_id=vs.staff_type_id 
+    AND b.id = vs.bank_id
+    AND vet.id=employment_type_id
+    AND c.country_id=vs.nationality
+    AND vsg.id=vs.grade_level_id
+    AND vsp.id=vs.position_id
+    AND st.staff_type_id=vs.staff_type_id
     AND vs.user_id=%d";
     $rs = db_query($q, $_SESSION['staff']['staff_info']);
     $result2 = db_fetch_object($rs);
   }
-  
+
   $form['extra'] = array(
     '#type' => 'fieldset',
     '#title' => 'Staff Information',
@@ -6016,7 +6044,15 @@ function student_payment_data($student_id) {
     $return['personal_mobile'] = $result->mobile_number;
     $return['personal_email'] = $result->email_address;
 
-    $qry2 = "SELECT a.programme_id, a.department_id, a.programme_name, b.department_name, c.college_abbreviation, c.college_name FROM `programme` AS a, `department` AS b, `college` c WHERE a.department_id=b.department_id AND b.college_id=c.college_id AND a.programme_id=%d";
+    $qry2 = "SELECT
+        p.nid AS p.programme_id,
+        field_programme_name_value AS programme_name,
+        d.nid AS department_id,
+        d.field_department_name_value AS department_name,
+        c.field_college_abbreviation_value AS college_abbreviation,
+        c.field_college_name_value AS college_name
+      FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
+      WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
     $res2 = db_query($qry2, $result->first_choice);
     $result2 = db_fetch_object($res2);
 
@@ -6036,7 +6072,7 @@ function student_payment_data($student_id) {
     $return['sponsor_address'] = $result4->address1;
     $return['sponsor_city'] = $result4->city;
 
-    $qry5 = "SELECT asa.college_id, ah.cost, ah.name, at.name AS type FROM admitted_student_accomodation asa, 
+    $qry5 = "SELECT asa.college_id, ah.cost, ah.name, at.name AS type FROM admitted_student_accomodation asa,
     accomodation_types at, accomodation_hostels ah WHERE asa.student_id=%d AND ah.id=asa.hostel_id AND at.id=ah.accomodation_type_id";
     $res5 = db_query($qry5, $result->student_id);
     $result_accomodation = db_fetch_object($res5);
@@ -6044,7 +6080,7 @@ function student_payment_data($student_id) {
     $return['hostel_type'] = $result_accomodation->type;
 
 
-    $qry6 = "SELECT sum(at.trans_amount) AS total_amount FROM admitted_transaction at, session s WHERE 
+    $qry6 = "SELECT sum(at.trans_amount) AS total_amount FROM admitted_transaction at, session s WHERE
     at.student_id = %d AND at.session_id = s.session_id AND s.sess_name = '%s'";
     $res6 = db_query($qry6, $result->student_id, variable_get('veritas_current_session', ''));
     $result_session_payment = db_fetch_object($res6);
