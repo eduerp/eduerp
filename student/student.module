@@ -9,6 +9,7 @@ function student_menu() {
     'access arguments' => array('student new'),
     'type' => MENU_NORMAL_ITEM,
   );
+  
   $items['student/registration2'] = array(
    'title' => 'Student Registration Form',
    'page callback' => 'drupal_get_form',
@@ -16,6 +17,7 @@ function student_menu() {
    'access arguments' => array('student admit'),
    'type' => MENU_NORMAL_ITEM,
   );
+  
   $items['student/payment'] = array(
    'title' => 'Student Fee Payment',
    'page callback' => 'drupal_get_form',
@@ -24,20 +26,12 @@ function student_menu() {
    'type' => MENU_NORMAL_ITEM,
   );
 
-  //$items['studentreg/login'] = array(
-  //'page callback' => 'drupal_get_form',
-  //'page arguments' => array('register_student_login_form'),
-  //'access arguments' => array('student login'),
-  //'type' => MENU_CALLBACK,
-  //);
-
   $items['student/course'] = array(
    'title' => 'Student Course Registration Form',
    'page callback' => 'drupal_get_form',
    'page arguments' => array('student_course_form'),
    'access arguments' => array('student course'),
    'type' => MENU_NORMAL_ITEM,
-   //'type' => MENU_CALLBACK,
   );
 
   $items['student/ajaxlga'] = array(
@@ -116,6 +110,7 @@ function change_pasword_success(&$obj) {
   echo "Password Changed successfully";
   return ob_get_clean();
 }
+
 function student_change_password_form(&$obj) {
    $form['#title'] = t('Change Password');
    $form['oldpassword'] = array(
@@ -147,7 +142,6 @@ function student_change_password_form_submit($form, &$states) {
 }
 
 function student_change_password_form_validate($form, &$states) {
-
   if ($form['#post']['newpassword'] != $form['#post']['confirmpassword']) {
     form_set_error('submitted[confirmpassword]', "Password not match with  Confirm Password");
   }
@@ -157,7 +151,6 @@ function student_change_password_form_validate($form, &$states) {
 }
 
 function register_student_login_form(&$obj) {
-
   unset($_SESSION);
 
   $form['#title'] = t('Student Login');
