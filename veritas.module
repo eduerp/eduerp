@@ -10,12 +10,9 @@ function veritas_menu() {
     ),
     'access callback' => 'veritas_verify_access',
     'type' => MENU_CALLBACK,
-
-
   );
 
   $items['veritas/payments'] = array (
-
     'title' => 'Upload payment file',
     'page callback' => 'drupal_get_form',
     'page arguments' => array (
@@ -25,8 +22,6 @@ function veritas_menu() {
       'veritas payments'
     ),
     'type' => MENU_NORMAL_ITEM,
-
-
   );
 
   $items['veritas/error'] = array (
@@ -35,17 +30,14 @@ function veritas_menu() {
       'veritas access'
     ),
     'type' => MENU_CALLBACK,
-
-
   );
+  
   $items['ajax'] = array (
     'page callback' => 'veritas_ajax',
     'access arguments' => array (
       'veritas access'
     ),
     'type' => MENU_CALLBACK,
-
-
   );
 
   $items['admin/settings/veritas'] = array (
@@ -59,6 +51,7 @@ function veritas_menu() {
     ),
     'type' => MENU_NORMAL_ITEM,
   );
+  
   return $items;
 }
 
@@ -74,6 +67,17 @@ function veritas_perm() {
     'anonymous',
     'student register'
   );
+}
+
+/**
+ * implements the simpletest testing framework hook
+ * for more information see http://drupal.org/project/simpletest
+ */
+function hook_simpletest() {
+  $module_name = "veritas";
+  $dir = drupal_get_path('module', $module_name) . "/tests";
+  $tests = file_scan_directory($dir, '\.test$');
+  return array_keys($tests);
 }
 
 function veritas_mail_receipt($f, $email, $name, $img) {
