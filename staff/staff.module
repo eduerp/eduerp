@@ -1,16 +1,7 @@
 <?php
 include(drupal_get_path('module', 'veritas') . '/veritas_global.inc');
 
-/*All variables, which are needed to run the clearnce process by AR staff's in the main menu of AR. */
 function staff_menu() {
-  $items['staff/sign_in']=array(
-    'title'=>'Staff Login',
-    'page callback' => 'drupal_get_form',
-    'page arguments'=>array('staff_login_form'),
-    'access arguments' => array('staff register'),
-    'type' => MENU_CALLBACK,
-  );
-
   $items['staff/registration']=array(
     'title'=>'Staff Registration',
     'page callback' => 'drupal_get_form',
@@ -1611,15 +1602,10 @@ function staff_user($op, &$edit, &$account, $category) {
 }
 
 
-function staff_home_form(&$obj) {
-  if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
-  }
-}
 /*Code adding started on 24/02/2009 for staff profile form.*/
 function staff_profile_form(&$obj) {
   if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
+    drupal_goto('user');
   }
   if (isset($_SESSION['staff']['data']->staff_id)) {
     $qry = "select * from `veritas_staff` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
@@ -1797,7 +1783,7 @@ function staff_profile_form_validate($form, &$states) {
 /*Code adding started on 25/02/2009 for staff clearance form. */
 function _staff_clearance() {
   /*if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
+    drupal_goto('user');
   }*/
   $qry = "select * from `veritas_staff_college` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
   $result = db_query($qry);
@@ -1849,22 +1835,12 @@ function _staff_clearance() {
 }
     /*Code adding ended on 25/02/2009 for staff clearance form. */
 
-    /*Code adding started on 26/02/2009 for staff logout page. */
-function _staff_logout() {
-  ob_start();
-  if (isset($_SESSION['staff'])) {
-    unset($_SESSION['staff']);
-    drupal_goto('staff/sign_in');
-  }
-  return ob_get_clean();
-}
-    /* Code adding started on 26/02/2009 for staff logout page. */
 
     /* Code adding started on 27/02/2009 for student clearance page. */
 function staff_begin_clearance_form1(&$obj) {
 /*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
+    drupal_goto('user');
   }
 */
   if (isset($_SESSION['staff']['mat'])) {
@@ -2851,7 +2827,7 @@ function staff_cleared_student() {
 function staff_notcleared_student() {
 /*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
+    drupal_goto('user');
   }*/
   if ($_SESSION['staff']['role'] !== 'Registrar') {
     $_SESSION['staff']['msg']='You are not authorized to access this page.';
@@ -2905,7 +2881,7 @@ function staff_create_ar_form(&$obj) {
 }
 function staff_create_ar_form1(&$obj) {
   if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('staff/sign_in');
+    drupal_goto('user');
   }
   if ($_SESSION['staff']['role']!=='Registrar') {
     $_SESSION['staff']['msg']='You are not authorized to view this page.';
