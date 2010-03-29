@@ -632,18 +632,6 @@ function add_student_courses($data) {
   // So this will need to be passed as a hidden/value form element in $data
   $semester = variable_get('veritas_current_semester', '');
 
-  delete_student_grades($student_user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
-
-  foreach ($data['corecourses'] as $key => $value) {
-    create_cck_records($student_user, $value, $data, $session, $semester);
-  }
-  foreach ($data['electivecourses'] as $key => $value) {
-    create_cck_records($student_user, $key, $data, $session, $semester);
-  }
-}
-
-
-function create_cck_records($student_user, $course_instance, $data, $session, $semester) {
   $studentname = '';
   if (!empty($student_user->profile_first_name) && !empty($student_user->profile_last_name)) {
     $middle = '';
@@ -651,24 +639,59 @@ function create_cck_records($student_user, $course_instance, $data, $session, $s
     $studentname = "{$student_user->profile_last_name}, {$student_user->profile_first_name}{$middle}";
   }
 
+  // Find the existing student_program
+  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+  $result = db_query($query, $student_user->uid, $student_user->profile_first_choice);
+  $row = db_fetch_object($result);
+  $student_program = $row->nid;
+
+  // Check if there is an existing student_gpa, must avoid a duplicate
   $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
     WHERE
       gpa.field_student_ref_gpa_uid=%d AND
       gpa.field_sess_name_gpa_value='%s' AND
       gpa.field_semester_name_gpa_value=%d
     LIMIT 1";
-
   $rows = db_query($sql, $student_user->uid, $session, $semester);
-  $row = db_fetch_object($rows);
-  $student_gpa = $row->student_gpa;
-
-  node_load($student_gpa);
+  if ($row = db_fetch_object($rows)) {
+    $node = node_load($row->student_gpa);
+  }
+  else {
+    $node = new stdClass();
+    $node->type                                  = 'student_gpa';
+    $node->uid                                   = 1;  // Admin
+    $node->status                                = 1;  // Published
+    $node->promote                               = 0;
+    $node->sticky                                = 0;
+    $node->comment                               = 0;
+    $node->title                                 = "$studentname - $session - $semester";
+    $node->field_student_ref_gpa[0]['uid']       = $student_user->uid;
+    $node->field_sess_name_gpa[0]['value']       = $session;
+    $node->field_semester_name_gpa[0]['value']   = $semester;
+  }
+  $node->field_program_ref_gpa[0]['nid']         = $student_user->profile_first_choice;
+  $node->field_student_program_ref_gpa[0]['nid'] = $student_program;
   $node->field_gptotal[0]['value']               = '-';
   $node->field_gpa[0]['value']                   = '-';
   $node->field_gpaforstudent[0]['value']         = '-';
   $node->field_credit_load_registered[0]['value']= $data['select_credit'];
   $node->field_credit_load_completed[0]['value'] = 0;
+  $node->field_level_name_gpa[0]['value']        = $student_user->profile_level_name;
   node_save($node);
+  $student_gpa = $node->nid;
+
+  delete_student_grades($student_user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
+
+  foreach ($data['corecourses'] as $key => $value) {
+    create_student_grades($student_user, $value, $data, $session, $semester, $student_gpa, $studentname);
+  }
+  foreach ($data['electivecourses'] as $key => $value) {
+    create_student_grades($student_user, $key, $data, $session, $semester, $student_gpa, $studentname);
+  }
+}
+
+
+function create_student_grades($student_user, $course_instance, $data, $session, $semester, $student_gpa, $studentname) {
 
   // student_grades CCK
   $node = new stdClass();
