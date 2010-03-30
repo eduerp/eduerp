@@ -1423,32 +1423,7 @@ function staff_registration_form_validate(&$form, &$state) {
   }
   return;
 }
-/*Function that creates staff login form.*/
-function staff_login_form(&$obj) {
-  unset($_SESSION['student']['data']);
-  unset($_SESSION['veritas']);
-  unset($_SESSION['staff']);
-  $form['#title'] = t('Staff Login');
-  $form['user'] = array(
-    '#title' => 'Username',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#required' => TRUE);
-  $form['pass'] = array(
-    '#title' => 'Password',
-    '#type' => 'password',
-    '#required' => TRUE,
-    '#size' => 20);
-  $form['submit'] = array(
-    '#value' => 'Login',
-    '#type' => 'submit');
-  return $form;
-}
- /*Function that specifies the next action after staff submits his/her form.*/
- /*function staff_login_form_submit(&$obj)
- {
-      drupal_goto('staff/home');
- }*/
+
 
  /*Staff module multiple form call back.*/
 function staff_module_form(&$obj) {
@@ -1538,33 +1513,8 @@ function view_student_payments_form(&$obj) {
   else if ($st == 2)
     return view_student_payments_form2($obj);
 }
-/*Function that validates staff login.*/
-function staff_login_form_validate($form, &$states) {
-  $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a.staff_type_id=b.staff_type_id left outer join veritas_staff_role as c on a.role_id=c.id  where a.usrname = '". $form['#post']['user'] ."'");
-  if ($result && ($data = db_fetch_object($result))) {
-    /*Check if staff is an academic staff*/
-    /*if ($data->staff_type!=='AR' && $data->category!=2)
-    {
-      form_set_error('submitted["user"]'," Not an AR staff.");
-      //drupal_goto('staff/academic');
-    }*/
-    /*Check if password mismatches*/
-    if ($data->password!==$form['#post']['pass']) {
-      form_set_error('submitted["user"]', " Password did not match.");
-    }
-    /*Check if staff is non-academic staff then retrive the values from database table and set it in SESSION*/
-    else {
-      $qry = "select a . *, b.name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
-      //die;
-      $res=db_query($qry);
-      $result1 = db_fetch_object($res);
-      $_SESSION['staff']['role'] = $result1->name;
-      $_SESSION['staff']['user'] = $data->usrname;
-      $_SESSION['staff']['data'] = $data;
-	  drupal_goto('staff/profile');
-    }
-  }
-}
+
+
 function staff_user($op, &$edit, &$account, $category) {
   //var_dump($_SESSION['staff']['data']->role_id);
   switch ($op) {
