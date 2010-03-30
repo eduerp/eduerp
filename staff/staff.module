@@ -401,7 +401,7 @@ function search_staff_list() {
 
 function staff_lecturer_list() {
   ob_start();
-  $query = "select distinct * from `veritas_staff` s
+  $query = "select distinct * from {veritas_staff} s
     inner join registrable_course rc on rc.lecturer_id = s.staff_id
     inner join course c on rc.course_id = c.course_id
     inner join programme p on p.programme_id = rc.programme_id
@@ -427,7 +427,7 @@ function staff_lecturer_list() {
 }
 function staff_department_list() {
   ob_start();
-  $r=db_query("select d.* ,  s.* from `department` d inner join veritas_staff_college sc on d.college_id = sc.assigned_college  Left join veritas_staff_department sd on sd.department_id = d.department_id left join veritas_staff s on sd.staff_id=s.staff_id where sc.staff_id=%d", $_SESSION['staff']['data']->staff_id);
+  $r=db_query("select d.* ,  s.* from `department` d inner join veritas_staff_college sc on d.college_id = sc.assigned_college  Left join veritas_staff_department sd on sd.department_id = d.department_id left join {veritas_staff} s on sd.staff_id=s.staff_id where sc.staff_id=%d", $_SESSION['staff']['data']->staff_id);
   $f[]='Select';
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
@@ -482,7 +482,7 @@ function staff_search_list() {
     $condition  = '';
   }
   $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
-    FROM veritas_staff vs LEFT JOIN eduerp_roles er ON vs.user_id=er.uid
+    FROM {veritas_staff} vs LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
     $condition GROUP BY vs.staff_id ORDER BY staff_last_name ASC";
   $result = db_query($query);
 ?>
@@ -510,7 +510,7 @@ function staff_search_list() {
 
 function staff_view_form(&$obj) {
   $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
-    FROM veritas_staff vs LEFT JOIN eduerp_roles er ON vs.user_id=er.uid
+    FROM {veritas_staff} vs LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
     WHERE user_id='" . arg(2) . "' GROUP BY vs.staff_id";
   $result = db_query($query);
   $data = db_fetch_object($result);
@@ -968,7 +968,7 @@ function staff_type() {
   static $titles;
   if (!$titles) {
     $titles = array();
-    $r=db_query("select * from `veritas_staff_type`  order by staff_type_name");
+    $r=db_query("select * from {veritas_staff_type}  order by staff_type_name");
     while ($f=db_fetch_object($r))
       $titles[$f->staff_type_id]=$f->staff_type_name;
   }
@@ -1261,7 +1261,7 @@ function staff_registration_form_submit(&$form, &$state) {
       );
     $user = user_save(NULL, $drupal_data);
 
-    $query = "insert veritas_staff set
+    $query = "insert {veritas_staff} set
 staff_first_name='%s' ,
 staff_last_name='%s',
 staff_middle_name='%s',
@@ -1509,35 +1509,18 @@ function view_student_payments_form(&$obj) {
 
 
 function staff_user($op, &$edit, &$account, $category) {
-  //var_dump($_SESSION['staff']['data']->role_id);
   switch ($op) {
     case 'login':
-      $query ="select COUNT(*) AS count from `veritas_staff` where user_id = %d";
+      $query ="select COUNT(*) AS count from {veritas_staff} where user_id = %d";
       $result = db_query($query, $account->uid);
 	    $rows = db_fetch_array($result);
 
 	    if ($result && intval($rows['count']) > 0) {
-        $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a . staff_type_id = b . staff_type_id left outer join veritas_staff_role as c on a . role_id=c . id  where a . user_id = '". $account->uid ."'");
+        $result = db_query("SELECT * FROM {veritas_staff} as vs LEFT JOIN {veritas_staff_type} AS vst ON vs.staff_type_id=vst.staff_type_id
+          WHERE vs.user_id='" . $account->uid . "'");
 
         if ($result && ($data = db_fetch_object($result))) {
-          /*Check if staff is an academic staff*/
-          /*if ($data->staff_type!=='AR' && $data->category!=2)
-          {
-            form_set_error('submitted["user"]'," Not an AR staff.");
-            //drupal_goto('staff/academic');
-          }*/
-
-          //$qry = "select a . *, b . name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
-          //$res=db_query($qry);
-          //$result1=db_fetch_object($res);
-
-          // Since we've reimplemented non-drupal features like roles, this is not necessary
-          // I'm leaving it commented just in case.
-          //$_SESSION['staff']['role'] = $result1->name;
-          //$_SESSION['staff']['user'] = $data->usrname;
           $_SESSION['staff']['data'] = $data;
-
-		  // drupal_goto('staff/profile');
         }
       }
     break;
@@ -1551,7 +1534,7 @@ function staff_profile_form(&$obj) {
     drupal_goto('user');
   }
   if (isset($_SESSION['staff']['data']->staff_id)) {
-    $qry = "select * from `veritas_staff` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+    $qry = "select * from {veritas_staff} where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
     $res = db_query($qry);
     if ($res && ($data = db_fetch_object($res))) {
       $_SESSION['staff']['user'] = $data->usrname;
@@ -1690,7 +1673,7 @@ function staff_profile_form_validate($form, &$states) {
     //if ($form['#post']['newpass']===$form['#post']['confpass'])
     if ($newpass===$confpass) {
       $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-      $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."',  staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', personal_email='". $form['#post']['pemail'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."', blood_group='". $form['#post']['blood'] ."', dob='". $dob ."', password='". $newpass ."' where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+      $qry="update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."',  staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', personal_email='". $form['#post']['pemail'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."', blood_group='". $form['#post']['blood'] ."', dob='". $dob ."', password='". $newpass ."' where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
       $result = db_query($qry);
       $show = db_affected_rows();
       if ($result && db_affected_rows()>0) {
@@ -1712,7 +1695,7 @@ function staff_profile_form_validate($form, &$states) {
   }
   else {
     $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-    $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
+    $qry="update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
       where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
     /*$qry="update veritas_staff set title='".$form['#post']['title']."', first_name='".$form['#post']['fname']."', last_name='".$form['#post']['lname']."', middle_name='".$form['#post']['mname']."', usrname='".$form['#post']['user']."', blood_group='".$form['#post']['blood']."', dob='".$form['#post']['dob']."',  where staff_id = '".$_SESSION['staff']['data']->staff_id."'";*/
     $result = db_query($qry);
@@ -4591,7 +4574,7 @@ function view_staff_form1(&$obj) {
   return $form;
 }
 function _get_staff_list() {
-  $q = "SELECT user_id, staff_last_name, staff_first_name FROM veritas_staff";
+  $q = "SELECT user_id, staff_last_name, staff_first_name FROM {veritas_staff}";
   $rs = db_query($q);
   $staff_list = array(0 => "Select One");
 
