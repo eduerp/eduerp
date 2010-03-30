@@ -73,11 +73,26 @@ function veritas_perm() {
  * implements the simpletest testing framework hook
  * for more information see http://drupal.org/project/simpletest
  */
-function hook_simpletest() {
+function veritas_simpletest() {
   $module_name = "veritas";
   $dir = drupal_get_path('module', $module_name) . "/tests";
   $tests = file_scan_directory($dir, '\.test$');
   return array_keys($tests);
+}
+
+/**
+ * implements autoloading for class files
+ * uses the Autoload module
+ * http://drupal.org/project/autoload
+ */
+function veritas_autoload_info() {
+  $class_path = __DIR__.DIRECTORY_SEPARATOR."lib";
+
+  return array(
+    'Student' => array (
+      'file' => 'lib/Student.class.php',
+    ),
+  );
 }
 
 function veritas_mail_receipt($f, $email, $name, $img) {
