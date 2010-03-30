@@ -26,7 +26,7 @@ function staff_menu() {
 
   $items['staff/viewlecturer']=array(
     'title'=>'Staff List',
-    'page callback' => 'staff_lecturer_list',
+    'page callback' => 'staff_course_list',
     'access arguments' => array('staff view lecturer'),
     'type' => MENU_CALLBACK,
   );
@@ -399,24 +399,33 @@ function search_staff_list() {
 }
 
 
-function staff_lecturer_list() {
+function staff_course_list() {
   ob_start();
-  $query = "select distinct * from {veritas_staff} s
-    inner join registrable_course rc on rc.lecturer_id = s.staff_id
-    inner join course c on rc.course_id = c.course_id
-    inner join programme p on p.programme_id = rc.programme_id
-    where s.parent_id=". arg(2);
-  $result = db_query($query);
+  $query = "SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
+    FROM
+      (SELECT
+        c.field_coursetitle_value AS course_title
+        ci.field_lecturer_uid AS uid
+      FROM {content_type_course} c, {content_type_course} ci
+      WHERE
+        c.field_department_nid_nid=%d, c.nid=ci.field_course_id_nid
+      ) AS courses
+    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid
+    INNER JOIN {profile_fields} pf0 ON pv0.fid=pf0.fid AND pf0.name='profile_last_name'
+    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid
+    INNER JOIN {profile_fields} pf1 ON pv1.fid=pf1.fid AND pf1.name='profile_first_name'
+    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid
+    INNER JOIN {profile_fields} pf2 ON pv2.fid=pf2.fid AND pf2.name='profile_middle_name'";
+  $result = db_query($query, arg(2));
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Name</b></td><td><b>Course</b></td><td><b>Programme</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Name</b></td><td><b>Course</b></td></tr>
 <?php
   while ($f=db_fetch_object($result)) {
 ?>
       <tr>
-      <td><a href="view/<?php echo $f->user_id?>"><? echo $f->staff_first_name; ?></a></td>
+      <td><a href="view/<?php echo $f->uid?>"><? echo $f->staff_name; ?></a></td>
       <td><? echo $f->course_title; ?></td>
-      <td><? echo $f->programme_name; ?></td>
       </tr>
 <?php
   }
@@ -425,6 +434,8 @@ function staff_lecturer_list() {
 <?php
   return ob_get_clean();
 }
+
+
 function staff_department_list() {
   ob_start();
   $r=db_query("select d.* ,  s.* from `department` d inner join veritas_staff_college sc on d.college_id = sc.assigned_college  Left join veritas_staff_department sd on sd.department_id = d.department_id left join {veritas_staff} s on sd.staff_id=s.staff_id where sc.staff_id=%d", $_SESSION['staff']['data']->staff_id);
@@ -446,7 +457,7 @@ function staff_department_list() {
     }
     else {
 ?>
-        <td><a href="viewlecturer/<? echo $f->staff_id; ?>">View Lecturers</a></td>
+        <td><a href="viewlecturer/<? echo $f->department_id; ?>">View Courses/Lecturers</a></td>
 <?php
     }
 ?>
