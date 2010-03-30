@@ -13,7 +13,6 @@ function staff_menu() {
   $items['staff/list']=array(
     'title'=>'Staff List',
     'page callback' => 'search_staff_list',
-    //'page arguments'=>array('staff_cousrse_assign_form'),
     'access arguments' => array('staff list'),
     'type' => MENU_CALLBACK,
   );
@@ -387,19 +386,19 @@ function staff_assign_role_form(&$obj) {
     return assign_role_form_assign_bursar($obj);
   }
 }
+
+
 function search_staff_list() {
   ob_start();
 
   echo  drupal_get_form('staff_search_form');
 
-
-  ?>
-
-
-<?php
   staff_search_list();
+
   return ob_get_clean();
-  }
+}
+
+
 function staff_lecturer_list() {
   ob_start();
   $query = "select distinct * from `veritas_staff` s
@@ -415,7 +414,7 @@ function staff_lecturer_list() {
   while ($f=db_fetch_object($result)) {
 ?>
       <tr>
-      <td><a href="view/<?php echo $f->staff_id?>"><? echo $f->staff_first_name; ?></a></td>
+      <td><a href="view/<?php echo $f->user_id?>"><? echo $f->staff_first_name; ?></a></td>
       <td><? echo $f->course_title; ?></td>
       <td><? echo $f->programme_name; ?></td>
       </tr>
@@ -438,7 +437,7 @@ function staff_department_list() {
 ?>
       <tr>
       <td><? echo $f->department_name; ?></td>
-      <td><a href="view/<?php echo $f->staff_id?>"><? echo $f->staff_first_name; ?></a></td>
+      <td><a href="view/<?php echo $f->user_id?>"><? echo $f->staff_first_name; ?></a></td>
 <?php
     if ($f->staff_id == "") {
 ?>
@@ -459,6 +458,8 @@ function staff_department_list() {
 <?php
   return ob_get_clean();
 }
+
+
 function staff_search_list() {
   $search_keys = array('gender', 'department_id', 'staff_type_id', 'grade_level_id', 'state');
   $search_values = array(
@@ -480,12 +481,14 @@ function staff_search_list() {
   else {
     $condition  = '';
   }
-  $query = "Select  s.* , sr.name as role_name from `veritas_staff` s left join veritas_staff_role sr on sr.id = s.role_id ". $condition;
+  $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+    FROM veritas_staff vs LEFT JOIN eduerp_roles er ON vs.user_id=er.uid
+    $condition GROUP BY vs.staff_id ORDER BY staff_last_name ASC";
   $result = db_query($query);
 ?>
     <table border='1' align='center'>
     <tr bgcolor='#ACCFCC'><td colspan='7'><b>Staff List</b></td></tr>
-    <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Role</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
+    <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Roles</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
 <?php
   while ($f = db_fetch_object($result)) {
 ?>
@@ -494,8 +497,8 @@ function staff_search_list() {
       <td><?php echo $f->staff_middle_name; ?></td>
       <td><?php echo $f->staff_first_name; ?></td>
       <td><? echo $f->role_name; ?></td>
-      <td><a href="view/<? echo $f->staff_id; ?>">View</a></td>
-      <td><a href="<?php echo url('staff/assignrole/'. $f->staff_id)?>">Assign Role</a></td>
+      <td><a href="view/<? echo $f->user_id; ?>">View</a></td>
+      <td><a href="<?php echo url('staff/assignrole/'. $f->user_id)?>">Assign Roles</a></td>
       </tr>
 <?php
   }
@@ -503,10 +506,13 @@ function staff_search_list() {
     </table>
 <?php
 }
+
+
 function staff_view_form(&$obj) {
-  $query ="select * from `veritas_staff` where staff_id = '". arg(2) ."'";
+  $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+    FROM veritas_staff vs LEFT JOIN eduerp_roles er ON vs.user_id=er.uid
+    WHERE user_id='" . arg(2) . "' GROUP BY vs.staff_id";
   $result = db_query($query);
-  //echo  "select * from student where jambno = '".$form['#post']['jamb_no']."' and Admitted = 'Yes'" ; die ;
   $data = db_fetch_object($result);
   $form['staff_type'] = array(
     '#type' => 'select',
@@ -572,22 +578,19 @@ function staff_view_form(&$obj) {
     '#title' => 'Account Number',
     '#type' => 'textfield',
     '#size' => 20,
-    '#required' => TRUR,
+    '#required' => TRUE,
     '#default_value' => $data->account_id);
   $form['staff_role'] = array(
-    '#type' => 'select',
-    '#options' => staff_roles(),
-    '#title' => 'Role',
-    '#default_value' => $data->role_id,
-    '#required' => TRUE );
+    '#value' => '<b>Roles:</b><br />' . $data->role_name);
   $form['staff_id'] = array(
     '#type' => 'hidden',
     '#title' => 'Role',
     '#default_value' => $data->staff_id,
     '#required' => TRUE);
-  //$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit','#default_value'=>$data->staff_type_id);
   return $form;
 }
+
+
 function staff_course_assign() {
   $delete_assignment_js =<<< EOD
 function delete_course(id) {
@@ -947,16 +950,6 @@ function staff_banks() {
     $titles = array();
     $r=db_query("select * from `veritas_bank`  order by name");
     while ($f = db_fetch_object($r))
-      $titles[$f->id]=$f->name;
-  }
-  return  $titles;
-}
-function staff_roles() {
-  static $titles;
-  if (!$titles) {
-    $titles = array();
-    $r=db_query("select * from `veritas_staff_role` order by name");
-    while ($f=db_fetch_object($r))
       $titles[$f->id]=$f->name;
   }
   return  $titles;
