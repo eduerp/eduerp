@@ -1663,37 +1663,23 @@ function _staff_clearance() {
   /*if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }*/
-  $qry = "select * from `veritas_staff_college` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-  $result = db_query($qry);
   ob_start();
-  //if ($result && db_affected_rows()>0)
-  if (1) {
-    while ($res=db_fetch_object($result)) {
-      $qry1 = "select * from `college` where college_id='". $res->assigned_college ."'";
-      $result1 = db_query($qry1);
-      while ($res1=db_fetch_object($result1)) {
-        /*Query to fetch all the data's from student, department and college table.*/
-        // $qry2 = "SELECT * FROM student AS a LEFT OUTER JOIN department AS d ON a.first_choice=d.department_id LEFT OUTER JOIN college AS c ON d.college_id=c.college_id WHERE a.staff_id='".$_SESSION['staff']['data']->staff_id."'";
-        $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
-        $qry2 =  "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
-        $result2 = db_query($qry2);
-        // $show = db_affected_rows();
-      }
-    }
-  }
-  else {
-    drupal_set_message('You are not assigned to any college.');
-    drupal_goto('staff/home');
-  }
-  if (!db_fetch_object($result2)) {
-    drupal_set_message('No student has been cleared by you.');
-  }
+
+  // $qry2 = "SELECT * FROM student AS a LEFT OUTER JOIN department AS d ON a.first_choice=d.department_id LEFT OUTER JOIN college AS c ON d.college_id=c.college_id WHERE a.staff_id='".$_SESSION['staff']['data']->staff_id."'";
+  // $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
+  // $qry2 = "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
+  $qry2 = "SELECT a.*, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
+    FROM {admitted_student} a, {content_type_program} p, {content_type_department} d, {content_type_college} c
+    WHERE a.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid AND a.clearance_status=1 ORDER BY a.last_name ASC";
+  $result2 = db_query($qry2);
+  $found = FALSE;
 ?>
   <table border='1' align='center'>
   <tr bgcolor='#ACCFCC'><td colspan='7'><b>Cleared Student List</b></td></tr>
   <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Mat. No.</b></td><td><b>College</b></td><td><b>Department</b></td><td><b>Clearance Date</b></td></tr>
 <?php
-  while ($f=db_fetch_object($result2)) {
+  while ($f = db_fetch_object($result2)) {
+    $found = TRUE;
 ?>
     <tr>
     <td><?php echo $f->last_name; ?></td>
@@ -1709,12 +1695,13 @@ function _staff_clearance() {
 ?>
   </table>
 <?php
+  if (!$found) {
+    drupal_set_message('No students found.');
+  }
   return ob_get_clean();
 }
-    /*Code adding ended on 25/02/2009 for staff clearance form. */
 
 
-    /* Code adding started on 27/02/2009 for student clearance page. */
 function staff_begin_clearance_form1(&$obj) {
 /*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
