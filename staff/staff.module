@@ -1907,6 +1907,8 @@ function staff_begin_clearance_form_validate($form, &$state) {
 
     /* Code adding started on 27/02/2009 for student clearance main page. */
 function staff_begin_clearance_form2(&$obj) {
+  global $user;
+
   if (isset($_SESSION['staff']['jamb'])) {
     $qry = "select * from {admitted_student} where jambno='%s' AND (verify_status != 1 OR clearance_status != 1)";
     $res = db_query($qry, $_SESSION['staff']['jamb']);
@@ -2590,7 +2592,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  if ($_SESSION['staff']['role'] !== 'Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
@@ -2615,7 +2617,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#prefix' => '<div id="reason">',
       '#suffix' => '</div>');
   }
-  if ($_SESSION['staff']['role']==='Registrar') {
+  if (veritas_has_role($user, 'Registrar')) {
     $form['approve'] = array(
       '#type' => 'fieldset',
       '#title' => 'Approve Student',
@@ -2703,11 +2705,13 @@ function staff_cleared_student() {
   return $d;
 }
 function staff_notcleared_student() {
+  global $user;
+
 /*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }*/
-  if ($_SESSION['staff']['role'] !== 'Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $_SESSION['staff']['msg']='You are not authorized to access this page.';
     drupal_goto('staff/cleared');
   }
@@ -2758,10 +2762,12 @@ function staff_create_ar_form(&$obj) {
     return staff_create_ar_form1($obj);
 }
 function staff_create_ar_form1(&$obj) {
+  global $user;
+
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }
-  if ($_SESSION['staff']['role']!=='Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $_SESSION['staff']['msg']='You are not authorized to view this page.';
     drupal_goto('staff/cleared');
   }
@@ -3272,6 +3278,8 @@ function view_student_form_validate($form, &$state) {
   }
 }
 function view_student_form2(&$obj) {
+  global $user;
+
   if (isset($_SESSION['staff']['jamb'])) {
     $qry = "select * from {admitted_student} where jambno='%s'";
     $res = db_query($qry, $_SESSION['staff']['jamb']);
@@ -3971,7 +3979,7 @@ function view_student_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  if ($_SESSION['staff']['role'] !== 'Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
