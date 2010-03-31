@@ -410,12 +410,12 @@ function staff_course_list() {
       WHERE
         c.field_department_nid_nid=%d AND c.nid=ci.field_course_id_nid
       ) AS courses
-    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid
-    INNER JOIN {profile_fields} pf0 ON pv0.fid=pf0.fid AND pf0.name='profile_last_name'
-    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid
-    INNER JOIN {profile_fields} pf1 ON pv1.fid=pf1.fid AND pf1.name='profile_first_name'
-    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid
-    INNER JOIN {profile_fields} pf2 ON pv2.fid=pf2.fid AND pf2.name='profile_middle_name'";
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
   $result = db_query($query, arg(2));
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
@@ -438,29 +438,39 @@ function staff_course_list() {
 
 function staff_department_list() {
   ob_start();
-  $r=db_query("select d.* ,  s.* from `department` d inner join veritas_staff_college sc on d.college_id = sc.assigned_college  Left join veritas_staff_department sd on sd.department_id = d.department_id left join {veritas_staff} s on sd.staff_id=s.staff_id where sc.staff_id=%d", $_SESSION['staff']['data']->staff_id);
-  $f[]='Select';
+  $r = db_query("SELECT courses.*, er.uid AS hod_uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS hod_name
+    FROM
+      (SELECT
+        d.nid AS department_id,
+        d.field_department_name_value AS department_name
+      FROM
+        {veritas_staff} vs,
+        {content_type_department} d0,
+        {content_type_department} d
+      WHERE
+        vs.staff_id=%d AND
+        vs.department_id=d0.nid AND
+        d0.field_college_id_nid=d.field_college_id_nid
+      ) AS courses
+    LEFT  JOIN {eduerp_roles} er ON courses.department_id=er.department_id AND er.role='Head of Department'
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid",
+    1);
+//    $_SESSION['staff']['data']->staff_id);
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>Hod</b></td><td><b>Action</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>HOD</b></td><td><b>Action</b></td></tr>
 <?php
-  while ($f=db_fetch_object($r)) {
+  while ($f = db_fetch_object($r)) {
 ?>
       <tr>
       <td><? echo $f->department_name; ?></td>
-      <td><a href="view/<?php echo $f->user_id?>"><? echo $f->staff_first_name; ?></a></td>
-<?php
-    if ($f->staff_id == "") {
-?>
-        <td>No Hod Assigned</td>
-<?php
-    }
-    else {
-?>
-        <td><a href="viewlecturer/<? echo $f->department_id; ?>">View Courses/Lecturers</a></td>
-<?php
-    }
-?>
+      <td><a href="view/<?php echo $f->hod_uid?>"><? echo $f->hod_name; ?></a></td>
+      <td><a href="viewlecturer/<? echo $f->department_id; ?>">View Courses/Lecturers</a></td>
       </tr>
 <?php
   }
@@ -773,12 +783,12 @@ function course_assign_list() {
       FROM {program_course} pc, {content_type_program} p, {content_type_course} c
       WHERE pc.programme_id=p.nid AND pc.course_id=c.nid AND p.field_department_id_nid=%d AND pc.historical=0
       ) AS courses
-    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid
-    INNER JOIN {profile_fields} pf0 ON pv0.fid=pf0.fid AND pf0.name='profile_last_name'
-    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid
-    INNER JOIN {profile_fields} pf1 ON pv1.fid=pf1.fid AND pf1.name='profile_first_name'
-    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid
-    INNER JOIN {profile_fields} pf2 ON pv2.fid=pf2.fid AND pf2.name='profile_middle_name'";
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
   $r = db_query($query, $_SESSION['staff']['data']->department_id);
   $html = "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
