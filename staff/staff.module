@@ -1438,16 +1438,6 @@ function staff_registration_form_validate(&$form, &$state) {
 }
 
 
- /*Staff module multiple form call back.*/
-function staff_module_form(&$obj) {
-  if (!$obj['storage']['step'])
-    $obj['storage']['step']=1;
-    $st=$obj['storage']['step'];
-  if ($st == 1)
-    return staff_profile_form($obj);
-  else if ($st == 2)
-    return staff_begin_clearance_form($obj);
-}
 function staff_begin_clearance_form(&$obj) {
   if (arg(2)) {
     //echo "<br>2 ".arg(2);
