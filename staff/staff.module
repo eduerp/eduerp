@@ -419,7 +419,7 @@ function staff_course_list() {
   $result = db_query($query, arg(2));
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Name</b></td><td><b>Course</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
 <?php
   while ($f=db_fetch_object($result)) {
 ?>
@@ -459,8 +459,7 @@ function staff_department_list() {
     LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
     LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
     LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid",
-    1);
-//    $_SESSION['staff']['data']->staff_id);
+    $_SESSION['staff']['data']->staff_id);
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
     <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>HOD</b></td><td><b>Action</b></td></tr>
