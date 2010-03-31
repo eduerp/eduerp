@@ -1636,22 +1636,6 @@ function staff_profile_form(&$obj) {
       'day' => (int)substr($_SESSION['staff']['data']->dob, -2),
       'month' => (int)substr($_SESSION['staff']['data']->dob, 5, 2),
       'year' => substr($_SESSION['staff']['data']->dob, 0, 4)));
-  $form['user'] = array(
-    '#title' => 'User Name',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#default_value' => $_SESSION['staff']['data']->usrname,
-    '#required' => TRUE,
-    '#attributes' => array('readonly' => 'readonly'));
-  $form['lbl'] = array('#type' => 'fieldset', '#title' => 'Change Password');
-  $form['lbl']['newpass'] = array(
-    '#title' => 'New Password',
-    '#type' => 'password',
-    '#size' => 20);
-  $form['lbl']['confpass'] = array(
-    '#title' => 'Confirm Password',
-    '#type' => 'password',
-    '#size' => 20);
   $form['submit'] = array(
     '#id' => 'enter',
     '#value' => 'Submit',
@@ -1659,52 +1643,21 @@ function staff_profile_form(&$obj) {
   return $form;
 }
 /*Code adding ended on 24/02/2009 for staff profile form.*/
-/*Code adding started on 24/02/2009 for staff profile validation form.*/
+
+
 function staff_profile_form_validate($form, &$states) {
   ob_start();
-  /*Check whether newpassword and confirm password field's are filled or not.*/
-  $values = $form['lbl']['#post'];
-  $newpass = $values['newpass'];
-  $confpass = $values['confpass'];
-  //if ($form['#post']['newpass']!='' && $form['#post']['confpass']!='')
-  if ($newpass!='' && $newpass!='') {
-    /*Check if confirm password field do not matches with new password field.*/
-    //if ($form['#post']['newpass']===$form['#post']['confpass'])
-    if ($newpass===$confpass) {
-      $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-      $qry="update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."',  staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', personal_email='". $form['#post']['pemail'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."', blood_group='". $form['#post']['blood'] ."', dob='". $dob ."', password='". $newpass ."' where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-      $result = db_query($qry);
-      $show = db_affected_rows();
-      if ($result && db_affected_rows()>0) {
-        drupal_set_message('You have successfully updated your details.');
-        drupal_goto('staff/home');
-      }
-    }
-    else {
-      //form_set_error('Password did not match.');
-      drupal_set_message('Password did not match');
-      drupal_goto('staff/profile');
-    }
-  }
-  if ($form['#post']['newpass'] == '' && $form['#post']['confpass'] != '') {
-    drupal_set_message('Please specify new password');
-  }
-  else if ($form['#post']['newpass'] != '' && $form['#post']['confpass'] == '') {
-    drupal_set_message('Please specify confirmation password');
-  }
-  else {
-    $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-    $qry="update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
+  $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
+  $qry = "update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
       where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-    /*$qry="update veritas_staff set title='".$form['#post']['title']."', first_name='".$form['#post']['fname']."', last_name='".$form['#post']['lname']."', middle_name='".$form['#post']['mname']."', usrname='".$form['#post']['user']."', blood_group='".$form['#post']['blood']."', dob='".$form['#post']['dob']."',  where staff_id = '".$_SESSION['staff']['data']->staff_id."'";*/
-    $result = db_query($qry);
-    if ($result && db_affected_rows()>0) {
-      drupal_set_message('You have successfully updated your details.');
-      drupal_goto('staff/home');
-    }
+  $result = db_query($qry);
+  if ($result && db_affected_rows() > 0) {
+    drupal_set_message('You have successfully updated your details.');
+    drupal_goto('staff/home');
   }
 }
-/*Code adding ended on 24/02/2009 for staff profile validation form.*/
+
+
 /*Code adding started on 25/02/2009 for staff clearance form. */
 function _staff_clearance() {
   /*if (!isset($_SESSION['staff']['data']->staff_id)) {
