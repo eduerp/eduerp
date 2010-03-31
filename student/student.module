@@ -9,7 +9,7 @@ function student_menu() {
     'access arguments' => array('student new'),
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
   $items['student/registration2'] = array(
    'title' => 'Student Registration Form',
    'page callback' => 'drupal_get_form',
@@ -17,7 +17,7 @@ function student_menu() {
    'access arguments' => array('student admit'),
    'type' => MENU_NORMAL_ITEM,
   );
-  
+
   $items['student/payment'] = array(
    'title' => 'Student Fee Payment',
    'page callback' => 'drupal_get_form',
@@ -96,11 +96,6 @@ function student_menu() {
   return $items;
 }
 
-function register_student_logout() {
-  unset($_SESSION['student']);
-  drupal_goto('user');
-}
-
 function student_perm() {
   return array('student new', 'student register', 'student registercourse', 'student admit', 'student course',  'student list students');
 }
@@ -148,48 +143,6 @@ function student_change_password_form_validate($form, &$states) {
   if ($_SESSION['student']['data']->pwd != $form['#post']['oldpassword'] ) {
     form_set_error('submitted[oldpassword]', "Old Password not correct");
   }
-}
-
-function register_student_login_form(&$obj) {
-  unset($_SESSION);
-
-  $form['#title'] = t('Student Login');
-  $form['matriculation_no'] = array(
-    '#title' => 'Matriculation No.',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#required'=> TRUE
-   );
-   $form['password'] = array(
-     '#type' => 'password',
-     '#title' => 'Password',
-     '#size' => '30',
-     '#description' => 'Password is DOB and in format YYYY-mm-dd '
-    );
-   $form['submit'] = array('#value' => 'Login', '#type' => 'submit');
-   return $form;
-}
-
-function register_student_login_form_validate($form, &$states) {
-  $query = "select * from {admitted_student} where matriculation_no = '". $form['#post']['matriculation_no'] ."' and clearance_status = 1";
-  $result = db_query($query);
-  if ($data = db_fetch_object($result)) {
-    if ($form['#post']['password'] == $data->pwd) {
-       $_SESSION['student']['id'] = $data->student_id;
-       $_SESSION['student']['data'] = $data;
-    }
-    else {
-       form_set_error('submitted[passoword]', "Password is not correct");
-    }
-
-  }
-  else {
-    form_set_error('submitted[matriculation_no]', "Matriculation number not valid");
-  }
-}
-
-function register_student_login_form_submit(&$obj) {
-  drupal_goto('student/course');
 }
 
 function student_course_form(&$obj) {
