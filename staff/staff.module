@@ -267,6 +267,7 @@ function staff_assign_role() {
   echo drupal_get_form('faculty_role_form');
   echo '<br /><br /><hr /><br />';
   echo drupal_get_form('university_role_form');
+  echo '<br /><br /><hr /><br />';
   echo drupal_get_form('current_roles_list_form');
   echo '<br /><br /><hr /><br />';
   echo drupal_get_form('move_department_form');
@@ -342,6 +343,13 @@ function university_role_form($form_state) {
 
   $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
 
+
+
+
+$staff_user = user_load($_SESSION['eduerpassignrole']->uid);
+$x = print_r($staff_user, TRUE);
+  $form['mark'] = array('#value' => $x);
+
   return $form;
 }
 
@@ -393,7 +401,7 @@ function faculty() {
 
 
 function current_roles_list_form($form_state) {
-  $form['top'] = array('#value' => "All current roles for {$_SESSION['eduerpassignrole']->name}:");
+  $form['top'] = array('#value' => "All current roles for {$_SESSION['eduerpassignrole']->name}:<br />");
 
   $result = db_query("SELECT er.eduerp_role_id,
       CONCAT(er.role, IFNULL(CONCAT(' (', d.field_department_name_value, ')'), IFNULL(CONCAT(' (', c.field_college_name_value, ')'), ''))) AS name
@@ -435,18 +443,44 @@ function move_department_form($form_state) {
 
 
 function department_role_form_submit($form, &$form_state) {
-  $department = $form_state['values']['department'];
-  $role = $form_state['values']['role'];
-  $uid = $form_state['values']['uid'];
+  addrole($form_state['values']['uid'], $form_state['values']['department'], 0, $form_state['values']['role']);
+}
 
-//check if role exists before adding
 
-//'university_role_form'
-//This form must also allow the following two Drupal roles to be assigned and unassigned 'Bursary' & 'Registry' (by making it a side effect of assigning Bursary and Registry eduerp_roles)
-//Some of the other eduerp_roles might also cause assignment of Drupal Registry or Bursay roles (e.g. VC, Registrar, Dean or HOD might)
+addrole($uid, $department_id, $college_id, $role) {
+  $result = db_query("SELECT 1 FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d AND er.role='%s'",
+    $uid, $department_id, $college_id, $role);
+  if (!db_fetch_object($result)) {
+    db_query("INSERT INTO {eduerp_roles} SET uid=%d, department_id=%d, college_id=%d, role='%s'",
+      $uid, $department_id, $college_id, $role);
+  }
+
+  if ($role === 'Bursary' || $role === 'Registry') {
+    assign_drupal_role($uid, $role);
+  }
+}
+
+
+function assign_drupal_role($uid, $role) {
+  $result = db_query("SELECT rid FROM {role} WHERE name='%s'", $role);
+  $row = db_fetch_object($result);
+
+  $staff_user = user_load($uid);
+
+  $roles = array($row->rid => $row->rid);
+//will drop all others!!!
+//print_r($staff_user, TRUE);
+//  user_save($staff_user, array('roles' => $roles));
+}
+
+
+
+
 
 //  echo  drupal_get_form('current_roles_list_form');
 //# There will be a from listing all the users current roles with a checked tickbox beside each allowing them to be removed if the box is unchecked
+//unassigned also 'Bursary' & 'Registry'... drupal roles
+
 
 //  echo  drupal_get_form('move_department_form');
 //# Also need code to move a staff members's department in veritas_staff and their profile.
