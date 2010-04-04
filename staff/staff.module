@@ -438,13 +438,13 @@ function move_department_form($form_state) {
   return $form;
 }
 
-/*
+
 function department_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], $form_state['values']['department'], 0, $form_state['values']['role']);
 }
 
 
-addrole($uid, $department_id, $college_id, $role) {
+function addrole($uid, $department_id, $college_id, $role) {
   $result = db_query("SELECT 1 FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d AND er.role='%s'",
     $uid, $department_id, $college_id, $role);
   if (!db_fetch_object($result)) {
@@ -463,13 +463,12 @@ function assign_drupal_role($uid, $role) {
   $row = db_fetch_object($result);
 
   $staff_user = user_load($uid);
+  $roles = $staff_user->roles;
+  $roles[$row->rid] = $role; // If it is new, it will be added, ($role is not relevent, must be something)
 
-  $roles = array($row->rid => $row->rid);
-//will drop all others!!!
-//print_r($staff_user, TRUE);
-//  user_save($staff_user, array('roles' => $roles));
+  user_save($staff_user, array('roles' => $roles));
 }
-*/
+
 
 
 
