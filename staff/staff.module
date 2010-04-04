@@ -406,8 +406,10 @@ function current_roles_list_form($form_state) {
     LEFT JOIN {content_type_department} d ON er.department_id=d.nid
     LEFT JOIN {content_type_college}    c ON er.college_id=c.nid
     WHERE er.uid=%d ORDER BY er.role", $_SESSION['eduerpassignrole']->uid);
+
+  $form['roles'] = array('#tree' => TRUE);
   while ($row = db_fetch_object($result)) {
-    $form[$row->eduerp_role_id] = array(
+    $form['roles'][$row->eduerp_role_id] = array(
       '#type' => 'checkbox',
       '#title' => $row->name
     );
@@ -416,7 +418,6 @@ function current_roles_list_form($form_state) {
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
   $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles checked above from {$_SESSION['eduerpassignrole']->name}");
-
   return $form;
 }
 
@@ -434,13 +435,22 @@ function move_department_form($form_state) {
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
   $form['submit'] = array('#type' => 'submit', '#value' => "Move {$_SESSION['eduerpassignrole']->name} to the above department");
-
   return $form;
 }
 
 
 function department_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], $form_state['values']['department'], 0, $form_state['values']['role']);
+}
+
+
+function faculty_role_form_submit($form, &$form_state) {
+  addrole($form_state['values']['uid'], 0, $form_state['values']['faculty'], $form_state['values']['role']);
+}
+
+
+function university_role_form_submit($form, &$form_state) {
+  addrole($form_state['values']['uid'], 0, 0, $form_state['values']['role']);
 }
 
 
@@ -455,6 +465,8 @@ function addrole($uid, $department_id, $college_id, $role) {
   if ($role === 'Bursary' || $role === 'Registry') {
     assign_drupal_role($uid, $role);
   }
+
+  drupal_set_message('Role Assigned');
 }
 
 
@@ -470,20 +482,58 @@ function assign_drupal_role($uid, $role) {
 }
 
 
+function current_roles_list_form_submit($form, &$form_state) {
+  $i = 0;
+  foreach ($form_state['values']['roles'] as $eduerp_role_id => $checked) {
+    droprole($form_state['values']['uid'], $eduerp_role_id);
+    $i++;
+  }
+
+  if ($i == 1) drupal_set_message('Role Removed');
+  else drupal_set_message("$i Roles Removed");
+}
 
 
+function droprole($uid, $eduerp_role_id) {
+  $result = db_query("SELECT role FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
+  if ($row = db_fetch_object($result)) {
+    db_query("DELETE FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
+  }
 
-//  echo  drupal_get_form('current_roles_list_form');
-//# There will be a from listing all the users current roles with a checked tickbox beside each allowing them to be removed if the box is unchecked
-//unassigned also 'Bursary' & 'Registry'... drupal roles
+  if ($row->role === 'Bursary' || $row->role === 'Registry') {
+    drop_drupal_role($uid, $row->role);
+  }
+}
 
 
-//  echo  drupal_get_form('move_department_form');
-//# Also need code to move a staff members's department in veritas_staff and their profile.
+function drop_drupal_role($uid, $role) {
+  $result = db_query("SELECT rid FROM {role} WHERE name='%s'", $role);
+  $row = db_fetch_object($result);
 
-//drupal_set_message('Role Assigned');
-//drupal_goto("superadmin/stafflist");
+  $staff_user = user_load($uid);
+  $roles = $staff_user->roles;
+  unset($roles[$row->rid]);
 
+  user_save($staff_user, array('roles' => $roles));
+}
+
+
+function move_department_form_submit($form, &$form_state) {
+  $result = db_query("SELECT field_department_name_value FROM {content_type_department} WHERE nid=%d", $form_state['values']['department']);
+  if ($row = db_fetch_object($result)) {
+    $staff_user = user_load($form_state['values']['uid']);
+
+    $data = array(
+      'profile_department_id' => $form_state['values']['department'],
+      'profile_department_name' => $row->field_department_name_value
+    );
+    user_save($staff_user, $data);
+
+    db_query("UPDATE {veritas_staff} SET department_id=%d WHERE user_id=%d", $form_state['values']['department'], $form_state['values']['uid']);
+
+    drupal_set_message("Department Moved");
+  }
+}
 
 
 function search_staff_list() {
