@@ -460,13 +460,12 @@ function addrole($uid, $department_id, $college_id, $role) {
   if (!db_fetch_object($result)) {
     db_query("INSERT INTO {eduerp_roles} SET uid=%d, department_id=%d, college_id=%d, role='%s'",
       $uid, $department_id, $college_id, $role);
+    drupal_set_message('Role Assigned');
   }
 
   if ($role === 'Bursary' || $role === 'Registry') {
     assign_drupal_role($uid, $role);
   }
-
-  drupal_set_message('Role Assigned');
 }
 
 
