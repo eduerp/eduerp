@@ -56,9 +56,8 @@ function staff_menu() {
   );
 
   $items['staff/assignrole']=array(
-    'title'=>'Staff Profile',
-    'page callback' => 'drupal_get_form',
-    'page arguments'=>array('staff_assign_role_form'),
+    'title'=>'Staff Roles',
+    'page callback' => 'staff_assign_role',
     'access arguments' => array('staff assign role'),
     'type' => MENU_CALLBACK,
   );
@@ -241,150 +240,214 @@ function staff_perm() {
   return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student', 'staff data', 'staff search', 'student payments');
 }
 
-function staff_assign_role_form_submit($form,&$state) {
 
-  $values = $form['#post'];
-  if ($state['storage']['step'] == 1) {
-    $query = 'Update veritas_staff set usrname = "'.$values['username'].'" , password = "'.$values['password'].'" ,  role_id ="'.$values['staff_role'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
+function staff_assign_role() {
+  $_SESSION['eduerpassignrole']->uid = arg(2);
+
+  $staff_user = user_load($_SESSION['eduerpassignrole']->uid);
+  $staffname = '';
+  if (!empty($staff_user->profile_first_name) && !empty($staff_user->profile_last_name)) {
+    $middle = '';
+    if (!empty($staff_user->profile_middle_name)) $middle = ' ' . $staff_user->profile_middle_name;
+    $staffname = "{$staff_user->profile_last_name}, {$staff_user->profile_first_name}{$middle}";
   }
+  $_SESSION['eduerpassignrole']->name = $staffname;
+  $_SESSION['eduerpassignrole']->department_id = $staff_user->profile_department_id;
+  $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
+  $row = db_fetch_object($result, $staff_user->profile_department_id);
+  $_SESSION['eduerpassignrole']->college_id = $row->field_college_id_nid;
 
-  if ($state['storage']['step'] == 2) {
+  ob_start();
 
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    $query = 'delete from  veritas_staff_department  where staff_id='.arg(2);
-    db_query($query);
-    $query = "insert veritas_staff_department set staff_id=".arg(2)." , department_id='".$state['values']['staff_department']."' ";
-    db_query($query);
-    drupal_set_message('Role Assigned');
+  echo "<b>Assign Roles or move Home Department for {$staffname}...</b><br />"
 
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 3) {
+  echo drupal_get_form('department_role_form');
+  echo drupal_get_form('faculty_role_form');
+  echo drupal_get_form('university_role_form');
+  echo drupal_get_form('current_roles_list_form');
+  echo drupal_get_form('move_department_form');
 
-    $query = 'delete from  veritas_staff_college  where staff_id='.arg(2);
-    db_query($query);
-    $query = "insert veritas_staff_college set staff_id=".arg(2)." , assigned_college='".$state['values']['staff_college']."' ";
-    db_query($query);
-    drupal_set_message('Role Assigned');
+  echo "<br />Further down the page there will be a description of roles."
 
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 4) {
-
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    $query = 'delete from  veritas_staff_college  where staff_id='.arg(2);
-    db_query($query);
-    $query = "insert veritas_staff_college set staff_id=".arg(2)." , assigned_college='".$state['values']['staff_college']."' ";
-    db_query($query);
-    drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 5) {
-
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 6) {
-
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 7) {
-
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['clicked_button']['#id'] == 'edit-previous') {
-
-    $state['storage']['step']--;
-    $state['#rebuild']=true;
-    return;
-  }
-  elseif ($state['clicked_button']['#id'] == 'edit-next') {
-    $state[storage][values][$state[storage][step]] = $state[values];
-    $state['#rebuild']=true;
-    if ($state['storage']['step'] == 1) {
-
-      switch($values['staff_role']) {
-
-        case 7:
-          $state['storage']['step']++;
-          break;
-        case 6:
-          $state['storage']['step'] = 3;
-          break;
-        case 5:
-        case 4:
-          $state['storage']['step'] = 4;
-          break;
-        case 8 :
-          $state['storage']['step'] = 5;
-          break;
-        case 10 :
-          $state['storage']['step'] = 7;
-          break ;
-        case 1:
-        case 2:
-        case 3:
-        case 11:
-        case 13:
-          drupal_set_message('Role Assigned');
-
-          drupal_goto("staff/list");
-          break;
-        case 14 :
-          $state['storage']['step'] = 6;
-          break ;
-      }
-    }
-    return;
-  }
+  return ob_get_clean();
 }
 
 
-function staff_assign_role_form(&$obj) {
+function department_role_form($form_state) {
+  $form['top'] = array('#value' => "Give another Department role to {$_SESSION['eduerpassignrole']->name}:");
 
-  if (!$obj[storage][step])
-  $obj[storage][step]=1;
-  $st=$obj[storage][step];
+  $form['role'] = array(
+    '#type' => 'select',
+    '#options' => eduerp_department_roles(),
+    '#title' => 'Role',
+    '#default_value' => 'Department Examination Viewer',
+    '#required' => TRUE);
 
-  if ($st==1) {
- //return _student_reg_form6($obj);
- //   return _student_reg_form5($obj);
-    return assign_role_form1($obj);
+  $form['department'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#default_value' => $_SESSION['eduerpassignrole']->department_id,
+    '#required' => TRUE);
 
-  } elseif ($st==2) {
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
-   return assign_role_form_hod($obj);
+  $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
 
-  } elseif ($st==3) {
+  return $form;
+}
 
-    return assign_role_form_assign_college($obj);
 
-  } elseif ($st==4) {
+function faculty_role_form($form_state) {
+  $form['top'] = array('#value' => "Give another Faculty role to {$_SESSION['eduerpassignrole']->name}:");
 
-    return assign_role_form_assign_registrar($obj);
+  $form['role'] = array(
+    '#type' => 'select',
+    '#options' => eduerp_faculty_roles(),
+    '#title' => 'Role',
+    '#default_value' => 'Faculty Examination Viewer',
+    '#required' => TRUE);
 
-  } elseif ($st==5) {
-    return assign_role_form_assign_hod($obj);
-  } elseif ($st==6) {
-    return assign_role_form_assign_vc($obj);
-  } elseif ($st==7) {
-    return assign_role_form_assign_bursar($obj);
+  $form['faculty'] = array(
+    '#type' => 'select',
+    '#options' => faculty(),
+    '#title' => 'Faculty',
+    '#default_value' => $_SESSION['eduerpassignrole']->college_id,
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
+
+  return $form;
+}
+
+
+function university_role_form($form_state) {
+  $form['top'] = array('#value' => "Give another University role to {$_SESSION['eduerpassignrole']->name}:");
+
+  $form['role'] = array(
+    '#type' => 'select',
+    '#options' => eduerp_university_roles(),
+    '#title' => 'Role',
+    '#default_value' => 'University Examination Viewer',
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
+
+  return $form;
+}
+
+
+function eduerp_department_roles() {
+  $titles = array(
+    'Department Examination Viewer' => 'Department Examination Viewer',
+    'Department Examination Officer' => 'Department Examination Officer',
+    'Head of Department' => 'Head of Department'
+  );
+  return  $titles;
+}
+
+
+function eduerp_faculty_roles() {
+  $titles = array(
+    'Faculty Examination Viewer' => 'Faculty Examination Viewer',
+    'Faculty Examination Officer' => 'Faculty Examination Officer',
+    'Dean of Faculty' => 'Dean of Faculty'
+  );
+  return  $titles;
+}
+
+
+function eduerp_university_roles() {
+  $titles = array(
+    'University Examination Viewer' => 'University Examination Viewer',
+    'University Examination Officer' => 'University Examination Officer',
+    'Registry' => 'Registry',
+    'Bursary' => 'Bursary',
+    'Registrar' => 'Registrar',
+    'Vice-Chancellor' => 'Vice-Chancellor',
+    'Staff that can View Approved Grades'
+  );
+  return  $titles;
+}
+
+
+function faculty() {
+  static $titles;
+  if (!$titles) {
+    $titles = array();
+    $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} ORDER BY field_college_name_value");
+    while ($f = db_fetch_object($r))
+      $titles[$f->nid] = $f->value;
   }
+  return  $titles;
+}
+
+
+function current_roles_list_form($form_state) {
+  $form['top'] = array('#value' => "All current roles for {$_SESSION['eduerpassignrole']->name}:");
+
+  $result = db_query("SELECT er.eduerp_role_id,
+      CONCAT(er.role, IFNULL(CONCAT(' (', d.field_department_name_value, ')'), IFNULL(CONCAT(' (', c.field_college_name_value, ')'), ''))) AS name
+    FROM {eduerp_roles} er
+    LEFT JOIN {content_type_department} d ON er.department_id=d.nid
+    LEFT JOIN {content_type_college}    c ON er.college_id=c.nid
+    WHERE er.uid=%d ORDER BY er.role", $_SESSION['eduerpassignrole']->uid);
+  while ($row = db_fetch_object($result)) {
+    $form[$row->eduerp_role_id] = array(
+      '#type' => 'checkbox',
+      '#title' => $row->name
+    );
+  }
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles checked above from {$_SESSION['eduerpassignrole']->name}");
+
+  return $form;
+}
+
+
+function move_department_form($form_state) {
+  $form['top'] = array('#value' => "Move {$_SESSION['eduerpassignrole']->name} to a new department:");
+
+  $form['department'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#default_value' => $_SESSION['eduerpassignrole']->department_id,
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Move {$_SESSION['eduerpassignrole']->name} to the above department");
+
+  return $form;
+}
+
+
+function department_role_form_submit($form, &$form_state) {
+  $department = $form_state['values']['department'];
+  $role = $form_state['values']['role'];
+  $uid = $form_state['values']['uid'];
+
+//check if role exists before adding
+
+//'university_role_form'
+//This form must also allow the following two Drupal roles to be assigned and unassigned 'Bursary' & 'Registry' (by making it a side effect of assigning Bursary and Registry eduerp_roles)
+//Some of the other eduerp_roles might also cause assignment of Drupal Registry or Bursay roles (e.g. VC, Registrar, Dean or HOD might)
+
+//  echo  drupal_get_form('current_roles_list_form');
+//# There will be a from listing all the users current roles with a checked tickbox beside each allowing them to be removed if the box is unchecked
+
+//  echo  drupal_get_form('move_department_form');
+//# Also need code to move a staff members's department in veritas_staff and their profile.
+
+//drupal_set_message('Role Assigned');
+//drupal_goto("superadmin/stafflist");
 }
 
 
