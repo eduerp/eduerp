@@ -55,12 +55,12 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
-//  $items['staff/assignrole'] = array(
-//    'title' => 'Staff Roles',
-//    'page callback' => 'staff_assign_role',
-//    'access arguments' => array('staff assign role'),
-//    'type' => MENU_CALLBACK,
-//  );
+  $items['staff/assignrole'] = array(
+    'title' => 'Staff Roles',
+    'page callback' => 'staff_assign_role',
+    'access arguments' => array('staff assign role'),
+    'type' => MENU_CALLBACK,
+  );
 
   $items['staff/registration/success']=array(
     'page callback' => 'registartion_success',
@@ -240,7 +240,7 @@ function staff_perm() {
   return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student', 'staff data', 'staff search', 'student payments');
 }
 
-/*
+
 function staff_assign_role() {
   $_SESSION['eduerpassignrole']->uid = arg(2);
 
@@ -261,18 +261,18 @@ function staff_assign_role() {
 
   echo "<b>Assign Roles or move Home Department for {$staffname}...</b><br />"
 
-  echo drupal_get_form('department_role_form');
-  echo drupal_get_form('faculty_role_form');
-  echo drupal_get_form('university_role_form');
-  echo drupal_get_form('current_roles_list_form');
-  echo drupal_get_form('move_department_form');
+//  echo drupal_get_form('department_role_form');
+//  echo drupal_get_form('faculty_role_form');
+//  echo drupal_get_form('university_role_form');
+//  echo drupal_get_form('current_roles_list_form');
+//  echo drupal_get_form('move_department_form');
 
   echo "<br />Further down the page there will be a description of roles."
 
   return ob_get_clean();
 }
 
-
+/*
 function department_role_form($form_state) {
   $form['top'] = array('#value' => "Give another Department role to {$_SESSION['eduerpassignrole']->name}:");
 
