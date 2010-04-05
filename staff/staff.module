@@ -257,11 +257,6 @@ function staff_assign_role() {
   $row = db_fetch_object($result, $staff_user->profile_department_id);
   $_SESSION['eduerpassignrole']->college_id = $row->field_college_id_nid;
 
-
-$staff_user = user_load($_SESSION['eduerpassignrole']->uid);
-$x = print_r($staff_user, TRUE);
-
-
   ob_start();
 
   echo "<b>Assign Roles or move Home Department for {$staffname}...</b><br />";
@@ -278,9 +273,7 @@ $x = print_r($staff_user, TRUE);
   echo drupal_get_form('move_department_form');
   echo '<br /><br /><hr /><br />';
 
-
-echo $x;
-  echo "<br />Further down the page there will be a description of roles.";
+  echo "<br />Further down the page there will be a description of roles!!!!!";
 
   return ob_get_clean();
 }
