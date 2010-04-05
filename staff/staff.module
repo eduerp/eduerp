@@ -417,11 +417,15 @@ function current_roles_list_form($form_state) {
       '#default_value' => TRUE
     );
   }
-  if (!$found) $form['noroles'] = array('#value' => '<br />No Roles Assigned<br /><br />');
 
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles unchecked above from {$_SESSION['eduerpassignrole']->name}");
+  if ($found) {
+    $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles unchecked above from {$_SESSION['eduerpassignrole']->name}");
+  }
+  else {
+    $form['noroles'] = array('#value' => '<br />No Roles Assigned<br /><br />');
+  }
   return $form;
 }
 
