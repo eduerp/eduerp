@@ -530,20 +530,29 @@ function drop_drupal_role($uid, $role) {
 
 
 function move_department_form_submit($form, &$form_state) {
-  $result = db_query("SELECT field_department_name_value FROM {content_type_department} WHERE nid=%d", $form_state['values']['department']);
-  if ($row = db_fetch_object($result)) {
-    $staff_user = user_load($form_state['values']['uid']);
+  db_query("UPDATE
+      {content_type_department} d, {content_type_college} c,
+      {profile_fields} pf0, {profile_values} pv0,
+      {profile_fields} pf1, {profile_values} pv1,
+      {profile_fields} pf2, {profile_values} pv2
+    SET
+      pv0.value=d.nid,
+      pv1.value=d.field_department_name_value,
+      pv2.value=c.field_college_name_value
+    WHERE
+      d.nid=%d AND
+      d.field_college_id_nid=c.nid AND
+      pf0.name='profile_department_id' AND
+      pf1.name='profile_department_name' AND
+      pf2.name='profile_college_name' AND
+      pv0.uid=%d AND pv0.fid=pf0.fid AND
+      pv1.uid=pv0.uid AND pv1.fid=pf1.fid AND
+      pv2.uid=pv0.uid AND pv2.fid=pf2.fid",
+    $form_state['values']['department'], $form_state['values']['uid']);
 
-    $data = array(
-      'profile_department_id' => $form_state['values']['department'],
-      'profile_department_name' => $row->field_department_name_value
-    );
-    user_save($staff_user, $data);
+  db_query("UPDATE {veritas_staff} SET department_id=%d WHERE user_id=%d", $form_state['values']['department'], $form_state['values']['uid']);
 
-    db_query("UPDATE {veritas_staff} SET department_id=%d WHERE user_id=%d", $form_state['values']['department'], $form_state['values']['uid']);
-
-    drupal_set_message("Department Moved");
-  }
+  drupal_set_message("Department Moved");
 }
 
 
