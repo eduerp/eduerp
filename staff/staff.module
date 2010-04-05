@@ -413,14 +413,15 @@ function current_roles_list_form($form_state) {
     $found = TRUE;
     $form['roles'][$row->eduerp_role_id] = array(
       '#type' => 'checkbox',
-      '#title' => $row->name
+      '#title' => $row->name,
+      '#default_value' => TRUE
     );
   }
   if (!$found) $form['noroles'] = array('#value' => 'No Roles Assigned');
 
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
-  $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles checked above from {$_SESSION['eduerpassignrole']->name}");
+  $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles unchecked above from {$_SESSION['eduerpassignrole']->name}");
   return $form;
 }
 
@@ -488,8 +489,10 @@ function current_roles_list_form_submit($form, &$form_state) {
   $i = 0;
   if (!empty($form_state['values']['roles'])) {
     foreach ($form_state['values']['roles'] as $eduerp_role_id => $checked) {
-      droprole($form_state['values']['uid'], $eduerp_role_id);
-      $i++;
+      if (!$checked) {
+        droprole($form_state['values']['uid'], $eduerp_role_id);
+        $i++;
+      }
     }
   }
 
