@@ -13,7 +13,6 @@ function staff_menu() {
   $items['staff/list']=array(
     'title'=>'Staff List',
     'page callback' => 'search_staff_list',
-    //'page arguments'=>array('staff_cousrse_assign_form'),
     'access arguments' => array('staff list'),
     'type' => MENU_CALLBACK,
   );
@@ -27,7 +26,7 @@ function staff_menu() {
 
   $items['staff/viewlecturer']=array(
     'title'=>'Staff List',
-    'page callback' => 'staff_lecturer_list',
+    'page callback' => 'staff_course_list',
     'access arguments' => array('staff view lecturer'),
     'type' => MENU_CALLBACK,
   );
@@ -56,10 +55,9 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['staff/assignrole']=array(
-    'title'=>'Staff Profile',
-    'page callback' => 'drupal_get_form',
-    'page arguments'=>array('staff_assign_role_form'),
+  $items['staff/assignrole'] = array(
+    'title' => 'Staff Roles',
+    'page callback' => 'staff_assign_role',
     'access arguments' => array('staff assign role'),
     'type' => MENU_CALLBACK,
   );
@@ -242,182 +240,353 @@ function staff_perm() {
   return array('staff register','staff create ar','staff not cleared list','staff cleared list','staff clearance','staff assign role','staff view','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'sa student', 'staff data', 'staff search', 'student payments');
 }
 
-function staff_assign_role_form_submit($form,&$state) {
 
-  $values = $form['#post'];
-  if ($state['storage']['step'] == 1) {
-    $query = 'Update veritas_staff set usrname = "'.$values['username'].'" , password = "'.$values['password'].'" ,  role_id ="'.$values['staff_role'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
+function staff_assign_role() {
+  $_SESSION['eduerpassignrole']->uid = arg(2);
+
+  $staff_user = user_load($_SESSION['eduerpassignrole']->uid);
+  $staffname = '';
+  if (!empty($staff_user->profile_first_name) && !empty($staff_user->profile_last_name)) {
+    $middle = '';
+    if (!empty($staff_user->profile_middle_name)) $middle = ' ' . $staff_user->profile_middle_name;
+    $staffname = "{$staff_user->profile_last_name}, {$staff_user->profile_first_name}{$middle}";
+  }
+  $_SESSION['eduerpassignrole']->name = $staffname;
+  $_SESSION['eduerpassignrole']->department_id = $staff_user->profile_department_id;
+  $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
+  $row = db_fetch_object($result, $staff_user->profile_department_id);
+  $_SESSION['eduerpassignrole']->college_id = $row->field_college_id_nid;
+
+  ob_start();
+
+  echo "<b>Assign Roles or move Home Department for {$staffname}...</b><br />";
+
+  echo '<br /><br /><hr /><br />';
+  echo drupal_get_form('department_role_form');
+  echo '<br /><br /><hr /><br />';
+  echo drupal_get_form('faculty_role_form');
+  echo '<br /><br /><hr /><br />';
+  echo drupal_get_form('university_role_form');
+  echo '<br /><br /><hr /><br />';
+  echo drupal_get_form('current_roles_list_form');
+  echo '<br /><br /><hr /><br />';
+  echo drupal_get_form('move_department_form');
+  echo '<br /><br /><hr /><br />';
+
+  echo "<br />Further down the page there will be a description of roles!!!!!";
+
+  return ob_get_clean();
+}
+
+
+function department_role_form($form_state) {
+  $form['top'] = array('#value' => "Give another Department role to {$_SESSION['eduerpassignrole']->name}:");
+
+  $form['role'] = array(
+    '#type' => 'select',
+    '#options' => eduerp_department_roles(),
+    '#title' => 'Role',
+    '#default_value' => 'Department Examination Viewer',
+    '#required' => TRUE);
+
+  $form['department'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#default_value' => $_SESSION['eduerpassignrole']->department_id,
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
+  return $form;
+}
+
+
+function faculty_role_form($form_state) {
+  $form['top'] = array('#value' => "Give another Faculty role to {$_SESSION['eduerpassignrole']->name}:");
+
+  $form['role'] = array(
+    '#type' => 'select',
+    '#options' => eduerp_faculty_roles(),
+    '#title' => 'Role',
+    '#default_value' => 'Faculty Examination Viewer',
+    '#required' => TRUE);
+
+  $form['faculty'] = array(
+    '#type' => 'select',
+    '#options' => faculty(),
+    '#title' => 'Faculty',
+    '#default_value' => $_SESSION['eduerpassignrole']->college_id,
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
+  return $form;
+}
+
+
+function university_role_form($form_state) {
+  $form['top'] = array('#value' => "Give another University role to {$_SESSION['eduerpassignrole']->name}:");
+
+  $form['role'] = array(
+    '#type' => 'select',
+    '#options' => eduerp_university_roles(),
+    '#title' => 'Role',
+    '#default_value' => 'University Examination Viewer',
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Assign new role to {$_SESSION['eduerpassignrole']->name}");
+  return $form;
+}
+
+
+function eduerp_department_roles() {
+  $options = array(
+    'Department Examination Viewer' => 'Department Examination Viewer',
+    'Department Examination Officer' => 'Department Examination Officer',
+    'Head of Department' => 'Head of Department'
+  );
+  return $options;
+}
+
+
+function eduerp_faculty_roles() {
+  $options = array(
+    'Faculty Examination Viewer' => 'Faculty Examination Viewer',
+    'Faculty Examination Officer' => 'Faculty Examination Officer',
+    'Dean of Faculty' => 'Dean of Faculty'
+  );
+  return $options;
+}
+
+
+function eduerp_university_roles() {
+  $options = array(
+    'University Examination Viewer' => 'University Examination Viewer',
+    'University Examination Officer' => 'University Examination Officer',
+    'Registry' => 'Registry',
+    'Bursary' => 'Bursary',
+    'Registrar' => 'Registrar',
+    'Vice-Chancellor' => 'Vice-Chancellor',
+    'Staff that can View Approved Grades' => 'Staff that can View Approved Grades'
+  );
+  return $options;
+}
+
+
+function faculty() {
+  static $options;
+  if (!$options) {
+    $options = array();
+    $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} ORDER BY field_college_name_value");
+    while ($f = db_fetch_object($r))
+      $options[$f->nid] = $f->value;
+  }
+  return  $options;
+}
+
+
+function current_roles_list_form($form_state) {
+  $form['top'] = array('#value' => "All current roles for {$_SESSION['eduerpassignrole']->name}:<br />");
+
+  $result = db_query("SELECT er.eduerp_role_id,
+      CONCAT(er.role, IFNULL(CONCAT(' (', d.field_department_name_value, ')'), IFNULL(CONCAT(' (', c.field_college_name_value, ')'), ''))) AS name
+    FROM {eduerp_roles} er
+    LEFT JOIN {content_type_department} d ON er.department_id=d.nid
+    LEFT JOIN {content_type_college}    c ON er.college_id=c.nid
+    WHERE er.uid=%d ORDER BY er.role", $_SESSION['eduerpassignrole']->uid);
+
+  $form['roles'] = array('#tree' => TRUE);
+  $found = FALSE;
+  while ($row = db_fetch_object($result)) {
+    $found = TRUE;
+    $form['roles'][$row->eduerp_role_id] = array(
+      '#type' => 'checkbox',
+      '#title' => $row->name,
+      '#default_value' => TRUE
+    );
   }
 
-  if ($state['storage']['step'] == 2) {
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    $query = 'delete from  veritas_staff_department  where staff_id='.arg(2);
-    db_query($query);
-    $query = "insert veritas_staff_department set staff_id=".arg(2)." , department_id='".$state['values']['staff_department']."' ";
-    db_query($query);
+  if ($found) {
+    $form['submit'] = array('#type' => 'submit', '#value' => "Remove any roles unchecked above from {$_SESSION['eduerpassignrole']->name}");
+  }
+  else {
+    $form['noroles'] = array('#value' => '<br />No Roles Assigned<br />');
+  }
+  return $form;
+}
+
+
+function move_department_form($form_state) {
+  $form['top'] = array('#value' => "Move {$_SESSION['eduerpassignrole']->name} to a new department:");
+
+  $form['department'] = array(
+    '#type' => 'select',
+    '#options' => department(),
+    '#title' => 'Department',
+    '#default_value' => $_SESSION['eduerpassignrole']->department_id,
+    '#required' => TRUE);
+
+  $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
+
+  $form['submit'] = array('#type' => 'submit', '#value' => "Move {$_SESSION['eduerpassignrole']->name} to the above department");
+  return $form;
+}
+
+
+function department_role_form_submit($form, &$form_state) {
+  addrole($form_state['values']['uid'], $form_state['values']['department'], 0, $form_state['values']['role']);
+}
+
+
+function faculty_role_form_submit($form, &$form_state) {
+  addrole($form_state['values']['uid'], 0, $form_state['values']['faculty'], $form_state['values']['role']);
+}
+
+
+function university_role_form_submit($form, &$form_state) {
+  addrole($form_state['values']['uid'], 0, 0, $form_state['values']['role']);
+}
+
+
+function addrole($uid, $department_id, $college_id, $role) {
+  $result = db_query("SELECT 1 FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d AND er.role='%s'",
+    $uid, $department_id, $college_id, $role);
+  if (!db_fetch_object($result)) {
+    db_query("INSERT INTO {eduerp_roles} SET uid=%d, department_id=%d, college_id=%d, role='%s'",
+      $uid, $department_id, $college_id, $role);
     drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
   }
-  if ($state['storage']['step'] == 3) {
 
-    $query = 'delete from  veritas_staff_college  where staff_id='.arg(2);
-    db_query($query);
-    $query = "insert veritas_staff_college set staff_id=".arg(2)." , assigned_college='".$state['values']['staff_college']."' ";
-    db_query($query);
-    drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
+  if ($role === 'Bursary' || $role === 'Registry') {
+    assign_drupal_role($uid, $role);
   }
-  if ($state['storage']['step'] == 4) {
+}
 
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    $query = 'delete from  veritas_staff_college  where staff_id='.arg(2);
-    db_query($query);
-    $query = "insert veritas_staff_college set staff_id=".arg(2)." , assigned_college='".$state['values']['staff_college']."' ";
-    db_query($query);
-    drupal_set_message('Role Assigned');
 
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 5) {
+function assign_drupal_role($uid, $role) {
+  $result = db_query("SELECT rid FROM {role} WHERE name='%s'", $role);
+  $row = db_fetch_object($result);
 
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    drupal_set_message('Role Assigned');
+  $staff_user = user_load($uid);
+  $roles = $staff_user->roles;
+  $roles[$row->rid] = $role; // If it is new, it will be added, ($role is not relevent, must be something)
 
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 6) {
+  user_save($staff_user, array('roles' => $roles));
+}
 
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    drupal_set_message('Role Assigned');
 
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['storage']['step'] == 7) {
-
-    $query = 'Update veritas_staff set parent_id ="'.$values['staff_parent'].'" where staff_id='.$values['staff_id'];
-    db_query($query);
-    drupal_set_message('Role Assigned');
-
-    drupal_goto("superadmin/stafflist");
-  }
-  if ($state['clicked_button']['#id'] == 'edit-previous') {
-
-    $state['storage']['step']--;
-    $state['#rebuild']=true;
-    return;
-  }
-  elseif ($state['clicked_button']['#id'] == 'edit-next') {
-    $state[storage][values][$state[storage][step]] = $state[values];
-    $state['#rebuild']=true;
-    if ($state['storage']['step'] == 1) {
-
-      switch($values['staff_role']) {
-
-        case 7:
-          $state['storage']['step']++;
-          break;
-        case 6:
-          $state['storage']['step'] = 3;
-          break;
-        case 5:
-        case 4:
-          $state['storage']['step'] = 4;
-          break;
-        case 8 :
-          $state['storage']['step'] = 5;
-          break;
-        case 10 :
-          $state['storage']['step'] = 7;
-          break ;
-        case 1:
-        case 2:
-        case 3:
-        case 11:
-        case 13:
-          drupal_set_message('Role Assigned');
-
-          drupal_goto("staff/list");
-          break;
-        case 14 :
-          $state['storage']['step'] = 6;
-          break ;
+function current_roles_list_form_submit($form, &$form_state) {
+  $i = 0;
+  if (!empty($form_state['values']['roles'])) {
+    foreach ($form_state['values']['roles'] as $eduerp_role_id => $checked) {
+      if (!$checked) {
+        droprole($form_state['values']['uid'], $eduerp_role_id);
+        $i++;
       }
     }
-    return;
+  }
+
+  if ($i == 1) drupal_set_message('Role Removed');
+  else drupal_set_message("$i Roles Removed");
+}
+
+
+function droprole($uid, $eduerp_role_id) {
+  $result = db_query("SELECT role FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
+  if ($row = db_fetch_object($result)) {
+    db_query("DELETE FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
+  }
+
+  if ($row->role === 'Bursary' || $row->role === 'Registry') {
+    drop_drupal_role($uid, $row->role);
   }
 }
 
 
-function staff_assign_role_form(&$obj) {
+function drop_drupal_role($uid, $role) {
+  $result = db_query("SELECT rid FROM {role} WHERE name='%s'", $role);
+  $row = db_fetch_object($result);
 
-  if (!$obj[storage][step])
-  $obj[storage][step]=1;
-  $st=$obj[storage][step];
+  $staff_user = user_load($uid);
+  $roles = $staff_user->roles;
+  unset($roles[$row->rid]);
 
-  if ($st==1) {
- //return _student_reg_form6($obj);
- //   return _student_reg_form5($obj);
-    return assign_role_form1($obj);
-
-  } elseif ($st==2) {
-
-   return assign_role_form_hod($obj);
-
-  } elseif ($st==3) {
-
-    return assign_role_form_assign_college($obj);
-
-  } elseif ($st==4) {
-
-    return assign_role_form_assign_registrar($obj);
-
-  } elseif ($st==5) {
-    return assign_role_form_assign_hod($obj);
-  } elseif ($st==6) {
-    return assign_role_form_assign_vc($obj);
-  } elseif ($st==7) {
-    return assign_role_form_assign_bursar($obj);
-  }
+  user_save($staff_user, array('roles' => $roles));
 }
+
+
+function move_department_form_submit($form, &$form_state) {
+  db_query("UPDATE
+      {content_type_department} d, {content_type_college} c,
+      {profile_fields} pf0, {profile_values} pv0,
+      {profile_fields} pf1, {profile_values} pv1,
+      {profile_fields} pf2, {profile_values} pv2
+    SET
+      pv0.value=d.nid,
+      pv1.value=d.field_department_name_value,
+      pv2.value=c.field_college_name_value
+    WHERE
+      d.nid=%d AND
+      d.field_college_id_nid=c.nid AND
+      pf0.name='profile_department_id' AND
+      pf1.name='profile_department_name' AND
+      pf2.name='profile_college_name' AND
+      pv0.uid=%d AND pv0.fid=pf0.fid AND
+      pv1.uid=pv0.uid AND pv1.fid=pf1.fid AND
+      pv2.uid=pv0.uid AND pv2.fid=pf2.fid",
+    $form_state['values']['department'], $form_state['values']['uid']);
+
+  db_query("UPDATE {veritas_staff} SET department_id=%d WHERE user_id=%d", $form_state['values']['department'], $form_state['values']['uid']);
+
+  drupal_set_message("Department Moved");
+}
+
+
 function search_staff_list() {
   ob_start();
 
   echo  drupal_get_form('staff_search_form');
 
-
-  ?>
-
-
-<?php
   staff_search_list();
+
   return ob_get_clean();
-  }
-function staff_lecturer_list() {
+}
+
+
+function staff_course_list() {
   ob_start();
-  $query = "select distinct * from `veritas_staff` s
-    inner join registrable_course rc on rc.lecturer_id = s.staff_id
-    inner join course c on rc.course_id = c.course_id
-    inner join programme p on p.programme_id = rc.programme_id
-    where s.parent_id=". arg(2);
-  $result = db_query($query);
+  $query = "SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
+    FROM
+      (SELECT
+        c.field_coursetitle_value AS course_title,
+        ci.field_lecturer_uid AS uid
+      FROM {content_type_course} c, {content_type_course_instance} ci
+      WHERE
+        c.field_department_nid_nid=%d AND c.nid=ci.field_course_id_nid
+      ) AS courses
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
+  $result = db_query($query, arg(2));
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Name</b></td><td><b>Course</b></td><td><b>Programme</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
 <?php
   while ($f=db_fetch_object($result)) {
 ?>
       <tr>
-      <td><a href="view/<?php echo $f->staff_id?>"><? echo $f->staff_first_name; ?></a></td>
+      <td><a href="view/<?php echo $f->uid?>"><? echo $f->staff_name; ?></a></td>
       <td><? echo $f->course_title; ?></td>
-      <td><? echo $f->programme_name; ?></td>
       </tr>
 <?php
   }
@@ -426,31 +595,42 @@ function staff_lecturer_list() {
 <?php
   return ob_get_clean();
 }
+
+
 function staff_department_list() {
   ob_start();
-  $r=db_query("select d.* ,  s.* from `department` d inner join veritas_staff_college sc on d.college_id = sc.assigned_college  Left join veritas_staff_department sd on sd.department_id = d.department_id left join veritas_staff s on sd.staff_id=s.staff_id where sc.staff_id=%d", $_SESSION['staff']['data']->staff_id);
-  $f[]='Select';
+  $r = db_query("SELECT courses.*, er.uid AS hod_uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS hod_name
+    FROM
+      (SELECT
+        d.nid AS department_id,
+        d.field_department_name_value AS department_name
+      FROM
+        {veritas_staff} vs,
+        {content_type_department} d0,
+        {content_type_department} d
+      WHERE
+        vs.staff_id=%d AND
+        vs.department_id=d0.nid AND
+        d0.field_college_id_nid=d.field_college_id_nid
+      ) AS courses
+    LEFT  JOIN {eduerp_roles} er ON courses.department_id=er.department_id AND er.role='Head of Department'
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid",
+    $_SESSION['staff']['data']->staff_id);
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>Hod</b></td><td><b>Action</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>HOD</b></td><td><b>Action</b></td></tr>
 <?php
-  while ($f=db_fetch_object($r)) {
+  while ($f = db_fetch_object($r)) {
 ?>
       <tr>
       <td><? echo $f->department_name; ?></td>
-      <td><a href="view/<?php echo $f->staff_id?>"><? echo $f->staff_first_name; ?></a></td>
-<?php
-    if ($f->staff_id == "") {
-?>
-        <td>No Hod Assigned</td>
-<?php
-    }
-    else {
-?>
-        <td><a href="viewlecturer/<? echo $f->staff_id; ?>">View Lecturers</a></td>
-<?php
-    }
-?>
+      <td><a href="view/<?php echo $f->hod_uid?>"><? echo $f->hod_name; ?></a></td>
+      <td><a href="viewlecturer/<? echo $f->department_id; ?>">View Courses/Lecturers</a></td>
       </tr>
 <?php
   }
@@ -459,6 +639,8 @@ function staff_department_list() {
 <?php
   return ob_get_clean();
 }
+
+
 function staff_search_list() {
   $search_keys = array('gender', 'department_id', 'staff_type_id', 'grade_level_id', 'state');
   $search_values = array(
@@ -480,12 +662,14 @@ function staff_search_list() {
   else {
     $condition  = '';
   }
-  $query = "Select  s.* , sr.name as role_name from `veritas_staff` s left join veritas_staff_role sr on sr.id = s.role_id ". $condition;
+  $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+    FROM {veritas_staff} vs LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
+    $condition GROUP BY vs.staff_id ORDER BY staff_last_name ASC";
   $result = db_query($query);
 ?>
     <table border='1' align='center'>
     <tr bgcolor='#ACCFCC'><td colspan='7'><b>Staff List</b></td></tr>
-    <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Role</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
+    <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Roles</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
 <?php
   while ($f = db_fetch_object($result)) {
 ?>
@@ -494,8 +678,8 @@ function staff_search_list() {
       <td><?php echo $f->staff_middle_name; ?></td>
       <td><?php echo $f->staff_first_name; ?></td>
       <td><? echo $f->role_name; ?></td>
-      <td><a href="view/<? echo $f->staff_id; ?>">View</a></td>
-      <td><a href="<?php echo url('staff/assignrole/'. $f->staff_id)?>">Assign Role</a></td>
+      <td><a href="view/<? echo $f->user_id; ?>">View</a></td>
+      <td><a href="<?php echo url('staff/assignrole/'. $f->user_id)?>">Assign Roles</a></td>
       </tr>
 <?php
   }
@@ -503,10 +687,13 @@ function staff_search_list() {
     </table>
 <?php
 }
+
+
 function staff_view_form(&$obj) {
-  $query ="select * from `veritas_staff` where staff_id = '". arg(2) ."'";
+  $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+    FROM {veritas_staff} vs LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
+    WHERE user_id='" . arg(2) . "' GROUP BY vs.staff_id";
   $result = db_query($query);
-  //echo  "select * from student where jambno = '".$form['#post']['jamb_no']."' and Admitted = 'Yes'" ; die ;
   $data = db_fetch_object($result);
   $form['staff_type'] = array(
     '#type' => 'select',
@@ -572,22 +759,19 @@ function staff_view_form(&$obj) {
     '#title' => 'Account Number',
     '#type' => 'textfield',
     '#size' => 20,
-    '#required' => TRUR,
+    '#required' => TRUE,
     '#default_value' => $data->account_id);
   $form['staff_role'] = array(
-    '#type' => 'select',
-    '#options' => staff_roles(),
-    '#title' => 'Role',
-    '#default_value' => $data->role_id,
-    '#required' => TRUE );
+    '#value' => '<b>Roles:</b><br />' . $data->role_name);
   $form['staff_id'] = array(
     '#type' => 'hidden',
     '#title' => 'Role',
     '#default_value' => $data->staff_id,
     '#required' => TRUE);
-  //$form['jambsubp']=array('#id'=>'edit-previous','#value'=>'Previous','#type'=>'submit','#default_value'=>$data->staff_type_id);
   return $form;
 }
+
+
 function staff_course_assign() {
   $delete_assignment_js =<<< EOD
 function delete_course(id) {
@@ -759,12 +943,12 @@ function course_assign_list() {
       FROM {program_course} pc, {content_type_program} p, {content_type_course} c
       WHERE pc.programme_id=p.nid AND pc.course_id=c.nid AND p.field_department_id_nid=%d AND pc.historical=0
       ) AS courses
-    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid
-    INNER JOIN {profile_fields} pf0 ON pv0.fid=pf0.fid AND pf0.name='profile_last_name'
-    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid
-    INNER JOIN {profile_fields} pf1 ON pv1.fid=pf1.fid AND pf1.name='profile_first_name'
-    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid
-    INNER JOIN {profile_fields} pf2 ON pv2.fid=pf2.fid AND pf2.name='profile_middle_name'";
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
   $r = db_query($query, $_SESSION['staff']['data']->department_id);
   $html = "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
@@ -951,16 +1135,6 @@ function staff_banks() {
   }
   return  $titles;
 }
-function staff_roles() {
-  static $titles;
-  if (!$titles) {
-    $titles = array();
-    $r=db_query("select * from `veritas_staff_role` order by name");
-    while ($f=db_fetch_object($r))
-      $titles[$f->id]=$f->name;
-  }
-  return  $titles;
-}
 function salary_grade() {
   static $titles;
   if (!$titles) {
@@ -975,7 +1149,7 @@ function staff_type() {
   static $titles;
   if (!$titles) {
     $titles = array();
-    $r=db_query("select * from `veritas_staff_type`  order by staff_type_name");
+    $r=db_query("select * from {veritas_staff_type}  order by staff_type_name");
     while ($f=db_fetch_object($r))
       $titles[$f->staff_type_id]=$f->staff_type_name;
   }
@@ -1268,7 +1442,7 @@ function staff_registration_form_submit(&$form, &$state) {
       );
     $user = user_save(NULL, $drupal_data);
 
-    $query = "insert veritas_staff set
+    $query = "insert {veritas_staff} set
 staff_first_name='%s' ,
 staff_last_name='%s',
 staff_middle_name='%s',
@@ -1423,43 +1597,8 @@ function staff_registration_form_validate(&$form, &$state) {
   }
   return;
 }
-/*Function that creates staff login form.*/
-function staff_login_form(&$obj) {
-  unset($_SESSION['student']['data']);
-  unset($_SESSION['veritas']);
-  unset($_SESSION['staff']);
-  $form['#title'] = t('Staff Login');
-  $form['user'] = array(
-    '#title' => 'Username',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#required' => TRUE);
-  $form['pass'] = array(
-    '#title' => 'Password',
-    '#type' => 'password',
-    '#required' => TRUE,
-    '#size' => 20);
-  $form['submit'] = array(
-    '#value' => 'Login',
-    '#type' => 'submit');
-  return $form;
-}
- /*Function that specifies the next action after staff submits his/her form.*/
- /*function staff_login_form_submit(&$obj)
- {
-      drupal_goto('staff/home');
- }*/
 
- /*Staff module multiple form call back.*/
-function staff_module_form(&$obj) {
-  if (!$obj['storage']['step'])
-    $obj['storage']['step']=1;
-    $st=$obj['storage']['step'];
-  if ($st == 1)
-    return staff_profile_form($obj);
-  else if ($st == 2)
-    return staff_begin_clearance_form($obj);
-}
+
 function staff_begin_clearance_form(&$obj) {
   if (arg(2)) {
     //echo "<br>2 ".arg(2);
@@ -1480,19 +1619,8 @@ function staff_begin_clearance_form(&$obj) {
   //else if ($st==4)
     //return staff_begin_clearance_form($obj);
 }
-function staff_begin_clearance_formold(&$obj) {
-  if (!$obj['storage']['step'])
-    $obj['storage']['step']=1;
-  $st=$obj['storage']['step'];
-  if ($st == 1)
-    return staff_begin_clearance_form1($obj);
-  else if ($st == 2)
-    return staff_begin_clearance_form2($obj);
-  //else if ($st==3)
-    //return staff_begin_clearance_form3($obj);
-  //else if ($st==4)
-    //return staff_begin_clearance_form($obj);
-}
+
+
 function view_student_form(&$obj) {
   if (!$obj['storage']['step'])
     $obj['storage']['step']=1;
@@ -1538,63 +1666,21 @@ function view_student_payments_form(&$obj) {
   else if ($st == 2)
     return view_student_payments_form2($obj);
 }
-/*Function that validates staff login.*/
-function staff_login_form_validate($form, &$states) {
-  $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a.staff_type_id=b.staff_type_id left outer join veritas_staff_role as c on a.role_id=c.id  where a.usrname = '". $form['#post']['user'] ."'");
-  if ($result && ($data = db_fetch_object($result))) {
-    /*Check if staff is an academic staff*/
-    /*if ($data->staff_type!=='AR' && $data->category!=2)
-    {
-      form_set_error('submitted["user"]'," Not an AR staff.");
-      //drupal_goto('staff/academic');
-    }*/
-    /*Check if password mismatches*/
-    if ($data->password!==$form['#post']['pass']) {
-      form_set_error('submitted["user"]', " Password did not match.");
-    }
-    /*Check if staff is non-academic staff then retrive the values from database table and set it in SESSION*/
-    else {
-      $qry = "select a . *, b.name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
-      //die;
-      $res=db_query($qry);
-      $result1 = db_fetch_object($res);
-      $_SESSION['staff']['role'] = $result1->name;
-      $_SESSION['staff']['user'] = $data->usrname;
-      $_SESSION['staff']['data'] = $data;
-	  drupal_goto('staff/profile');
-    }
-  }
-}
+
+
 function staff_user($op, &$edit, &$account, $category) {
-  //var_dump($_SESSION['staff']['data']->role_id);
   switch ($op) {
     case 'login':
-      $query ="select COUNT(*) AS count from `veritas_staff` where user_id = %d";
+      $query ="select COUNT(*) AS count from {veritas_staff} where user_id = %d";
       $result = db_query($query, $account->uid);
 	    $rows = db_fetch_array($result);
 
 	    if ($result && intval($rows['count']) > 0) {
-        $result = db_query("select * from `veritas_staff` as a left join veritas_staff_type as b on a . staff_type_id = b . staff_type_id left outer join veritas_staff_role as c on a . role_id=c . id  where a . user_id = '". $account->uid ."'");
+        $result = db_query("SELECT * FROM {veritas_staff} as vs LEFT JOIN {veritas_staff_type} AS vst ON vs.staff_type_id=vst.staff_type_id
+          WHERE vs.user_id='" . $account->uid . "'");
 
         if ($result && ($data = db_fetch_object($result))) {
-          /*Check if staff is an academic staff*/
-          /*if ($data->staff_type!=='AR' && $data->category!=2)
-          {
-            form_set_error('submitted["user"]'," Not an AR staff.");
-            //drupal_goto('staff/academic');
-          }*/
-
-          //$qry = "select a . *, b . name from `veritas_staff` as a join veritas_staff_role as b on a . role_id=b . id and a . staff_id='". $data->staff_id ."'";
-          //$res=db_query($qry);
-          //$result1=db_fetch_object($res);
-
-          // Since we've reimplemented non-drupal features like roles, this is not necessary
-          // I'm leaving it commented just in case.
-          //$_SESSION['staff']['role'] = $result1->name;
-          //$_SESSION['staff']['user'] = $data->usrname;
           $_SESSION['staff']['data'] = $data;
-
-		  // drupal_goto('staff/profile');
         }
       }
     break;
@@ -1608,7 +1694,7 @@ function staff_profile_form(&$obj) {
     drupal_goto('user');
   }
   if (isset($_SESSION['staff']['data']->staff_id)) {
-    $qry = "select * from `veritas_staff` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
+    $qry = "select * from {veritas_staff} where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
     $res = db_query($qry);
     if ($res && ($data = db_fetch_object($res))) {
       $_SESSION['staff']['user'] = $data->usrname;
@@ -1711,22 +1797,6 @@ function staff_profile_form(&$obj) {
       'day' => (int)substr($_SESSION['staff']['data']->dob, -2),
       'month' => (int)substr($_SESSION['staff']['data']->dob, 5, 2),
       'year' => substr($_SESSION['staff']['data']->dob, 0, 4)));
-  $form['user'] = array(
-    '#title' => 'User Name',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#default_value' => $_SESSION['staff']['data']->usrname,
-    '#required' => TRUE,
-    '#attributes' => array('readonly' => 'readonly'));
-  $form['lbl'] = array('#type' => 'fieldset', '#title' => 'Change Password');
-  $form['lbl']['newpass'] = array(
-    '#title' => 'New Password',
-    '#type' => 'password',
-    '#size' => 20);
-  $form['lbl']['confpass'] = array(
-    '#title' => 'Confirm Password',
-    '#type' => 'password',
-    '#size' => 20);
   $form['submit'] = array(
     '#id' => 'enter',
     '#value' => 'Submit',
@@ -1734,88 +1804,43 @@ function staff_profile_form(&$obj) {
   return $form;
 }
 /*Code adding ended on 24/02/2009 for staff profile form.*/
-/*Code adding started on 24/02/2009 for staff profile validation form.*/
+
+
 function staff_profile_form_validate($form, &$states) {
   ob_start();
-  /*Check whether newpassword and confirm password field's are filled or not.*/
-  $values = $form['lbl']['#post'];
-  $newpass = $values['newpass'];
-  $confpass = $values['confpass'];
-  //if ($form['#post']['newpass']!='' && $form['#post']['confpass']!='')
-  if ($newpass!='' && $newpass!='') {
-    /*Check if confirm password field do not matches with new password field.*/
-    //if ($form['#post']['newpass']===$form['#post']['confpass'])
-    if ($newpass===$confpass) {
-      $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-      $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."',  staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', personal_email='". $form['#post']['pemail'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."', blood_group='". $form['#post']['blood'] ."', dob='". $dob ."', password='". $newpass ."' where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-      $result = db_query($qry);
-      $show = db_affected_rows();
-      if ($result && db_affected_rows()>0) {
-        drupal_set_message('You have successfully updated your details.');
-        drupal_goto('staff/home');
-      }
-    }
-    else {
-      //form_set_error('Password did not match.');
-      drupal_set_message('Password did not match');
-      drupal_goto('staff/profile');
-    }
-  }
-  if ($form['#post']['newpass'] == '' && $form['#post']['confpass'] != '') {
-    drupal_set_message('Please specify new password');
-  }
-  else if ($form['#post']['newpass'] != '' && $form['#post']['confpass'] == '') {
-    drupal_set_message('Please specify confirmation password');
-  }
-  else {
-    $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-    $qry="update `veritas_staff` set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
+  $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
+  $qry = "update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
       where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-    /*$qry="update veritas_staff set title='".$form['#post']['title']."', first_name='".$form['#post']['fname']."', last_name='".$form['#post']['lname']."', middle_name='".$form['#post']['mname']."', usrname='".$form['#post']['user']."', blood_group='".$form['#post']['blood']."', dob='".$form['#post']['dob']."',  where staff_id = '".$_SESSION['staff']['data']->staff_id."'";*/
-    $result = db_query($qry);
-    if ($result && db_affected_rows()>0) {
-      drupal_set_message('You have successfully updated your details.');
-      drupal_goto('staff/home');
-    }
+  $result = db_query($qry);
+  if ($result && db_affected_rows() > 0) {
+    drupal_set_message('You have successfully updated your details.');
+    drupal_goto('user');
   }
 }
-/*Code adding ended on 24/02/2009 for staff profile validation form.*/
+
+
 /*Code adding started on 25/02/2009 for staff clearance form. */
 function _staff_clearance() {
   /*if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }*/
-  $qry = "select * from `veritas_staff_college` where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-  $result = db_query($qry);
   ob_start();
-  //if ($result && db_affected_rows()>0)
-  if (1) {
-    while ($res=db_fetch_object($result)) {
-      $qry1 = "select * from `college` where college_id='". $res->assigned_college ."'";
-      $result1 = db_query($qry1);
-      while ($res1=db_fetch_object($result1)) {
-        /*Query to fetch all the data's from student, department and college table.*/
-        // $qry2 = "SELECT * FROM student AS a LEFT OUTER JOIN department AS d ON a.first_choice=d.department_id LEFT OUTER JOIN college AS c ON d.college_id=c.college_id WHERE a.staff_id='".$_SESSION['staff']['data']->staff_id."'";
-        $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
-        $qry2 =  "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
-        $result2 = db_query($qry2);
-        // $show = db_affected_rows();
-      }
-    }
-  }
-  else {
-    drupal_set_message('You are not assigned to any college.');
-    drupal_goto('staff/home');
-  }
-  if (!db_fetch_object($result2)) {
-    drupal_set_message('No student has been cleared by you.');
-  }
+
+  // $qry2 = "SELECT * FROM student AS a LEFT OUTER JOIN department AS d ON a.first_choice=d.department_id LEFT OUTER JOIN college AS c ON d.college_id=c.college_id WHERE a.staff_id='".$_SESSION['staff']['data']->staff_id."'";
+  // $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
+  // $qry2 = "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
+  $qry2 = "SELECT a.*, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
+    FROM {admitted_student} a, {content_type_program} p, {content_type_department} d, {content_type_college} c
+    WHERE a.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid AND a.clearance_status=1 ORDER BY a.last_name ASC";
+  $result2 = db_query($qry2);
+  $found = FALSE;
 ?>
   <table border='1' align='center'>
   <tr bgcolor='#ACCFCC'><td colspan='7'><b>Cleared Student List</b></td></tr>
   <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Mat. No.</b></td><td><b>College</b></td><td><b>Department</b></td><td><b>Clearance Date</b></td></tr>
 <?php
-  while ($f=db_fetch_object($result2)) {
+  while ($f = db_fetch_object($result2)) {
+    $found = TRUE;
 ?>
     <tr>
     <td><?php echo $f->last_name; ?></td>
@@ -1831,12 +1856,13 @@ function _staff_clearance() {
 ?>
   </table>
 <?php
+  if (!$found) {
+    drupal_set_message('No students found.');
+  }
   return ob_get_clean();
 }
-    /*Code adding ended on 25/02/2009 for staff clearance form. */
 
 
-    /* Code adding started on 27/02/2009 for student clearance page. */
 function staff_begin_clearance_form1(&$obj) {
 /*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
@@ -2029,6 +2055,8 @@ function staff_begin_clearance_form_validate($form, &$state) {
 
     /* Code adding started on 27/02/2009 for student clearance main page. */
 function staff_begin_clearance_form2(&$obj) {
+  global $user;
+
   if (isset($_SESSION['staff']['jamb'])) {
     $qry = "select * from {admitted_student} where jambno='%s' AND (verify_status != 1 OR clearance_status != 1)";
     $res = db_query($qry, $_SESSION['staff']['jamb']);
@@ -2064,8 +2092,8 @@ function staff_begin_clearance_form2(&$obj) {
       }
 
       $qry4 = "SELECT
-          p.nid AS p.programme_id,
-          field_programme_name_value AS programme_name,
+          p.nid AS programme_id,
+          p.field_programme_name_value AS programme_name,
           d.nid AS department_id,
           d.field_department_name_value AS department_name,
           c.field_college_abbreviation_value AS college_abbreviation,
@@ -2712,7 +2740,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  if ($_SESSION['staff']['role'] !== 'Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
@@ -2737,7 +2765,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#prefix' => '<div id="reason">',
       '#suffix' => '</div>');
   }
-  if ($_SESSION['staff']['role']==='Registrar') {
+  if (veritas_has_role($user, 'Registrar')) {
     $form['approve'] = array(
       '#type' => 'fieldset',
       '#title' => 'Approve Student',
@@ -2825,11 +2853,13 @@ function staff_cleared_student() {
   return $d;
 }
 function staff_notcleared_student() {
+  global $user;
+
 /*
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }*/
-  if ($_SESSION['staff']['role'] !== 'Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $_SESSION['staff']['msg']='You are not authorized to access this page.';
     drupal_goto('staff/cleared');
   }
@@ -2880,10 +2910,12 @@ function staff_create_ar_form(&$obj) {
     return staff_create_ar_form1($obj);
 }
 function staff_create_ar_form1(&$obj) {
+  global $user;
+
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }
-  if ($_SESSION['staff']['role']!=='Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $_SESSION['staff']['msg']='You are not authorized to view this page.';
     drupal_goto('staff/cleared');
   }
@@ -3394,6 +3426,8 @@ function view_student_form_validate($form, &$state) {
   }
 }
 function view_student_form2(&$obj) {
+  global $user;
+
   if (isset($_SESSION['staff']['jamb'])) {
     $qry = "select * from {admitted_student} where jambno='%s'";
     $res = db_query($qry, $_SESSION['staff']['jamb']);
@@ -3429,8 +3463,8 @@ function view_student_form2(&$obj) {
       }
 
       $qry4 = "SELECT
-          p.nid AS p.programme_id,
-          field_programme_name_value AS programme_name,
+          p.nid AS programme_id,
+          p.field_programme_name_value AS programme_name,
           d.nid AS department_id,
           d.field_department_name_value AS department_name,
           c.field_college_abbreviation_value AS college_abbreviation,
@@ -4093,7 +4127,7 @@ function view_student_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  if ($_SESSION['staff']['role'] !== 'Registrar') {
+  if (!veritas_has_role($user, 'Registrar')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
@@ -4216,8 +4250,8 @@ function sa_view_student_form2(&$obj) {
     $_SESSION['staff']['stud_info']=$result->student_id;
 
     $qry4 = "SELECT
-        p.nid AS p.programme_id,
-        field_programme_name_value AS programme_name,
+        p.nid AS programme_id,
+        p.field_programme_name_value AS programme_name,
         d.nid AS department_id,
         d.field_department_name_value AS department_name,
         c.field_college_abbreviation_value AS college_abbreviation,
@@ -4648,7 +4682,7 @@ function view_staff_form1(&$obj) {
   return $form;
 }
 function _get_staff_list() {
-  $q = "SELECT user_id, staff_last_name, staff_first_name FROM veritas_staff";
+  $q = "SELECT user_id, staff_last_name, staff_first_name FROM {veritas_staff}";
   $rs = db_query($q);
   $staff_list = array(0 => "Select One");
 
@@ -6033,8 +6067,8 @@ function student_payment_data($student_id) {
     $return['personal_email'] = $result->email_address;
 
     $qry2 = "SELECT
-        p.nid AS p.programme_id,
-        field_programme_name_value AS programme_name,
+        p.nid AS programme_id,
+        p.field_programme_name_value AS programme_name,
         d.nid AS department_id,
         d.field_department_name_value AS department_name,
         c.field_college_abbreviation_value AS college_abbreviation,
