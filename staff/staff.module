@@ -408,12 +408,15 @@ function current_roles_list_form($form_state) {
     WHERE er.uid=%d ORDER BY er.role", $_SESSION['eduerpassignrole']->uid);
 
   $form['roles'] = array('#tree' => TRUE);
+  $found = FALSE;
   while ($row = db_fetch_object($result)) {
+    $found = TRUE;
     $form['roles'][$row->eduerp_role_id] = array(
       '#type' => 'checkbox',
       '#title' => $row->name
     );
   }
+  if (!$found) $form['noroles'] = array('#value' => 'No Roles Assigned');
 
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
@@ -483,9 +486,11 @@ function assign_drupal_role($uid, $role) {
 
 function current_roles_list_form_submit($form, &$form_state) {
   $i = 0;
-  foreach ($form_state['values']['roles'] as $eduerp_role_id => $checked) {
-    droprole($form_state['values']['uid'], $eduerp_role_id);
-    $i++;
+  if (!empty($form_state['values']['roles'])) {
+    foreach ($form_state['values']['roles'] as $eduerp_role_id => $checked) {
+      droprole($form_state['values']['uid'], $eduerp_role_id);
+      $i++;
+    }
   }
 
   if ($i == 1) drupal_set_message('Role Removed');
