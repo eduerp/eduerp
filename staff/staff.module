@@ -1997,53 +1997,51 @@ function staff_begin_clearance_form2(&$obj) {
     $qry = "select * from {admitted_student} where matriculation_no='%s' AND (verify_status != 1 OR clearance_status != 1)";
     $res = db_query($qry, $_SESSION['staff']['mat']);
   }
-  if ($res && ($result=db_fetch_object($res))) {
-    $_SESSION['staff']['stud_info']=$result->student_id;
-    $qry1 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
-    $res1 = db_query($qry1, $result->student_id);
-    if ($res1 && ($result1=db_fetch_object($res1))) {
-      $qry2 = "SELECT a.ext_exam_rec_id, a.exam_body, a.exam_date, a.exam_center_name, a.exam_number, b.exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a.exam_body=b.exam_body_id WHERE a.exam_student_id=%d";
-      $res2 = db_query($qry2, $result->student_id);
 
-      $data_key = array();
-      while ($result2 = db_fetch_object($res2)) {
-        $data[$result2->ext_exam_rec_id] = array(
-          'exam_body' => $result2->exam_body,
-          'exam_date' => $result2->exam_date,
-          'exam_center_name' => $result2->exam_center_name,
-          'exam_number' => $result2->exam_number,
-        );
-        $query3 = "SELECT * FROM admitted_ext_exam_detail WHERE ext_exam_record_id=%d";
-        $r=db_query($query3, $result2->ext_exam_rec_id);
-        while ($f=db_fetch_object($r)) {
-          $data[$result2->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
-          if (!in_array($result2->ext_exam_rec_id, $data_key)) {
-            $data_key[] = $result2->ext_exam_rec_id;
-          }
+  if ($res && ($result = db_fetch_object($res))) {
+    $_SESSION['staff']['stud_info'] = $result->student_id;
+
+    $qry2 = "SELECT a.ext_exam_rec_id, a.exam_body, a.exam_date, a.exam_center_name, a.exam_number, b.exam_body_name FROM {admitted_ext_exam_record} AS a LEFT OUTER JOIN {ext_exam_body} AS b ON a.exam_body=b.exam_body_id WHERE a.exam_student_id=%d";
+    $res2 = db_query($qry2, $result->student_id);
+
+    $data_key = array();
+    while ($result2 = db_fetch_object($res2)) {
+      $data[$result2->ext_exam_rec_id] = array(
+        'exam_body' => $result2->exam_body,
+        'exam_date' => $result2->exam_date,
+        'exam_center_name' => $result2->exam_center_name,
+        'exam_number' => $result2->exam_number,
+      );
+      $query3 = "SELECT * FROM {admitted_ext_exam_detail} WHERE ext_exam_record_id=%d";
+      $r=db_query($query3, $result2->ext_exam_rec_id);
+      while ($f=db_fetch_object($r)) {
+        $data[$result2->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
+        if (!in_array($result2->ext_exam_rec_id, $data_key)) {
+          $data_key[] = $result2->ext_exam_rec_id;
         }
       }
-
-      $qry4 = "SELECT
-          p.nid AS programme_id,
-          p.field_programme_name_value AS programme_name,
-          d.nid AS department_id,
-          d.field_department_name_value AS department_name,
-          c.field_college_abbreviation_value AS college_abbreviation,
-          c.field_college_name_value AS college_name
-        FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
-        WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
-      $res4 = db_query($qry4, $result->first_choice);
-      $result4 = db_fetch_object($res4);
-      $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
-      $res5 = db_query($qry5);
-      $result5 = db_fetch_object($res5);
-      $qry6 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
-      $res6 = db_query($qry6);
-      $result6 = db_fetch_object($res6);
-      $qry7 = "select * from `admitted_sponsor` where student_id='". $result->student_id ."'";
-      $res7 = db_query($qry7);
-      $result7 = db_fetch_object($res7);
     }
+
+    $qry4 = "SELECT
+        p.nid AS programme_id,
+        p.field_programme_name_value AS programme_name,
+        d.nid AS department_id,
+        d.field_department_name_value AS department_name,
+        c.field_college_abbreviation_value AS college_abbreviation,
+        c.field_college_name_value AS college_name
+      FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
+      WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
+    $res4 = db_query($qry4, $result->first_choice);
+    $result4 = db_fetch_object($res4);
+    $qry5 = "select a . session_id, b . sess_name from {current_session_semester} as a join session as b on a . session_id=b . session_id";
+    $res5 = db_query($qry5);
+    $result5 = db_fetch_object($res5);
+    $qry6 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
+    $res6 = db_query($qry6);
+    $result6 = db_fetch_object($res6);
+    $qry7 = "select * from {admitted_sponsor} where student_id='". $result->student_id ."'";
+    $res7 = db_query($qry7);
+    $result7 = db_fetch_object($res7);
   }
   $form['extra'] = array(
     '#type' => 'fieldset',
@@ -2924,64 +2922,60 @@ function view_student_form2(&$obj) {
     $qry = "select * from {admitted_student} where matriculation_no='%s'";
     $res = db_query($qry, $_SESSION['staff']['mat']);
   }
-  if ($res && ($result=db_fetch_object($res))) {
-    $_SESSION['staff']['stud_info']=$result->student_id;
-    $qry1 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
-    $res1 = db_query($qry1, $result->student_id);
-    if ($res1 && ($result1=db_fetch_object($res1))) {
-      $qry2 = "SELECT a.ext_exam_rec_id, a.exam_body, a.exam_date, a.exam_center_name, a.exam_number, b.exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a.exam_body=b.exam_body_id WHERE a.exam_student_id=%d";
-      $res2 = db_query($qry2, $result->student_id);
 
-      $data_key = array();
-      while ($result2 = db_fetch_object($res2)) {
-        $data[$result2->ext_exam_rec_id] = array(
-          'exam_body' => $result2->exam_body,
-          'exam_date' => $result2->exam_date,
-          'exam_center_name' => $result2->exam_center_name,
-          'exam_number' => $result2->exam_number,
-        );
-        $query3 = "SELECT * FROM admitted_ext_exam_detail WHERE ext_exam_record_id=%d";
-        $r=db_query($query3, $result2->ext_exam_rec_id);
-        while ($f=db_fetch_object($r)) {
-          $data[$result2->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
-          if (!in_array($result2->ext_exam_rec_id, $data_key)) {
-            $data_key[] = $result2->ext_exam_rec_id;
-          }
+  if ($res && ($result = db_fetch_object($res))) {
+    $_SESSION['staff']['stud_info'] = $result->student_id;
+
+    $qry2 = "SELECT a.ext_exam_rec_id, a.exam_body, a.exam_date, a.exam_center_name, a.exam_number, b.exam_body_name FROM {admitted_ext_exam_record} AS a LEFT OUTER JOIN {ext_exam_body} AS b ON a.exam_body=b.exam_body_id WHERE a.exam_student_id=%d";
+    $res2 = db_query($qry2, $result->student_id);
+
+    $data_key = array();
+    while ($result2 = db_fetch_object($res2)) {
+      $data[$result2->ext_exam_rec_id] = array(
+        'exam_body' => $result2->exam_body,
+        'exam_date' => $result2->exam_date,
+        'exam_center_name' => $result2->exam_center_name,
+        'exam_number' => $result2->exam_number,
+      );
+      $query3 = "SELECT * FROM {admitted_ext_exam_detail} WHERE ext_exam_record_id=%d";
+      $r=db_query($query3, $result2->ext_exam_rec_id);
+      while ($f=db_fetch_object($r)) {
+        $data[$result2->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
+        if (!in_array($result2->ext_exam_rec_id, $data_key)) {
+          $data_key[] = $result2->ext_exam_rec_id;
         }
       }
-
-      $qry4 = "SELECT
-          p.nid AS programme_id,
-          p.field_programme_name_value AS programme_name,
-          d.nid AS department_id,
-          d.field_department_name_value AS department_name,
-          c.field_college_abbreviation_value AS college_abbreviation,
-          c.field_college_name_value AS college_name
-        FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
-        WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
-      $res4 = db_query($qry4, $result->first_choice);
-      if ($res4) $res444= 'YES OK'; else $res444= 'NO BAD';
-      $result4 = db_fetch_object($res4);
-      if ($result4) $result4444= 'YES OK'; else $result4444= 'NO BAD';
-      $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
-      $res5 = db_query($qry5);
-      $result5 = db_fetch_object($res5);
-      $qry6 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
-      $res6 = db_query($qry6);
-      $result6 = db_fetch_object($res6);
-      $qry7 = "select * from `admitted_sponsor` where student_id='". $result->student_id ."'";
-      $res7 = db_query($qry7);
-      $result7 = db_fetch_object($res7);
-
-      // From sa display...
-      $qry8 = "SELECT ah.name as `name`, at.name as `type` FROM `accomodation_hostels` ah, `accomodation_types` at, `admitted_student_accomodation` asa WHERE asa.student_id=%d AND ah.id=asa.hostel_id AND at.id=ah.accomodation_type_id";
-      $res8 = db_query($qry8, $result->student_id);
-      $result8 = db_fetch_object($res8);
     }
+
+    $qry4 = "SELECT
+        p.nid AS programme_id,
+        p.field_programme_name_value AS programme_name,
+        d.nid AS department_id,
+        d.field_department_name_value AS department_name,
+        c.field_college_abbreviation_value AS college_abbreviation,
+        c.field_college_name_value AS college_name
+      FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
+      WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
+    $res4 = db_query($qry4, $result->first_choice);
+    $result4 = db_fetch_object($res4);
+    $qry5 = "select a . session_id, b . sess_name from {current_session_semester} as a join session as b on a . session_id=b . session_id";
+    $res5 = db_query($qry5);
+    $result5 = db_fetch_object($res5);
+    $qry6 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
+    $res6 = db_query($qry6);
+    $result6 = db_fetch_object($res6);
+    $qry7 = "select * from {admitted_sponsor} where student_id='". $result->student_id ."'";
+    $res7 = db_query($qry7);
+    $result7 = db_fetch_object($res7);
+
+    // From Student Affairs display (moved here with UI)...
+    $qry8 = "SELECT ah.name as `name`, at.name as `type` FROM {accomodation_hostels} ah, {accomodation_types} at, {admitted_student_accomodation} asa WHERE asa.student_id=%d AND ah.id=asa.hostel_id AND at.id=ah.accomodation_type_id";
+    $res8 = db_query($qry8, $result->student_id);
+    $result8 = db_fetch_object($res8);
   }
   $form['extra'] = array(
     '#type' => 'fieldset',
-    '#title' => 'Admission Information' . $result->first_choice . $res444 . '==' . $result4444 . '==',
+    '#title' => 'Admission Information',
     '#collapsed' => TRUE,
     '#collapsible' => TRUE);
   $form['extra']['college0'] = array(
