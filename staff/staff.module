@@ -4699,6 +4699,7 @@ function search_staff_form2(&$obj) {
     vsk.telephone AS kin_telephone,
     vsk.mobile AS kin_mobile,
     vsk.email AS kin_email,
+    vs.tax_number,
     b.name AS bank_name,
     vs.account_id
     FROM
@@ -5063,6 +5064,43 @@ function search_staff_form2(&$obj) {
     '#value' => $result2->kin_email,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr></table>');
+  $form['payment'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Payment Information',
+    '#collapsed' => TRUE,
+    '#collapsible' => TRUE);
+  $form['payment']['tax0'] = array(
+    '#type' => 'item',
+    '#title' => 'Tax Number',
+    '#prefix' => '<table><tr><td>',
+    '#suffix' => '</td>');
+  $form['payment']['tax1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->tax_number,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['bank0'] = array(
+    '#type' => 'item',
+    '#title' => 'Bank Name',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['bank1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->bank_name,
+    '#size' => 20,
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['acct0'] = array(
+    '#type' => 'item',
+    '#title' => 'Account Number',
+    '#prefix' => '<td>',
+    '#suffix' => '</td>');
+  $form['payment']['acct1'] = array(
+    '#type' => 'item',
+    '#value' => $result2->account_id,
+    '#prefix' => '<td>',
+    '#suffix' => '</td></tr></table>');
   $form['submit'] = array(
     '#id' => 'edit-next',
     '#value' => 'Continue',
@@ -5071,6 +5109,8 @@ function search_staff_form2(&$obj) {
   $form['#redirect']=FALSE;
   return $form;
 }
+
+
 function _staff_rel($id = 0) {
   static $titles;
   if (!$titles) {
