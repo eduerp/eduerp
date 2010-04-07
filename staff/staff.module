@@ -48,7 +48,7 @@ function staff_menu() {
   );
 
   $items['staff/view']=array(
-    'title'=>'Staff Profile',
+    'title'=>'Staff Summary',
     'page callback' => 'drupal_get_form',
     'page arguments'=>array('staff_view_form'),
     'access arguments' => array('staff list'),
@@ -681,14 +681,25 @@ function staff_search_list() {
 
 
 function staff_view_form(&$obj) {
-  $query = "SELECT vs.*, ve.staff_type_name, d.field_department_name_value, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+  $query = "SELECT vs.*, ve.staff_type_name, d.field_department_name_value, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
     FROM {veritas_staff} vs
     LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
-    LEFT JOIN {veritas_staff_type} ve ON vs.employment_type_id=ve.staff_type_id
+    LEFT JOIN {veritas_staff_type} ve ON vs.staff_type_id=ve.staff_type_id
     LEFT JOIN {content_type_department} d ON vs.department_id=d.nid
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON vs.user_id=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON vs.user_id=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON vs.user_id=pv2.uid AND pv2.fid=pf2.fid
     WHERE user_id='" . arg(2) . "' GROUP BY vs.staff_id";
   $result = db_query($query);
   $data = db_fetch_object($result);
+
+  $form['staff_name'] = array(
+    '#type' => 'item',
+    '#title' => 'Staff Name',
+    '#value' => $data->staff_name);
   $form['staff_type'] = array(
     '#type' => 'item',
     '#title' => 'Staff Type',
