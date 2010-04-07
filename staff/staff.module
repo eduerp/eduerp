@@ -2960,7 +2960,9 @@ function view_student_form2(&$obj) {
         FROM {content_type_program} p, {content_type_department} d, {content_type_college} c
         WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
       $res4 = db_query($qry4, $result->first_choice);
+      if ($res4) $res444= 'YES OK'; else $res444= 'NO BAD';
       $result4 = db_fetch_object($res4);
+      if ($result4) $result4444= 'YES OK'; else $result4444= 'NO BAD';
       $qry5 = "select a . session_id, b . sess_name from `current_session_semester` as a join session as b on a . session_id=b . session_id";
       $res5 = db_query($qry5);
       $result5 = db_fetch_object($res5);
@@ -2979,7 +2981,7 @@ function view_student_form2(&$obj) {
   }
   $form['extra'] = array(
     '#type' => 'fieldset',
-    '#title' => 'Admission Information' . $result->first_choice . $result4->college_abbreviation,
+    '#title' => 'Admission Information' . $result->first_choice . $result4->college_abbreviation . $res444 . $result4444,
     '#collapsed' => TRUE,
     '#collapsible' => TRUE);
   $form['extra']['college0'] = array(
