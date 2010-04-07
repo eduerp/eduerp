@@ -681,15 +681,18 @@ function staff_search_list() {
 
 
 function staff_view_form(&$obj) {
-  $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
-    FROM {veritas_staff} vs LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
+  $query = "SELECT vs.*, ve.staff_type_name, d.field_department_name_value, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+    FROM {veritas_staff} vs
+    LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
+    LEFT JOIN {veritas_employment_type} ve ON vs.employment_type_id=ve.id
+    LEFT JOIN {content_type_department} d ON vs.department_id=d.nid
     WHERE user_id='" . arg(2) . "' GROUP BY vs.staff_id";
   $result = db_query($query);
   $data = db_fetch_object($result);
   $form['staff_type'] = array(
     '#type' => 'item',
     '#title' => 'Staff Type',
-    '#value' => $data->staff_type_id);
+    '#value' => $data->staff_type_name);
   $form['staff_number'] = array(
   '#title' => 'Staff Number',
     '#type' => 'item',
@@ -698,7 +701,7 @@ function staff_view_form(&$obj) {
   $form['staff_department'] = array(
     '#type' => 'item',
     '#title' => 'Department',
-    '#value' => $data->department_id);
+    '#value' => $data->field_department_name_value);
   $form['staff_room'] = array(
     '#title' => 'Room',
     '#type' => 'item',
