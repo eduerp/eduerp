@@ -113,7 +113,6 @@ function staff_menu() {
     'access arguments' => array('staff clearance'),
     'type' => MENU_CALLBACK,
   );
-  /*Special Menu's For Registrar.*/
   $items['staff/not_cleared']=array(
     'page callback' => 'staff_notcleared_student',
     'access arguments' => array('staff clearance'),
@@ -125,7 +124,6 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-
   return $items;
 }
 
@@ -1894,7 +1892,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
     $results=$form['verify']['#post'];
     $results1=$form['clear']['#post'];
     $results2=$form['approve']['#post'];
-    if (!veritas_has_role($user, 'Registrar')) {
+    if (!veritas_has_role($user, 'Registry')) {
       if ($results['result'] == '' && $results1['cleared']=='') {
         drupal_set_message('Please specify verify and clearance status');
       }
@@ -1959,7 +1957,7 @@ function staff_begin_clearance_form_validate($form, &$state) {
         drupal_set_message(sprintf('Students can only be cleared when their data are verified. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance')));
       }
     }
-    if (veritas_has_role($user, 'Registrar')) {
+    if (veritas_has_role($user, 'Registry')) {
       if ($results2['accept'] == 'no') {
         $dt1 = date('Y-m-d');
         $qry_rej = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt1 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
@@ -2670,7 +2668,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  if (!veritas_has_role($user, 'Registrar')) {
+  if (!veritas_has_role($user, 'Registry')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
@@ -2695,7 +2693,7 @@ function staff_begin_clearance_form2(&$obj) {
       '#prefix' => '<div id="reason">',
       '#suffix' => '</div>');
   }
-  if (veritas_has_role($user, 'Registrar')) {
+  if (veritas_has_role($user, 'Registry')) {
     $form['approve'] = array(
       '#type' => 'fieldset',
       '#title' => 'Approve Student',
@@ -2789,7 +2787,7 @@ function staff_notcleared_student() {
   if (!isset($_SESSION['staff']['data']->staff_id)) {
     drupal_goto('user');
   }*/
-  if (!veritas_has_role($user, 'Registrar')) {
+  if (!veritas_has_role($user, 'Registry')) {
     $_SESSION['staff']['msg']='You are not authorized to access this page.';
     drupal_goto('staff/cleared');
   }
@@ -3604,7 +3602,7 @@ function view_student_form2(&$obj) {
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-  if (!veritas_has_role($user, 'Registrar')) {
+  if (!veritas_has_role($user, 'Registry')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
