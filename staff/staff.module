@@ -333,7 +333,8 @@ function eduerp_faculty_roles() {
   $options = array(
     'Faculty Examination Viewer' => 'Faculty Examination Viewer',
     'Faculty Examination Officer' => 'Faculty Examination Officer',
-    'Dean of Faculty' => 'Dean of Faculty'
+    'Dean of Faculty' => 'Dean of Faculty',
+    'Faculty Registry Officer' => 'Faculty Registry Officer'
   );
   return $options;
 }
@@ -347,9 +348,21 @@ function eduerp_university_roles() {
     'Bursary' => 'Bursary',
     'Registrar' => 'Registrar',
     'Vice-Chancellor' => 'Vice-Chancellor',
-    'Staff that can View Approved Grades' => 'Staff that can View Approved Grades'
+    'Staff that can View Approved Grades' => 'Staff that can View Approved Grades',
+    'Student Affairs Officer' => 'Student Affairs Officer',
+    'Role Assigner' => 'Role Assigner'
   );
   return $options;
+}
+
+
+function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
+  $result = db_query("SELECT 1 FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d", $uid, $department_id, $faculty_id);
+
+  while ($row = db_fetch_object($result)) {
+    if (in_array($row->role, $roles)) return TRUE;
+  }
+  return FALSE;
 }
 
 
