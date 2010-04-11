@@ -347,14 +347,15 @@ function eduerp_faculty_roles() {
 
 function eduerp_university_roles() {
   $options = array(
+    'Non-Academic Staff' => 'Non-Academic Staff',
+    'Academic Staff' => 'Academic Staff',
     'University Examination Viewer' => 'University Examination Viewer',
     'University Examination Officer' => 'University Examination Officer',
-    'Registry' => 'Registry',
     'Bursar' => 'Bursar',
     'Bursary' => 'Bursary',
+    'Registry' => 'Registry',
     'Registrar' => 'Registrar',
     'Vice-Chancellor' => 'Vice-Chancellor',
-    'Staff that can View Approved Grades' => 'Staff that can View Approved Grades',
     'Student Affairs Officer' => 'Student Affairs Officer',
     'Role Assigner' => 'Role Assigner'
   );
@@ -467,6 +468,9 @@ function addrole($uid, $department_id, $college_id, $role) {
   if ($role === 'Student Affairs Officer') {
     assign_drupal_role($uid, 'SA');
   }
+  if ($role === 'Academic Staff' || $role === 'Non-Academic Staff') {
+    assign_drupal_role($uid, 'Staff');
+  }
 }
 
 
@@ -504,14 +508,17 @@ function droprole($uid, $eduerp_role_id) {
     db_query("DELETE FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
   }
 
-  if ($row->role === 'Registry' || $row->role === 'Registrar' || $row->role === 'Vice-Chancellor') {
+  if (!staff_has_eduerp_role($uid, 0, 0, array('Registry', 'Registrar', 'Vice-Chancellor'))) {
     drop_drupal_role($uid, 'Registry');
   }
-  if ($row->role === 'Bursary' || $row->role === 'Bursar' || $row->role === 'Vice-Chancellor') {
+  if (!staff_has_eduerp_role($uid, 0, 0, array('Bursary', 'Bursar', 'Vice-Chancellor'))) {
     drop_drupal_role($uid, 'Bursary');
   }
-  if ($row->role === 'Student Affairs Officer') {
+  if (!staff_has_eduerp_role($uid, 0, 0, array('Student Affairs Officer'))) {
     drop_drupal_role($uid, 'SA');
+  }
+  if (!staff_has_eduerp_role($uid, 0, 0, array('Academic Staff', 'Non-Academic Staff'))) {
+    drop_drupal_role($uid, 'Staff');
   }
 }
 
