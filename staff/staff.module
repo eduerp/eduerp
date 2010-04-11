@@ -34,7 +34,6 @@ function staff_menu() {
   $items['staff/registrablecourse']=array(
     'title'=>'Course Program Assign',
     'page callback' => 'staff_course_assign',
-    //'page arguments'=>array('staff_cousrse_assign_form'),
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
@@ -3070,6 +3069,8 @@ function search_staff_form_validate($form, &$state) {
   }
 }
 function search_staff_form2(&$obj) {
+  global $user;
+
   // TODO: Fill out remaining sections
   if (isset($_SESSION['staff']['user_id'])) {
     $qry = "select * from {veritas_staff} where user_id=%d";
@@ -3481,43 +3482,47 @@ function search_staff_form2(&$obj) {
     '#value' => $result2->kin_email,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr></table>');
-  $form['payment'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Payment Information',
-    '#collapsed' => TRUE,
-    '#collapsible' => TRUE);
-  $form['payment']['tax0'] = array(
-    '#type' => 'item',
-    '#title' => 'Tax Number',
-    '#prefix' => '<table><tr><td>',
-    '#suffix' => '</td>');
-  $form['payment']['tax1'] = array(
-    '#type' => 'item',
-    '#value' => $result2->tax_number,
-    '#size' => 20,
-    '#prefix' => '<td>',
-    '#suffix' => '</td>');
-  $form['payment']['bank0'] = array(
-    '#type' => 'item',
-    '#title' => 'Bank Name',
-    '#prefix' => '<td>',
-    '#suffix' => '</td>');
-  $form['payment']['bank1'] = array(
-    '#type' => 'item',
-    '#value' => $result2->bank_name,
-    '#size' => 20,
-    '#prefix' => '<td>',
-    '#suffix' => '</td>');
-  $form['payment']['acct0'] = array(
-    '#type' => 'item',
-    '#title' => 'Account Number',
-    '#prefix' => '<td>',
-    '#suffix' => '</td>');
-  $form['payment']['acct1'] = array(
-    '#type' => 'item',
-    '#value' => $result2->account_id,
-    '#prefix' => '<td>',
-    '#suffix' => '</td></tr></table>');
+
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Bursar'))) {
+    $form['payment'] = array(
+      '#type' => 'fieldset',
+      '#title' => 'Payment Information',
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE);
+    $form['payment']['tax0'] = array(
+      '#type' => 'item',
+      '#title' => 'Tax Number',
+      '#prefix' => '<table><tr><td>',
+      '#suffix' => '</td>');
+    $form['payment']['tax1'] = array(
+      '#type' => 'item',
+      '#value' => $result2->tax_number,
+      '#size' => 20,
+      '#prefix' => '<td>',
+      '#suffix' => '</td>');
+    $form['payment']['bank0'] = array(
+      '#type' => 'item',
+      '#title' => 'Bank Name',
+      '#prefix' => '<td>',
+      '#suffix' => '</td>');
+    $form['payment']['bank1'] = array(
+      '#type' => 'item',
+      '#value' => $result2->bank_name,
+      '#size' => 20,
+      '#prefix' => '<td>',
+      '#suffix' => '</td>');
+    $form['payment']['acct0'] = array(
+      '#type' => 'item',
+      '#title' => 'Account Number',
+      '#prefix' => '<td>',
+      '#suffix' => '</td>');
+    $form['payment']['acct1'] = array(
+      '#type' => 'item',
+      '#value' => $result2->account_id,
+      '#prefix' => '<td>',
+      '#suffix' => '</td></tr></table>');
+  }
+
   $form['submit'] = array(
     '#id' => 'edit-next',
     '#value' => 'Continue',
