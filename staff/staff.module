@@ -457,8 +457,11 @@ function addrole($uid, $department_id, $college_id, $role) {
     drupal_set_message('Role Assigned');
   }
 
-  if ($role === 'Bursary' || $role === 'Registry') {
-    assign_drupal_role($uid, $role);
+  if ($role === 'Registry' || $role === 'Registrar' || $role === 'Vice-Chancellor') {
+    assign_drupal_role($uid, 'Registry');
+  }
+  if ($role === 'Bursary' || $role === 'Vice-Chancellor') {
+    assign_drupal_role($uid, 'Bursary');
   }
 }
 
@@ -497,8 +500,11 @@ function droprole($uid, $eduerp_role_id) {
     db_query("DELETE FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
   }
 
-  if ($row->role === 'Bursary' || $row->role === 'Registry') {
-    drop_drupal_role($uid, $row->role);
+  if ($row->role === 'Registry' || $row->role === 'Registrar' || $row->role === 'Vice-Chancellor') {
+    drop_drupal_role($uid, 'Registry');
+  }
+  if ($row->role === 'Bursary' || $row->role === 'Vice-Chancellor') {
+    drop_drupal_role($uid, 'Bursary');
   }
 }
 
