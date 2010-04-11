@@ -463,6 +463,9 @@ function addrole($uid, $department_id, $college_id, $role) {
   if ($role === 'Bursary' || $role === 'Vice-Chancellor') {
     assign_drupal_role($uid, 'Bursary');
   }
+  if ($role === 'Student Affairs Officer') {
+    assign_drupal_role($uid, 'SA');
+  }
 }
 
 
@@ -505,6 +508,9 @@ function droprole($uid, $eduerp_role_id) {
   }
   if ($row->role === 'Bursary' || $row->role === 'Vice-Chancellor') {
     drop_drupal_role($uid, 'Bursary');
+  }
+  if ($row->role === 'Student Affairs Officer') {
+    drop_drupal_role($uid, 'SA');
   }
 }
 
