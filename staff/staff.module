@@ -350,6 +350,7 @@ function eduerp_university_roles() {
     'University Examination Viewer' => 'University Examination Viewer',
     'University Examination Officer' => 'University Examination Officer',
     'Registry' => 'Registry',
+    'Bursar' => 'Bursar',
     'Bursary' => 'Bursary',
     'Registrar' => 'Registrar',
     'Vice-Chancellor' => 'Vice-Chancellor',
@@ -460,7 +461,7 @@ function addrole($uid, $department_id, $college_id, $role) {
   if ($role === 'Registry' || $role === 'Registrar' || $role === 'Vice-Chancellor') {
     assign_drupal_role($uid, 'Registry');
   }
-  if ($role === 'Bursary' || $role === 'Vice-Chancellor') {
+  if ($role === 'Bursary' || $role === 'Bursar' || $role === 'Vice-Chancellor') {
     assign_drupal_role($uid, 'Bursary');
   }
   if ($role === 'Student Affairs Officer') {
@@ -506,7 +507,7 @@ function droprole($uid, $eduerp_role_id) {
   if ($row->role === 'Registry' || $row->role === 'Registrar' || $row->role === 'Vice-Chancellor') {
     drop_drupal_role($uid, 'Registry');
   }
-  if ($row->role === 'Bursary' || $row->role === 'Vice-Chancellor') {
+  if ($row->role === 'Bursary' || $row->role === 'Bursar' || $row->role === 'Vice-Chancellor') {
     drop_drupal_role($uid, 'Bursary');
   }
   if ($row->role === 'Student Affairs Officer') {
