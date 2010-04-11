@@ -216,6 +216,12 @@ function staff_perm() {
 
 
 function staff_assign_role() {
+  global $user;
+  if (!staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {
+      drupal_set_message('You are not authorized to access this page.');
+      drupal_goto('user');
+  }
+
   $_SESSION['eduerpassignrole']->uid = arg(2);
 
   $staff_user = user_load($_SESSION['eduerpassignrole']->uid);
