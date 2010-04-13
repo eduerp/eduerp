@@ -3430,7 +3430,7 @@ function _student_prg($zero_ok = false) {
   static $titles = array();
   if (!$titles) {
     if ($zero_ok) $titles[0] = '';
-    $r = db_query("SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_program_type_value!=-1 ORDER BY field_programme_name_value");
+    $r = db_query("SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_program_type_value>=0 ORDER BY field_programme_name_value");
     while ($f = db_fetch_object($r))
       $titles[$f->nid] = $f->value;
   }
