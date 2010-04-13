@@ -534,6 +534,12 @@ function add_student_courses($data) {
     $studentname = "{$student_user->profile_last_name}, {$student_user->profile_first_name}{$middle}";
   }
 
+  // Find the program type
+  $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($query, $student_user->profile_first_choice);
+  $row = db_fetch_object($result);
+  $program_type = abs($row->field_program_type_value);
+
   // Find the existing student_program
   $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
   $result = db_query($query, $student_user->uid, $student_user->profile_first_choice);
@@ -578,15 +584,15 @@ function add_student_courses($data) {
   delete_student_grades($student_user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
 
   foreach ($data['corecourses'] as $key => $value) {
-    create_student_grades($student_user, $value, $data, $session, $semester, $student_gpa, $studentname);
+    create_student_grades($student_user, $value, $data, $session, $semester, $student_gpa, $studentname, $program_type);
   }
   foreach ($data['electivecourses'] as $key => $value) {
-    create_student_grades($student_user, $key, $data, $session, $semester, $student_gpa, $studentname);
+    create_student_grades($student_user, $key, $data, $session, $semester, $student_gpa, $studentname, $program_type);
   }
 }
 
 
-function create_student_grades($student_user, $course_instance, $data, $session, $semester, $student_gpa, $studentname) {
+function create_student_grades($student_user, $course_instance, $data, $session, $semester, $student_gpa, $studentname, $program_type) {
 
   // student_grades CCK
   $node = new stdClass();
@@ -622,6 +628,7 @@ function create_student_grades($student_user, $course_instance, $data, $session,
   $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
   $node->field_gradepointforstudent[0]['value']  = '-';
   $node->field_dropped[0]['value']               = 0;
+  $node->field_calc_type[0]['value']             = $program_type;
   node_save($node);
 }
 
