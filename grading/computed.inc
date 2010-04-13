@@ -42,14 +42,22 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
 
   $total = calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid);
 
-  if ($total >= 70) $gp = 5;
-  elseif ($total >= 60) $gp = 4;
-  elseif ($total >= 50) $gp = 3;
-  elseif ($total >= 45) $gp = 2;
-  elseif ($total >= 40) $gp = 1;
-  else $gp = 0;
+  if ($calc_type == 3) { // Medicine
+    if ($total >= 70) $gp = 3;
+    elseif ($total >= 60) $gp = 2;
+    elseif ($total >= 50) $gp = 1;
+    else $gp = 0;
+  }
+  else {
+    if ($total >= 70) $gp = 5;
+    elseif ($total >= 60) $gp = 4;
+    elseif ($total >= 50) $gp = 3;
+    elseif ($total >= 45) $gp = 2;
+    elseif ($total >= 40) $gp = 1;
+    else $gp = 0;
+  }
 
-  updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $field_name);
+  updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name);
 
   return (string)$gp;
 }
@@ -60,27 +68,42 @@ function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
 
   $total = (int)grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name);
-  if ($total === 5) return 'A';
-  if ($total === 4) return 'B';
-  if ($total === 3) return 'C';
-  if ($total === 2) return 'D';
-  if ($total === 1) return 'E';
+  if ($calc_type == 3) { // Medicine
+    if ($total === 3) return 'Distinction';
+    if ($total === 2) return 'Credit';
+    if ($total === 1) return 'Pass';
+  }
+  else {
+    if ($total === 5) return 'A';
+    if ($total === 4) return 'B';
+    if ($total === 3) return 'C';
+    if ($total === 2) return 'D';
+    if ($total === 1) return 'E';
+  }
   return 'F';
 }
 
 
-function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $field_name = NULL) {
+function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name = NULL) {
   global $user;
   global $base_url;
 
   if (!empty($uid) && !empty($course_instance_nid)) {
 
-    if     ($gp === 5) $grade = 'A';
-    elseif ($gp === 4) $grade = 'B';
-    elseif ($gp === 3) $grade = 'C';
-    elseif ($gp === 2) $grade = 'D';
-    elseif ($gp === 1) $grade = 'E';
-    else               $grade = 'F';
+    if ($calc_type == 3) { // Medicine
+      if     ($gp === 3) $grade = 'Distinction';
+      elseif ($gp === 2) $grade = 'Credit';
+      elseif ($gp === 1) $grade = 'Pass';
+      else               $grade = 'F';
+    }
+    else {
+      if     ($gp === 5) $grade = 'A';
+      elseif ($gp === 4) $grade = 'B';
+      elseif ($gp === 3) $grade = 'C';
+      elseif ($gp === 2) $grade = 'D';
+      elseif ($gp === 1) $grade = 'E';
+      else               $grade = 'F';
+    }
 
     $sql = "UPDATE {content_type_student_grades} sg SET sg.field_grade_value='{$grade}', sg.field_gradepoint_value='{$gp}'
       WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
@@ -94,7 +117,9 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $fi
         (
           SELECT
             exams.field_mat_no_uid AS uid,
+            MAX(exams.field_calc_type_value) AS calc_type,
             SUM(exams.gradepoint) AS gradepoints,
+            MIN(exams.gradepoint) AS allpassed,
             SUM(exams.field_creditload_value) AS totalload,
             exams.field_sess_name_value AS session,
             exams.field_semester_name_value AS semester
@@ -102,6 +127,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $fi
             SELECT
               IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
               sg.field_mat_no_uid,
+              sg.field_calc_type_value,
               c.field_creditload_value,
               ci0.field_sess_name_value,
               ci0.field_semester_name_value
@@ -126,7 +152,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $fi
       SET
         gpa.field_gptotal_value=gpatoset.gradepoints,
         gpa.field_credit_load_completed_value=gpatoset.totalload,
-        gpa.field_gpa_value=FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
+        gpa.field_gpa_value=IF(gpatoset.calc_type=3,
+          IF(gpatoset.allpassed=0, '-', 'Pass'),
+          FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
+        )
       WHERE
         gpa.field_student_ref_gpa_uid=gpatoset.uid AND
         gpa.field_sess_name_gpa_value=gpatoset.session AND
@@ -143,12 +172,15 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $fi
         (
           SELECT
             exams.field_mat_no_uid AS uid,
+            MAX(exams.field_calc_type_value) AS calc_type,
             SUM(exams.gradepoint) AS gradepoints,
+            MIN(exams.gradepoint) AS allpassed,
             SUM(exams.field_creditload_value) AS totalload
           FROM (
             SELECT
               IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
               sg.field_mat_no_uid,
+              sg.field_calc_type_value,
               CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
               c.field_code_value,
               c.field_creditload_value
@@ -205,7 +237,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $fi
       SET
         sp.field_gptotal_sp_value=cgpatoset.gradepoints,
         sp.field_credit_load_completed_sp_value=cgpatoset.totalload,
-        sp.field_cgpa_sp_value=FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+        sp.field_cgpa_sp_value=IF(cgpatoset.calc_type=3,
+          IF(cgpatoset.allpassed=0, '-', 'Pass'),
+          FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+        )
       WHERE
         sp.field_student_ref_sp_uid=cgpatoset.uid AND
         sp.field_program_ref_sp_nid=pv.value AND

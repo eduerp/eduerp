@@ -526,12 +526,15 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       (
         SELECT
           exams.field_mat_no_uid AS uid,
+          MAX(exams.field_calc_type_value) AS calc_type,
           SUM(exams.gradepoint) AS gradepoints,
+          MIN(exams.gradepoint) AS allpassed,
           SUM(exams.field_creditload_value) AS totalload
         FROM (
           SELECT
             IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
             sg.field_mat_no_uid,
+            sg.field_calc_type_value,
             c.field_creditload_value
           FROM
             {content_type_student_grades} sg,
@@ -562,7 +565,10 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     SET
       gpa.field_gptotal_value=gpatoset.gradepoints,
       gpa.field_credit_load_completed_value=gpatoset.totalload,
-      gpa.field_gpa_value=FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
+      gpa.field_gpa_value=IF(gpatoset.calc_type=3,
+        IF(gpatoset.allpassed=0, '-', 'Pass'),
+        FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
+      )
     WHERE
       gpa.field_student_ref_gpa_uid=gpatoset.uid AND
       gpa.field_sess_name_gpa_value='%s' $semesterwheregpa";
@@ -578,12 +584,15 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       (
         SELECT
           exams.field_mat_no_uid AS uid,
+          MAX(exams.field_calc_type_value) AS calc_type,
           SUM(exams.gradepoint) AS gradepoints,
+          MIN(exams.gradepoint) AS allpassed,
           SUM(exams.field_creditload_value) AS totalload
         FROM (
           SELECT
             IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
             sg.field_mat_no_uid,
+            sg.field_calc_type_value,
             CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
             c.field_code_value,
             c.field_creditload_value
@@ -662,7 +671,10 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     SET
       sp.field_gptotal_sp_value=cgpatoset.gradepoints,
       sp.field_credit_load_completed_sp_value=cgpatoset.totalload,
-      sp.field_cgpa_sp_value=FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+      sp.field_cgpa_sp_value=IF(cgpatoset.calc_type=3,
+        IF(cgpatoset.allpassed=0, '-', 'Pass'),
+        FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+      )
     WHERE
       sp.field_student_ref_sp_uid=cgpatoset.uid AND
       sp.field_program_ref_sp_nid=pv.value AND
