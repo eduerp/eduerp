@@ -4372,7 +4372,7 @@ function listofopenprogrammes() {
     $names[] = $row->name;
   }
   if (empty($names)) return 'None';
-  return implode(';', $names);
+  return implode('; ', $names);
 }
 
 
@@ -4437,7 +4437,7 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
     $prog_lev_sem = explode(',', $form_state['values']['programmestoopen']);
 
     if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
-    else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}"
+    else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}";
 
     db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=1 WHERE pls.programme_id=%d AND pls.level=%d $semesterselect", $prog_lev_sem[0], $prog_lev_sem[1]);
   }
@@ -4445,7 +4445,7 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
     $prog_lev_sem = explode(',', explode($form_state['values']['programmestoclose']);
 
     if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
-    else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}"
+    else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}";
 
     db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=0 WHERE pls.programme_id=%d AND pls.level=%d $semesterselect", $prog_lev_sem[0], $prog_lev_sem[1]);
   }
