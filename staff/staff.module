@@ -4209,12 +4209,10 @@ function download_student_payments() {
 function semester_admin() {
   ob_start();
 
-  echo "<b>Semester Administration</b><br />";
-
-  echo '<br /><br /><hr /><br />';
+  echo '<br /><hr /><br />';
 
   echo drupal_get_form('set_session_form');
-  echo '<br /><br /><hr /><br />';
+  echo '<br /><hr /><br />';
 
   echo 'Display list of any missing courses for semester 1 (Highlight any courses that are in programmes for this semester but have not got a course_instance (lecturer allocation) for this semester.) (Note, the programme creation UI will do this for a single programme... share the code)';
   echo '<br /><br /><hr /><br />';
@@ -4226,10 +4224,10 @@ function semester_admin() {
   echo '<br /><br /><hr /><br />';
 
   echo drupal_get_form('open_close_student_registration_form');
-  echo '<br /><br /><hr /><br />';
+  echo '<br /><hr /><br />';
 
   echo drupal_get_form('open_close_student_course_registration_form');
-  echo '<br /><br /><hr /><br />';
+  echo '<br /><hr /><br />';
 
   echo '<a href="' . url('grading/statsuni') . '">Grading Statistics for University</a>';
   echo '<br /><br /><hr /><br />';
@@ -4247,7 +4245,7 @@ function semester_admin() {
 function set_session_form($form_state) {
   global $user;
 
-  $form['top'] = array('#value' => 'The current Session is: ' . variable_get('veritas_current_session', '') . ', and current Semester is: ' . variable_get('veritas_current_semester', ''));
+  $form['top'] = array('#value' => 'The current Session is: ' . variable_get('veritas_current_session', '') . ' and current Semester is: ' . variable_get('veritas_current_semester', ''));
 
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
     $current_year = intval(date('Y'));
