@@ -10,6 +10,13 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['staff/semester'] = array(
+    'title' => 'Semester Administration',
+    'page callback' => 'semester_admin',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_NORMAL_ITEM
+  );
+
   $items['staff/list']=array(
     'title'=>'Staff List',
     'page callback' => 'search_staff_list',
@@ -4196,4 +4203,250 @@ function download_student_payments() {
       $spd['total_session_payable'] + $spd['total_outstanding_payable']);
     echo $output . "\n";
   endwhile;
+}
+
+
+function semester_admin() {
+  ob_start();
+
+  echo "<b>Semester Administration</b><br />";
+
+  echo '<br /><br /><hr /><br />';
+
+  echo drupal_get_form('set_session_form');
+  echo '<br /><br /><hr /><br />';
+
+  echo 'Display list of any missing courses for semester 1 (Highlight any courses that are in programmes for this semester but have not got a course_instance (lecturer allocation) for this semester.) (Note, the programme creation UI will do this for a single programme... share the code)';
+  echo '<br /><br /><hr /><br />';
+
+  echo 'Display list of any missing courses for semester 2 (same as for semester 1 in previous point)';
+  echo '<br /><br /><hr /><br />';
+
+  echo 'List the fees for each programme by level & semester';
+  echo '<br /><br /><hr /><br />';
+
+  echo drupal_get_form('open_close_student_registration_form');
+  echo '<br /><br /><hr /><br />';
+
+  echo drupal_get_form('open_close_student_course_registration_form');
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('grading/statsuni') . '">Grading Statistics for University</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo 'Link to Student Progress display';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/list') . '">List Staff and Assign Roles</a>';
+  echo '<br /><br /><hr /><br />';
+
+  return ob_get_clean();
+}
+
+
+function set_session_form($form_state) {
+  global $user;
+
+  $form['top'] = array('#value' => 'The current Session is: ' . variable_get('veritas_current_session', '') . ', and current Semester is: ' . variable_get('veritas_current_semester', ''));
+
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar')) {
+    $current_year = intval(date('Y'));
+    $sessions = array();
+    $sessions[sprintf("%s/%s", $current_year - 1, $current_year)] = sprintf("%s/%s", $current_year - 1, $current_year);
+    $sessions[sprintf("%s/%s", $current_year, $current_year + 1)] = sprintf("%s/%s", $current_year, $current_year + 1);
+
+    $veritas_current_session = variable_get('veritas_current_session', sprintf("%s/%s", $current_year - 1, $current_year));
+
+    $form['veritas_current_session'] = array(
+      '#type' => 'select',
+      '#options' => $sessions,
+      '#title' => 'Current Session',
+      '#default_value' => variable_get('veritas_current_session', sprintf("%s/%s", $current_year - 1, $current_year)),
+      '#description' => 'Please specify the current session'
+    );
+
+    $form['veritas_current_semester'] = array(
+      '#type' => 'select',
+      '#options' => array(1 => '1', 2 => '2'),
+      '#title' => 'Current Semester',
+      '#default_value' => variable_get('veritas_current_semester', 1),
+      '#description' => 'Please specify the current semester'
+    );
+
+    $form['submit'] = array('#type' => 'submit', '#value' => 'Set the Session and Semester');
+  }
+  return $form;
+}
+
+
+function set_session_form_submit($form, &$form_state) {
+
+  variable_set('veritas_current_session', $form_state['values']['veritas_current_session']);
+  variable_set('veritas_current_semester', $form_state['values']['veritas_current_semester']);
+
+  // Check if the current session is in the session table
+  $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['veritas_current_session']);
+  if (!db_result($session_rs)) {
+    db_query("INSERT INTO {session} (sess_name) VALUES ('%s')", $form_state['values']['veritas_current_session']);
+  }
+}
+
+
+function open_close_student_registration_form($form_state) {
+  global $user;
+
+  // We could add a from element with more options that just on/off
+  if (variable_get('veritas_allow_student_registrations', '1')) {
+    $open = 'Open';
+    $closeverb = 'Close';
+  }
+  else {
+    $open = 'Closed';
+    $closeverb = 'Open';
+  }
+
+  $form['top'] = array('#value' => "Student Registrations and Initial Payment are $open for the Session(" . variable_get('veritas_current_session', '') . ')');
+
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar')) {
+    $form['submit'] = array('#type' => 'submit', '#value' => "$closeverb Student Registrations for the Session");
+  }
+  return $form;
+}
+
+
+function open_close_student_registration_form_submit($form, &$form_state) {
+
+  if (variable_get('veritas_allow_student_registrations', '1')) {
+    variable_set('veritas_allow_student_registrations', '0');
+  }
+  else {
+    variable_set('veritas_allow_student_registrations', '1');
+  }
+}
+
+
+function open_close_student_course_registration_form($form_state) {
+  global $user;
+
+  $form['top'] = array('#value' => 'Here are the Programmes (& Level) currenly Open for Course Registrations this Semester: ' . listofopenprogrammes());
+
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar')) {
+
+    $programmestoopen = selectlistofprogrammestoopen();
+    if (!empty($programmestoopen)) {
+        $form['programmestoopen'] = array(
+          '#type' => 'select',
+          '#options' => $programmestoopen,
+          '#title' => 'Programme(level) to Open OR Open ALL',
+          '#default_value' => 999999,
+          '#description' => 'Please specify one Programme Level to Open for Course Registrations or Open ALL'
+        );
+    }
+
+    $programmestoclose = selectlistofprogrammestoclose();
+    if (!empty($programmestoclose)) {
+        $form['programmestoclose'] = array(
+          '#type' => 'select',
+          '#options' => $programmestoclose,
+          '#title' => 'Programme(level) to Close OR Close ALL',
+          '#default_value' => 999999,
+          '#description' => 'Please specify one Programme Level to Close for Course Registrations or Close ALL'
+        );
+    }
+
+    $form['submit'] = array('#type' => 'submit', '#value' => 'Open or Close Course Registrations for this Semester');
+  }
+  return $form;
+}
+
+
+function listofopenprogrammes() {
+  $semester = variable_get('veritas_current_semester', 1);
+
+  $names = array();
+  $sql = "SELECT CONCAT(p.field_programme_name_value, '(', pls.level, ')') AS name
+    FROM {program_level_semester} pls, {content_type_program} p
+    WHERE pls.open_for_registrations=1 AND pls.semester='%s' AND pls.programme_id=p.nid ORDER BY name ASC";
+  $rows = db_query($sql, $semester);
+  while ($row = db_fetch_object($rows)) {
+    $names[] = $row->name;
+  }
+  if (empty($names)) return 'None';
+  return implode(';', $names);
+}
+
+
+function selectlistofprogrammestoopen() {
+  $semester = variable_get('veritas_current_semester', 1);
+
+  $names = array();
+  $names[999999] = 'ALL';
+  $noprogrammes = TRUE;
+  $sql = "SELECT
+      CONCAT(pls.programme_id, ',', pls.level, ',', pls.semester) AS id,
+      CONCAT(p.field_programme_name_value, '(', pls.level, ')') AS name
+    FROM {program_level_semester} pls, {content_type_program} p
+    WHERE pls.open_for_registrations=0 AND pls.semester='%s' AND pls.programme_id=p.nid ORDER BY name ASC";
+  $rows = db_query($sql, $semester);
+  while ($row = db_fetch_object($rows)) {
+    $noprogrammes = FALSE;
+    $names[$row->id] = $row->name;
+  }
+  if ($noprogrammes) return FALSE;
+  return $names;
+}
+
+
+function selectlistofprogrammestoclose() {
+  $semester = variable_get('veritas_current_semester', 1);
+
+  $names = array();
+  $names[999999] = 'ALL';
+  $noprogrammes = TRUE;
+  $sql = "SELECT
+      CONCAT(pls.programme_id, ',', pls.level, ',', pls.semester) AS id,
+      CONCAT(p.field_programme_name_value, '(', pls.level, ')') AS name
+    FROM {program_level_semester} pls, {content_type_program} p
+    WHERE pls.open_for_registrations=1 AND pls.semester='%s' AND pls.programme_id=p.nid ORDER BY name ASC";
+  $rows = db_query($sql, $semester);
+  while ($row = db_fetch_object($rows)) {
+    $noprogrammes = FALSE;
+    $names[$row->id] = $row->name;
+  }
+  if ($noprogrammes) return FALSE;
+  return $names;
+}
+
+
+function open_close_student_course_registration_form_submit($form, &$form_state) {
+  $semester = variable_get('veritas_current_semester', 1);
+
+  if     (!empty($form_state['values']['programmestoopen']) && $form_state['values']['programmestoopen'] == 999999) {
+    if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
+    else $semesterselect = "WHERE pls.semester=$semester"
+
+    db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=1 $semesterselect");
+  }
+  elseif (!empty($form_state['values']['programmestoclose']) && $form_state['values']['programmestoclose'] == 999999) {
+    if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
+    else $semesterselect = "WHERE pls.semester=$semester"
+
+    db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=0 $semesterselect");
+  }
+  elseif (!empty($form_state['values']['programmestoopen'])) {
+    $prog_lev_sem = explode(',', $form_state['values']['programmestoopen']);
+
+    if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
+    else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}"
+
+    db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=1 WHERE pls.programme_id=%d AND pls.level=%d $semesterselect", $prog_lev_sem[0], $prog_lev_sem[1]);
+  }
+  elseif (!empty($form_state['values']['programmestoclose'])) {
+    $prog_lev_sem = explode(',', explode($form_state['values']['programmestoclose']);
+
+    if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
+    else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}"
+
+    db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=0 WHERE pls.programme_id=%d AND pls.level=%d $semesterselect", $prog_lev_sem[0], $prog_lev_sem[1]);
+  }
 }
