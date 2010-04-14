@@ -31,7 +31,7 @@ function veritas_menu() {
     ),
     'type' => MENU_CALLBACK,
   );
-  
+
   $items['ajax'] = array (
     'page callback' => 'veritas_ajax',
     'access arguments' => array (
@@ -51,7 +51,7 @@ function veritas_menu() {
     ),
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
   return $items;
 }
 
@@ -369,62 +369,12 @@ function veritas_admin_settings() {
     '#default_value' => variable_get('veritas_tender_adminuser', '')
   );
 
-  // Generate a list of sessions starting from the previous year or the currently configured session
-  // whichever is lower and then a session ahead of the current year.
-  $sessions = array();
-  $current_year = intval(date('Y'));
-  $current_session_year  = intval(preg_replace('/\/\d+$/', "", variable_get('veritas_current_session', sprintf('%s/%s', $current_year-1, $current_year))));
-  $start_year = min($current_year, $current_session_year);
-  for ($c = $start_year - 5; $c <= $current_year+5; $c++):
-    $sessions[sprintf("%s/%s", $c, $c+1)] = sprintf("%s/%s", $c, $c+1);
-  endfor;
-
-  $veritas_current_session = variable_get('veritas_current_session', sprintf('%s/%s', $current_year-1, $current_year));
-  // Check if the current session is in the session table
-  $session_sql = "SELECT * FROM {session} WHERE `sess_name` = '%s'";
-  $session_rs = db_query($session_sql, $veritas_current_session);
-  if (!db_result($session_rs)) {
-    $session_insert_rs = "INSERT INTO {session} (`sess_name`) VALUES ('%s')";
-    db_query($session_insert_rs, $veritas_current_session);
-  }
-
-  // Check if the current session is set
-  $current_session_sql = "SELECT css.*, s.sess_name FROM {current_session_semester} css LEFT JOIN {session} s ON s.session_id=css.session_id LIMIT 1";
-  $current_session_rs = db_query($current_session_sql);
-  if ($current_session_rs) {
-    $result = db_fetch_object($current_session_rs);
-    if ($result->sess_name != $veritas_current_session) {
-      $current_sql = "SELECT * FROM {session} WHERE `sess_name`='%s'";
-      $current_rs = db_query($current_sql, $veritas_current_session);
-
-      if ($current_rs):
-        $current_obj = db_fetch_object($current_rs);
-        $update_sql = "UPDATE {current_session_semester} SET `session_id`=%d";
-        $rs = db_query($update_sql, $current_obj->session_id);
-      endif;
-    }
-  }
-
-  $form['veritas_current_session'] = array (
-    '#type' => 'select',
-    '#title' => t('Current Session'),
-    '#default_value' => variable_get('veritas_current_session', sprintf('%s/%s', $current_year-1, $current_year)),
-    '#description' => t('Please specify the current session'),
-    '#options' => $sessions,
-    '#tree' => TRUE,
-  );
-
-  // Update semester settings
-  $semester_update_sql = "UPDATE {current_session_semester} SET semester_id=%d";
-  $rs = db_query($semester_update_sql, variable_get('veritas_current_semester', 1));
-
-  $form['veritas_current_semester'] = array(
-    '#type' => 'select',
-    '#title' => t('Current Semester'),
-    '#default_value' => variable_get('veritas_current_semester', 1),
-    '#description' => t('Please select the current semester'),
-    '#options' => array( 1 => t('1'), 2 => t('2') ),
-    '#tree' => TRUE,
+  $form['RegisterAllCoursesatStartofSession'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Register All Courses at Start of Session',
+    '#default_value' => variable_get('RegisterAllCoursesatStartofSession', 0),
+    '#description' => 'This switch determines whether students register courses for both semesters at the start of the first semester',
+    '#tree' => TRUE
   );
 
   $form['veritas_allow_course_registrations'] = array(
