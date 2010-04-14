@@ -371,7 +371,7 @@ function eduerp_university_roles() {
 
 
 function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
-  $result = db_query("SELECT 1 FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d", $uid, $department_id, $faculty_id);
+  $result = db_query("SELECT er.role FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d", $uid, $department_id, $faculty_id);
 
   while ($row = db_fetch_object($result)) {
     if (in_array($row->role, $roles)) return TRUE;
