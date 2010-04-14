@@ -2269,9 +2269,6 @@ function view_student_form2($clearanceform) {
       WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid";
     $res4 = db_query($qry4, $result->first_choice);
     $result4 = db_fetch_object($res4);
-    $qry5 = "select a . session_id, b . sess_name from {current_session_semester} as a join session as b on a . session_id=b . session_id";
-    $res5 = db_query($qry5);
-    $result5 = db_fetch_object($res5);
     $qry6 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
     $res6 = db_query($qry6);
     $result6 = db_fetch_object($res6);
@@ -2355,7 +2352,7 @@ function view_student_form2($clearanceform) {
     '#suffix' => '</td>');
   $form['extra']['sess1'] = array(
     '#type' => 'item',
-    '#value' => $result5->sess_name,
+    '#value' => variable_get('veritas_current_session', ''),
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>',
     '#size' => 15);

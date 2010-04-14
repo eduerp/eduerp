@@ -572,11 +572,8 @@ function grading_node_grants($account, $op) {
 
 
 function grading_stats_department_form(&$obj) {
-  $sql = "SELECT css.semester_id, s.sess_name FROM {current_session_semester} css, {session} s WHERE css.id=1 AND css.session_id=s.session_id";
-  $css_rows = db_query($sql);
-  $css_row = db_fetch_object($css_rows);
-  $sessiondefault = $css_row->sess_name;
-  $semesterdefault = $css_row->semester_id;
+  $sessiondefault = variable_get('veritas_current_session', '');
+  $semesterdefault = variable_get('veritas_current_semester', 1);
 
   if (!empty($_GET['department'])) $departmentdefault = stripslashes($_GET['department']);
   else $departmentdefault = 'Arts and Theology';
@@ -1554,11 +1551,8 @@ function approve_grades_vc_form_submit($form, &$form_state) {
 
 
 function grading_stats_uni_form(&$obj) {
-  $sql = "SELECT css.semester_id, s.sess_name FROM {current_session_semester} css, {session} s WHERE css.id=1 AND css.session_id=s.session_id";
-  $css_rows = db_query($sql);
-  $css_row = db_fetch_object($css_rows);
-  $sessiondefault = $css_row->sess_name;
-  $semesterdefault = $css_row->semester_id;
+  $sessiondefault = variable_get('veritas_current_session', '');
+  $semesterdefault = variable_get('veritas_current_semester', 1);
 
   $form['session'] = array(
     '#type' => 'select',
