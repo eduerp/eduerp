@@ -4249,7 +4249,7 @@ function set_session_form($form_state) {
 
   $form['top'] = array('#value' => 'The current Session is: ' . variable_get('veritas_current_session', '') . ', and current Semester is: ' . variable_get('veritas_current_semester', ''));
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar')) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
     $current_year = intval(date('Y'));
     $sessions = array();
     $sessions[sprintf("%s/%s", $current_year - 1, $current_year)] = sprintf("%s/%s", $current_year - 1, $current_year);
@@ -4307,7 +4307,7 @@ function open_close_student_registration_form($form_state) {
 
   $form['top'] = array('#value' => "Student Registrations and Initial Payment are $open for the Session(" . variable_get('veritas_current_session', '') . ')');
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar')) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
     $form['submit'] = array('#type' => 'submit', '#value' => "$closeverb Student Registrations for the Session");
   }
   return $form;
@@ -4330,7 +4330,7 @@ function open_close_student_course_registration_form($form_state) {
 
   $form['top'] = array('#value' => 'Here are the Programmes (& Level) currenly Open for Course Registrations this Semester: ' . listofopenprogrammes());
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar')) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
 
     $programmestoopen = selectlistofprogrammestoopen();
     if (!empty($programmestoopen)) {
@@ -4423,13 +4423,13 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
 
   if     (!empty($form_state['values']['programmestoopen']) && $form_state['values']['programmestoopen'] == 999999) {
     if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
-    else $semesterselect = "WHERE pls.semester=$semester"
+    else $semesterselect = "WHERE pls.semester=$semester";
 
     db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=1 $semesterselect");
   }
   elseif (!empty($form_state['values']['programmestoclose']) && $form_state['values']['programmestoclose'] == 999999) {
     if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
-    else $semesterselect = "WHERE pls.semester=$semester"
+    else $semesterselect = "WHERE pls.semester=$semester";
 
     db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=0 $semesterselect");
   }
@@ -4442,7 +4442,7 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
     db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=1 WHERE pls.programme_id=%d AND pls.level=%d $semesterselect", $prog_lev_sem[0], $prog_lev_sem[1]);
   }
   elseif (!empty($form_state['values']['programmestoclose'])) {
-    $prog_lev_sem = explode(',', explode($form_state['values']['programmestoclose']);
+    $prog_lev_sem = explode(',', $form_state['values']['programmestoclose']);
 
     if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
     else $semesterselect = "AND pls.semester={$prog_lev_sem[2]}";
