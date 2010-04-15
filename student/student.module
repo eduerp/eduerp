@@ -96,7 +96,7 @@ function student_perm() {
 
 function student_course_form(&$obj) {
   global $user;
-  profile_load_profile($user)
+  profile_load_profile($user);
 
   $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
     $user->profile_first_choice, $user->profile_level_name, variable_get('veritas_current_semester', 1));
