@@ -539,6 +539,7 @@ function add_student_courses($data) {
   $result = db_query($query, $student_user->profile_first_choice);
   $row = db_fetch_object($result);
   $program_type = abs($row->field_program_type_value);
+  if ($program_type == 3 && $student_user->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
 
   // Find the existing student_program
   $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
