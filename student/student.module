@@ -94,49 +94,22 @@ function student_perm() {
   return array('student new', 'student register', 'student admit', 'student course',  'student list students');
 }
 
-function student_course_form(&$obj) {
-  global $user;
-  profile_load_profile($user);
+class courseselectionsclass {
+  public $form = array();
 
-  $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
-    $user->profile_first_choice, $user->profile_level_name, variable_get('veritas_current_semester', 1));
-  if (!db_fetch_object($rows)) {
-    drupal_set_message("Sorry. You are not allowed to register courses at this time.");
-    return FALSE;
-  }
+  public $scriptforpage = '$(function() {'; // end }) will come in $this->finishform()
 
-  if (!$obj['storage']['step'])
-    $obj['storage']['step'] = 1;
-  $st = $obj['storage']['step'];
-  if ($st == 1) {
-    return student_course_form1($obj);
-  }
-  elseif ($st == 2) {
-    return student_course_form2($obj);
-  }
-}
+  public function addformelementsforsemester($semester) {
+    global $user;
 
-function student_courses() {
-  // List the student's courses
-  drupal_goto('listcourses');
-}
+    $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green")';
 
-function student_course_form1(&$obj) {
-	// Check if the student has paid his/her fees for this session
-	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
-	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
-	if ($rs && ($row = db_fetch_object($rs))) {
-
-    $student_user = user_load($_SESSION['student']['id']);
-
-    $semester = variable_get('veritas_current_semester', '');
 
     $query = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
-    $result = db_query($query, $student_user->profile_first_choice, $student_user->profile_level_name, $semester);
+    $result = db_query($query, $user->profile_first_choice, $user->profile_level_name, $semester);
     $min_max_credits = db_fetch_object($result);
 
     $query = "SELECT
-        pci.semester AS semester,
         ci.nid AS course_instance,
         ci.field_timetable_value AS timetable,
         c.field_creditload_value AS credit_load,
@@ -160,329 +133,144 @@ function student_course_form1(&$obj) {
         c.nid=pc.course_id,
         pci.semester=pc.semester,
         pci.programme_id=pc.programme_id,
-        pc.level='%s'";
-    $result = db_query($query, $student_user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $student_user->profile_level_name);
+        pc.level='%s'
+      ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
+    $result = db_query($query, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
     $result = db_query($query);
 
-		 $core_html = "<tr>
-				 <th>
-					Course Code
-				 </th>
-				 <th>
-					Course Title
-				 </th>
-				 <th>
-					Course Description
-				 </th>
-				 <th>
-					Semester
-				 </th>
-				 <th>
-					Credit Load
-				 </th>
-				</tr>";
+    $selected_load = 0;
+    $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th>Timetable<th></tr>');
 
-		 $elective_html = "<tr>
-					<th>
+    while ($row = db_fetch_object($result)) {
+      $this->form['chosencourses' . $semester][$row->course_instance] = array(
+        '#type' => 'checkbox',
+        '#title' => $row->course_code,
+        '#default_value' => TRUE,
+        '#disabled' => TRUE,
+        '#prefix' => '<tr><td>',
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td></tr>"
+      );
 
-				 </th>
-				 <th>
-					Course Code
-				 </th>
-				 <th>
-					Course Title
-				 </th>
-				 <th>
-
-					Course Description
-				 </th>
-				 <th>
-					Semester
-				 </th>
-				 <th>
-					Credit Load
-				 </th>
-				</tr>";
-		 while ($row = db_fetch_object($result)) {
-        if ($row->course_type == 1 && $row->level == $student_user->profile_level_name) {
-					 $core_html .= '<tr>
-				 <td>
-					'.$row->course_code.'
-				 </td>
-				 <td>
-					'.$row->course_title.'
-				 </td>
-				 <td>
-					'.$row->course_description.'
-				 </td>
-				 <td>
-					'.$row->semester.'
-				 </td>
-				 <td>
-					'.$row->credit_load.'
-				 </td>
-				</tr>';
-					$form['courses']['corecourses['.$row->course_instance.']'] = array('#type' => 'hidden', '#value' => $row->course_instance);
-					$selected_load += $row->credit_load;
-				}
-				else {
-
-					$elective_html .= ' <tr>
-					<td>
-					<input class="select_course" type="checkbox" name="electivecourses['. $row->course_instance .']" value='. $row->credit_load .' />
-				 </td>
-												<td>
-					'. $row->course_code .'
-				 </td>
-				 <td>
-					'. $row->course_title .'
-				 </td>
-				 <td>
-					'. $row->course_description .'
-				 </td>
-				 <td>
-					'. $row->semester .'
-				 </td>
-				 <td>
-					'. $row->credit_load  .'
-				 </td>
-				 </tr>
-				 ';
-			}
-		}
-		 $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
-		 $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
-		 $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td><span id="min_load">'. $min_max_credits->min_credit_load .'</span></td></tr>';
-		 $credit_counter_html .= '<tr><th>Selected Credit Load</th><td><span id="selected_load">'. $selected_load .'</span></td></tr>';
-		 $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
-		 $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
-		 $form['courses']['select_credit'] = array('#type'=>'hidden', '#value'=>$selected_load);
-		 $script =<<<EOD
-			// For some reason, the following javascript gets rendered twice!
-			var counter = $selected_load;
-			$(function(){
-				// The following line was added to null the effect
-				// of the previous binding as a result of a repeat
-				// of the javascript.
-				$(".select_course").unbind();
-				$(".select_course").click(function(){
-					counter = parseInt($("#selected_load").text());
-					if(this.checked == true){
-						counter += parseInt(\$(this).val());
-						$("#selected_load").text(counter);
-					} else {
-						counter -= parseInt($(this).val());
-						$("#selected_load").text(counter);
-					}
-					$("#edit-select-credit-1").val(counter);
-				});
-				$("form").unbind();
-				$("form").submit( function() {
-					selected_load = parseInt($("#selected_load").text());
-					min_load = parseInt($("#min_load").text());
-					max_load = parseInt($("#max_load").text());
-					if (selected_load < min_load) {
-						alert("Please select enough courses to meet the minimum credit load requirement.");
-						return false;
-					}
-					if (selected_load > max_load) {
-						alert("Your credit load is higher than the recommended maximum credit load. Please shed off some courses.");
-						return false;
-					}
-					return true;
-				});
-		 });
-EOD;
-		drupal_add_js($script,'inline','header', FALSE, FALSE);
-		$form['courses']['core'] = array('#type' => 'item', '#value' => $core_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
-		$form['courses']['elective'] = array('#type' => 'item', '#value' => $elective_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
-		$form['courses']['loadcounter'] = array('#type' => 'item', '#value' => $credit_counter_html, "#prefix" => '<table border="1">' , "#suffix" => '</table>');
-		$form['courses']['submit'] = array('#id'=>'edit-next' , '#type'=>"submit" , '#value'=>'Submit');
-	}
-	else {
-		drupal_goto('student/payment');
-	}
-  return $form;
-}
-
-function student_course_form2(&$obj) {
-  $student_user = user_load($_SESSION['student']['id']);
-
-  $semester = variable_get('veritas_current_semester', '');
-
-  $query = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
-  $result = db_query($query, $student_user->profile_first_choice, $student_user->profile_level_name, $semester);
-  $min_max_credits = db_fetch_object($result);
-
-  $query = "SELECT
-      pci.semester AS semester,
-      ci.nid AS course_instance,
-      ci.field_timetable_value AS timetable,
-      c.field_creditload_value AS credit_load,
-      c.field_code_value AS course_code,
-      c.field_coursetitle_value AS course_title,
-      c.field_course_description_value AS course_description,
-      c.field_prerequisite_codes_value AS prerequisite_codes,
-      pc.level AS level
-      pc.course_type AS course_type,
-    FROM
-      {program_course_instance} pci,
-      {content_type_course_instance} ci,
-      {content_type_course} c,
-      {program_course} pc
-    WHERE
-      pci.programme_id=%d,
-      pci.session='%s',
-      pci.semester='%s',
-      pci.course_instance_id=ci.nid,
-      ci.field_course_id_nid=c.nid,
-      c.nid=pc.course_id,
-      pci.semester=pc.semester,
-      pci.programme_id=pc.programme_id,
-      pc.level='%s'";
-  $result = db_query($query, $student_user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $student_user->profile_level_name);
-  $result = db_query($query);
-
-  $core_html = "<tr>
-       <th>
-        Course Code
-       </th>
-       <th>
-        Course Title
-       </th>
-       <th>
-        Course Description
-       </th>
-       <th>
-        Semester
-       </th>
-       <th>
-        Credit Load
-       </th>
-      </tr>";
-  $elective_html = "<tr>
-        <th>
-
-       </th>
-       <th>
-        Course Code
-       </th>
-       <th>
-        Course Title
-       </th>
-       <th>
-        Course Description
-       </th>
-       <th>
-        Semester
-       </th>
-       <th>
-        Credit Load
-       </th>
-      </tr>";
-  $elective_course = array_keys($obj['storage'][1]['electivecourse']);
-
-  while ($row = db_fetch_object($result)) {
-    if ($row->course_type == 1 && ($row->level == $student_user->profile_level_name)) {
-      $core_html .= '<tr>
-       <td>
-        '. $row->course_code .'
-       </td>
-       <td>
-        '. $row->course_title .'
-       </td>
-       <td>
-        '. $row->course_description .'
-       </td>
-       <td>
-        '. $row->semester .'
-       </td>
-       <td>
-        '. $row->credit_load .'
-       </td>
-       </tr>';
-      $form['courses']['corecourses['.$row->course_instance.']'] = array('#type'=>'hidden', '#value'=>$row->course_instance);
-      $selected_load += $row->credit_load;
-    }
-    else if ($row->course_type == 2) {
-      if (in_array($row->course_instance,$elective_course)) {
-        $checked = "checked";
+      if ($row->course_type == 1 && $row->level == $user->profile_level_name) {
         $selected_load += $row->credit_load;
-			}
-			else {
-				$checked = '';
-			}
-				$elective_html .= '<tr>
-       <td>
-       <input class="select_course" readonly type="checkbox" '.$checked.' name="electivecourses['. $row->course_instance .']" value='. $row->credit_load .' />
-       </td>
-       <td>
-        '. $row->course_code .'
-       </td>
-       <td>
-        '. $row->course_title .'
-       </td>
-       <td>
-        '. $row->course_description .'
-       </td>
-       <td>
-        '. $row->semester .'
-       </td>
-       <td>
-        '. $row->credit_load .'
-       </td>
-       </tr>
-       ';
-		}
-	}
+      }
+      elseif ($row->course_type == 2) {
+        $this->form['chosencourses' . $semester][$row->course_instance]['#disabled'] = FALSE;
 
-  $credit_counter_html = '<tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>';
-  $credit_counter_html .= '<tr><th>Maximum Credit Load</th><td><span id="max_load">'. $min_max_credits->max_credit_load .'</span></td></tr>';
-  $credit_counter_html .= '<tr><th>Minimum Credit Load</th><td><span id="min_load">'. $min_max_credits->min_credit_load .'</span></td></tr>';
-  $credit_counter_html .= '<tr><th>Selected Credit Load</th><td><span id="selected_load">'. $selected_load .'</span></td></tr>';
-  $form['courses']['max_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->max_credit_load);
-  $form['courses']['min_load'] = array('#type'=>'hidden', '#value'=>$min_max_credits->min_credit_load);
-  $form['courses']['select_credit'] = array('#type'=>'hidden', '#value'=>$selected_load);
-  $script =<<<EOD
-var counter = '$selected_load';
-$(function(){
-  $(".select_course").unbind();
-  $(".select_course").click(function(){
-    counter = parseInt($("#selected_load").text());
-    if(this.checked == true){
-      counter += parseInt($(this).val());
-      $("#selected_load").text(counter);
-    } else {
-      counter -= parseInt($(this).val());
-      $("#selected_load").text(counter);
+        if (in_array($row->course_instance, $_SESSION['eduerp_elective_courses'])) {
+          $selected_load += $row->credit_load;
+        }
+        else {
+          $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = FALSE;
+        }
+
+        $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+      }
     }
-    $("#edit-select-credit").val(counter);
-  });
-  $("form").unbind();
-  $("form").submit( function() {
-    selected_load = parseInt($("#selected_load").text());
-    min_load = parseInt($("#min_load").text());
-    max_load = parseInt($("#max_load").text());
-    if (selected_load < min_load) {
-      alert("Please select enough courses to meet the minimum credit load requirement.");
-      return false;
-    }
-    if (selected_load > max_load) {
-      alert("Your credit load is higher than the recommended maximum credit load. Please shed off some courses.");
-      return false;
-    }
-    return true;
-  });
-});
-EOD;
-  drupal_add_js($script,'inline','header');
-  $form['courses']['core'] = array('#type' => 'item', '#value' => $core_html,"#prefix" => '<table border="1">' , "#suffix" => '</table>');
-  $form['courses']['elective'] = array('#type'=>'item', '#value' => $elective_html,"#prefix" => '<table border="1">' , "#suffix" => '</table>');
-  $form['courses']['loadcounter'] = array('#type' => 'item', '#value' => $credit_counter_html, "#prefix" => '<table border="1">', "#suffix" => '</table>');
-  $form['coursep']=array('#id' => 'edit-previous', '#value' => 'Previous', '#type' => 'submit');
-  $form['coursen']=array('#id' => 'edit-next', '#value' => 'Next', '#type' => 'submit');
-  return $form;
+
+    $this->form['endtable' . $semester] = array('#value' => '</table>');
+
+    $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
+      <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
+      <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
+      <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
+      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $selected_load . '</span></td></tr>
+      </table>');
+  }
+
+  function addscriptforcheckbox($course_instance, $semester, $credit_load) {
+    $this->scriptforpage .= "$(\"#chosencourses{$semester}-{$course_instance}\").click(function() {
+      selected_load = parseInt($(\"#selected_load{$semester}\").text());
+      min_load = parseInt($(\"#min_load{$semester}\").text());
+      max_load = parseInt($(\"#max_load{$semester}\").text());
+
+      if (this.checked == true) {
+        selected_load += {$credit_load};
+        $(\"selected_load{$semester}\").text(selected_load);
+        if (selected_load > max_load) {
+          $(\"#max_load{$semester}\").css(\"background-color\", \"red\")
+        }
+        if (selected_load >= min_load) {
+          $(\"#min_load{$semester}\").css(\"background-color\", \"green\")
+        }
+      }
+      else {
+        selected_load -= {$credit_load};
+        $(\"selected_load{$semester}\").text(selected_load);
+        if (selected_load <= max_load) {
+          $(\"#max_load{$semester}\").css(\"background-color\", \"green\")
+        }
+        if (selected_load < min_load) {
+          $(\"#min_load{$semester}\").css(\"background-color\", \"red\")
+        }
+      }
+    });";
+  }
+
+  function finishform() {
+    $this->form['submit'] = array('#type' => 'submit' , '#value' => 'Submit');
+
+    // matches ({ from when object constructed
+    $this->scriptforpage .= '});';
+
+    drupal_add_js($this->scriptforpage, 'inline', 'header', FALSE, FALSE);
+// (*) TAKE OUT 'header', FALSE, FALSE WHEN IT WORKS
+  }
 }
+
+
+function student_course_form(&$obj) {
+  global $user;
+  profile_load_profile($user);
+
+  $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
+    $user->profile_first_choice, $user->profile_level_name, variable_get('veritas_current_semester', 1));
+  if (!db_fetch_object($rows)) {
+    drupal_set_message("Sorry. You are not allowed to register courses at this time.");
+    return FALSE;
+  }
+
+  // Check if the student has paid his/her fees for this session
+  $q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
+  $rs = db_query($q, $user->uid, variable_get('veritas_current_session', ''));
+  if ($rs && ($row = db_fetch_object($rs))) {
+
+    $courseselections = new courseselectionsclass();
+
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE)) {
+      $courseselections->addformelementsforsemester(1);
+      $courseselections->addformelementsforsemester(2);
+    }
+    else {
+      $courseselections->addformelementsforsemester(variable_get('veritas_current_semester', ''));
+    }
+
+    $courseselections->finishform();
+  }
+  else {
+    drupal_goto('student/payment');
+  }
+
+  return $courseselections->form;
+}
+
+
+function student_course_form_validate($form, &$states) {
+
+  if (empty($_SESSION['student']['id'])) { // ALAN
+      form_set_error('submitted[courses]', "Student id is not valid");
+      return;
+  }
+
+  $values = $states['values'];
+  if ($state['storage']['step'] == 1) {
+    if ($values['select_credit'] < $values['min_load'] || $values['select_credit'] > $values['max_load'] ) {
+      form_set_error('submitted[courses]', "Specify Proper Credit Load");
+      return;
+    }
+  }
+}
+
 
 function student_course_form_submit($form,&$state){
   $values = $state['values'];
@@ -513,7 +301,10 @@ function student_course_form_submit($form,&$state){
 }
 
 
-// ALAN
+function student_courses() {
+  drupal_goto('listcourses');
+}
+
 
 function add_student_courses($data) {
 
@@ -666,24 +457,7 @@ function delete_student_grades($uid, $session, $semester) {
     }
   }
 }
-// END ALAN
 
-
-function student_course_form_validate($form, &$states) {
-
-  if (empty($_SESSION['student']['id'])) { // ALAN
-      form_set_error('submitted[courses]', "Student id is not valid");
-      return;
-  }
-
-  $values = $states['values'];
-  if ($state['storage']['step'] == 1) {
-    if ($values['select_credit'] < $values['min_load'] || $values['select_credit'] > $values['max_load'] ) {
-      form_set_error('submitted[courses]', "Specify Proper Credit Load");
-      return;
-    }
-  }
-}
 
 function student_login_form(&$obj){
   $form['#title'] = t('Student Login');
