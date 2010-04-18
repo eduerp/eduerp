@@ -117,8 +117,8 @@ class courseselectionsclass {
         c.field_coursetitle_value AS course_title,
         c.field_course_description_value AS course_description,
         c.field_prerequisite_codes_value AS prerequisite_codes,
-        pc.level AS level
-        pc.course_type AS course_type,
+        pc.level AS level,
+        pc.course_type AS course_type
       FROM
         {program_course_instance} pci,
         {content_type_course_instance} ci,
@@ -136,7 +136,6 @@ class courseselectionsclass {
         pc.level='%s'
       ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
     $result = db_query($query, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
-    $result = db_query($query);
 
     $selected_load = 0;
     $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th>Timetable<th></tr>');

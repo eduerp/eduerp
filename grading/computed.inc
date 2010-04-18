@@ -243,9 +243,9 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
         )
       WHERE
         sp.field_student_ref_sp_uid=cgpatoset.uid AND
-        sp.field_program_ref_sp_nid=pv.value AND
+        sp.field_program_ref_sp_nid=pv1.value AND
         pf1.name='profile_first_choice' AND
-        pf1.fid=pv.fid AND
+        pf1.fid=pv1.fid AND
         pv1.uid=cgpatoset.uid";
       db_query($sql);
 
