@@ -138,7 +138,7 @@ class courseselectionsclass {
     $result = db_query($query, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
 
     $selected_load = 0;
-    $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th>Timetable<th></tr>');
+    $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
 
     while ($row = db_fetch_object($result)) {
       $this->form['chosencourses' . $semester][$row->course_instance] = array(
@@ -147,10 +147,11 @@ class courseselectionsclass {
         '#default_value' => TRUE,
         '#disabled' => TRUE,
         '#prefix' => '<tr><td>',
-        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td></tr>"
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}</td></tr>"
       );
+      // Made assumption that core course are run only once per semester, otherwise would have to make selection ungreyed
 
-      if ($row->course_type == 1 && $row->level == $user->profile_level_name) {
+      if ($row->course_type == 1) {
         $selected_load += $row->credit_load;
       }
       elseif ($row->course_type == 2) {
