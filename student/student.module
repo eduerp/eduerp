@@ -166,6 +166,127 @@ class courseselectionsclass {
     $this->form['endtable' . $semester] = array('#value' => '</table>');
   }
 
+  public function addformelementsforfailedcoursesforsemester($semester) {
+    global $user;
+
+    // Find any failed (and not since passed) courses and see are they being run
+    // failedcourses sub-query below borrows from similar query in computed.inc
+    $query = "SELECT
+        ci1.nid AS course_instance,
+        ci1.field_timetable_value AS timetable,
+        c1.field_creditload_value AS credit_load,
+        c1.field_code_value AS course_code,
+        c1.field_coursetitle_value AS course_title,
+        c1.field_course_description_value AS course_description,
+        c1.field_prerequisite_codes_value AS prerequisite_codes,
+        pc1.level AS level,
+        pc1.course_type AS course_type
+      FROM
+        {program_course_instance} pci1,
+        {content_type_course_instance} ci1,
+        {content_type_course} c1,
+        {program_course} pc1,
+        (
+          SELECT
+            exams.field_mat_no_uid AS uid,
+            exams.field_code_value
+          FROM (
+            SELECT
+              IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
+              sg.field_mat_no_uid,
+              sg.field_calc_type_value,
+              CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
+              c.field_code_value,
+              c.field_creditload_value
+            FROM
+              {content_type_student_grades} sg,
+              {content_type_course_instance} ci,
+              {content_type_course} c,
+              {program_course} pc,
+              {profile_fields} pf,
+              {profile_values} pv
+            WHERE
+              sg.field_mat_no_uid=%d
+              sg.field_course_instance_nid=ci.nid AND
+              sg.field_examscorelocked_value>0 AND
+              sg.field_dropped_value=0 AND
+              ci.field_course_id_nid=c.nid AND
+              ci.field_course_id_nid=pc.course_id AND
+              pc.programme_id=pv.value AND
+              pf.name='profile_first_choice' AND
+              pf.fid=pv.fid AND
+              pv.uid=sg.field_mat_no_uid
+            ) AS exams
+          JOIN (
+            SELECT
+              sg0.field_mat_no_uid,
+              MAX(CONCAT(ci0.field_sess_name_value, ci0.field_semester_name_value, sg0.nid)) AS sess_sem0,
+              c0.field_code_value
+            FROM
+              {content_type_student_grades} sg0,
+              {content_type_course_instance} ci0,
+              {content_type_course} c0,
+              {program_course} pc0,
+              {profile_fields} pf0,
+              {profile_values} pv0
+            WHERE
+              sg0.field_mat_no_uid=%d
+              sg0.field_course_instance_nid=ci0.nid AND
+              sg0.field_examscorelocked_value>0 AND
+              sg0.field_dropped_value=0 AND
+              ci0.field_course_id_nid=c0.nid AND
+              ci0.field_course_id_nid=pc0.course_id AND
+              pc0.programme_id=pv0.value AND
+              pf0.name='profile_first_choice' AND
+              pf0.fid=pv0.fid AND
+              pv0.uid=sg0.field_mat_no_uid
+            GROUP BY c0.field_code_value, sg0.field_mat_no_uid
+            ) AS most_recent_exam
+          ON
+            exams.field_code_value=most_recent_exam.field_code_value AND
+            exams.sess_sem=most_recent_exam.sess_sem0 AND
+            exams.field_mat_no_uid=most_recent_exam.field_mat_no_uid AND
+            exams.gradepoint=0
+        ) AS failedcourses
+      WHERE
+        c1.field_code_value=failedcourses.field_code_value AND
+        pci1.programme_id=%d AND
+        pci1.session='%s' AND
+        pci1.semester='%s' AND
+        pci1.course_instance_id=ci1.nid AND
+        ci1.field_course_id_nid=c1.nid AND
+        c1.nid=pc1.course_id AND
+        pci1.semester=pc1.semester AND
+        pci1.programme_id=pc1.programme_id
+      ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
+    $result = db_query($query, $user->uid, $user->uid, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
+
+    $any = FALSE;
+    while ($row = db_fetch_object($result)) {
+      if (!$any) {
+        $this->form['starttablefailed' . $semester] = array('#value' => '<br /><br />Previously Failed Courses, you must choose all these...<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
+        $any = TRUE;
+      }
+
+      $this->form['chosencourses' . $semester][$row->course_instance] = array(
+        '#type' => 'checkbox',
+        '#title' => $row->course_code,
+        '#default_value' => FALSE,
+        '#disabled' => FALSE,
+        '#prefix' => '<tr><td>',
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}</td></tr>"
+      );
+
+      if (in_array($row->course_instance, $_SESSION['eduerp_elective_courses'])) {
+        // Unless spec changes... $this->selected_load += $row->credit_load;
+        $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
+      }
+      // Unless spec changes... $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+    }
+
+    if ($any) $this->form['endtablefailed' . $semester] = array('#value' => '</table>');
+  }
+
   public function addformelementsforloadcounter($semester) {
     global $user;
 
@@ -247,12 +368,16 @@ function student_course_form(&$obj) {
     if (variable_get('RegisterAllCoursesatStartofSession', FALSE)) {
       $courseselections->addformelementsforsemester(1);
       $courseselections->addformelementsforloadcounter(1);
+      $courseselections->addformelementsforfailedcoursesforsemester(1);
+
       $courseselections->addformelementsforsemester(2);
       $courseselections->addformelementsforloadcounter(2);
+      $courseselections->addformelementsforfailedcoursesforsemester(2);
     }
     else {
       $courseselections->addformelementsforsemester($semester);
       $courseselections->addformelementsforloadcounter($semester);
+      $courseselections->addformelementsforfailedcoursesforsemester($semester);
     }
 
     $courseselections->finishform();
