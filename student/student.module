@@ -104,7 +104,7 @@ class courseselectionsclass {
   public function addformelementsforsemester($semester) {
     global $user;
 
-    $query = "SELECT
+    $sql = "SELECT
         ci.nid AS course_instance,
         ci.field_timetable_value AS timetable,
         c.field_creditload_value AS credit_load,
@@ -130,7 +130,7 @@ class courseselectionsclass {
         pci.programme_id=pc.programme_id AND
         pc.level='%s'
       ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
-    $result = db_query($query, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
+    $result = db_query($sql, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
 
     $this->selected_load = 0;
     $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
@@ -171,7 +171,7 @@ class courseselectionsclass {
 
     // Find any failed (and not since passed) courses and see are they being run
     // failedcourses sub-query below borrows from similar query in computed.inc
-    $query = "SELECT
+    $sql = "SELECT
         ci1.nid AS course_instance,
         ci1.field_timetable_value AS timetable,
         c1.field_creditload_value AS credit_load,
@@ -259,7 +259,7 @@ class courseselectionsclass {
         pci1.semester=pc1.semester AND
         pci1.programme_id=pc1.programme_id
       ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
-    $result = db_query($query, $user->uid, $user->uid, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
+    $result = db_query($sql, $user->uid, $user->uid, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
 
     $any = FALSE;
     while ($row = db_fetch_object($result)) {
@@ -292,8 +292,8 @@ class courseselectionsclass {
 
     $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green")';
 
-    $query = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
-    $result = db_query($query, $user->profile_first_choice, $user->profile_level_name, $semester);
+    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
+    $result = db_query($sql, $user->profile_first_choice, $user->profile_level_name, $semester);
     $min_max_credits = db_fetch_object($result);
 
     $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
@@ -462,14 +462,14 @@ function add_student_courses($data) {
 
   // Find the program type
   $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
-  $result = db_query($query, $student_user->profile_first_choice);
+  $result = db_query($sql, $student_user->profile_first_choice);
   $row = db_fetch_object($result);
   $program_type = abs($row->field_program_type_value);
   if ($program_type == 3 && $student_user->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
 
   // Find the existing student_program
   $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
-  $result = db_query($query, $student_user->uid, $student_user->profile_first_choice);
+  $result = db_query($sql, $student_user->uid, $student_user->profile_first_choice);
   $row = db_fetch_object($result);
   $student_program = $row->nid;
 
@@ -994,7 +994,7 @@ function student_registration_form_submit($form, &$state) {
     profile_load_profile($user);
 
     $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
-    $result = db_query($query, $user->uid, $user->profile_first_choice);
+    $result = db_query($sql, $user->uid, $user->profile_first_choice);
     $row = db_fetch_object($result);
 
     if (empty($row->nid)) {
