@@ -97,9 +97,47 @@ function student_perm() {
 class courseselectionsclass {
   public $form = array();
 
-  public $selected_load;
+  private $passedcodes;
 
-  public $scriptforpage = '$(function() {'; // end }) will come in $this->finishform()
+  private $selected_load;
+
+  private $scriptforpage;
+
+  function __construct() {
+    global $user;
+
+    $this->scriptforpage = '$(function() {'; // end }) will come in $this->finishform()
+
+    // Find all passed courses for this student
+    $sql = "SELECT c.field_code_value
+      FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+      WHERE
+        sg.field_mat_no_uid=%d AND
+        sg.field_course_instance_nid=ci.nid AND
+        sg.field_examscorelocked_value>0 AND
+        sg.field_dropped_value=0 AND
+        ci.field_course_id_nid=c.nid AND
+        IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value)>0";
+    $result = db_query($sql, $user->uid);
+
+    $this->passedcodes = array();
+    while ($row = db_fetch_object($result)) {
+      $this->passedcodes[] = strtolower($row->field_code_value);
+    }
+  }
+
+  private function blockingprerequisites($prerequisite_codes) {
+    $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
+    foreach ($prerequisite_codes as $prerequisite_code) {
+      $alternatives = explode('/', prerequisite_code));
+      $foundone = FALSE;
+      foreach ($alternatives as $alternative) {
+        if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+      }
+      if (!$foundone) return $prerequisite_code;
+    }
+    return FALSE;
+  }
 
   public function addformelementsforsemester($semester) {
     global $user;
@@ -136,31 +174,41 @@ class courseselectionsclass {
     $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
 
     while ($row = db_fetch_object($result)) {
-      $this->form['chosencourses' . $semester][$row->course_instance] = array(
-        '#type' => 'checkbox',
-        '#title' => $row->course_code,
-        '#default_value' => TRUE,
-        '#disabled' => TRUE,
-        '#prefix' => '<tr><td>',
-        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}</td></tr>"
-      );
-      // Made assumption that core course are run only once per semester, otherwise would have to make selection ungreyed
 
-      if ($row->course_type == 1) {
-        $this->selected_load += $row->credit_load;
+      if ($block = blockingprerequisites($row->prerequisite_codes)) {
+        $block = "<br />You cannot do this course because of prerequisite: $block";
+        $default_value = FALSE;
+        $disabled = TRUE;
       }
-      elseif ($row->course_type == 2) {
-        $this->form['chosencourses' . $semester][$row->course_instance]['#disabled'] = FALSE;
-
-        if (in_array($row->course_instance, $_SESSION['eduerp_elective_courses'])) {
+      else {
+        $block = '';
+        if ($row->course_type == 1) {
+          $default_value = TRUE;
+          $disabled = TRUE;
           $this->selected_load += $row->credit_load;
         }
         else {
-          $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = FALSE;
-        }
+          $disabled = FALSE;
 
-        $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+          if (in_array($row->course_instance, $_SESSION['eduerp_elective_courses'])) {
+            $default_value = TRUE;
+            $this->selected_load += $row->credit_load;
+          }
+          else {
+            $default_value = FALSE;
+          }
+          $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+        }
       }
+      $this->form['chosencourses' . $semester][$row->course_instance] = array(
+        '#type' => 'checkbox',
+        '#title' => $row->course_code,
+        '#default_value' => $default_value,
+        '#disabled' => $disabled,
+        '#prefix' => '<tr><td>',
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}{$block}</td></tr>"
+      );
+      // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
     }
 
     $this->form['endtable' . $semester] = array('#value' => '</table>');
@@ -304,7 +352,7 @@ class courseselectionsclass {
       </table>');
   }
 
-  function addscriptforcheckbox($course_instance, $semester, $credit_load) {
+  private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
     $this->scriptforpage .= "$(\"#chosencourses{$semester}-{$course_instance}\").click(function() {
       selected_load = parseInt($(\"#selected_load{$semester}\").text());
       min_load = parseInt($(\"#min_load{$semester}\").text());
@@ -333,7 +381,7 @@ class courseselectionsclass {
     });";
   }
 
-  function finishform() {
+  public function finishform() {
     $this->form['submit'] = array('#type' => 'submit' , '#value' => 'Submit');
 
     // matches ({ from when object constructed
