@@ -137,7 +137,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               {content_type_course} c,
               {content_type_course_instance} ci0
             WHERE
-              sg.field_mat_no_uid={$uid}
+              sg.field_mat_no_uid={$uid} AND
               sg.field_course_instance_nid=ci.nid AND
               sg.field_examscorelocked_value>0 AND
               sg.field_dropped_value=0 AND
@@ -192,7 +192,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               {profile_fields} pf,
               {profile_values} pv
             WHERE
-              sg.field_mat_no_uid={$uid}
+              sg.field_mat_no_uid={$uid} AND
               sg.field_course_instance_nid=ci.nid AND
               sg.field_examscorelocked_value>0 AND
               sg.field_dropped_value=0 AND
@@ -216,7 +216,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               {profile_fields} pf0,
               {profile_values} pv0
             WHERE
-              sg0.field_mat_no_uid={$uid}
+              sg0.field_mat_no_uid={$uid} AND
               sg0.field_course_instance_nid=ci0.nid AND
               sg0.field_examscorelocked_value>0 AND
               sg0.field_dropped_value=0 AND
