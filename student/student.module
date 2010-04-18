@@ -125,14 +125,14 @@ class courseselectionsclass {
         {content_type_course} c,
         {program_course} pc
       WHERE
-        pci.programme_id=%d,
-        pci.session='%s',
-        pci.semester='%s',
-        pci.course_instance_id=ci.nid,
-        ci.field_course_id_nid=c.nid,
-        c.nid=pc.course_id,
-        pci.semester=pc.semester,
-        pci.programme_id=pc.programme_id,
+        pci.programme_id=%d AND
+        pci.session='%s' AND
+        pci.semester='%s' AND
+        pci.course_instance_id=ci.nid AND
+        ci.field_course_id_nid=c.nid AND
+        c.nid=pc.course_id AND
+        pci.semester=pc.semester AND
+        pci.programme_id=pc.programme_id AND
         pc.level='%s'
       ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
     $result = db_query($query, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
