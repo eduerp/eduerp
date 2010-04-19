@@ -996,7 +996,7 @@ function staff_course_assign_form1_submit(&$form, &$state) {
 function lecturer() {
   global $user;
 
-  $titles[''] = 'Select';
+  $titles[''] = 'Select'.$user->department_id;
   $r = db_query("SELECT er.uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
     FROM {eduerp_roles} er
     INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
