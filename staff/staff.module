@@ -951,7 +951,7 @@ function course_assign_list() {
     LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
     LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
     LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
-  $r = db_query($query, $user->department_id);
+  $r = db_query($query, $user->profile_department_id);
   $html = "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
     $course_type = array('1' => 'Core', 2 => 'Elective');
@@ -1009,7 +1009,7 @@ function lecturer() {
     INNER JOIN {profile_values} pv3 ON er.uid=pv3.uid AND pv3.fid=pf3.fid
     WHERE pv3.value=%d
     GROUP BY er.uid
-    ORDER BY staff_name", $user->department_id);
+    ORDER BY staff_name", $user->profile_department_id);
   while ($f = db_fetch_object($r))
     $titles[$f->uid] = $f->staff_name;
   return  $titles;
@@ -1018,9 +1018,9 @@ function lecturer() {
 
 function staff_prg() {
   global $user;
-  $titles[''] = 'TEST'.$user->department_id.'A';
+  $titles[''] = '';
   $sql = "SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d ORDER BY field_programme_name_value";
-  $rows = db_query($sql, $user->department_id);
+  $rows = db_query($sql, $user->profile_department_id);
   while ($row = db_fetch_object($rows)) {
     $titles[$row->nid] = $row->value;
   }
