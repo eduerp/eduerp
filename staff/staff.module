@@ -2907,6 +2907,31 @@ function _get_staff_list() {
 
   return $staff_list;
 }
+
+
+function _get_staff_list_number() {
+  $q = "SELECT er.uid, CONCAT(pv3.value, ': ', pv0.value, ', ', pv1.value, ' ', pv2.value) AS name
+    FROM {eduerp_roles} er
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    INNER JOIN {profile_fields} pf3 ON pf3.name='profile_staff_no'
+    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    LEFT  JOIN {profile_values} pv3 ON er.uid=pv3.uid AND pv2.fid=pf3.fid
+    GROUP BY er.uid ORDER BY name";
+  $rs = db_query($q);
+  $staff_list = array(0 => "Select One");
+
+  while ($row = db_fetch_object($rs)) {
+    $staff_list[$row->uid] = $row->name;
+  }
+
+  return $staff_list;
+}
+
+
 function search_staff_form1(&$obj) {
   if (isset($_SESSION['staff']['staff_no'])) {
     unset($_SESSION['staff']['staff_no']);
@@ -2914,8 +2939,8 @@ function search_staff_form1(&$obj) {
   $form['#title'] = t('Search Staff');
   $form['staff_no'] = array(
     '#title' => 'Staff No.',
-    '#type' => 'textfield',
-    '#size' => 20);
+    '#type' => 'select',
+    '#options' => _get_staff_list_number());
   $form['lbl_or'] = array(
     '#type' => 'fieldset',
     '#title' => 'Or');
