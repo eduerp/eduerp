@@ -2954,6 +2954,8 @@ function search_staff_form1(&$obj) {
     '#id' => 'edit-next');
   return $form;
 }
+
+
 function search_staff_form_submit($form, &$state) {
   if ($state['clicked_button']['#id'] == 'edit-previous') {
     $state['storage']['step']--;
@@ -2961,25 +2963,23 @@ function search_staff_form_submit($form, &$state) {
   }
   elseif ($state['clicked_button']['#id'] == 'edit-next') {
     $state['storage']['values'][$state['storage']['step']]=$state['values'];
-    // Prevent the counter from going beyond 2
     $state['storage']['step'] = (++$state['storage']['step'] > 2) ? 1 : $state['storage']['step'];
     $state['#rebuild']=TRUE;
   }
   else
     return;
 }
-function search_staff_form_validate($form, &$state) {
-  global $user;
 
+
+function search_staff_form_validate($form, &$state) {
   if ($state['storage']['step'] == 1) {
-    $values=$form['lbl_or']['#post'];
-    $staff_no=$values['staff_no'];
+    $values = $form['lbl_or']['#post'];
+    $staff_no = $values['staff_no'];
     if ($staff_no != '' && !$form['#post']['user_id']) {
-      $qry = "select * from {veritas_staff} where staff_no='%s'";
+      $qry = "SELECT * FROM {veritas_staff} WHERE user_id=%d";
       $res = db_query($qry, $staff_no);
       if ($res && ($result = db_fetch_object($res))) {
-        $_SESSION['staff']['staff_no']=$result->staff_no;
-        $_SESSION['staff']['user_id']=$result->user_id;
+        $_SESSION['staff']['user_id'] = $result->staff_no;
       }
       else {
         form_set_error('staff_no', "Staff number is not valid.");
@@ -2997,18 +2997,14 @@ function search_staff_form_validate($form, &$state) {
     }
   }
 }
+
+
 function search_staff_form2(&$obj) {
   global $user;
+  profile_load_profile($user);
 
-  // TODO: Fill out remaining sections
-  if (isset($_SESSION['staff']['user_id'])) {
-    $qry = "select * from {veritas_staff} where user_id=%d";
-    $res = db_query($qry, $_SESSION['staff']['user_id']);
-  }
-  else {
-    $qry = "select * from {veritas_staff} where staff_no='%s'";
-    $res = db_query($qry, $_SESSION['staff']['staff_no']);
-  }
+  $qry = "select * from {veritas_staff} where user_id=%d";
+  $res = db_query($qry, $_SESSION['staff']['user_id']);
   if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['staff_info']=$result->user_id;
     // TODO: fix the remaining queries
