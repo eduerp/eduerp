@@ -770,6 +770,9 @@ function staff_view_form(&$obj) {
 
 
 function staff_course_assign() {
+  global $user;
+  profile_load_profile($user);
+
   $delete_assignment_js =<<< EOD
 function delete_course(id) {
   if (confirm('Are you sure you want to delete this course assignment?')) {
@@ -928,7 +931,6 @@ function staff_course_assign_form1(&$obj) {
 }
 function course_assign_list() {
   global $user;
-  profile_load_profile($user);
 
   $query = "
     SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
@@ -990,17 +992,35 @@ function staff_course_assign_form1_submit(&$form, &$state) {
   drupal_set_message("Course Added to Programme");
   drupal_goto("staff/registrablecourse");
 }
+
 function lecturer() {
-  $titles['']="Select";
-  $r=db_query("select * from {veritas_staff} where department_id = %d order by staff_first_name", $_SESSION['staff']['data']->department_id);
-    while ($f=db_fetch_object($r))
-      $titles[$f->user_id] = sprintf('%s %s', $f->staff_first_name, $f->staff_last_name);
+  global $user;
+
+  $titles[''] = 'Select';
+  $r = db_query("SELECT er.uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name,
+    FROM {eduerp_roles} er
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    INNER JOIN {profile_fields} pf3 ON pf3.name='profile_department_id'
+    INNER JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
+    INNER JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
+    INNER JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    INNER JOIN {profile_values} pv3 ON er.uid=pv3.uid AND pv3.fid=pf3.fid
+    WHERE pv3.value=%d
+    GROUP BY er.uid
+    ORDER BY staff_name", $user->department_id);
+  while ($f = db_fetch_object($r))
+    $titles[$f->uid] = $f->staff_name;
   return  $titles;
 }
+
+
 function staff_prg() {
-  $titles[''] = "";
+  global $user;
+  $titles[''] = '';
   $sql = "SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d ORDER BY field_programme_name_value";
-  $rows = db_query($sql, $_SESSION['staff']['data']->department_id);
+  $rows = db_query($sql, $user->department_id);
   while ($row = db_fetch_object($rows)) {
     $titles[$row->nid] = $row->value;
   }
