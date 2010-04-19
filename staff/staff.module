@@ -727,7 +727,7 @@ function staff_view_form(&$obj) {
     INNER JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
     INNER JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
     INNER JOIN {profile_values} pv3 ON er.uid=pv3.uid AND pv3.fid=pf3.fid
-    INNER JOIN {content_type_department} d ON pv3.value=d.nid
+    LEFT  JOIN {content_type_department} d ON pv3.value=d.nid
     LEFT  JOIN {veritas_staff} vs ON er.uid=vs.user_id
     WHERE er.uid=%d GROUP BY er.uid";
   $result = db_query($query, arg(2));
