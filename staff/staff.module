@@ -2057,8 +2057,6 @@ function view_student_form_submit($form, &$state) {
     return;
 }
 function view_student_form_validate($form, &$state) {
-  global $user;
-
   if ($state['storage']['step'] == 1) {
     $values=$form['lbl_or']['#post'];
     $jambno=$values['jambno'];
@@ -3001,7 +2999,7 @@ function search_staff_form_validate($form, &$state) {
 
 function search_staff_form2(&$obj) {
   global $user;
-  profile_load_profile($user);
+  $staff_user = user_load($_SESSION['staff']['user_id']);
 
   $qry = "select * from {veritas_staff} where user_id=%d";
   $res = db_query($qry, $_SESSION['staff']['user_id']);
@@ -3082,7 +3080,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['staff_no1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_staff_no,
+    '#value' => $staff_user->profile_staff_no,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3093,7 +3091,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['type1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_staff_type,
+    '#value' => $staff_user->profile_staff_type,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -3138,7 +3136,7 @@ function search_staff_form2(&$obj) {
   $form['extra']['employ_type1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $user->profile_employment_type,
+    '#value' => $staff_user->profile_employment_type,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['extra']['appt_date0'] = array(
@@ -3165,7 +3163,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['fname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $user->profile_first_name,
+    '#value' => $staff_user->profile_first_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['mname0'] = array(
@@ -3176,7 +3174,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['mname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $user->profile_middle_name,
+    '#value' => $staff_user->profile_middle_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['lname0'] = array(
@@ -3187,7 +3185,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['lname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $user->profile_last_name,
+    '#value' => $staff_user->profile_last_name,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['personal']['dob0'] = array(
@@ -3197,7 +3195,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['dob1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_dob,
+    '#value' => $staff_user->profile_dob,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
   $form['personal']['gender0'] = array(
@@ -3208,7 +3206,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['gender1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $user->profile_gender,
+    '#value' => $staff_user->profile_gender,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['origin0'] = array(
@@ -3218,7 +3216,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['origin1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_state_name_origin,
+    '#value' => $staff_user->profile_state_name_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
     '#attributes' => array('disabled' => 'disabled'));
@@ -3229,7 +3227,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['lga1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_lga_name,
+    '#value' => $staff_user->profile_lga_name,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['personal']['mstatus0'] = array(
@@ -3239,7 +3237,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['mstatus1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_marital_status,
+    '#value' => $staff_user->profile_marital_status,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3251,7 +3249,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['address1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $user->profile_permanent_address1,
+    '#value' => $staff_user->profile_permanent_address1,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
   $form['personal']['city0'] = array(
@@ -3261,7 +3259,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['city1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_permanent_address_city,
+    '#value' => $staff_user->profile_permanent_address_city,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3305,7 +3303,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['mobile1'] = array(
     '#type' => 'item',
-    '#value' => $user->profile_mobile_number,
+    '#value' => $staff_user->profile_mobile_number,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
