@@ -625,7 +625,7 @@ function staff_department_list() {
       er.uid AS hod_uid,
       CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS hod_name
     FROM {content_type_department} d
-    LEFT  JOIN {eduerp_roles} er ON d.department_id=er.department_id AND er.role='Head of Department'
+    LEFT  JOIN {eduerp_roles} er ON d.nid=er.department_id AND er.role='Head of Department'
     INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
     INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
     INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
