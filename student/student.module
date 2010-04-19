@@ -99,6 +99,10 @@ class courseselectionsclass {
 
   private $passedcodes;
 
+  private $currentlevelcis;
+
+  private $failedcodes;
+
   private $selected_load;
 
   private $scriptforpage;
@@ -124,6 +128,9 @@ class courseselectionsclass {
     while ($row = db_fetch_object($result)) {
       $this->passedcodes[] = strtolower($row->field_code_value);
     }
+
+    $this->currentlevelcis = array();
+    $this->failedcodes = array();
   }
 
   private function blockingprerequisites($prerequisite_codes) {
@@ -174,6 +181,7 @@ class courseselectionsclass {
     $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
 
     while ($row = db_fetch_object($result)) {
+      if (in_array($row->course_code, $this->passedcodes)) continue;
 
       if ($block = blockingprerequisites($row->prerequisite_codes)) {
         $block = "<br />You cannot do this course because of prerequisite: $block";
@@ -190,7 +198,7 @@ class courseselectionsclass {
         else {
           $disabled = FALSE;
 
-          if (in_array($row->course_instance, $_SESSION['eduerp_elective_courses'])) {
+          if (in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
             $default_value = TRUE;
             $this->selected_load += $row->credit_load;
           }
@@ -199,6 +207,7 @@ class courseselectionsclass {
           }
           $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
         }
+        $this->currentlevelcis[] = $row->course_instance;
       }
       $this->form['chosencourses' . $semester][$row->course_instance] = array(
         '#type' => 'checkbox',
@@ -311,6 +320,8 @@ class courseselectionsclass {
 
     $any = FALSE;
     while ($row = db_fetch_object($result)) {
+      $this->failedcodes[] = $row->course_code;
+
       if (!$any) {
         $this->form['starttablefailed' . $semester] = array('#value' => '<br /><br />Previously Failed Courses, you must choose all these...<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
         $any = TRUE;
@@ -325,11 +336,11 @@ class courseselectionsclass {
         '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}</td></tr>"
       );
 
-      if (in_array($row->course_instance, $_SESSION['eduerp_elective_courses'])) {
-        // Unless spec changes... $this->selected_load += $row->credit_load;
+      if (in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+        // Unless spec changes, removed: $this->selected_load += $row->credit_load;
         $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
       }
-      // Unless spec changes... $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+      // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
     }
 
     if ($any) $this->form['endtablefailed' . $semester] = array('#value' => '</table>');
@@ -350,6 +361,9 @@ class courseselectionsclass {
       <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
       <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load . '</span></td></tr>
       </table>');
+
+    $this->form['#max_credit_load' . $semester] = $min_max_credits->max_credit_load;
+    $this->form['#min_credit_load' . $semester] = $min_max_credits->min_credit_load;
   }
 
   private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
@@ -382,6 +396,9 @@ class courseselectionsclass {
   }
 
   public function finishform() {
+    $this->form['#currentlevelcis'] = $this->currentlevelcis;
+    $this->form['#failedcodes'] = $this->failedcodes;
+
     $this->form['submit'] = array('#type' => 'submit' , '#value' => 'Submit');
 
     // matches ({ from when object constructed
@@ -438,49 +455,106 @@ function student_course_form(&$obj) {
 }
 
 
-function student_course_form_validate($form, &$states) {
+function student_course_form_validate($form, &$form_state) {
+  $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
+  if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
+  else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
 
-  if (empty($_SESSION['student']['id'])) { // ALAN
-      form_set_error('submitted[courses]', "Student id is not valid");
-      return;
+  $_SESSION['eduerp_chosen_courses1'] = $course_instances1;
+  $_SESSION['eduerp_chosen_courses2'] = $course_instances2;
+  $cis = implode(',', array_merge($course_instances1, $course_instances2));
+  if (empty($cis)) $cis = '0';
+
+  $sql = "SELECT c.field_code_value
+    FROM {content_type_course_instance} ci, {content_type_course} c
+    WHERE ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
+  $result = db_query($sql, $cis);
+
+  $selectedcodes = array();
+  while ($row = db_fetch_object($result)) {
+    $selectedcodes[] = $row->field_code_value;
   }
 
-  $values = $states['values'];
-  if ($state['storage']['step'] == 1) {
-    if ($values['select_credit'] < $values['min_load'] || $values['select_credit'] > $values['max_load'] ) {
-      form_set_error('submitted[courses]', "Specify Proper Credit Load");
-      return;
-    }
+  foreach ($form['#failedcodes'] as $failedcode) {
+    if (!in_array($failedcode, $selectedcodes)) form_set_error('', "You must select $failedcode");
+  }
+
+  $counts = array_count_values($selectedcodes);
+  foreach ($counts as $code => $count) {
+    if ($count > 1) form_set_error('', "You have selected $code more than once");
+  }
+
+  // According to spec, only credit load for the current level courses should towards the limits, failed repeats are extra
+  $currentlevelcis = implode(',', $form['#currentlevelcis']);
+  if (empty($currentlevelcis)) $currentlevelcis = '0';
+
+  $cis1 = implode(',', $course_instances1);
+  if (empty($cis1)) $cis1 = '0';
+
+  $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS load
+    FROM {content_type_course_instance} ci, {content_type_course} c
+    WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
+  $result = db_query($sql, $cis1, $currentlevelcis);
+  $row = db_fetch_object($result);
+  if ($row->load < $form['#min_credit_load1']) form_set_error('', 'You have not selected enough credit load for semester 1, select more courses.');
+  if ($row->load > $form['#max_credit_load1']) form_set_error('', 'You have selected too much credit load for semester 1, select fewer courses.');
+  $form_state['storage']['creditload'][1] = $row->load;
+
+  if (!empty($form['#max_credit_load2'])) {
+    $cis2 = implode(',', $course_instances2);
+    if (empty($cis2)) $cis2 = '0';
+
+    $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS load
+      FROM {content_type_course_instance} ci, {content_type_course} c
+      WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
+    $result = db_query($sql, $cis2, $currentlevelcis);
+    $row = db_fetch_object($result);
+    if ($row->load < $form['#min_credit_load2']) form_set_error('', 'You have not selected enough credit load for semester 2, select more courses.');
+    if ($row->load > $form['#max_credit_load2']) form_set_error('', 'You have selected too much credit load for semester 2, select fewer courses.');
+    $form_state['storage']['creditload'][2] = $row->load;
   }
 }
 
 
-function student_course_form_submit($form,&$state){
-  $values = $state['values'];
+function student_course_form_submit($form, &$form_state) {
+  global $user;
+  profile_load_profile($user);
 
-  $elective=$state['clicked_button']['#post']['electivecourses'];
+  $session = variable_get('veritas_current_session', '');
 
-  if ($state['storage']['step'] == 1) {
+  $studentname = '';
+  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+    $middle = '';
+    if (!empty($user->profile_middle_name)) $middle = ' ' . $user->profile_middle_name;
+    $studentname = "{$user->profile_last_name}, {$user->profile_first_name}{$middle}";
+  }
 
-    $state['storage'][1] = $state['values'];
-    $state['storage'][1]['electivecourse'] = $elective;
+  // Find the program type
+  $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $user->profile_first_choice);
+  $row = db_fetch_object($result);
+  $program_type = abs($row->field_program_type_value);
+  if ($program_type == 3 && $user->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
+
+  // Find the existing student_program
+  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+  $result = db_query($sql, $user->uid, $user->profile_first_choice);
+  $row = db_fetch_object($result);
+  $student_program = $row->nid;
+
+  foreach (array(1, 2) as $semester) {
+    if (!empty($_SESSION['eduerp_chosen_courses' . $semester])) {
+      $student_gpa = create_student_gpa($user, $studentname, $student_program, $session, $semester, $form_state['storage']['creditload'][$semester]);
+
+      delete_student_grades($user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
+
+      foreach ($_SESSION['eduerp_chosen_courses' . $semester] as $course_instance) {
+        create_student_grades($user, $course_instance, $student_gpa, $studentname, $program_type);
+      }
+    }
   }
-  if($state['storage']['step'] == 2){
-     add_student_courses($state['clicked_button']['#post']);
-     drupal_goto("student/listcourses");
-  }
-  if ($state['clicked_button']['#id'] == 'edit-previous') {
-      $state['storage']['step']--;
-      return;
-  }
-  elseif ($state['clicked_button']['#id'] == 'edit-next') {
-     $state['storage']['values'][$state['storage']['step']] = $state['values'];
-     $state['#rebuild'] = TRUE;
-     $state['storage']['step']++;
-    return;
-   }
-   else
-    return;
+
+  drupal_goto('student/listcourses');
 }
 
 
@@ -489,38 +563,7 @@ function student_courses() {
 }
 
 
-function add_student_courses($data) {
-
-  // $_SESSION['student']['id'] is being used as storage for the uid of the student who is being registered (which in the future may not be the current user)
-  // In the future this should be passed as a hidden/value form element in $data
-  $student_user = user_load($_SESSION['student']['id']);
-
-  $session = variable_get('veritas_current_session', '');
-
-  // In the future this should not be used because the courses being selected could be for the 2nd semester but selected at the start of the 1st semester
-  // So this will need to be passed as a hidden/value form element in $data
-  $semester = variable_get('veritas_current_semester', 1);
-
-  $studentname = '';
-  if (!empty($student_user->profile_first_name) && !empty($student_user->profile_last_name)) {
-    $middle = '';
-    if (!empty($student_user->profile_middle_name)) $middle = ' ' . $student_user->profile_middle_name;
-    $studentname = "{$student_user->profile_last_name}, {$student_user->profile_first_name}{$middle}";
-  }
-
-  // Find the program type
-  $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
-  $result = db_query($sql, $student_user->profile_first_choice);
-  $row = db_fetch_object($result);
-  $program_type = abs($row->field_program_type_value);
-  if ($program_type == 3 && $student_user->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
-
-  // Find the existing student_program
-  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
-  $result = db_query($sql, $student_user->uid, $student_user->profile_first_choice);
-  $row = db_fetch_object($result);
-  $student_program = $row->nid;
-
+function create_student_gpa($student_user, $studentname, $student_program, $session, $semester, $creditload) {
   // Check if there is an existing student_gpa, must avoid a duplicate
   $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
     WHERE
@@ -550,24 +593,15 @@ function add_student_courses($data) {
   $node->field_gptotal[0]['value']               = '-';
   $node->field_gpa[0]['value']                   = '-';
   $node->field_gpaforstudent[0]['value']         = '-';
-  $node->field_credit_load_registered[0]['value']= $data['select_credit'];
+  $node->field_credit_load_registered[0]['value']= $creditload;
   $node->field_credit_load_completed[0]['value'] = 0;
   $node->field_level_name_gpa[0]['value']        = $student_user->profile_level_name;
   node_save($node);
-  $student_gpa = $node->nid;
-
-  delete_student_grades($student_user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
-
-  foreach ($data['corecourses'] as $key => $value) {
-    create_student_grades($student_user, $value, $data, $session, $semester, $student_gpa, $studentname, $program_type);
-  }
-  foreach ($data['electivecourses'] as $key => $value) {
-    create_student_grades($student_user, $key, $data, $session, $semester, $student_gpa, $studentname, $program_type);
-  }
+  return $node->nid;
 }
 
 
-function create_student_grades($student_user, $course_instance, $data, $session, $semester, $student_gpa, $studentname, $program_type) {
+function create_student_grades($student_user, $course_instance, $student_gpa, $studentname, $program_type) {
 
   // student_grades CCK
   $node = new stdClass();
