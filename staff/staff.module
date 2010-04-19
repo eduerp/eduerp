@@ -1684,20 +1684,16 @@ function staff_user($op, &$edit, &$account, $category) {
 }
 
 
-/*Code adding started on 24/02/2009 for staff profile form.*/
 function staff_profile_form(&$obj) {
-  if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('user');
+  global $user;
+
+  $qry = "SELECT * FROM {veritas_staff} WHERE user_id=%d";
+  $res = db_query($qry, $user->uid);
+  if ($res && ($data = db_fetch_object($res))) {
+    $_SESSION['staff']['user'] = $data->usrname;
+    $_SESSION['staff']['data'] = $data;
   }
-  if (isset($_SESSION['staff']['data']->staff_id)) {
-    $qry = "select * from {veritas_staff} where staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-    $res = db_query($qry);
-    if ($res && ($data = db_fetch_object($res))) {
-      $_SESSION['staff']['user'] = $data->usrname;
-      $_SESSION['staff']['data'] = $data;
-      //echo $_SESSION['staff']['data']->state;
-    }
-  }
+
   $form['#title'] = t('Staff Profile');
   $form['title'] = array(
     '#type' => 'select',
@@ -1785,7 +1781,6 @@ function staff_profile_form(&$obj) {
     '#type' => 'textfield',
     '#default_value' => $_SESSION['staff']['data']->blood_group,
     '#size' => 5);
-  /*$form['dob']=array('#type'=>'date','#title'=>'Date Of Birth', '#default_value'=>$_SESSION['staff']['data']->dob);*/
   $form['dob'] = array(
     '#type' => 'date',
     '#title' => 'Date Of Birth',
@@ -1799,7 +1794,6 @@ function staff_profile_form(&$obj) {
     '#type' => 'submit');
   return $form;
 }
-/*Code adding ended on 24/02/2009 for staff profile form.*/
 
 
 function staff_profile_form_validate($form, &$states) {
@@ -3028,12 +3022,20 @@ function validate_always_true($element, &$form_state){
 
 
 function _get_staff_list() {
-  $q = "SELECT user_id, staff_last_name, staff_first_name FROM {veritas_staff}";
+  $q = "SELECT er.uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS name
+    FROM {eduerp_roles} er
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    GROUP BY er.uid ORDER BY name";
   $rs = db_query($q);
   $staff_list = array(0 => "Select One");
 
   while ($row = db_fetch_object($rs)) {
-    $staff_list[$row->user_id] = sprintf("%s %s", trim($row->staff_last_name), trim($row->staff_first_name));
+    $staff_list[$row->uid] = $row->name;
   }
 
   return $staff_list;
