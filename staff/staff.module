@@ -1007,8 +1007,7 @@ function staff_level() {
   return  $titles;
 }
 function staff_course() {
-  $titles[''] = "";
-  //$r=db_query("select * from `course` c inner join veritas_staff_department sd on sd.department_id=c.department_id where sd.staff_id=". $_SESSION['staff']['data']->staff_id ." order by course_title");
+  $titles[''] = '';
   $r = db_query("SELECT nid, field_coursetitle_value AS value FROM {content_type_course} ORDER BY field_coursetitle_value");
   while ($f = db_fetch_object($r))
     $titles[$f->nid] = $f->value;
@@ -1578,11 +1577,6 @@ function staff_registration_form_validate(&$form, &$state) {
       form_set_error('submitted[cpassword]', "Password not match with  Confirm Password");
       return;
     }
-    /* $query ="select * from veritas_staff where usrname = '".$form['#post']['username']."'";
-    $result = db_query($query);
-    if ($result && db_fetch_object($result)) {
-      form_set_error('submitted[username]',"Username already exists.");
-    }*/
   }
   if ($state['storage']['step'] ==2) {
   }
@@ -1794,16 +1788,9 @@ function staff_profile_form_validate($form, &$states) {
 }
 
 
-/*Code adding started on 25/02/2009 for staff clearance form. */
 function _staff_clearance() {
-  /*if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('user');
-  }*/
   ob_start();
 
-  // $qry2 = "SELECT * FROM student AS a LEFT OUTER JOIN department AS d ON a.first_choice=d.department_id LEFT OUTER JOIN college AS c ON d.college_id=c.college_id WHERE a.staff_id='".$_SESSION['staff']['data']->staff_id."'";
-  // $qry2 = "SELECT * FROM `admitted_student` AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id left join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id  WHERE 1=1 or a . clearance_status=1 OR a . clearance_status=2";
-  // $qry2 = "SELECT * FROM `admitted_studen`t AS a LEFT OUTER JOIN programme AS p ON a . first_choice=p . programme_id inner join department d on p . department_id = d . department_id LEFT OUTER JOIN college AS c ON d . college_id=c . college_id inner join veritas_staff_college vc on vc . assigned_college = c . college_id and vc.staff_id = ". $_SESSION['staff']['data']->staff_id ." WHERE a . clearance_status=1   ORDER BY a . last_name ASC";
   $qry2 = "SELECT a.*, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
     FROM {admitted_student} a, {content_type_program} p, {content_type_department} d, {content_type_college} c
     WHERE a.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid AND a.clearance_status=1 ORDER BY a.last_name ASC";
@@ -1839,11 +1826,6 @@ function _staff_clearance() {
 
 
 function staff_begin_clearance_form1(&$obj) {
-/*
-  if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('user');
-  }
-*/
   if (isset($_SESSION['staff']['mat'])) {
     unset($_SESSION['staff']['mat']);
   }
@@ -2100,10 +2082,6 @@ function staff_cleared_student() {
 function staff_notcleared_student() {
   global $user;
 
-/*
-  if (!isset($_SESSION['staff']['data']->staff_id)) {
-    drupal_goto('user');
-  }*/
   if (!veritas_has_role($user, 'Registry')) {
     $_SESSION['staff']['msg']='You are not authorized to access this page.';
     drupal_goto('staff/cleared');
