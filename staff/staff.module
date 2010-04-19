@@ -927,6 +927,9 @@ function staff_course_assign_form1(&$obj) {
   return $form;
 }
 function course_assign_list() {
+  global $user;
+  profile_load_profile($user);
+
   $query = "
     SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
     FROM
@@ -946,7 +949,7 @@ function course_assign_list() {
     LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
     LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
     LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
-  $r = db_query($query, $_SESSION['staff']['data']->department_id);
+  $r = db_query($query, $user->department_id);
   $html = "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
     $course_type = array('1' => 'Core', 2 => 'Elective');
