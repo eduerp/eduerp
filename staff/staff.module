@@ -45,14 +45,6 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['staff/profile']=array(
-    'title'=>'Staff Profile',
-    'page callback' => 'drupal_get_form',
-    'page arguments'=>array('staff_profile_form'),
-     'access arguments' => array('staff profile'),
-     'type' => MENU_CALLBACK,
-  );
-
   $items['staff/view']=array(
     'title'=>'Staff Summary',
     'page callback' => 'drupal_get_form',
@@ -218,7 +210,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff clearance','staff assign role','staff profile','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments');
+  return array('staff register','staff clearance','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments');
 }
 
 
@@ -1680,131 +1672,6 @@ function staff_user($op, &$edit, &$account, $category) {
         }
       }
     break;
-  }
-}
-
-
-function staff_profile_form(&$obj) {
-  global $user;
-
-  $qry = "SELECT * FROM {veritas_staff} WHERE user_id=%d";
-  $res = db_query($qry, $user->uid);
-  if ($res && ($data = db_fetch_object($res))) {
-    $_SESSION['staff']['user'] = $data->usrname;
-    $_SESSION['staff']['data'] = $data;
-  }
-
-  $form['#title'] = t('Staff Profile');
-  $form['title'] = array(
-    '#type' => 'select',
-    '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
-    '#required' => TRUE,
-    '#title' => 'Title',
-    '#default_value' => $_SESSION['staff']['data']->staff_title);
-  $form['fname'] = array(
-    '#title' => 'First Name',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#required' => TRUE,
-    '#default_value' => $_SESSION['staff']['data']->staff_first_name);
-  $form['mname'] = array(
-    '#title' => 'Middle Name',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#default_value' => $_SESSION['staff']['data']->staff_middle_name);
-  $form['lname'] = array(
-    '#title' => 'Last Name',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#default_value' => $_SESSION['staff']['data']->staff_last_name,
-    '#required' => TRUE);
-  $form['maidname'] = array(
-    '#title' => 'Maiden Name',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#default_value' => $_SESSION['staff']['data']->staff_maiden_name,
-    '#required' => TRUE);
-  $form['gender'] = array(
-    '#title' => 'Gender',
-    '#type' => 'select',
-    '#options' => array('M' => 'Male', 'F' => 'Female'),
-    '#default_value' => $_SESSION['staff']['data']->gender,
-    '#required' => TRUE);
-  $form['nation'] = array(
-    '#title' => 'Nationality',
-    '#type' => 'select',
-    '#options' => _veritas_country(),
-    '#default_value' => $_SESSION['staff']['data']->nationality,
-    '#required' => TRUE);
-  $form['state'] = array(
-    '#title' => 'State',
-    '#type' => 'select',
-    '#options' => veritas_states(),
-    '#default_value' => $_SESSION['staff']['data']->state,
-    '#required' => TRUE);
-  $form['address'] = array(
-    '#title' => 'Address',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->address,
-    '#required' => TRUE);
-  $form['city'] = array(
-    '#title' => 'City',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->city,
-    '#required' => TRUE);
-  $form['tel'] = array(
-    '#title' => 'Telephone',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->tel,
-    '#required' => TRUE);
-  $form['gsm'] = array(
-    '#title' => 'GSM',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->gsm,
-    '#required' => TRUE);
-  $form['pemail'] = array(
-    '#title' => 'Personal Email',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->personal_email,
-    '#required' => TRUE);
-  $form['mstatus'] = array(
-    '#title' => 'Marital Status',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->marital_status,
-    '#required' => TRUE);
-  $form['location'] = array(
-    '#title' => 'Location',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->location);
-  $form['blood'] = array(
-    '#title' => 'Blood Group',
-    '#type' => 'textfield',
-    '#default_value' => $_SESSION['staff']['data']->blood_group,
-    '#size' => 5);
-  $form['dob'] = array(
-    '#type' => 'date',
-    '#title' => 'Date Of Birth',
-    '#default_value' => array(
-      'day' => (int)substr($_SESSION['staff']['data']->dob, -2),
-      'month' => (int)substr($_SESSION['staff']['data']->dob, 5, 2),
-      'year' => substr($_SESSION['staff']['data']->dob, 0, 4)));
-  $form['submit'] = array(
-    '#id' => 'enter',
-    '#value' => 'Submit',
-    '#type' => 'submit');
-  return $form;
-}
-
-
-function staff_profile_form_validate($form, &$states) {
-  ob_start();
-  $dob = $form['#post']['dob']['year'] ."-". $form['#post']['dob']['month'] ."-". $form['#post']['dob']['day'];
-  $qry = "update {veritas_staff} set staff_title='". $form['#post']['title'] ."', staff_first_name='". $form['#post']['fname'] ."', staff_last_name='". $form['#post']['lname'] ."', staff_middle_name='". $form['#post']['mname'] ."', staff_maiden_name='". $form['#post']['maidname'] ."', gender='". $form['#post']['gender'] ."', nationality='". $form['#post']['nation'] ."', state='". $form['#post']['state'] ."', address='". $form['#post']['address'] ."', city='". $form['#post']['city'] ."', tel='". $form['#post']['tel'] ."', gsm='". $form['#post']['gsm'] ."', dob='". $dob ."', personal_email='". $form['#post']['pemail'] ."', blood_group='". $form['#post']['blood'] ."', marital_status='". $form['#post']['mstatus'] ."', location='". $form['#post']['location'] ."'
-      where  staff_id='". $_SESSION['staff']['data']->staff_id ."'";
-  $result = db_query($qry);
-  if ($result && db_affected_rows() > 0) {
-    drupal_set_message('You have successfully updated your details.');
-    drupal_goto('user');
   }
 }
 
