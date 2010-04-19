@@ -619,28 +619,20 @@ function staff_course_list() {
 
 function staff_department_list() {
   ob_start();
-  $r = db_query("SELECT courses.*, er.uid AS hod_uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS hod_name
-    FROM
-      (SELECT
-        d.nid AS department_id,
-        d.field_department_name_value AS department_name
-      FROM
-        {veritas_staff} vs,
-        {content_type_department} d0,
-        {content_type_department} d
-      WHERE
-        vs.staff_id=%d AND
-        vs.department_id=d0.nid AND
-        d0.field_college_id_nid=d.field_college_id_nid
-      ) AS courses
-    LEFT  JOIN {eduerp_roles} er ON courses.department_id=er.department_id AND er.role='Head of Department'
+  $r = db_query("SELECT
+      d.nid AS department_id,
+      d.field_department_name_value AS department_name,
+      er.uid AS hod_uid,
+      CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS hod_name
+    FROM {content_type_department} d
+    LEFT  JOIN {eduerp_roles} er ON d.department_id=er.department_id AND er.role='Head of Department'
     INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
     INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
     INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
     LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
     LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
-    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid",
-    $_SESSION['staff']['data']->staff_id);
+    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    ORDER BY department_name");
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
     <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>HOD</b></td><td><b>Action</b></td></tr>
