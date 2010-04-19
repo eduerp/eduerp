@@ -2979,7 +2979,7 @@ function search_staff_form_validate($form, &$state) {
       $qry = "SELECT * FROM {veritas_staff} WHERE user_id=%d";
       $res = db_query($qry, $staff_no);
       if ($res && ($result = db_fetch_object($res))) {
-        $_SESSION['staff']['user_id'] = $result->staff_no;
+        $_SESSION['staff']['user_id'] = $result->user_id;
       }
       else {
         form_set_error('staff_no', "Staff number is not valid.");
