@@ -674,24 +674,32 @@ function staff_search_list() {
   else {
     $condition  = '';
   }
-  $query = "SELECT vs.*, GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
-    FROM {veritas_staff} vs LEFT JOIN {eduerp_roles} er ON vs.user_id=er.uid
-    $condition GROUP BY vs.staff_id ORDER BY staff_last_name ASC";
+  $query = "SELECT
+      er.uid,
+      CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS name,
+      GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
+    FROM {eduerp_roles} er
+    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
+    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
+    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
+    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
+    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
+    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    $condition
+    GROUP BY er.uid ORDER BY name";
   $result = db_query($query);
 ?>
     <table border='1' align='center'>
-    <tr bgcolor='#ACCFCC'><td colspan='7'><b>Staff List</b></td></tr>
-    <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Roles</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td colspan='4'><b>Staff List</b></td></tr>
+    <tr><td><b>Name</b></td><td><b>Roles</b></td><td><b>View</b></td><td><b>Action</b></td></tr>
 <?php
   while ($f = db_fetch_object($result)) {
 ?>
       <tr>
-      <td><?php echo $f->staff_last_name; ?></td>
-      <td><?php echo $f->staff_middle_name; ?></td>
-      <td><?php echo $f->staff_first_name; ?></td>
+      <td><?php echo $f->name ?></td>
       <td><? echo $f->role_name; ?></td>
-      <td><a href="view/<? echo $f->user_id; ?>">View</a></td>
-      <td><a href="<?php echo url('staff/assignrole/'. $f->user_id)?>">Assign Roles</a></td>
+      <td><a href="view/<? echo $f->uid; ?>">View</a></td>
+      <td><a href="<?php echo url('staff/assignrole/'. $f->uid)?>">Assign Roles</a></td>
       </tr>
 <?php
   }
