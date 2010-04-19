@@ -996,7 +996,7 @@ function staff_course_assign_form1_submit(&$form, &$state) {
 function lecturer() {
   global $user;
 
-  $titles[''] = 'Select'.$user->department_id;
+  $titles[''] = 'Select';
   $r = db_query("SELECT er.uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
     FROM {eduerp_roles} er
     INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
@@ -1018,7 +1018,7 @@ function lecturer() {
 
 function staff_prg() {
   global $user;
-  $titles[''] = '';
+  $titles[''] = 'TEST'.$user->department_id.'A';
   $sql = "SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d ORDER BY field_programme_name_value";
   $rows = db_query($sql, $user->department_id);
   while ($row = db_fetch_object($rows)) {
