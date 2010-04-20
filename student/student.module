@@ -3832,9 +3832,9 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
   return 0;
 }
 
-function student_user($type, &$edit, &$user, $category = NULL){
 
-  switch($type){
+function student_user($type, &$edit, &$user, $category = NULL) {
+  switch ($type) {
     case 'login':
       // Each time a user logs in, all previous session variables should be reset
 			unset($_SESSION['student']);
@@ -3845,7 +3845,39 @@ function student_user($type, &$edit, &$user, $category = NULL){
         $_SESSION['student']['data'] = $data;
       }
       break;
+    case 'update':
+    case 'insert':
+      if (!empty($edit->profile_jambno)) {
+        db_query("
+          UPDATE {admitted_student} a, {title} t, {state} s
+          SET
+            a.last_name='%s',
+            a.first_name='%s',
+            a.middle_name='%s',
+            a.title=t.title_id,
+            a.permanent_address1='%s',
+            a.permanent_address_city='%s',
+            a.permanent_address_state=s.state_id,
+            a.mobile_number='%s',
+            a.marital_status='%s',
+            a.religion='%s'
+          WHERE
+            t.title_name='%s' AND
+            s.state_name='%s' AND
+            a.student_id=%d",
+          $edit->profile_last_name,
+          $edit->profile_first_name,
+          $edit->profile_middle_name,
+          $edit->profile_permanent_address1,
+          $edit->profile_permanent_address_city,
+          $edit->profile_mobile_number,
+          $edit->profile_marital_status,
+          $edit->profile_religion,
+          $edit->profile_title_name,
+          $edit->profile_permanent_address_state,
+          $user->uid);
+      }
+      break;
   }
-  //die;
 }
 ?>
