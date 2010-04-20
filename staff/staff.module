@@ -1656,26 +1656,6 @@ function view_student_payments_form(&$obj) {
 }
 
 
-function staff_user($op, &$edit, &$account, $category) {
-  switch ($op) {
-    case 'login':
-      $query ="select COUNT(*) AS count from {veritas_staff} where user_id = %d";
-      $result = db_query($query, $account->uid);
-	    $rows = db_fetch_array($result);
-
-	    if ($result && intval($rows['count']) > 0) {
-        $result = db_query("SELECT * FROM {veritas_staff} as vs LEFT JOIN {veritas_staff_type} AS vst ON vs.staff_type_id=vst.staff_type_id
-          WHERE vs.user_id='" . $account->uid . "'");
-
-        if ($result && ($data = db_fetch_object($result))) {
-          $_SESSION['staff']['data'] = $data;
-        }
-      }
-    break;
-  }
-}
-
-
 function _staff_clearance() {
   ob_start();
 
