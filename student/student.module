@@ -3834,7 +3834,7 @@ function file_save_upload_name($source, $validators = array('file_validate_exten
 
 
 function student_user($type, &$edit, &$user, $category = NULL) {
-error_log("student_user type: $type, category: $category, uid: {$user->uid}, edit->profile_last_name: {$edit->profile_last_name}, user->profile_last_name: {$user->profile_last_name}");
+error_log("student_user type: $type, category: $category, uid: {$user->uid}, user->profile_jambno: {$user->profile_jambno}, user->profile_last_name: {$user->profile_last_name}");
   switch ($type) {
     case 'login':
       // Each time a user logs in, all previous session variables should be reset
@@ -3846,9 +3846,8 @@ error_log("student_user type: $type, category: $category, uid: {$user->uid}, edi
         $_SESSION['student']['data'] = $data;
       }
       break;
-    case 'update':
-    case 'insert':
-      if (!empty($edit->profile_jambno)) {
+    case 'after_update':
+      if ($category === 'eduerp' && !empty($user->profile_jambno)) {
         db_query("
           UPDATE {admitted_student} a, {title} t, {state} s
           SET
@@ -3866,16 +3865,16 @@ error_log("student_user type: $type, category: $category, uid: {$user->uid}, edi
             t.title_name='%s' AND
             s.state_name='%s' AND
             a.student_id=%d",
-          $edit->profile_last_name,
-          $edit->profile_first_name,
-          $edit->profile_middle_name,
-          $edit->profile_permanent_address1,
-          $edit->profile_permanent_address_city,
-          $edit->profile_mobile_number,
-          $edit->profile_marital_status,
-          $edit->profile_religion,
-          $edit->profile_title_name,
-          $edit->profile_permanent_address_state,
+          $user->profile_last_name,
+          $user->profile_first_name,
+          $user->profile_middle_name,
+          $user->profile_permanent_address1,
+          $user->profile_permanent_address_city,
+          $user->profile_mobile_number,
+          $user->profile_marital_status,
+          $user->profile_religion,
+          $user->profile_title_name,
+          $user->profile_permanent_address_state,
           $user->uid);
       }
       break;
