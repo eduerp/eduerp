@@ -1,6 +1,6 @@
 <?php
 // staff_eduerp_profile.inc Alan Barrett 20091112
-// Save profile data from admitted_student into eduerp category of user profile
+// Save profile data from veritas_staff into eduerp category of user profile
 
 
 function save_staff_eduerp_profile($uid) {
