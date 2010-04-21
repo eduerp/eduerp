@@ -38,11 +38,11 @@ function save_staff_eduerp_profile($uid) {
     $profile_key = 'profile_' . $key;
 
     if ($key === 'dob') {
-      $addprofile[$profile_key] = array(
+      $addprofile[$profile_key] = serialize(array(
           'year'  => (int)substr($value, 0, 4),
           'month' => (int)substr($value, 5, 2),
           'day'   => (int)substr($value, 8, 2)
-        );
+        ));
     }
     else {
       if (is_null($value)) {
@@ -65,10 +65,12 @@ function save_staff_eduerp_profile($uid) {
   $addprofile['profile_first_choice'] = '';
   $addprofile['profile_programme_name'] = '';
 
-  $userforprofile = new stdClass;
-  $userforprofile->uid = $uid;
-  profile_save_profile($addprofile, $userforprofile, 'eduerp');
-
+  foreach ($addprofile as $profile_key => $value) {
+    db_query("DELETE FROM {profile_values}
+      USING {profile_values}, {profile_fields} pf
+      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $uid, $profile_key);
+    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $uid, $value, $profile_key);
+  }
 
   // Do Staff specific profile values
   $sql = "SELECT
@@ -85,18 +87,14 @@ function save_staff_eduerp_profile($uid) {
   $admitteds = db_query($sql, $uid);
   $admitted = db_fetch_array($admitteds);
 
-  $addprofilestaff = array();
   foreach ($admitted as $key => $value) {
     $profile_key = 'profile_' . $key;
+    if (is_null($value)) $value = '';
 
-    if (is_null($value)) {
-      $addprofilestaff[$profile_key] = '';
-    }
-    else {
-      $addprofilestaff[$profile_key] = $value;
-    }
+    db_query("DELETE FROM {profile_values}
+      USING {profile_values}, {profile_fields} pf
+      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $uid, $profile_key);
+    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $uid, $value, $profile_key);
   }
-
-  profile_save_profile($addprofilestaff, $userforprofile, 'eduerpstaff');
 }
 ?>

@@ -51,12 +51,11 @@ function save_student_eduerp_profile($uid) {
     $profile_key = 'profile_' . $key;
 
     if ($key === 'dob') {
-      $addprofile[$profile_key] = array(
+      $addprofile[$profile_key] = serialize(array(
           'year'  => (int)substr($value, 0, 4),
           'month' => (int)substr($value, 5, 2),
           'day'   => (int)substr($value, 8, 2)
-        );
-      //echo $key . ': ' . $value . '<br />';
+        ));
     }
     else {
       if (is_null($value)) {
@@ -65,12 +64,14 @@ function save_student_eduerp_profile($uid) {
       else {
         $addprofile[$profile_key] = $value;
       }
-      //echo $key . ': ' . $addprofile[$profile_key] . '<br />';
     }
   }
 
-  $userforprofile = new stdClass;
-  $userforprofile->uid = $admitted['student_id'];
-  profile_save_profile($addprofile, $userforprofile, 'eduerp');
+  foreach ($addprofile as $profile_key => $value) {
+    db_query("DELETE FROM {profile_values}
+      USING {profile_values}, {profile_fields} pf
+      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $uid, $profile_key);
+    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $uid, $value, $profile_key);
+  }
 }
 ?>
