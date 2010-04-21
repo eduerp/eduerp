@@ -1246,6 +1246,36 @@ function create_student_program($uid) {
 }
 
 
+function change_student_program($uid, $first_choice) {
+  $sql = "SELECT
+    p.field_programme_name_value AS programme_name,
+    d.field_department_name_value AS department_name,
+    co.field_college_name_value AS college_name
+  FROM {content_type_program} p, {content_type_department} d, {content_type_college} co
+  WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=co.nid";
+  $result = db_query($sql, $first_choice);
+  $row = db_fetch_array($result);
+  $addprofile = array(
+    'profile_first_choice'    => $first_choice,
+    'profile_programme_name'  => $row->programme_name,
+    'profile_department_name' => $row->department_name,
+    'profile_college_name'    => $row->college_name);
+
+  foreach ($addprofile as $profile_key => $value) {
+    db_query("DELETE FROM {profile_values}
+      USING {profile_values}, {profile_fields} pf
+      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $uid, $profile_key);
+    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $uid, $value, $profile_key);
+  }
+
+  db_query("UPDATE {admitted_student} SET first_choice=%d WHERE student_id=%d", $first_choice, $uid);
+
+  create_student_program($uid);
+
+  // Change matriculation number (link to Tim's code)
+}
+
+
 function student_reg_form(&$obj) {
 
 
