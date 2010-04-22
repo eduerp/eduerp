@@ -64,6 +64,8 @@ function save_staff_eduerp_profile($uid) {
   $addprofile['profile_level_name'] = '';
   $addprofile['profile_first_choice'] = '';
   $addprofile['profile_programme_name'] = '';
+  $addprofile['profile_registered_session'] = '';
+  $addprofile['profile_registered_semester'] = '';
 
   foreach ($addprofile as $profile_key => $value) {
     db_query("DELETE FROM {profile_values}

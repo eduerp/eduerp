@@ -66,6 +66,8 @@ function save_student_eduerp_profile($uid) {
       }
     }
   }
+  $addprofile['profile_registered_session'] = '';
+  $addprofile['profile_registered_semester'] = '';
 
   foreach ($addprofile as $profile_key => $value) {
     db_query("DELETE FROM {profile_values}
