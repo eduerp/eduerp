@@ -414,10 +414,45 @@ function student_course_form(&$obj) {
   global $user;
   profile_load_profile($user);
 
+  $session =  variable_get('veritas_current_session', '');
   $semester = variable_get('veritas_current_semester', 1);
 
+  $gotonextlevel = TRUE;
+
+  $sql = "SELECT field_event_sr_value FROM {content_type_student_record}
+    WHERE
+      field_student_ref_sr_uid=%d AND
+      field_student_program_sr_nid=%d AND
+      (
+        field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+        OR
+        (
+          field_event_sr_value='Repeat Session' AND
+          CONCAT(CAST(SUBSTR(field_session_sr_value, 1, 4) AS UNSIGNED)+1, '/', CAST(SUBSTR(field_session_sr_value, 6, 4) AS UNSIGNED)+1)='%s'
+        )
+      )";
+  $rows = db_query($sql, $user->uid, $user->profile_first_choice, $session);
+  if ($row = db_fetch_object($rows)) {
+    if ($row->field_event_sr_value === 'Repeat Session') {
+      $gotonextlevel = FALSE;
+    }
+    else {
+      drupal_set_message("Sorry, you have left this programme so cannot register courses.");
+      return FALSE;
+    }
+  }
+
+  if ($user->profile_registered_session === $session) $gotonextlevel = FALSE;
+
+  $level_name = $user->profile_level_name;
+
+  if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
+    if ($level_name >= 100) $level_name += 100;
+    else                    $level_name += 1;
+  }
+
   $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
-    $user->profile_first_choice, $user->profile_level_name, $semester);
+    $user->profile_first_choice, $level_name, $semester);
   if (!db_fetch_object($rows)) {
     drupal_set_message("Sorry. You are not allowed to register courses at this time.");
     return FALSE;
@@ -425,8 +460,26 @@ function student_course_form(&$obj) {
 
   // Check if the student has paid his/her fees for this session
   $q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
-  $rs = db_query($q, $user->uid, variable_get('veritas_current_session', ''));
+  $rs = db_query($q, $user->uid, $session);
   if ($rs && ($row = db_fetch_object($rs))) {
+
+    $addprofile = array();
+
+    if ($gotonextlevel) {
+      $level_id = $user->profile_level_id;
+      $rows = db_query("SELECT level_id FROM {level} WHERE level_name='%s'", $level_name);
+      if ($row = db_fetch_object($rows)) $level_id = $row->level_id;
+
+      $addprofile['profile_level_id'] = $level_id;
+      $addprofile['profile_level_name'] = $level_name;
+
+      db_query("UPDATE {admitted_student} SET level_id=%d WHERE student_id=%d", $level_id, $user->uid);
+    }
+
+    $addprofile['profile_registered_session'] = $session;
+    $addprofile['profile_registered_semester'] = $semester;
+
+    updateprofilevalues($user, $addprofile);
 
     $courseselections = new courseselectionsclass();
 
@@ -1246,7 +1299,7 @@ function create_student_program($uid) {
 }
 
 
-function change_student_program($uid, $first_choice) {
+function change_student_program(&$user, $first_choice) {
   $sql = "SELECT
     p.field_programme_name_value AS programme_name,
     d.field_department_name_value AS department_name,
@@ -1260,19 +1313,25 @@ function change_student_program($uid, $first_choice) {
     'profile_programme_name'  => $row->programme_name,
     'profile_department_name' => $row->department_name,
     'profile_college_name'    => $row->college_name);
+  updateprofilevalues($user, $addprofile);
 
+  db_query("UPDATE {admitted_student} SET first_choice=%d WHERE student_id=%d", $first_choice, $user->uid);
+
+  create_student_program($user->uid);
+
+  // Change matriculation number (link to Tim's code)
+}
+
+
+function updateprofilevalues(&$user, $addprofile) {
   foreach ($addprofile as $profile_key => $value) {
     db_query("DELETE FROM {profile_values}
       USING {profile_values}, {profile_fields} pf
-      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $uid, $profile_key);
-    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $uid, $value, $profile_key);
+      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $user->uid, $profile_key);
+    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $user->uid, $value, $profile_key);
+    unset($user->{$profile_key});
   }
-
-  db_query("UPDATE {admitted_student} SET first_choice=%d WHERE student_id=%d", $first_choice, $uid);
-
-  create_student_program($uid);
-
-  // Change matriculation number (link to Tim's code)
+  profile_load_profile($user); // Reload any unset values
 }
 
 
