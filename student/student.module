@@ -428,10 +428,10 @@ function student_course_form(&$obj) {
         OR
         (
           field_event_sr_value='Repeat Session' AND
-          CONCAT(CAST(SUBSTR(field_session_sr_value, 1, 4) AS UNSIGNED)+1, '/', CAST(SUBSTR(field_session_sr_value, 6, 4) AS UNSIGNED)+1)='%s'
+          field_session_sr_value='%s'
         )
       )";
-  $rows = db_query($sql, $user->uid, $user->profile_first_choice, $session);
+  $rows = db_query($sql, $user->uid, $user->profile_first_choice, $user->profile_registered_session);
   if ($row = db_fetch_object($rows)) {
     if ($row->field_event_sr_value === 'Repeat Session') {
       $gotonextlevel = FALSE;
