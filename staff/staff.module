@@ -564,7 +564,7 @@ function move_department_form_submit($form, &$form_state) {
 function search_staff_list() {
   ob_start();
 
-  echo  drupal_get_form('staff_search_form');
+//  echo  drupal_get_form('staff_search_form');
 
   staff_search_list();
 
@@ -646,6 +646,7 @@ function staff_department_list() {
 
 
 function staff_search_list() {
+  /*
   $search_keys = array('gender', 'department_id', 'staff_type_id', 'grade_level_id', 'state');
   $search_values = array(
     'gender' => '',
@@ -663,9 +664,9 @@ function staff_search_list() {
   if (implode(' and ', $condition) != '') {
     $condition = " where ". implode(' and ', $condition);
   }
-  else {
+  else {*/
     $condition  = '';
-  }
+  /*}*/
   $query = "SELECT er.uid,
       CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS name,
       GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
@@ -783,7 +784,9 @@ EOD;
 <?php
   return ob_get_clean();
 }
-function staff_search_form(&$obj) {
+
+
+/* function staff_search_form(&$obj) {
   $form = array(
     '#theme' => 'form_panel_table',
     '#form_panel_table_attributes' => array('border' => 0),
@@ -838,7 +841,9 @@ function staff_search_form(&$obj) {
     '#form_panel_col' => 6,
     '#form_panel_row' => 1);
   return $form ;
-}
+}*/
+
+
 function staff_course_assign_form1(&$obj) {
   $form = array(
     '#theme' => 'form_panel_table',
