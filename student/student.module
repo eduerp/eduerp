@@ -546,27 +546,27 @@ function student_course_form_validate($form, &$form_state) {
   $cis1 = implode(',', $course_instances1);
   if (empty($cis1)) $cis1 = '0';
 
-  $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS load
+  $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS tload
     FROM {content_type_course_instance} ci, {content_type_course} c
     WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
   $result = db_query($sql, $cis1, $currentlevelcis);
   $row = db_fetch_object($result);
-  if ($row->load < $form['#min_credit_load1']) form_set_error('', 'You have not selected enough credit load for semester 1, select more courses.');
-  if ($row->load > $form['#max_credit_load1']) form_set_error('', 'You have selected too much credit load for semester 1, select fewer courses.');
-  $form_state['storage']['creditload'][1] = $row->load;
+  if ($row->tload < $form['#min_credit_load1']) form_set_error('', 'You have not selected enough credit load for semester 1, select more courses.');
+  if ($row->tload > $form['#max_credit_load1']) form_set_error('', 'You have selected too much credit load for semester 1, select fewer courses.');
+  $form_state['storage']['creditload'][1] = $row->tload;
 
   if (!empty($form['#max_credit_load2'])) {
     $cis2 = implode(',', $course_instances2);
     if (empty($cis2)) $cis2 = '0';
 
-    $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS load
+    $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS tload
       FROM {content_type_course_instance} ci, {content_type_course} c
       WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
     $result = db_query($sql, $cis2, $currentlevelcis);
     $row = db_fetch_object($result);
-    if ($row->load < $form['#min_credit_load2']) form_set_error('', 'You have not selected enough credit load for semester 2, select more courses.');
-    if ($row->load > $form['#max_credit_load2']) form_set_error('', 'You have selected too much credit load for semester 2, select fewer courses.');
-    $form_state['storage']['creditload'][2] = $row->load;
+    if ($row->tload < $form['#min_credit_load2']) form_set_error('', 'You have not selected enough credit load for semester 2, select more courses.');
+    if ($row->tload > $form['#max_credit_load2']) form_set_error('', 'You have selected too much credit load for semester 2, select fewer courses.');
+    $form_state['storage']['creditload'][2] = $row->tload;
   }
 }
 
