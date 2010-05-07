@@ -511,7 +511,6 @@ function student_course_form(&$obj) {
 
 
 function student_course_form_validate($form, &$form_state) {
-  $x = print_r($form_state, TRUE);
   $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
   if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
   else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
@@ -552,7 +551,7 @@ function student_course_form_validate($form, &$form_state) {
     WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
   $result = db_query($sql, $cis1, $currentlevelcis);
   $row = db_fetch_object($result);
-  if ($row->load < $form['#min_credit_load1']) form_set_error('', 'You have not selected enough credit load for semester 1, select more courses.'. $x);
+  if ($row->load < $form['#min_credit_load1']) form_set_error('', 'You have not selected enough credit load for semester 1, select more courses.');
   if ($row->load > $form['#max_credit_load1']) form_set_error('', 'You have selected too much credit load for semester 1, select fewer courses.');
   $form_state['storage']['creditload'][1] = $row->load;
 
