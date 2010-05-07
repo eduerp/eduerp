@@ -177,6 +177,11 @@ class courseselectionsclass {
       ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
     $result = db_query($sql, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
 
+    $this->form['chosencourses' . $semester] = array(
+        '#type' => 'fieldset',
+        '#tree' => TRUE
+      );
+
     $this->selected_load = 0;
     $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
 
