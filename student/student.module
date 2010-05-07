@@ -454,7 +454,7 @@ function student_course_form(&$obj) {
   $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
     $user->profile_first_choice, $level_name, $semester);
   if (!db_fetch_object($rows)) {
-    drupal_set_message("Sorry. You are not allowed to register courses at this time.");
+    drupal_set_message("Sorry. You are not allowed to register courses at this time.[[{$user->profile_first_choice}, {$level_name}, {$semester}, {$session}]]");
     return FALSE;
   }
 
