@@ -198,7 +198,7 @@ class courseselectionsclass {
         else {
           $disabled = FALSE;
 
-          if (in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+          if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
             $default_value = TRUE;
             $this->selected_load += $row->credit_load;
           }
@@ -336,7 +336,7 @@ class courseselectionsclass {
         '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}</td></tr>"
       );
 
-      if (in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+      if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
         // Unless spec changes, removed: $this->selected_load += $row->credit_load;
         $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
       }
