@@ -1598,7 +1598,7 @@ function staff_registration_form_validate(&$form, &$state) {
     }
     $state['storage']['signature'] = $signature->fid;
     if ($form['#post']['cpassword'] != $form['#post']['password']) {
-      form_set_error('submitted[cpassword]', "Password not match with  Confirm Password");
+      form_set_error('submitted[cpassword]', "Password not match with  Confirm Password post pw {$form['#post']['password']}, post cpw {$form['#post']['cpassword']} value pw, {$state['values']['password']}, value cpw {$state['values']['cpassword']}");
       return;
     }
   }
