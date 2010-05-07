@@ -442,7 +442,7 @@ function student_course_form(&$obj) {
     }
   }
 
-  if ($user->profile_registered_session === $session) $gotonextlevel = FALSE;
+  if (empty($user->profile_registered_session) || $user->profile_registered_session === $session) $gotonextlevel = FALSE;
 
   $level_name = $user->profile_level_name;
 
