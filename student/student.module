@@ -178,12 +178,12 @@ class courseselectionsclass {
     $result = db_query($sql, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
 
     $this->form['chosencourses' . $semester] = array(
-        '#tree' => TRUE
+        '#tree' => TRUE,
+        '#prefix' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>',
+        '#suffix' => '</table>'
       );
 
     $this->selected_load = 0;
-    $this->form['starttable' . $semester] = array('#value' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
-
     while ($row = db_fetch_object($result)) {
       if (in_array($row->course_code, $this->passedcodes)) continue;
 
@@ -218,14 +218,11 @@ class courseselectionsclass {
         '#title' => $row->course_code,
         '#default_value' => $default_value,
         '#disabled' => $disabled,
-        '#tree' => TRUE,
         '#prefix' => '<tr><td>',
         '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}{$block}</td></tr>"
       );
       // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
     }
-
-    $this->form['endtable' . $semester] = array('#value' => '</table>');
   }
 
   public function addformelementsforfailedcoursesforsemester($semester) {
@@ -323,22 +320,22 @@ class courseselectionsclass {
       ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
     $result = db_query($sql, $user->uid, $user->uid, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
 
-    $any = FALSE;
+    $first = TRUE;
     while ($row = db_fetch_object($result)) {
       $this->failedcodes[] = $row->course_code;
 
-      if (!$any) {
-        $this->form['starttablefailed' . $semester] = array('#value' => '<br /><br />Previously Failed Courses, you must choose all these...<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>');
-        $any = TRUE;
+      if ($first) {
+        $extraprefix = '<tr><td colspan="7">Previously Failed Courses, you must choose all these...</td></tr>';
+        $first = FALSE;
       }
+      else $extraprefix = '';
 
       $this->form['chosencourses' . $semester][$row->course_instance] = array(
         '#type' => 'checkbox',
         '#title' => $row->course_code,
         '#default_value' => FALSE,
         '#disabled' => FALSE,
-        '#tree' => TRUE,
-        '#prefix' => '<tr><td>',
+        '#prefix' => $extraprefix . '<tr><td>',
         '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}</td></tr>"
       );
 
@@ -348,8 +345,6 @@ class courseselectionsclass {
       }
       // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
     }
-
-    if ($any) $this->form['endtablefailed' . $semester] = array('#value' => '</table>');
   }
 
   public function addformelementsforloadcounter($semester) {
@@ -490,18 +485,19 @@ function student_course_form(&$obj) {
     $courseselections = new courseselectionsclass();
 
     if (variable_get('RegisterAllCoursesatStartofSession', FALSE)) {
+
       $courseselections->addformelementsforsemester(1);
-      $courseselections->addformelementsforloadcounter(1);
       $courseselections->addformelementsforfailedcoursesforsemester(1);
+      $courseselections->addformelementsforloadcounter(1);
 
       $courseselections->addformelementsforsemester(2);
-      $courseselections->addformelementsforloadcounter(2);
       $courseselections->addformelementsforfailedcoursesforsemester(2);
+      $courseselections->addformelementsforloadcounter(2);
     }
     else {
       $courseselections->addformelementsforsemester($semester);
-      $courseselections->addformelementsforloadcounter($semester);
       $courseselections->addformelementsforfailedcoursesforsemester($semester);
+      $courseselections->addformelementsforloadcounter($semester);
     }
 
     $courseselections->finishform();
