@@ -183,7 +183,7 @@ class courseselectionsclass {
     while ($row = db_fetch_object($result)) {
       if (in_array($row->course_code, $this->passedcodes)) continue;
 
-      if ($block = blockingprerequisites($row->prerequisite_codes)) {
+      if ($block = $this->blockingprerequisites($row->prerequisite_codes)) {
         $block = "<br />You cannot do this course because of prerequisite: $block";
         $default_value = FALSE;
         $disabled = TRUE;
@@ -351,7 +351,7 @@ class courseselectionsclass {
 
     $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green")';
 
-    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.program_id=%d AND pls.level='%s' AND pls.semester='%s'";
+    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
     $result = db_query($sql, $user->profile_first_choice, $user->profile_level_name, $semester);
     $min_max_credits = db_fetch_object($result);
 
