@@ -546,7 +546,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
               FROM
                 {content_type_student_grades} sga,
                 {content_type_course_instance} cia,
-                {content_type_course} ca,
+                {content_type_course} ca
               WHERE
                 sga.field_course_instance_nid=cia.nid AND
                 cia.field_course_id_nid=ca.nid AND
@@ -609,7 +609,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
               FROM
                 {content_type_student_grades} sga,
                 {content_type_course_instance} cia,
-                {content_type_course} ca,
+                {content_type_course} ca
               WHERE
                 sga.field_course_instance_nid=cia.nid AND
                 cia.field_course_id_nid=ca.nid AND
@@ -644,7 +644,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
               FROM
                 {content_type_student_grades} sgb,
                 {content_type_course_instance} cib,
-                {content_type_course} cb,
+                {content_type_course} cb
               WHERE
                 sgb.field_course_instance_nid=cib.nid AND
                 cib.field_course_id_nid=cb.nid AND
