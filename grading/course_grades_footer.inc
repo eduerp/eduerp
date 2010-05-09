@@ -552,7 +552,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
                 cia.field_course_id_nid=ca.nid AND
                 cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
                 ca.field_code_value='%s'
-            )
+            ) AND
             sg.field_course_instance_nid=ci.nid AND
             sg.field_examscorelocked_value>0 AND
             sg.field_dropped_value=0 AND
@@ -615,7 +615,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
                 cia.field_course_id_nid=ca.nid AND
                 cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
                 ca.field_code_value='%s'
-            )
+            ) AND
             sg.field_course_instance_nid=ci.nid AND
             sg.field_examscorelocked_value>0 AND
             sg.field_dropped_value=0 AND
@@ -650,7 +650,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
                 cib.field_course_id_nid=cb.nid AND
                 cib.field_sess_name_value='%s' $semesterwhereb $locationwhereb AND
                 cb.field_code_value='%s'
-            )
+            ) AND
             sg0.field_course_instance_nid=ci0.nid AND
             sg0.field_examscorelocked_value>0 AND
             sg0.field_dropped_value=0 AND
