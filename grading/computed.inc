@@ -118,7 +118,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
           SELECT
             exams.field_mat_no_uid AS uid,
             MAX(exams.field_calc_type_value) AS calc_type,
-            SUM(exams.gradepoint) AS gradepoints,
+            SUM(exams.gradepoint*exams.field_creditload_value) AS gradepoints,
             MIN(exams.gradepoint) AS allpassed,
             SUM(exams.field_creditload_value) AS totalload,
             exams.field_sess_name_value AS session,
@@ -173,7 +173,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
           SELECT
             exams.field_mat_no_uid AS uid,
             MAX(exams.field_calc_type_value) AS calc_type,
-            SUM(exams.gradepoint) AS gradepoints,
+            SUM(exams.gradepoint*exams.field_creditload_value) AS gradepoints,
             MIN(exams.gradepoint) AS allpassed,
             SUM(exams.field_creditload_value) AS totalload
           FROM (

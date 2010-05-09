@@ -527,7 +527,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
         SELECT
           exams.field_mat_no_uid AS uid,
           MAX(exams.field_calc_type_value) AS calc_type,
-          SUM(exams.gradepoint) AS gradepoints,
+          SUM(exams.gradepoint*exams.field_creditload_value) AS gradepoints,
           MIN(exams.gradepoint) AS allpassed,
           SUM(exams.field_creditload_value) AS totalload
         FROM (
@@ -585,7 +585,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
         SELECT
           exams.field_mat_no_uid AS uid,
           MAX(exams.field_calc_type_value) AS calc_type,
-          SUM(exams.gradepoint) AS gradepoints,
+          SUM(exams.gradepoint*exams.field_creditload_value) AS gradepoints,
           MIN(exams.gradepoint) AS allpassed,
           SUM(exams.field_creditload_value) AS totalload
         FROM (
