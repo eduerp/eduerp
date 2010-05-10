@@ -1789,7 +1789,7 @@ function _grading_ahah_stats_uni() {
   foreach ($levels as $level) {
     if (($levelparm === All) || ($levelparm == $level)) {
 
-      $sql = "SELECT DISTINCT p.field_department_name_value AS department
+      $sql = "SELECT DISTINCT d.field_department_name_value AS department
         FROM {content_type_student_gpa} gpa, {content_type_program} p, {content_type_department} d, {content_type_college} co
         WHERE
           gpa.field_level_name_gpa_value='%s' AND
