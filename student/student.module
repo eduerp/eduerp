@@ -139,6 +139,7 @@ class courseselectionsclass {
       $alternatives = explode('/', prerequisite_code);
       $foundone = FALSE;
       foreach ($alternatives as $alternative) {
+error_log("$alternative, {$this->passedcodes[0]} {$this->passedcodes[1]} $prerequisite_code");
         if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
       }
       if (!$foundone) return $prerequisite_code;
