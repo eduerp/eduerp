@@ -157,6 +157,7 @@ class courseselectionsclass {
         c.field_coursetitle_value AS course_title,
         c.field_course_description_value AS course_description,
         c.field_prerequisite_codes_value AS prerequisite_codes,
+        c.field_prerequisite_value,
         pc.level AS level,
         pc.course_type AS course_type
       FROM
@@ -219,7 +220,7 @@ class courseselectionsclass {
         '#default_value' => $default_value,
         '#disabled' => $disabled,
         '#prefix' => '<tr><td>',
-        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->prerequisite_codes}{$block}</td></tr>"
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->field_prerequisite_value}{$block}</td></tr>"
       );
       // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
     }
