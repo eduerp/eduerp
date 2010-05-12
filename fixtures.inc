@@ -27,7 +27,7 @@ function load_fixtures($table, $fixtures_file, $flush_table = false) {
       $values .= sprintf("\"%s\",", $item);
     }
     $values = rtrim($values, ",");
-    $sql = sprintf("INSERT INTO {%s} VALUES (%s)", $table, $values);
+    if ($values) $sql = sprintf("INSERT INTO {%s} VALUES (%s)", $table, $values);
     db_query($sql);
   }
 }
