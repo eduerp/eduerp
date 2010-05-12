@@ -8,6 +8,11 @@ function veritas_install(){
 
   // Install the schemas
   drupal_install_schema('veritas');
+
+  // Load fixtures
+  $fixtures_path = dirname(__FILE__) . "/fixtures/";
+  load_fixtures('eduerp_states', $fixtures_path . "states.csv", true);
+  load_fixtures('eduerp_lgas', $fixtures_path . "lgas.csv", true);
   
   drupal_set_message('veritas module installed');
 }
@@ -41,7 +46,7 @@ function veritas_schema() {
     'primary key' => array('session_id'),
   );
 
-  $schema['eduerp_lga'] = array(
+  $schema['eduerp_lgas'] = array(
     'description' => t('This table stores Local Government Areas of a state'),
     'fields' => array(
       'lga_id' => array(
@@ -63,7 +68,7 @@ function veritas_schema() {
     ),
   );
   
-  $schema['eduerp_country'] = array(
+  $schema['eduerp_countries'] = array(
     'description' => t('Stores a list of countries'),
     'fields' => array(
       'country_id' => array(
@@ -80,7 +85,7 @@ function veritas_schema() {
     ),
   );
 
-  $schema['eduerp_state'] = array(
+  $schema['eduerp_states'] = array(
     'description' => t('Table for storing the states in a country'),
     'fields' => array(
       'state_id' => array(
