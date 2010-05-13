@@ -1,5 +1,100 @@
 <?php
 include('fixtures.inc');
+include_once('permissions_api.module');
+
+/**
+ * initialize the permissions for roles in this module
+ */
+function veritas_perms_initialize() {
+  $permissions = array(
+    'Administrator' => array(
+      'create profile content', 
+      'delete any profile content', 
+      'edit any profile content',
+      
+      'edit field_profile_country_name',
+      'edit field_profile_dob',
+      'edit field_profile_first_name',
+      'edit field_profile_gender',
+      'edit field_profile_last_name',
+      'edit field_profile_lga_name',
+      'edit field_profile_marital_status',
+      'edit field_profile_middle_name',
+      'edit field_profile_mobile_number',
+      'edit field_profile_permanent_address',
+      'edit field_profile_permanent_city',
+      'edit field_profile_permanent_state',
+      'edit field_profile_photograph',
+      'edit field_profile_religion',
+      'edit field_profile_signature',
+      'edit field_profile_state_name_origin',
+      'edit field_profile_title_name',
+
+      'view field_profile_country_name',
+      'view field_profile_department_id',
+      'view field_profile_dob',
+      'view field_profile_first_name',
+      'view field_profile_gender',
+      'view field_profile_last_name',
+      'view field_profile_lga_name',
+      'view field_profile_marital_status',
+      'view field_profile_middle_name',
+      'view field_profile_mobile_number',
+      'view field_profile_permanent_address',
+      'view field_profile_permanent_city',
+      'view field_profile_permanent_state',
+      'view field_profile_photograph',
+      'view field_profile_religion',
+      'view field_profile_signature',
+      'view field_profile_state_name_origin',
+      'view field_profile_title_name',
+    ),
+
+    'authenticated user' => array(
+      'create profile content',
+      'edit own profile content',
+      
+      'edit field_profile_country_name',
+      'edit field_profile_dob',
+      'edit field_profile_first_name',
+      'edit field_profile_gender',
+      'edit field_profile_last_name',
+      'edit field_profile_lga_name',
+      'edit field_profile_marital_status',
+      'edit field_profile_middle_name',
+      'edit field_profile_mobile_number',
+      'edit field_profile_permanent_address',
+      'edit field_profile_permanent_city',
+      'edit field_profile_permanent_state',
+      'edit field_profile_photograph',
+      'edit field_profile_religion',
+      'edit field_profile_signature',
+      'edit field_profile_state_name_origin',
+      'edit field_profile_title_name',
+
+      'view field_profile_country_name',
+      'view field_profile_department_id',
+      'view field_profile_dob',
+      'view field_profile_first_name',
+      'view field_profile_gender',
+      'view field_profile_last_name',
+      'view field_profile_lga_name',
+      'view field_profile_marital_status',
+      'view field_profile_middle_name',
+      'view field_profile_mobile_number',
+      'view field_profile_permanent_address',
+      'view field_profile_permanent_city',
+      'view field_profile_permanent_state',
+      'view field_profile_photograph',
+      'view field_profile_religion',
+      'view field_profile_signature',
+      'view field_profile_state_name_origin',
+      'view field_profile_title_name',
+    ),
+  );
+
+  return $permissions;
+}
 
 function veritas_install(){
   // Install the schemas
@@ -10,13 +105,42 @@ function veritas_install(){
   load_fixtures('eduerp_states', $fixtures_path . "states.csv", true);
   load_fixtures('eduerp_lgas', $fixtures_path . "lgas.csv", true);
   load_fixtures('eduerp_countries', $fixtures_path . "countries.csv", true);
+
+  // Install the content types
+  $profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_profile.txt');
+  $form_state = array(
+    'values' => array(
+      'type_name' => '<create>', 
+      'macro' => $profile_content_type,
+    ),
+  );
+  drupal_execute('content_copy_import_form', $form_state);
+  content_clear_type_cache();
   
+  // set content type permissions
+  $perms = veritas_perms_initialize();
+
+  foreach ($perms as $role => $permissions) {
+    permissions_grant_permissions($role, $permissions);
+  }
+
   drupal_set_message('veritas module installed');
 }
 
 function veritas_uninstall(){
   // uninstall the schemas
   drupal_uninstall_schema('veritas');
+  
+  // remove content type permissions
+  $perms = veritas_perms_initialize();
+
+  foreach ($perms as $role => $permissions) {
+    permissions_revoke_permissions($role, $permissions);
+  }
+
+  // delete the profile content type
+  node_type_delete('profile');
+  menu_rebuild();
 
   drupal_set_message('veritas module uninstalled');
 }
