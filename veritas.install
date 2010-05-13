@@ -2,10 +2,6 @@
 include('fixtures.inc');
 
 function veritas_install(){
-  // Define the roles used within EduERP
-  db_query("insert into {role} set name='Student'");
-  db_query("insert into {role} set name='Contractor'");
-
   // Install the schemas
   drupal_install_schema('veritas');
 
@@ -18,9 +14,6 @@ function veritas_install(){
 }
 
 function veritas_uninstall(){
-  // remove the EduERP roles
-  db_query("delete from {role} where (name='Student' or name='Contractor')");
-
   // uninstall the schemas
   drupal_uninstall_schema('veritas');
 

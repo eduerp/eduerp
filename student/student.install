@@ -1,4 +1,6 @@
 <?
+include_once(dirname(__FILE__) . '/../permissions_api.module');
+
 // student module installation
 
 function student_install() {
@@ -13,10 +15,28 @@ function student_install() {
   drupal_execute('content_copy_import_form', $form_state);
   content_clear_type_cache();
 
+  // create student role
+  permissions_create_role('Student');
+
+  // set content type permissions
+  $student_permissions = array('create profile content', 'edit own profile content');
+  $admin_permissions = array('create profile content', 'delete any profile content', 'edit any profile content');
+  permissions_grant_permissions('Student', $student_permissions);
+  permissions_grant_permissions('Administrator', $admin_permissions);
+
   drupal_set_message('student module installed');
 }
 
 function student_uninstall() {
+  // remove content type permissions
+  $student_permissions = array('create profile content', 'edit own profile content');
+  $admin_permissions = array('create profile content', 'delete any profile content', 'edit any profile content');
+  permissions_revoke_permissions('Student', $student_permissions);
+  permissions_revoke_permissions('Administrator', $admin_permissions);
+
+  // delete the student role
+  db_query("DELETE FROM {role} WHERE name='Student'");
+
   // Remove the content types
   node_type_delete('profile');
   menu_rebuild();
