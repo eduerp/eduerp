@@ -152,7 +152,7 @@ function grading_field_access($op, $field, $account, $node = NULL) {
     case 'edit':
       $editablegradingfields = array('field_ca1' => 1, 'field_ca2' => 1, 'field_ca3' => 1, 'field_ca4' => 1, 'field_exam_score' => 1, 'field_comment_grades' => 1);
       if (empty($editablegradingfields[$field['field_name']])) {
-        return FALSE; // No fields are editable except above ones for student_grades
+        return TRUE; // All fields are editable except above ones for student_grades, however content_permissions will have most fields not editable in any case overriding this
       }
 
       if (empty($node)) return FALSE;
