@@ -553,14 +553,14 @@ function veritas_receipt($f) {
       return ob_get_clean();
     }
 
-  function veritas_student_receipt(& $f, $isprint = false) {
-    ob_start();
+function veritas_student_receipt(& $f, $isprint = false) {
+  ob_start();
 
-    $query = "select *, ah.name hostel_name, at.name hostel_type, c.nid AS college_id from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join {content_type_college} c on c.nid = asa.college_id where asa.student_id = '%s' ";
-    //echo  sprintf($query,$_SESSION['student']['data']->student_id);
-    $result = db_query($query, $_SESSION['student']['data']->student_id);
-    $data = db_fetch_object($result);
-    $f->hostel_data = $data;
+  $query = "select *, ah.name hostel_name, at.name hostel_type, c.nid AS college_id from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join {content_type_college} c on c.nid = asa.college_id where asa.student_id = '%s' ";
+  //echo  sprintf($query,$_SESSION['student']['data']->student_id);
+  $result = db_query($query, $_SESSION['student']['data']->student_id);
+  $data = db_fetch_object($result);
+  $f->hostel_data = $data;
 ?>
   <html>
    <body <?php if($isprint){?> onLoad="window.print()"<?php }?> >
@@ -652,13 +652,13 @@ function veritas_receipt($f) {
 <?
 
 
-    return ob_get_clean();
+  return ob_get_clean();
 
-  }
+}
 
-  function veritas_admin_links($f) {
-    global $user;
-    ob_start();
+function veritas_admin_links($f) {
+  global $user;
+  ob_start();
 ?>
  <html>
  <body <?if($isprint){?>onload="window.print()"<?}?>>
@@ -674,14 +674,14 @@ function veritas_receipt($f) {
 <?
 
 
-    $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0", $user->uid, $f->receipt_no);
-    $i = 1;
-    $lots = array ();
-    while ($fx = db_fetch_object($r)) {
-      $str = uniqid('', true);
-      $link = url("contractor/tender/validate/$str", array (
-        'absolute' => true
-      ));
+  $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0", $user->uid, $f->receipt_no);
+  $i = 1;
+  $lots = array ();
+  while ($fx = db_fetch_object($r)) {
+    $str = uniqid('', true);
+    $link = url("contractor/tender/validate/$str", array (
+      'absolute' => true
+    ));
 ?>
 <tr><td width="20"><?=$i++?></td><td width="150">Tender <?=$fx->lot_name ?>:</td><td><a href="<?=$link ?>">Click To Approve</a></td></tr>
 <?
@@ -695,24 +695,24 @@ function veritas_receipt($f) {
 <?
 
 
-    $d = ob_get_clean();
-    $ad = user_load(array (
-      'name' => variable_get('veritas_tender_adminuser', '')
-    ));
-    $message = drupal_mail('veritas', 'receipt', $ad->mail, language_default(), array (), null, false);
-    $message[body] = $d;
-    $message[subject] = 'Tender Approval List for ' . $f->name;
-    $message[headers] = array_merge($message[headers], array (
-      'MIME-Version' => '1.0',
-      'Content-Type' => 'text/html; charset=UTF-8'
-    ));
-    drupal_mail_send($message);
+  $d = ob_get_clean();
+  $ad = user_load(array (
+    'name' => variable_get('veritas_tender_adminuser', '')
+  ));
+  $message = drupal_mail('veritas', 'receipt', $ad->mail, language_default(), array (), null, false);
+  $message[body] = $d;
+  $message[subject] = 'Tender Approval List for ' . $f->name;
+  $message[headers] = array_merge($message[headers], array (
+    'MIME-Version' => '1.0',
+    'Content-Type' => 'text/html; charset=UTF-8'
+  ));
+  drupal_mail_send($message);
 
-  }
+}
 
-  function veritas_print_receipt($f, $img = '', $isprint = false) {
-    global $user;
-    ob_start();
+function veritas_print_receipt($f, $img = '', $isprint = false) {
+  global $user;
+  ob_start();
 ?>
  <html>
  <body <?if($isprint){?>onload="window.print()"<?}?>>
@@ -727,10 +727,10 @@ function veritas_receipt($f) {
 <?
 
 
-    $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0", $user->uid, $f->receipt_no);
-    $i = 1;
-    $lots = array ();
-    while ($fx = db_fetch_object($r)) {
+  $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0", $user->uid, $f->receipt_no);
+  $i = 1;
+  $lots = array ();
+  while ($fx = db_fetch_object($r)) {
 ?>
 <tr><td <?if(!$isprint) {?>width="20" <?} ?>><?=$i++?></td><td <?if(!$isprint) {?>width="200" style="width:200px;"<? } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
 <?
@@ -769,312 +769,126 @@ function veritas_receipt($f) {
 <?php
 
 
-      $d = ob_get_clean();
+    $d = ob_get_clean();
 
-      if ($f->trans_type == 'cfee' && !$isprint) {
-        veritas_admin_links($f);
-      }
-      return $d;
+    if ($f->trans_type == 'cfee' && !$isprint) {
+      veritas_admin_links($f);
     }
-
-  function veritas_check_upload($source) {
-    global $user;
-    static $upload_cache;
-
-    // Add in our check of the the file name length.
-    $validators['file_validate_name_length'] = array ();
-
-    // Return cached objects without processing since the file will have
-    // already been processed and the paths in _FILES will be invalid.
-    if (isset ($upload_cache[$source])) {
-      return $upload_cache[$source];
-    }
-
-    // If a file was uploaded, process it.
-    if (isset ($_FILES['files']) && $_FILES['files']['name'][$source] && is_uploaded_file($_FILES['files']['tmp_name'][$source])) {
-      // Check for file upload errors and return FALSE if a
-      // lower level system error occurred.
-      switch ($_FILES['files']['error'][$source]) {
-        // @see http://php.net/manual/en/features.file-upload.errors.php
-        case UPLOAD_ERR_OK :
-          $file = new stdClass();
-          $file->filename = file_munge_filename(trim(basename($_FILES['files']['name'][$source]), '.'), $extensions);
-          $file->filepath = $_FILES['files']['tmp_name'][$source];
-          $file->filemime = $_FILES['files']['type'][$source];
-
-          // Rename potentially executable files, to help prevent exploits.
-          if (preg_match('/\.(php|pl|py|cgi|asp|js)$/i', $file->filename) && (substr($file->filename, -4) != '.txt')) {
-            $file->filemime = 'text/plain';
-            $file->filepath .= '.txt';
-            $file->filename .= '.txt';
-          }
-          $file->source = $source;
-          $file->destination = file_destination(file_create_path($dest . '/' . $file->filename), $replace);
-          $file->filesize = $_FILES['files']['size'][$source];
-          $extensions = 'jpg jpeg gif png txt html doc xls pdf ppt pps odt ods odp ZIP zip csv';
-          $errors = file_validate_name_length($file);
-          if (count($errors)) {
-            return implode(",", $errors);
-            drupal_set_message(t('The file %file could not be saved,Error %error', array (
-              '%file' => $source,
-              '%error' => $errors
-            )));
-          }
-          $errors = file_validate_extensions($file, $extensions);
-          if (count($errors)) {
-            drupal_set_message(t('The file %file could not be saved,Error %error', array (
-              '%file' => $source,
-              '%error' => $errors
-            )));
-            return implode(",", $errors);
-          }
-
-          $errors = file_validate_size($file, variable_get('veritas_file_size', 1000000));
-          if (count($errors)) {
-            drupal_set_message(t('The file %file could not be saved,Error %error', array (
-              '%file' => $source,
-              '%error' => $errors
-            )));
-            return implode(",", $errors);
-          }
-
-          return 0;
-
-        case UPLOAD_ERR_INI_SIZE :
-        case UPLOAD_ERR_FORM_SIZE :
-          drupal_set_message(t('The file %file could not be saved, because it exceeds %maxsize, the maximum allowed size for uploads.', array (
-            '%file' => $source,
-            '%maxsize' => format_size(file_upload_max_size())
-          )), 'error');
-          return 1;
-
-        case UPLOAD_ERR_PARTIAL :
-        case UPLOAD_ERR_NO_FILE :
-          drupal_set_message(t('The file %file could not be saved, because the upload did not complete.', array (
-            '%file' => $source
-          )), 'error');
-          return 1;
-
-          // Unknown error
-        default :
-          drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array (
-            '%file' => $source
-          )), 'error');
-          return 1;
-      }
-    }
-    drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array (
-      '%file' => $source
-    )), 'error');
-    return 1;
+    return $d;
   }
 
-  function veritas_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $email, $type) {
-    $r = db_query("select * from payment where (refno='%s' or refno='%s')  and paid=0", intval($rno), $rno);
-    $f = db_fetch_object($r);
+function veritas_check_upload($source) {
+  global $user;
+  static $upload_cache;
 
-    if ($f->refno) {
-      $name2 = trim($name2);
-      $description = trim($f->description);
-      $s = preg_match("/$name2\$/i", $description);
-      /*
-      if(!$s){    //strstr(strtoupper($f->description),strtoupper($name2))===false){
-      drupal_set_message('Invalid payment information. ');
-      return 1;
-      }
-      	*/
-      $pc = $f->refno;
-      $am = floatval($f->cr);
-      if ($am >= $amt) {
-        db_query("update payment set paid=1 where refno='%s'", $rno);
-        db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
-              ,user_type_id='%s',trans_type='%s' ", $transid, $pc, '', $amt, $descr, $uid, $type);
-        $trid = db_last_insert_id('transaction', 'transaction_id');
-        if (variable_get('veritas_logo', '')) {
-          $logourl = url('', array (
-            'absolute' => true
-          )) . variable_get('veritas_logo', '');
-          $img = "<img src='$logourl' alt='Veritas Logo'>";
-        } else
-          $img = '';
-        $r = db_query("select * from transaction where transaction_id=%d", $trid);
-        $f = db_fetch_object($r);
-        if ($f->transaction_id && ($type == 'creg' || $type == 'sreg')) {
-          $f->name = $name;
-          veritas_mail_receipt($f, $email, $name, $img);
+  // Add in our check of the the file name length.
+  $validators['file_validate_name_length'] = array ();
+
+  // Return cached objects without processing since the file will have
+  // already been processed and the paths in _FILES will be invalid.
+  if (isset ($upload_cache[$source])) {
+    return $upload_cache[$source];
+  }
+
+  // If a file was uploaded, process it.
+  if (isset ($_FILES['files']) && $_FILES['files']['name'][$source] && is_uploaded_file($_FILES['files']['tmp_name'][$source])) {
+    // Check for file upload errors and return FALSE if a
+    // lower level system error occurred.
+    switch ($_FILES['files']['error'][$source]) {
+      // @see http://php.net/manual/en/features.file-upload.errors.php
+      case UPLOAD_ERR_OK :
+        $file = new stdClass();
+        $file->filename = file_munge_filename(trim(basename($_FILES['files']['name'][$source]), '.'), $extensions);
+        $file->filepath = $_FILES['files']['tmp_name'][$source];
+        $file->filemime = $_FILES['files']['type'][$source];
+
+        // Rename potentially executable files, to help prevent exploits.
+        if (preg_match('/\.(php|pl|py|cgi|asp|js)$/i', $file->filename) && (substr($file->filename, -4) != '.txt')) {
+          $file->filemime = 'text/plain';
+          $file->filepath .= '.txt';
+          $file->filename .= '.txt';
         }
+        $file->source = $source;
+        $file->destination = file_destination(file_create_path($dest . '/' . $file->filename), $replace);
+        $file->filesize = $_FILES['files']['size'][$source];
+        $extensions = 'jpg jpeg gif png txt html doc xls pdf ppt pps odt ods odp ZIP zip csv';
+        $errors = file_validate_name_length($file);
+        if (count($errors)) {
+          return implode(",", $errors);
+          drupal_set_message(t('The file %file could not be saved,Error %error', array (
+            '%file' => $source,
+            '%error' => $errors
+          )));
+        }
+        $errors = file_validate_extensions($file, $extensions);
+        if (count($errors)) {
+          drupal_set_message(t('The file %file could not be saved,Error %error', array (
+            '%file' => $source,
+            '%error' => $errors
+          )));
+          return implode(",", $errors);
+        }
+
+        $errors = file_validate_size($file, variable_get('veritas_file_size', 1000000));
+        if (count($errors)) {
+          drupal_set_message(t('The file %file could not be saved,Error %error', array (
+            '%file' => $source,
+            '%error' => $errors
+          )));
+          return implode(",", $errors);
+        }
+
         return 0;
 
-      } else {
-        drupal_set_message('Invalid amount ' . $am);
+      case UPLOAD_ERR_INI_SIZE :
+      case UPLOAD_ERR_FORM_SIZE :
+        drupal_set_message(t('The file %file could not be saved, because it exceeds %maxsize, the maximum allowed size for uploads.', array (
+          '%file' => $source,
+          '%maxsize' => format_size(file_upload_max_size())
+        )), 'error');
         return 1;
-      }
 
-    } else {
-      drupal_set_message('Invalid payment information');
-      return 1;
+      case UPLOAD_ERR_PARTIAL :
+      case UPLOAD_ERR_NO_FILE :
+        drupal_set_message(t('The file %file could not be saved, because the upload did not complete.', array (
+          '%file' => $source
+        )), 'error');
+        return 1;
 
+        // Unknown error
+      default :
+        drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array (
+          '%file' => $source
+        )), 'error');
+        return 1;
     }
+  }
+  drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array (
+    '%file' => $source
+  )), 'error');
+  return 1;
+}
 
+function veritas_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $email, $type) {
+  $r = db_query("select * from payment where (refno='%s' or refno='%s')  and paid=0", intval($rno), $rno);
+  $f = db_fetch_object($r);
+
+  if ($f->refno) {
+    $name2 = trim($name2);
+    $description = trim($f->description);
+    $s = preg_match("/$name2\$/i", $description);
+    /*
+    if(!$s){    //strstr(strtoupper($f->description),strtoupper($name2))===false){
+    drupal_set_message('Invalid payment information. ');
     return 1;
-  }
-
-  function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $type) {
-
-    //return veritas_verify_bankpay($rno,$cno,$amt,$descr,$transid,$name,$email,$type);
-
-    $uid = $user->uid;
-
-    $r = db_query("SELECT * FROM transaction WHERE receipt_no='%s'", $rno);
-    $f = db_fetch_object($r);
-
-    if (!$f->receipt_no) {
-      $req = array (
-        'RESPONSE_URL' => 'http://localhost/',
-        'RECEIPT_NO' => $rno,
-        'CONFIRMATION_NO' => $cno,
-        'AMOUNT' => sprintf('%.2f', $amt), // Expected amount
-  		'TERMINAL_ID' => variable_get('veritas_terminal_id', '0000000001')
-      );
-
-      $query = "";
-      foreach ($req as $key => $value) {
-        $query .= sprintf("%s=%s&", $key, urlencode($value));
-      }
-      $query = substr($query, 0, -1);
-
-      $curl = curl_init();
-      curl_setopt($curl, CURLOPT_URL, variable_get('veritas_demo', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 'https://www.etranzact.net/WebConnect/verifypin.jsp');
-      //curl_setopt($curl, CURLOPT_URL, 'http://demo.etranzact.com/WebConnect/verifypin.jsp');
-      curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-      curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-      curl_setopt($curl, CURLOPT_POST, 1);
-      curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
-      curl_setopt($curl, CURLOPT_POSTFIELDS, $query);
-      $return = curl_exec($curl);
-
-      preg_match_all('/<input.*name=[\'"]([^\'"]*)[\'"].*value=[\'"]([^\'"]*)[\'"]>/', $return, $matches);
-
-      foreach ($matches[1] as $key => $value)
-        : $status[$value] = $matches[2][$key];
-      endforeach;
-
-      if ($status && $status['SUCCESS'] == '0') {
-        if (floatval($status['AMOUNT']) >= 0.01) {
-          if (floatval($status['AMOUNT']) == sprintf('%.2f', $amt)) {
-            db_query("INSERT INTO transaction SET receipt_no='%s', payment_code='%s', merchant_code='%s', " .
-            "trans_amount='%s', trans_descr='%s', trans_time=now(), user_type_id=%d, trans_type='%s'", $rno, $cno, '', $amt, $descr, $uid, $type);
-            $trid = db_last_insert_id('transaction', 'transaction_id');
-
-            if (variable_get('veritas_logo', '')) {
-              $logourl = url('', array (
-                'absolute' => true
-              )) . variable_get('veritas_logo', '');
-              $img = "<img src='$logourl' alt='Veritas Logo'>";
-            } else
-              $img = '';
-
-            $r = db_query("select * from transaction where transaction_id=%d", $trid);
-            $f = db_fetch_object($r);
-
-            if ($f->transaction_id && ($type == 'creg' || $type == 'sreg')) {
-              $f->name = $name;
-              @ veritas_mail_receipt($f, $email, $name, $img);
-            }
-            return 0;
-          } else {
-            drupal_set_message('Invalid amount ' . $status['AMOUNT']);
-            return 1;
-          }
-        } else {
-          drupal_set_message('Invalid amount ');
-          return 1;
-        }
-      } else {
-        drupal_set_message('Payment error please contact admin');
-        return 1;
-      }
-
-      drupal_set_message('Payment error please contact admin');
-      return -1;
-    } else {
-      drupal_set_message('Duplicate payment information detected.');
-      return 1;
     }
-  }
-
-  function veritas_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $email, $type = '') {
-    return veritas_pay_pin($pin, $ccno, $amt, $descr, $transid, $name, $email, $type);
-    global $user;
-    $uid = (int) $user->uid;
-    if (1) { //demo
-      if (variable_get('veritas_demo', 1)) {
-        $url = "http://demo.etranzact.com/WebConnect/webconnectProcess.jsp";
-      } else
-        $url = "https://etranzact.net/WebConnect/webconnectProcess.jsp";
-
-      $request['ECHODATA'] = 1;
-      $request['TRANSACTION_ID'] = $transid;
-      //$request['RESPONSE_URL']=urlencode( "http://64.34.215.179/echo.php");
-      $request['CARD_NUM'] = $ccno;
-      $request['CARD_PIN'] = $pin;
-      $request['EXP_MONTH'] = $em;
-      $request['EXP_YEAR'] = $ey;
-      $request['AMOUNT'] = number_format($amt, 2);
-      $request['DESCRIPTION'] = $descr;
-      $request['NO_RETRY'] = '';
-      $request['TERMINAL_ID'] = variable_get('veritas_terminal_id', '0000000001');
-      $data = '';
-      while (list ($key, $value) = each($request)) {
-        $data .= $key . '=' . urlencode(ereg_replace(',', '', $value)) . '&';
-      }
-      $data = substr($data, 0, -1);
-      $ch = curl_init();
-      curl_setopt($ch, CURLOPT_URL, $url);
-      curl_setopt($ch, CURLOPT_VERBOSE, 1);
-      curl_setopt($ch, CURLOPT_POST, 1);
-      curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-      curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0;Windows NT 5.1)');
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-      curl_setopt($ch, CURLOPT_HEADER, 0);
-      curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-      $str = curl_exec($ch);
-      curl_close($ch);
-      preg_match('/\<input[^>]*name[^\w]*=[^\w]*success[^>]*\>/i', $str, $m);
-      //var_dump($m[0]);
-      if ($m[0]) {
-        preg_match("/value[^\w]*(\d+)[^\w]/i", $m[0], $m);
-      } else
-        return array (
-          "error"
-        );
-      if (!$m[0]) {
-        watchdog('error', 'CC processing error. invalid response from server', WATCHDOG_CRITICAL);
-        return -1;
-
-      }
-      $s = $m[1];
-      preg_match('/\<input[^>]*name[^\w]*=[^\w]*card4[^>]*\>/i', $str, $m);
-      if ($m[0]) {
-        preg_match("/value[^\w]*(\d+)[^\w]/i", $m[0], $m);
-      }
-      $c4 = $m[1];
-
-      preg_match('/\<input[^>]*name[^\w]*=[^\w]*MERCHANT_CODE[^>]*\>/i', $str, $m);
-      if ($m[0]) {
-        preg_match("/value[^\w]*(\d+)[^\w]/i", $m[0], $m);
-      }
-      $mc = $m[1];
-    } //dem
-    else {
-      $s = '0';
-      $mc = "123124224";
-      $c4 = "2055";
-    }
-    if ($s === '0') {
+      */
+    $pc = $f->refno;
+    $am = floatval($f->cr);
+    if ($am >= $amt) {
+      db_query("update payment set paid=1 where refno='%s'", $rno);
       db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
-          ,user_type_id='%s',trans_type='%s' ", $transid, $c4, $mc, $amt, $descr, $uid, $type);
+            ,user_type_id='%s',trans_type='%s' ", $transid, $pc, '', $amt, $descr, $uid, $type);
       $trid = db_last_insert_id('transaction', 'transaction_id');
       if (variable_get('veritas_logo', '')) {
         $logourl = url('', array (
@@ -1085,211 +899,397 @@ function veritas_receipt($f) {
         $img = '';
       $r = db_query("select * from transaction where transaction_id=%d", $trid);
       $f = db_fetch_object($r);
-      if ($f->transaction_id) {
+      if ($f->transaction_id && ($type == 'creg' || $type == 'sreg')) {
         $f->name = $name;
-        if ($type == 'creg' || $type == 'sreg')
-          veritas_mail_receipt($f, $email, $name, $img);
+        veritas_mail_receipt($f, $email, $name, $img);
       }
       return 0;
 
     } else {
-      if (!$c4 || !$mc) {
-        watchdog('error', 'CC processing error. invalid response from server', WATCHDOG_CRITICAL);
-        return -1;
-      }
-      if ($s) {
-
-        return 1;
-      }
+      drupal_set_message('Invalid amount ' . $am);
+      return 1;
     }
-    return 0;
-    //echo "Success $s Card4 $c4 merchant $mc";
+
+  } else {
+    drupal_set_message('Invalid payment information');
+    return 1;
 
   }
-  function _assign_keys(& $form, $state) {
-    foreach ($form as $key => & $val) {
-      if (is_array($val) && !((array_key_exists('#type', $val) && !in_array($val['#type'], array (
+
+  return 1;
+}
+
+function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $type) {
+
+  //return veritas_verify_bankpay($rno,$cno,$amt,$descr,$transid,$name,$email,$type);
+
+  $uid = $user->uid;
+
+  $r = db_query("SELECT * FROM transaction WHERE receipt_no='%s'", $rno);
+  $f = db_fetch_object($r);
+
+  if (!$f->receipt_no) {
+    $req = array (
+      'RESPONSE_URL' => 'http://localhost/',
+      'RECEIPT_NO' => $rno,
+      'CONFIRMATION_NO' => $cno,
+      'AMOUNT' => sprintf('%.2f', $amt), // Expected amount
+    'TERMINAL_ID' => variable_get('veritas_terminal_id', '0000000001')
+    );
+
+    $query = "";
+    foreach ($req as $key => $value) {
+      $query .= sprintf("%s=%s&", $key, urlencode($value));
+    }
+    $query = substr($query, 0, -1);
+
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, variable_get('veritas_demo', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 'https://www.etranzact.net/WebConnect/verifypin.jsp');
+    //curl_setopt($curl, CURLOPT_URL, 'http://demo.etranzact.com/WebConnect/verifypin.jsp');
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($curl, CURLOPT_POST, 1);
+    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $query);
+    $return = curl_exec($curl);
+
+    preg_match_all('/<input.*name=[\'"]([^\'"]*)[\'"].*value=[\'"]([^\'"]*)[\'"]>/', $return, $matches);
+
+    foreach ($matches[1] as $key => $value)
+      : $status[$value] = $matches[2][$key];
+    endforeach;
+
+    if ($status && $status['SUCCESS'] == '0') {
+      if (floatval($status['AMOUNT']) >= 0.01) {
+        if (floatval($status['AMOUNT']) == sprintf('%.2f', $amt)) {
+          db_query("INSERT INTO transaction SET receipt_no='%s', payment_code='%s', merchant_code='%s', " .
+          "trans_amount='%s', trans_descr='%s', trans_time=now(), user_type_id=%d, trans_type='%s'", $rno, $cno, '', $amt, $descr, $uid, $type);
+          $trid = db_last_insert_id('transaction', 'transaction_id');
+
+          if (variable_get('veritas_logo', '')) {
+            $logourl = url('', array (
+              'absolute' => true
+            )) . variable_get('veritas_logo', '');
+            $img = "<img src='$logourl' alt='Veritas Logo'>";
+          } else
+            $img = '';
+
+          $r = db_query("select * from transaction where transaction_id=%d", $trid);
+          $f = db_fetch_object($r);
+
+          if ($f->transaction_id && ($type == 'creg' || $type == 'sreg')) {
+            $f->name = $name;
+            @ veritas_mail_receipt($f, $email, $name, $img);
+          }
+          return 0;
+        } else {
+          drupal_set_message('Invalid amount ' . $status['AMOUNT']);
+          return 1;
+        }
+      } else {
+        drupal_set_message('Invalid amount ');
+        return 1;
+      }
+    } else {
+      drupal_set_message('Payment error please contact admin');
+      return 1;
+    }
+
+    drupal_set_message('Payment error please contact admin');
+    return -1;
+  } else {
+    drupal_set_message('Duplicate payment information detected.');
+    return 1;
+  }
+}
+
+function veritas_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $email, $type = '') {
+  return veritas_pay_pin($pin, $ccno, $amt, $descr, $transid, $name, $email, $type);
+  global $user;
+  $uid = (int) $user->uid;
+  if (1) { //demo
+    if (variable_get('veritas_demo', 1)) {
+      $url = "http://demo.etranzact.com/WebConnect/webconnectProcess.jsp";
+    } else
+      $url = "https://etranzact.net/WebConnect/webconnectProcess.jsp";
+
+    $request['ECHODATA'] = 1;
+    $request['TRANSACTION_ID'] = $transid;
+    //$request['RESPONSE_URL']=urlencode( "http://64.34.215.179/echo.php");
+    $request['CARD_NUM'] = $ccno;
+    $request['CARD_PIN'] = $pin;
+    $request['EXP_MONTH'] = $em;
+    $request['EXP_YEAR'] = $ey;
+    $request['AMOUNT'] = number_format($amt, 2);
+    $request['DESCRIPTION'] = $descr;
+    $request['NO_RETRY'] = '';
+    $request['TERMINAL_ID'] = variable_get('veritas_terminal_id', '0000000001');
+    $data = '';
+    while (list ($key, $value) = each($request)) {
+      $data .= $key . '=' . urlencode(ereg_replace(',', '', $value)) . '&';
+    }
+    $data = substr($data, 0, -1);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_VERBOSE, 1);
+    curl_setopt($ch, CURLOPT_POST, 1);
+    curl_setopt($ch, CURLOPT_AUTOREFERER, true);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 6.0;Windows NT 5.1)');
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
+    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+    $str = curl_exec($ch);
+    curl_close($ch);
+    preg_match('/\<input[^>]*name[^\w]*=[^\w]*success[^>]*\>/i', $str, $m);
+    //var_dump($m[0]);
+    if ($m[0]) {
+      preg_match("/value[^\w]*(\d+)[^\w]/i", $m[0], $m);
+    } else
+      return array (
+        "error"
+      );
+    if (!$m[0]) {
+      watchdog('error', 'CC processing error. invalid response from server', WATCHDOG_CRITICAL);
+      return -1;
+
+    }
+    $s = $m[1];
+    preg_match('/\<input[^>]*name[^\w]*=[^\w]*card4[^>]*\>/i', $str, $m);
+    if ($m[0]) {
+      preg_match("/value[^\w]*(\d+)[^\w]/i", $m[0], $m);
+    }
+    $c4 = $m[1];
+
+    preg_match('/\<input[^>]*name[^\w]*=[^\w]*MERCHANT_CODE[^>]*\>/i', $str, $m);
+    if ($m[0]) {
+      preg_match("/value[^\w]*(\d+)[^\w]/i", $m[0], $m);
+    }
+    $mc = $m[1];
+  } //dem
+  else {
+    $s = '0';
+    $mc = "123124224";
+    $c4 = "2055";
+  }
+  if ($s === '0') {
+    db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
+        ,user_type_id='%s',trans_type='%s' ", $transid, $c4, $mc, $amt, $descr, $uid, $type);
+    $trid = db_last_insert_id('transaction', 'transaction_id');
+    if (variable_get('veritas_logo', '')) {
+      $logourl = url('', array (
+        'absolute' => true
+      )) . variable_get('veritas_logo', '');
+      $img = "<img src='$logourl' alt='Veritas Logo'>";
+    } else
+      $img = '';
+    $r = db_query("select * from transaction where transaction_id=%d", $trid);
+    $f = db_fetch_object($r);
+    if ($f->transaction_id) {
+      $f->name = $name;
+      if ($type == 'creg' || $type == 'sreg')
+        veritas_mail_receipt($f, $email, $name, $img);
+    }
+    return 0;
+
+  } else {
+    if (!$c4 || !$mc) {
+      watchdog('error', 'CC processing error. invalid response from server', WATCHDOG_CRITICAL);
+      return -1;
+    }
+    if ($s) {
+
+      return 1;
+    }
+  }
+  return 0;
+  //echo "Success $s Card4 $c4 merchant $mc";
+
+}
+function _assign_keys(& $form, $state) {
+  foreach ($form as $key => & $val) {
+    if (is_array($val) && !((array_key_exists('#type', $val) && !in_array($val['#type'], array (
+        'fieldset',
+        'markup',
+        'item'
+      ))) || array_key_exists('#value', $val))) {
+      //			echo "for key ".$key."<br/>";
+      _assign_keys($val, $state);
+    } else
+      if (is_array($val) && array_key_exists('#type', $val) && !in_array($val['#type'], array (
           'fieldset',
           'markup',
           'item'
-        ))) || array_key_exists('#value', $val))) {
-        //			echo "for key ".$key."<br/>";
-        _assign_keys($val, $state);
-      } else
-        if (is_array($val) && array_key_exists('#type', $val) && !in_array($val['#type'], array (
-            'fieldset',
-            'markup',
-            'item'
-          )) && $state[$key]) {
-          $val['#default_value'] = $state[$key];
-        }
-    }
-  }
-  function _veritas_titles() {
-    // We should be looking at replacing the functionality in this function
-    // it's not necessary to store titles in a database.
-    static $ritles;
-    if (!$titles) {
-      $r = db_query("select * from title order by title_name");
-      while ($f = db_fetch_object($r))
-        $titles[$f->title_id] = $f->title_name;
-    }
-    return $titles;
-
-  }
-  function _veritas_country() {
-    static $ritles;
-    if (!$titles) {
-      $r = db_query("select * from country order by country_name");
-      while ($f = db_fetch_object($r))
-        $titles[$f->country_id] = $f->country_name;
-    }
-    return $titles;
-
-  }
-  function _veritas_religion() {
-    static $ritles;
-    if (!$titles) {
-      $titles = array ();
-      $r = db_query("select * from religion ");
-      while ($f = db_fetch_object($r)) {
-        $titles[$f->relegion_id] = $f->religion_name;
+        )) && $state[$key]) {
+        $val['#default_value'] = $state[$key];
       }
-      ///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
-    }
-    return $titles;
-
   }
+}
+function _veritas_titles() {
+  // We should be looking at replacing the functionality in this function
+  // it's not necessary to store titles in a database.
+  static $ritles;
+  if (!$titles) {
+    $r = db_query("select * from title order by title_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->title_id] = $f->title_name;
+  }
+  return $titles;
 
-  function veritas_elements() {
-    return array (
-      'ccdt' => array (
-        '#input' => true,
-        '#process' => array (
-          'expand_ccdt'
-        )
+}
+function _veritas_country() {
+  static $ritles;
+  if (!$titles) {
+    $r = db_query("select * from country order by country_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->country_id] = $f->country_name;
+  }
+  return $titles;
+
+}
+function _veritas_religion() {
+  static $ritles;
+  if (!$titles) {
+    $titles = array ();
+    $r = db_query("select * from religion ");
+    while ($f = db_fetch_object($r)) {
+      $titles[$f->relegion_id] = $f->religion_name;
+    }
+    ///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
+  }
+  return $titles;
+
+}
+
+function veritas_elements() {
+  return array (
+    'ccdt' => array (
+      '#input' => true,
+      '#process' => array (
+        'expand_ccdt'
       )
-    );
+    )
+  );
+}
+
+function expand_ccdt($element) {
+  $options = drupal_map_assoc(range(1, 12), 'map_month');
+  if (empty ($element['#value'])) {
+  }
+  $element['#tree'] = TRUE;
+  $element[em] = array (
+    '#type' => 'select',
+    '#value' => $element['#value'][em],
+    '#attributes' => $element['#attributes'],
+    '#options' => $options,
+
+
+  );
+
+  $options = drupal_map_assoc(range(2008, 2012));
+  if ($element['#ccdt_attribute'])
+    $options = drupal_map_assoc(range($element['#ccdt_attribute'][0], $element['#ccdt_attribute'][1]));
+
+  $element[ey] = array (
+    '#type' => 'select',
+    '#value' => $element['#value'][ey],
+    '#attributes' => $element['#attributes'],
+    '#options' => $options,
+
+
+  );
+
+  return $element;
+}
+
+function theme_ccdt($element) {
+
+  return theme('form_element', $element, '<div class="container-inline">' . $element['#children'] . '</div>');
+}
+
+function veritas_theme() {
+
+  return array (
+    'ccdt' => array (
+      'arguments' => array (
+        'element' => NULL
+      )
+    ),
+
+
+  );
+}
+
+function veritas_st_form() {
+  $form['#title'] = 'CSV File upload form';
+  $form[] = array (
+    '#value' => "File name should be *.csv, the narrative field should not contain any ,"
+  );
+  $form['#attributes'] = array (
+    'enctype' => "multipart/form-data"
+  );
+  $form['payfile'] = array (
+    '#type' => 'file'
+  );
+  $form['submit'] = array (
+    '#type' => 'submit',
+    '#value' => 'Submit'
+  );
+  return $form;
+}
+function veritas_st_form_validate($form, & $form_state) {
+
+  $f = veritas_check_upload("payfile");
+  if ($f) {
+    form_set_error('payfile', 'Sorry file cannot be uploaded. Please try again ' . $f);
+    return;
   }
 
-  function expand_ccdt($element) {
-    $options = drupal_map_assoc(range(1, 12), 'map_month');
-    if (empty ($element['#value'])) {
-    }
-    $element['#tree'] = TRUE;
-    $element[em] = array (
-      '#type' => 'select',
-      '#value' => $element['#value'][em],
-      '#attributes' => $element['#attributes'],
-      '#options' => $options,
+}
+function veritas_st_form_submit($form, & $form_state) {
 
+  $d = $n = 0;
 
-    );
-
-    $options = drupal_map_assoc(range(2008, 2012));
-    if ($element['#ccdt_attribute'])
-      $options = drupal_map_assoc(range($element['#ccdt_attribute'][0], $element['#ccdt_attribute'][1]));
-
-    $element[ey] = array (
-      '#type' => 'select',
-      '#value' => $element['#value'][ey],
-      '#attributes' => $element['#attributes'],
-      '#options' => $options,
-
-
-    );
-
-    return $element;
+  $fx = fopen($_FILES['files']['tmp_name']['payfile'], 'r');
+  if (!$fx) {
+    echo 'file not open';
   }
-
-  function theme_ccdt($element) {
-
-    return theme('form_element', $element, '<div class="container-inline">' . $element['#children'] . '</div>');
-  }
-
-  function veritas_theme() {
-
-    return array (
-      'ccdt' => array (
-        'arguments' => array (
-          'element' => NULL
-        )
-      ),
-
-
-    );
-  }
-
-  function veritas_st_form() {
-    $form['#title'] = 'CSV File upload form';
-    $form[] = array (
-      '#value' => "File name should be *.csv, the narrative field should not contain any ,"
-    );
-    $form['#attributes'] = array (
-      'enctype' => "multipart/form-data"
-    );
-    $form['payfile'] = array (
-      '#type' => 'file'
-    );
-    $form['submit'] = array (
-      '#type' => 'submit',
-      '#value' => 'Submit'
-    );
-    return $form;
-  }
-  function veritas_st_form_validate($form, & $form_state) {
-
-    $f = veritas_check_upload("payfile");
-    if ($f) {
-      form_set_error('payfile', 'Sorry file cannot be uploaded. Please try again ' . $f);
+  $i = 0;
+  while ($arr = fgetcsv($fx, null, ',')) {
+    if (count($arr) > 7) {
+      drupal_set_message("line number " . ($i) . " in the csv file contain " . count($arr) . " fields.");
       return;
     }
 
-  }
-  function veritas_st_form_submit($form, & $form_state) {
-
-    $d = $n = 0;
-
-    $fx = fopen($_FILES['files']['tmp_name']['payfile'], 'r');
-    if (!$fx) {
-      echo 'file not open';
+    $arr[3] = str_replace(",", '', $arr[3]);
+    $arr[4] = str_replace(",", '', $arr[4]);
+    if (!is_numeric($arr[4])) {
+      continue;
     }
-    $i = 0;
-    while ($arr = fgetcsv($fx, null, ',')) {
-      if (count($arr) > 7) {
-        drupal_set_message("line number " . ($i) . " in the csv file contain " . count($arr) . " fields.");
-        return;
-      }
-
-      $arr[3] = str_replace(",", '', $arr[3]);
-      $arr[4] = str_replace(",", '', $arr[4]);
-      if (!is_numeric($arr[4])) {
-        continue;
-      }
-      $r = db_query("select * from payment where refno='%s'", $arr[1]);
-      $s = db_fetch_object($r);
-      if ($s->refno) {
-        $d++;
-        continue;
-      }
-      $n++;
-      $barr = array ();
-
-      $barr[0] = $arr[0];
-      $barr[1] = $arr[1];
-      $barr[2] = $arr[6];
-      $barr[3] = $arr[2];
-      $barr[4] = $arr[3];
-      $barr[5] = $arr[4];
-      $barr[6] = 0;
-      $sql = "insert into payment values ('" .
-      implode("','", $barr) . "')";
-      $f = db_query($sql);
-      if (db_error()) {
-        drupal_set_message('dberror in line ' . $i);
-        return;
-      }
+    $r = db_query("select * from payment where refno='%s'", $arr[1]);
+    $s = db_fetch_object($r);
+    if ($s->refno) {
+      $d++;
+      continue;
     }
-    drupal_set_message(" inserted  $n new record(s) ");
+    $n++;
+    $barr = array ();
+
+    $barr[0] = $arr[0];
+    $barr[1] = $arr[1];
+    $barr[2] = $arr[6];
+    $barr[3] = $arr[2];
+    $barr[4] = $arr[3];
+    $barr[5] = $arr[4];
+    $barr[6] = 0;
+    $sql = "insert into payment values ('" .
+    implode("','", $barr) . "')";
+    $f = db_query($sql);
+    if (db_error()) {
+      drupal_set_message('dberror in line ' . $i);
+      return;
+    }
   }
-?>
+  drupal_set_message(" inserted  $n new record(s) ");
+}
+
