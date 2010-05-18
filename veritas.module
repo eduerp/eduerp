@@ -1362,13 +1362,21 @@ class UserProfile {
     foreach ($this->profile_nodes as $node) {
       // obtain visible properties for nodes and set them
       // it sets $this->profile_first_name = $node->field_profile_first_name
-      // for instance
-      // TODO: prevent access to image file fields
+      // for instance (supports only native type and nodereference 
+      // field types)
+      // TODO: add support for other node field types
       foreach ($node as $key => $value) {
         if (preg_match('/^field\_(.*)/', $key, $matches)) {
           $node_value = $node->$key;
-          $this->$matches[1] = $node_value[0]['value'];
-          $this->field_map[$matches[1]] = $node->type;
+
+          // check the existence of readable values
+          if (array_key_exists('value', $node_value[0])) {
+            $this->$matches[1] = $node_value[0]['value'];
+            $this->field_map[$matches[1]] = $node->type;
+          } elseif (array_key_exists('nid', $node_value[0])) {
+            $this->$matches[1] = $node_value[0]['nid'];
+            $this->field_map[$matches[1]] = $node->type;
+          }
         }
       }
     }
@@ -1387,7 +1395,11 @@ class UserProfile {
         // must be returned as a reference if not
         // it will not be saved.
         $node_field =& $this->profile_nodes[$this->field_map[$key]]->$node_field_name;
-        $node_field[0]['value'] = $value;
+        if (array_key_exists('value', $node_field[0])) {
+          $node_field[0]['value'] = $value;
+        } elseif (array_key_exists('nid', $node_field[0])) {
+          $node_field[0]['nid'] = $value;
+        }
       }
     }
     foreach ($this->profile_nodes as $node) {
