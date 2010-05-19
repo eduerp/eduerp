@@ -147,7 +147,7 @@ class courseselectionsclass {
   }
 
   public function addformelementsforsemester($semester) {
-    global $user;
+    global $user_profile;
 
     $sql = "SELECT
         ci.nid AS course_instance,
@@ -176,7 +176,7 @@ class courseselectionsclass {
         pci.programme_id=pc.programme_id AND
         pc.level='%s'
       ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
-    $result = db_query($sql, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user->profile_level_name);
+    $result = db_query($sql, $user_profile->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user_profile->profile_level_name);
 
     $this->form['chosencourses' . $semester] = array(
         '#tree' => TRUE,
@@ -228,6 +228,7 @@ class courseselectionsclass {
 
   public function addformelementsforfailedcoursesforsemester($semester) {
     global $user;
+    global $user_profile;
 
     // Find any failed (and not since passed) courses and see are they being run
     // failedcourses sub-query below borrows from similar query in computed.inc
@@ -319,7 +320,7 @@ class courseselectionsclass {
         pci1.semester=pc1.semester AND
         pci1.programme_id=pc1.programme_id
       ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
-    $result = db_query($sql, $user->uid, $user->uid, $user->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
+    $result = db_query($sql, $user->uid, $user->uid, $user_profile->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
 
     $first = TRUE;
     while ($row = db_fetch_object($result)) {
@@ -349,12 +350,12 @@ class courseselectionsclass {
   }
 
   public function addformelementsforloadcounter($semester) {
-    global $user;
+    global $user_profile;
 
     $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green")';
 
     $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
-    $result = db_query($sql, $user->profile_first_choice, $user->profile_level_name, $semester);
+    $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
     $min_max_credits = db_fetch_object($result);
 
     $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
@@ -414,7 +415,8 @@ class courseselectionsclass {
 
 function student_course_form(&$obj) {
   global $user;
-  profile_load_profile($user);
+  global $user_profile;
+  $user_profile = new UserProfile($user->uid);
 
   $session =  variable_get('veritas_current_session', '');
   $semester = variable_get('veritas_current_semester', 1);
@@ -433,7 +435,7 @@ function student_course_form(&$obj) {
           field_session_sr_value='%s'
         )
       )";
-  $rows = db_query($sql, $user->uid, $user->profile_first_choice, $user->profile_registered_session);
+  $rows = db_query($sql, $user->uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
   if ($row = db_fetch_object($rows)) {
     if ($row->field_event_sr_value === 'Repeat Session') {
       $gotonextlevel = FALSE;
@@ -444,9 +446,9 @@ function student_course_form(&$obj) {
     }
   }
 
-  if (empty($user->profile_registered_session) || $user->profile_registered_session === $session) $gotonextlevel = FALSE;
+  if (empty($user_profile->profile_reg_session) || $user_profile->profile_reg_session === $session) $gotonextlevel = FALSE;
 
-  $level_name = $user->profile_level_name;
+  $level_name = $user_profile->profile_level_name;
 
   if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
     if ($level_name >= 100) $level_name += 100;
@@ -454,7 +456,7 @@ function student_course_form(&$obj) {
   }
 
   $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
-    $user->profile_first_choice, $level_name, $semester);
+    $user_profile->profile_first_choice, $level_name, $semester);
   if (!db_fetch_object($rows)) {
     drupal_set_message("Sorry. You are not allowed to register courses at this time.");
     return FALSE;
@@ -465,23 +467,10 @@ function student_course_form(&$obj) {
   $rs = db_query($q, $user->uid, $session);
   if ($rs && ($row = db_fetch_object($rs))) {
 
-    $addprofile = array();
-
-    if ($gotonextlevel) {
-      $level_id = $user->profile_level_id;
-      $rows = db_query("SELECT level_id FROM {level} WHERE level_name='%s'", $level_name);
-      if ($row = db_fetch_object($rows)) $level_id = $row->level_id;
-
-      $addprofile['profile_level_id'] = $level_id;
-      $addprofile['profile_level_name'] = $level_name;
-
-      db_query("UPDATE {admitted_student} SET level_id=%d WHERE student_id=%d", $level_id, $user->uid);
-    }
-
-    $addprofile['profile_registered_session'] = $session;
-    $addprofile['profile_registered_semester'] = $semester;
-
-    updateprofilevalues($user, $addprofile);
+    if ($gotonextlevel) $user_profile->profile_level_name = $level_name;
+    $user_profile->profile_reg_session = $session;
+    $user_profile->profile_reg_semester = $semester;
+    $user_profile->save();
 
     $courseselections = new courseselectionsclass();
 
@@ -574,33 +563,33 @@ function student_course_form_validate($form, &$form_state) {
 
 function student_course_form_submit($form, &$form_state) {
   global $user;
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $session = variable_get('veritas_current_session', '');
 
   $studentname = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = ' ' . $user->profile_middle_name;
-    $studentname = "{$user->profile_last_name}, {$user->profile_first_name}{$middle}";
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $studentname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
   }
 
   // Find the program type
   $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
-  $result = db_query($sql, $user->profile_first_choice);
+  $result = db_query($sql, $user_profile->profile_first_choice);
   $row = db_fetch_object($result);
   $program_type = abs($row->field_program_type_value);
-  if ($program_type == 3 && $user->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
+  if ($program_type == 3 && $user_profile->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
 
   // Find the existing student_program
   $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
-  $result = db_query($sql, $user->uid, $user->profile_first_choice);
+  $result = db_query($sql, $user->uid, $user_profile->profile_first_choice);
   $row = db_fetch_object($result);
   $student_program = $row->nid;
 
   foreach (array(1, 2) as $semester) {
     if (!empty($_SESSION['eduerp_chosen_courses' . $semester])) {
-      $student_gpa = create_student_gpa($user, $studentname, $student_program, $session, $semester, $form_state['storage']['creditload'][$semester]);
+      $student_gpa = create_student_gpa($user, $user_profile, $studentname, $student_program, $session, $semester, $form_state['storage']['creditload'][$semester]);
 
       delete_student_grades($user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
 
@@ -619,7 +608,7 @@ function student_courses() {
 }
 
 
-function create_student_gpa($student_user, $studentname, $student_program, $session, $semester, $creditload) {
+function create_student_gpa($student_user, $user_profile, $studentname, $student_program, $session, $semester, $creditload) {
   // Check if there is an existing student_gpa, must avoid a duplicate
   $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
     WHERE
@@ -644,14 +633,14 @@ function create_student_gpa($student_user, $studentname, $student_program, $sess
     $node->field_sess_name_gpa[0]['value']       = $session;
     $node->field_semester_name_gpa[0]['value']   = $semester;
   }
-  $node->field_program_ref_gpa[0]['nid']         = $student_user->profile_first_choice;
+  $node->field_program_ref_gpa[0]['nid']         = $user_profile->profile_first_choice;
   $node->field_student_program_ref_gpa[0]['nid'] = $student_program;
   $node->field_gptotal[0]['value']               = '-';
   $node->field_gpa[0]['value']                   = '-';
   $node->field_gpaforstudent[0]['value']         = '-';
   $node->field_credit_load_registered[0]['value']= $creditload;
   $node->field_credit_load_completed[0]['value'] = 0;
-  $node->field_level_name_gpa[0]['value']        = $student_user->profile_level_name;
+  $node->field_level_name_gpa[0]['value']        = $user_profile->profile_level_name;
   node_save($node);
   return $node->nid;
 }
@@ -1126,6 +1115,7 @@ function student_registration_form_submit($form, &$state) {
     $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
     db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
 
+    // Next two lines create the profile for the student. They should be removed when Tim has his new student registration code in place (ALAN)
     require_once './' . drupal_get_path('module', 'veritas') . '/student/student_eduerp_profile.inc';
     save_student_eduerp_profile($user->uid);
 
@@ -1265,10 +1255,10 @@ $f=db_fetch_object($t);
 
 
 function create_student_program($uid) {
-  $user = user_load($uid);
+  $user_profile = new UserProfile($uid);
 
   $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
-  $result = db_query($sql, $user->uid, $user->profile_first_choice);
+  $result = db_query($sql, $uid, $user_profile->profile_first_choice);
   $row = db_fetch_object($result);
 
   if (empty($row->nid)) {
@@ -1286,14 +1276,18 @@ function create_student_program($uid) {
   }
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
-  $node->title                                      = "$name - {$user->profile_programme_name}";
-  $node->field_student_ref_sp[0]['uid']             = $user->uid;
-  $node->field_program_ref_sp[0]['nid']             = $user->profile_first_choice;
+  $sql = "SELECT p.field_programme_name_value AS programme_name FROM {content_type_program} p WHERE p.nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_array($result);
+
+  $node->title                                      = "$name - {$row->programme_name}";
+  $node->field_student_ref_sp[0]['uid']             = $uid;
+  $node->field_program_ref_sp[0]['nid']             = $user_profile->profile_first_choice;
   $node->field_cgpa_sp[0]['value']                  = '-';
   $node->field_cgpaforstudent_sp[0]['value']        = '-';
   $node->field_gptotal_sp[0]['value']               = '-';
@@ -1303,38 +1297,13 @@ function create_student_program($uid) {
 
 
 function change_student_program(&$user, $first_choice) {
-  $sql = "SELECT
-    p.field_programme_name_value AS programme_name,
-    d.field_department_name_value AS department_name,
-    co.field_college_name_value AS college_name
-  FROM {content_type_program} p, {content_type_department} d, {content_type_college} co
-  WHERE p.nid=%d AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=co.nid";
-  $result = db_query($sql, $first_choice);
-  $row = db_fetch_array($result);
-  $addprofile = array(
-    'profile_first_choice'    => $first_choice,
-    'profile_programme_name'  => $row->programme_name,
-    'profile_department_name' => $row->department_name,
-    'profile_college_name'    => $row->college_name);
-  updateprofilevalues($user, $addprofile);
-
-  db_query("UPDATE {admitted_student} SET first_choice=%d WHERE student_id=%d", $first_choice, $user->uid);
+  $user_profile = new UserProfile($user->uid);
+  $user_profile->profile_first_choice = $first_choice;
+  $user_profile->save();
 
   create_student_program($user->uid);
 
   // Change matriculation number (link to Tim's code)
-}
-
-
-function updateprofilevalues(&$user, $addprofile) {
-  foreach ($addprofile as $profile_key => $value) {
-    db_query("DELETE FROM {profile_values}
-      USING {profile_values}, {profile_fields} pf
-      WHERE {profile_values}.uid=%d AND {profile_values}.fid=pf.fid AND pf.name='%s'", $user->uid, $profile_key);
-    db_query("INSERT INTO {profile_values} SELECT pf.fid, %d AS uid, '%s' AS value FROM {profile_fields} pf WHERE pf.name='%s'", $user->uid, $value, $profile_key);
-    unset($user->{$profile_key});
-  }
-  profile_load_profile($user); // Reload any unset values
 }
 
 
@@ -3941,38 +3910,6 @@ function student_user($type, &$edit, &$user, $category = NULL) {
       if ($data = db_fetch_object($result)) {
         $_SESSION['student']['id'] = $data->student_id;
         $_SESSION['student']['data'] = $data;
-      }
-      break;
-    case 'after_update':
-      if ($category === 'eduerp' && !empty($user->profile_jambno)) {
-        db_query("
-          UPDATE {admitted_student} a, {title} t, {state} s
-          SET
-            a.last_name='%s',
-            a.first_name='%s',
-            a.middle_name='%s',
-            a.title=t.title_id,
-            a.permanent_address1='%s',
-            a.permanent_address_city='%s',
-            a.permanent_address_state=s.state_id,
-            a.mobile_number='%s',
-            a.marital_status='%s',
-            a.religion='%s'
-          WHERE
-            t.title_name='%s' AND
-            s.state_name='%s' AND
-            a.student_id=%d",
-          $user->profile_last_name,
-          $user->profile_first_name,
-          $user->profile_middle_name,
-          $user->profile_permanent_address1,
-          $user->profile_permanent_address_city,
-          $user->profile_mobile_number,
-          $user->profile_marital_status,
-          $user->profile_religion,
-          $user->profile_title_name,
-          $user->profile_permanent_address_state,
-          $user->uid);
       }
       break;
   }
