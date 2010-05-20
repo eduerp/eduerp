@@ -223,17 +223,17 @@ function staff_assign_role() {
 
   $_SESSION['eduerpassignrole']->uid = arg(2);
 
-  $staff_user = user_load($_SESSION['eduerpassignrole']->uid);
+  $user_profile = new UserProfile($_SESSION['eduerpassignrole']->uid);
   $staffname = '';
-  if (!empty($staff_user->profile_first_name) && !empty($staff_user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($staff_user->profile_middle_name)) $middle = ' ' . $staff_user->profile_middle_name;
-    $staffname = "{$staff_user->profile_last_name}, {$staff_user->profile_first_name}{$middle}";
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $staffname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
   }
   $_SESSION['eduerpassignrole']->name = $staffname;
-  $_SESSION['eduerpassignrole']->department_id = $staff_user->profile_department_id;
+  $_SESSION['eduerpassignrole']->department_id = $user_profile->profile_department_id;
   $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
-  $row = db_fetch_object($result, $staff_user->profile_department_id);
+  $row = db_fetch_object($result, $user_profile->profile_department_id);
   $_SESSION['eduerpassignrole']->college_id = $row->field_college_id_nid;
 
   ob_start();
@@ -535,27 +535,9 @@ function drop_drupal_role($uid, $role) {
 
 
 function move_department_form_submit($form, &$form_state) {
-  db_query("UPDATE
-      {content_type_department} d, {content_type_college} c,
-      {profile_fields} pf0, {profile_values} pv0,
-      {profile_fields} pf1, {profile_values} pv1,
-      {profile_fields} pf2, {profile_values} pv2
-    SET
-      pv0.value=d.nid,
-      pv1.value=d.field_department_name_value,
-      pv2.value=c.field_college_name_value
-    WHERE
-      d.nid=%d AND
-      d.field_college_id_nid=c.nid AND
-      pf0.name='profile_department_id' AND
-      pf1.name='profile_department_name' AND
-      pf2.name='profile_college_name' AND
-      pv0.uid=%d AND pv0.fid=pf0.fid AND
-      pv1.uid=pv0.uid AND pv1.fid=pf1.fid AND
-      pv2.uid=pv0.uid AND pv2.fid=pf2.fid",
-    $form_state['values']['department'], $form_state['values']['uid']);
-
-  db_query("UPDATE {veritas_staff} SET department_id=%d WHERE user_id=%d", $form_state['values']['department'], $form_state['values']['uid']);
+  $user_profile = new UserProfile($form_state['values']['uid']);
+  $user_profile->profile_department_id = $form_state['values']['department'];
+  $user_profile->save();
 
   drupal_set_message("Department Moved");
 }
@@ -574,7 +556,7 @@ function search_staff_list() {
 
 function staff_course_list() {
   ob_start();
-  $query = "SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
+  $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS staff_name
     FROM
       (SELECT
         c.field_coursetitle_value AS course_title,
@@ -583,12 +565,8 @@ function staff_course_list() {
       WHERE
         c.field_department_nid_nid=%d AND c.nid=ci.field_course_id_nid
       ) AS courses
-    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
-    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
-    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
-    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
-    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
-    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
+    LEFT JOIN {node} npro ON courses.uid=npro.uid AND npro.type='profile'
+    LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid";
   $result = db_query($query, arg(2));
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
@@ -615,15 +593,11 @@ function staff_department_list() {
       d.nid AS department_id,
       d.field_department_name_value AS department_name,
       er.uid AS hod_uid,
-      CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS hod_name
+      CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS hod_name
     FROM {content_type_department} d
-    LEFT  JOIN {eduerp_roles} er ON d.nid=er.department_id AND er.role='Head of Department'
-    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
-    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
-    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
-    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
-    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
-    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    LEFT JOIN {eduerp_roles} er ON d.nid=er.department_id AND er.role='Head of Department'
+    LEFT JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
+    LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
     ORDER BY department_name");
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
@@ -668,15 +642,11 @@ function staff_search_list() {
     $condition  = '';
   /*}*/
   $query = "SELECT er.uid,
-      CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS name,
+      CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS name,
       GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
     FROM {eduerp_roles} er
-    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
-    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
-    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
-    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
-    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
-    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    LEFT JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
+    LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
     $condition
     GROUP BY er.uid ORDER BY name";
   $result = db_query($query);
@@ -764,7 +734,8 @@ function staff_view_form(&$obj) {
 
 function staff_course_assign() {
   global $user;
-  profile_load_profile($user);
+  global $user_profile;
+  $user_profile = new UserProfile($user->uid);
 
   $delete_assignment_js =<<< EOD
 function delete_course(id) {
@@ -926,11 +897,13 @@ function staff_course_assign_form1(&$obj) {
     '#form_panel_row' => 5);
   return $form;
 }
+
+
 function course_assign_list() {
-  global $user;
+  global $user_profile;
 
   $query = "
-    SELECT courses.*, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
+    SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS staff_name
     FROM
       (SELECT
         pc.program_course_id,
@@ -942,13 +915,10 @@ function course_assign_list() {
       FROM {program_course} pc, {content_type_program} p, {content_type_course} c
       WHERE pc.programme_id=p.nid AND pc.course_id=c.nid AND p.field_department_id_nid=%d AND pc.historical=0
       ) AS courses
-    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
-    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
-    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
-    LEFT  JOIN {profile_values} pv0 ON courses.uid=pv0.uid AND pv0.fid=pf0.fid
-    LEFT  JOIN {profile_values} pv1 ON courses.uid=pv1.uid AND pv1.fid=pf1.fid
-    LEFT  JOIN {profile_values} pv2 ON courses.uid=pv2.uid AND pv2.fid=pf2.fid";
-  $r = db_query($query, $user->profile_department_id);
+    LEFT JOIN {node} npro ON courses.uid=npro.uid AND npro.type='profile'
+    LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
+    ORDER BY programme_name, level_name, course_title";
+  $r = db_query($query, $user_profile->profile_department_id);
   $html = "<tr><th>Programme</th><th>Level</th><th>Course</th><th>Course Type</th><th>Lecturer</th><th>Actions</th></tr>";
   while ($f = db_fetch_object($r)) {
     $course_type = array('1' => 'Core', 2 => 'Elective');
@@ -967,6 +937,8 @@ EOD;
 </table>
 <?php
 }
+
+
 function staff_course_assign_form1_submit(&$form, &$state) {
   $values = $state['values'];
 
@@ -991,22 +963,16 @@ function staff_course_assign_form1_submit(&$form, &$state) {
 }
 
 function lecturer() {
-  global $user;
+  global $user_profile;
 
   $titles[''] = 'Select';
-  $r = db_query("SELECT er.uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS staff_name
+  $r = db_query("SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS staff_name
     FROM {eduerp_roles} er
-    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
-    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
-    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
-    INNER JOIN {profile_fields} pf3 ON pf3.name='profile_department_id'
-    INNER JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
-    INNER JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
-    INNER JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
-    INNER JOIN {profile_values} pv3 ON er.uid=pv3.uid AND pv3.fid=pf3.fid
-    WHERE pv3.value=%d
+    INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
+    INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+    WHERE pro.field_profile_department_id_nid=%d
     GROUP BY er.uid
-    ORDER BY staff_name", $user->profile_department_id);
+    ORDER BY staff_name", $user_profile->profile_department_id);
   while ($f = db_fetch_object($r))
     $titles[$f->uid] = $f->staff_name;
   return  $titles;
@@ -1014,10 +980,10 @@ function lecturer() {
 
 
 function staff_prg() {
-  global $user;
+  global $user_profile;
   $titles[''] = '';
   $sql = "SELECT nid, field_programme_name_value AS value FROM {content_type_program} WHERE field_department_id_nid=%d ORDER BY field_programme_name_value";
-  $rows = db_query($sql, $user->profile_department_id);
+  $rows = db_query($sql, $user_profile->profile_department_id);
   while ($row = db_fetch_object($rows)) {
     $titles[$row->nid] = $row->value;
   }
@@ -2872,14 +2838,10 @@ function validate_always_true($element, &$form_state){
 
 
 function _get_staff_list() {
-  $q = "SELECT er.uid, CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value) AS name
+  $q = "SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS name
     FROM {eduerp_roles} er
-    INNER JOIN {profile_fields} pf0 ON pf0.name='profile_last_name'
-    INNER JOIN {profile_fields} pf1 ON pf1.name='profile_first_name'
-    INNER JOIN {profile_fields} pf2 ON pf2.name='profile_middle_name'
-    LEFT  JOIN {profile_values} pv0 ON er.uid=pv0.uid AND pv0.fid=pf0.fid
-    LEFT  JOIN {profile_values} pv1 ON er.uid=pv1.uid AND pv1.fid=pf1.fid
-    LEFT  JOIN {profile_values} pv2 ON er.uid=pv2.uid AND pv2.fid=pf2.fid
+    INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
+    INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
     GROUP BY er.uid ORDER BY name";
   $rs = db_query($q);
   $staff_list = array(0 => "Select One");
@@ -2984,7 +2946,7 @@ function search_staff_form_validate($form, &$state) {
 
 function search_staff_form2(&$obj) {
   global $user;
-  $staff_user = user_load($_SESSION['staff']['user_id']);
+  $user_profile = new UserProfile($user->uid);
 
   $qry = "select * from {veritas_staff} where user_id=%d";
   $res = db_query($qry, $_SESSION['staff']['user_id']);
@@ -3065,7 +3027,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['staff_no1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_staff_no,
+    '#value' => $user_profile->profile_staff_no,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3076,7 +3038,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['type1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_staff_type,
+    '#value' => $user_profile->profile_staff_type,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -3121,7 +3083,7 @@ function search_staff_form2(&$obj) {
   $form['extra']['employ_type1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $staff_user->profile_employment_type,
+    '#value' => $user_profile->profile_employment_type,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['extra']['appt_date0'] = array(
@@ -3148,7 +3110,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['fname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $staff_user->profile_first_name,
+    '#value' => $user_profile->profile_first_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['mname0'] = array(
@@ -3159,7 +3121,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['mname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $staff_user->profile_middle_name,
+    '#value' => $user_profile->profile_middle_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['lname0'] = array(
@@ -3170,7 +3132,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['lname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $staff_user->profile_last_name,
+    '#value' => $user_profile->profile_last_name,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['personal']['dob0'] = array(
@@ -3180,7 +3142,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['dob1'] = array(
     '#type' => 'item',
-    '#value' => sprintf("%04d-%02d-%02d", $staff_user->profile_dob['year'], $staff_user->profile_dob['month'], $staff_user->profile_dob['day']),
+    '#value' => substr($user_profile->profile_dob, 0, 10),
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
   $form['personal']['gender0'] = array(
@@ -3191,7 +3153,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['gender1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $staff_user->profile_gender,
+    '#value' => $user_profile->profile_gender,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['origin0'] = array(
@@ -3201,7 +3163,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['origin1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_state_name_origin,
+    '#value' => $user_profile->profile_state_name_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
     '#attributes' => array('disabled' => 'disabled'));
@@ -3212,7 +3174,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['lga1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_lga_name,
+    '#value' => $user_profile->profile_lga_name,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['personal']['mstatus0'] = array(
@@ -3222,7 +3184,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['mstatus1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_marital_status,
+    '#value' => $user_profile->profile_marital_status,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3234,7 +3196,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['address1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $staff_user->profile_permanent_address1,
+    '#value' => $user_profile->profile_permanent_address,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
   $form['personal']['city0'] = array(
@@ -3244,7 +3206,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['city1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_permanent_address_city,
+    '#value' => $user_profile->profile_permanent_city,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3288,7 +3250,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['mobile1'] = array(
     '#type' => 'item',
-    '#value' => $staff_user->profile_mobile_number,
+    '#value' => $user_profile->profile_mobile_number,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
