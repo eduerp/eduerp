@@ -579,8 +579,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     // ... Sums them and saves result in the student_program found from the students's profile
     $sql = "UPDATE
       {content_type_student_program} sp,
-      {profile_fields} pf1,
-      {profile_values} pv1,
+      {node} nspro1,
+      {content_type_student_profile} spro1,
       (
         SELECT
           exams.field_mat_no_uid AS uid,
@@ -601,8 +601,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             {content_type_course_instance} ci,
             {content_type_course} c,
             {program_course} pc,
-            {profile_fields} pf,
-            {profile_values} pv
+            {node} nspro,
+            {content_type_student_profile} spro
           WHERE
             sg.field_mat_no_uid IN (
               SELECT sga.field_mat_no_uid
@@ -621,10 +621,10 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             sg.field_dropped_value=0 AND
             ci.field_course_id_nid=c.nid AND
             ci.field_course_id_nid=pc.course_id AND
-            pc.programme_id=pv.value AND
-            pf.name='profile_first_choice' AND
-            pf.fid=pv.fid AND
-            pv.uid=sg.field_mat_no_uid
+            pc.programme_id=spro.field_profile_first_choice_nid AND
+            nspro.uid=sg.field_mat_no_uid AND
+            nspro.type='student_profile' AND
+            nspro.vid=spro.vid
           ) AS exams
         JOIN (
           SELECT
@@ -636,8 +636,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             {content_type_course_instance} ci0,
             {content_type_course} c0,
             {program_course} pc0,
-            {profile_fields} pf0,
-            {profile_values} pv0
+            {node} nspro0,
+            {content_type_student_profile} spro0
           WHERE
             sg0.field_mat_no_uid IN (
               SELECT sgb.field_mat_no_uid
@@ -656,10 +656,10 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             sg0.field_dropped_value=0 AND
             ci0.field_course_id_nid=c0.nid AND
             ci0.field_course_id_nid=pc0.course_id AND
-            pc0.programme_id=pv0.value AND
-            pf0.name='profile_first_choice' AND
-            pf0.fid=pv0.fid AND
-            pv0.uid=sg0.field_mat_no_uid
+            pc0.programme_id=spro0.field_profile_first_choice_nid AND
+            nspro0.uid=sg0.field_mat_no_uid AND
+            nspro0.type='student_profile' AND
+            nspro0.vid=spro0.vid
           GROUP BY c0.field_code_value, sg0.field_mat_no_uid
           ) AS most_recent_exam
         ON
@@ -677,38 +677,44 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       )
     WHERE
       sp.field_student_ref_sp_uid=cgpatoset.uid AND
-      sp.field_program_ref_sp_nid=pv1.value AND
-      pf1.name='profile_first_choice' AND
-      pf1.fid=pv1.fid AND
-      pv1.uid=cgpatoset.uid";
+      sp.field_program_ref_sp_nid=spro1.field_profile_first_choice_nid AND
+      nspro1.uid=cgpatoset.uid AND
+      nspro1.type='student_profile' AND
+      nspro1.vid=spro1.vid";
     db_query($sql, $session, $coursecode, $session, $coursecode);
   }
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
 
   $firsttime = TRUE;
   $hod_uid_array = explode(',', $hod_uid);
   foreach ($hod_uid_array as $hod_uid_i) {
 
-    if (!empty($hod_uid_i)) $destination_user = user_load($hod_uid_i);
-    else $destination_user = NULL;
+    if (!empty($hod_uid_i)) {
+      $destination_user = user_load($hod_uid_i);
+      $user_profile = new UserProfile($hod_uid_i);
+    }
+    else {
+      $destination_user = NULL;
+      $user_profile = NULL;
+    }
 
     $subject = "$gradestext for $coursecode Approved by $name";
 
     $body = '';
-    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+    if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
       $middle = '';
-      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+      if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+      $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
     }
 
     $body .= "I have approved $gradestext for $coursecode\n\n";
@@ -852,24 +858,31 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
 
-  if (!empty($lecturer_uid)) $destination_user = user_load($lecturer_uid);
+  if (!empty($lecturer_uid)) {
+    $destination_user = user_load($lecturer_uid);
+    $user_profile = new UserProfile($lecturer_uid);
+  }
+  else {
+    $destination_user = NULL;
+    $user_profile = NULL;
+  }
 
   $subject = "$gradestexthod for $coursecode Unlocked by $name";
 
   $body = '';
-  if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-    $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
   }
 
   $body .= "I have unlocked $gradestexthod for $coursecode\n\n";
@@ -915,16 +928,22 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
     drupal_mail_send($message);
   }
 
-  if (!empty($lecturer_alternate_uid)) $destination_user = user_load($lecturer_alternate_uid);
-  else $destination_user = NULL;
+  if (!empty($lecturer_alternate_uid)) {
+    $destination_user = user_load($lecturer_alternate_uid);
+    $user_profile = new UserProfile($lecturer_alternate_uid);
+  }
+  else {
+    $destination_user = NULL;
+    $user_profile = NULL;
+  }
 
   $subject = "$gradestexthod for $coursecode Unlocked by $name";
 
   $body = '';
-  if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-    $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
   }
 
   $body .= "I have unlocked $gradestexthod for $coursecode\n\n";
@@ -1056,29 +1075,35 @@ function approve_grades_hod_form_submit($form, &$form_state) {
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
 
   $firsttime = TRUE;
   $dean_uid_array = explode(',', $dean_uid);
   foreach ($dean_uid_array as $dean_uid_i) {
 
-    if (!empty($dean_uid_i)) $destination_user = user_load($dean_uid_i);
-    else $destination_user = NULL;
+    if (!empty($dean_uid_i)) {
+      $destination_user = user_load($dean_uid_i);
+      $user_profile = new UserProfile($dean_uid_i);
+    }
+    else {
+      $destination_user = NULL;
+      $user_profile = NULL;
+    }
 
     $subject = "$gradestexthoda for $coursecode Approved by $name";
 
     $body = '';
-    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+    if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
       $middle = '';
-      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+      if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+      $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
     }
 
     $body .= "I have approved $gradestexthoda for $coursecode\n\n";
@@ -1144,14 +1169,15 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $student_uid = $student->field_mat_no_uid;
 
       $destination_user = user_load($student_uid);
+      $user_profile = new UserProfile($student_uid);
 
       $subject = "$gradestexthoda for $coursecode Approved by $name";
 
       $body = '';
-      if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+      if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
         $middle = '';
-        if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-        $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+        if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+        $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
       }
       $body .= "I have approved $gradestexthoda for $coursecode\n\n";
       $body .= "To view your grades go to $base_url/student\n";
@@ -1263,13 +1289,13 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
 
   $subject = "$gradestextdean for $coursecode Approved by $name";
@@ -1339,11 +1365,11 @@ function listlocations($coursecode, $session, $semesterwhere, $locationwhere) {
       $semesterwhere $locationwhere";
   $locationresult = db_query($sql, $coursecode, $session);
   while ($locationdetail = db_fetch_object($locationresult)) {
-    $lecturer_user = user_load($locationdetail->lecturer_uid);
+    $user_profile = new UserProfile($locationdetail->lecturer_uid);
 
-    echo "Location: $locationdetail->location (Lecturer: $lecturer_user->profile_first_name ";
-    if (!empty($lecturer_user->profile_middle_name)) echo $lecturer_user->profile_middle_name . ' ';
-    echo "$lecturer_user->profile_last_name)<br />";
+    echo "Location: $locationdetail->location (Lecturer: $user_profile->profile_first_name ";
+    if (!empty($user_profile->profile_middle_name)) echo $user_profile->profile_middle_name . ' ';
+    echo "$user_profile->profile_last_name)<br />";
   }
 }
 ?>
