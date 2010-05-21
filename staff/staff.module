@@ -556,7 +556,7 @@ function search_staff_list() {
 
 function staff_course_list() {
   ob_start();
-  $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS staff_name
+  $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
     FROM
       (SELECT
         c.field_coursetitle_value AS course_title,
@@ -593,7 +593,7 @@ function staff_department_list() {
       d.nid AS department_id,
       d.field_department_name_value AS department_name,
       er.uid AS hod_uid,
-      CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS hod_name
+      CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS hod_name
     FROM {content_type_department} d
     LEFT JOIN {eduerp_roles} er ON d.nid=er.department_id AND er.role='Head of Department'
     LEFT JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
@@ -642,7 +642,7 @@ function staff_search_list() {
     $condition  = '';
   /*}*/
   $query = "SELECT er.uid,
-      CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS name,
+      CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS name,
       GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
     FROM {eduerp_roles} er
     LEFT JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
@@ -903,7 +903,7 @@ function course_assign_list() {
   global $user_profile;
 
   $query = "
-    SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS staff_name
+    SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
     FROM
       (SELECT
         pc.program_course_id,
@@ -966,7 +966,7 @@ function lecturer() {
   global $user_profile;
 
   $titles[''] = 'Select';
-  $r = db_query("SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS staff_name
+  $r = db_query("SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
     FROM {eduerp_roles} er
     INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
@@ -2838,7 +2838,7 @@ function validate_always_true($element, &$form_state){
 
 
 function _get_staff_list() {
-  $q = "SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', pro.field_profile_middle_name_value) AS name
+  $q = "SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS name
     FROM {eduerp_roles} er
     INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
