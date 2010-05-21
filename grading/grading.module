@@ -1174,29 +1174,35 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
     $college = '';
   }
 
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
 
   $firsttime = TRUE;
   $vc_uid_array = explode(',', $vc_uid);
   foreach ($vc_uid_array as $vc_uid_i) {
 
-    if (!empty($vc_uid_i)) $destination_user = user_load($vc_uid_i);
-    else $destination_user = NULL;
+    if (!empty($vc_uid_i)) {
+      $destination_user = user_load($vc_uid_i);
+      $user_profile = new UserProfile($vc_uid_i);
+    }
+    else {
+      $destination_user = NULL;
+      $user_profile = NULL;
+    }
 
     $subject = "$gradestext for $department/$level/$session/$semester Approved by $name";
 
     $body = '';
-    if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+    if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
       $middle = '';
-      if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-      $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+      if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+      $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
     }
 
     $body .= "I have approved $gradestext\n\n";
@@ -1357,13 +1363,13 @@ function approve_grades_vc_form_submit($form, &$form_state) {
     $college = '';
   }
 
-  profile_load_profile($user);
+  $user_profile = new UserProfile($user->uid);
 
   $name = '';
-  if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
     $middle = '';
-    if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-    $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
   }
 
   $subject = "$gradestext for $department/$level/$session/$semester Approved by $name";
@@ -1877,7 +1883,12 @@ function grading_student_details_form(&$obj) {
 function _grading_student_list() {
   $names = array();
   $names[0] = '';
-  $sql = "SELECT CONCAT(pv0.value, ', ', pv1.value, ' ', pv2.value, ' (', u.name, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid FROM users u, users_roles ur, role r, {profile_fields} pf0, {profile_values} pv0, {profile_fields} pf1, {profile_values} pv1, {profile_fields} pf2, {profile_values} pv2 WHERE u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND u.uid=pv0.uid AND pv0.fid=pf0.fid AND pf0.name='profile_last_name' AND u.uid=pv1.uid AND pv1.fid=pf1.fid AND pf1.name='profile_first_name' AND u.uid=pv2.uid AND pv2.fid=pf2.fid AND pf2.name='profile_middle_name' ORDER BY name ASC";
+  $sql = "SELECT CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, ''), ' (', u.name, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid
+    FROM users u, users_roles ur, role r, {node} npro, {content_type_profile} pro
+    WHERE
+      u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND
+      u.uid=npro.uid AND npro.type='profile' AND npro.vid=pro.vid
+    ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->uid] = $row->name;
@@ -1889,7 +1900,12 @@ function _grading_student_list() {
 function _grading_mat_list() {
   $names = array();
   $names[0] = '';
-  $sql = "SELECT CONCAT(u.name, ' (', pv0.value, ', ', pv1.value, ' ', pv2.value, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid FROM users u, users_roles ur, role r, {profile_fields} pf0, {profile_values} pv0, {profile_fields} pf1, {profile_values} pv1, {profile_fields} pf2, {profile_values} pv2 WHERE u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND u.uid=pv0.uid AND pv0.fid=pf0.fid AND pf0.name='profile_last_name' AND u.uid=pv1.uid AND pv1.fid=pf1.fid AND pf1.name='profile_first_name' AND u.uid=pv2.uid AND pv2.fid=pf2.fid AND pf2.name='profile_middle_name' ORDER BY name ASC";
+  $sql = "SELECT CONCAT(u.name, ' (', pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, ''), ' ', u.mail, ' ', u.uid, ')') AS name, u.uid
+    FROM users u, users_roles ur, role r, {node} npro, {content_type_profile} pro
+    WHERE
+      u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND
+      u.uid=npro.uid AND npro.type='profile' AND npro.vid=pro.vid
+    ORDER BY name ASC";
   $rows = db_query($sql);
   while ($row = db_fetch_object($rows)) {
     $names[$row->uid] = $row->name;
@@ -2067,23 +2083,25 @@ function grading_cron() {
     if ($notification->instruction == 3) {
 
       $source_user = user_load($notification->approver_uid);
+      $user_profile = new UserProfile($notification->approver_uid);
       $name = '';
-      if (!empty($source_user->profile_first_name) && !empty($source_user->profile_last_name)) {
+      if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
         $middle = '';
-        if (!empty($source_user->profile_middle_name)) $middle = $source_user->profile_middle_name . ' ';
-        $name = "$source_user->profile_first_name {$middle}$source_user->profile_last_name";
+        if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+        $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
       }
 
       $destination_user = user_load($notification->student_uid);
+      $user_profile = new UserProfile($notification->student_uid);
       $gradestext = $notification->gradestext;
       $programme = $notification->programme;
       $subject = "$gradestext for $programme Approved";
 
       $body = '';
-      if (!empty($destination_user->profile_first_name) && !empty($destination_user->profile_last_name)) {
+      if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
         $middle = '';
-        if (!empty($destination_user->profile_middle_name)) $middle = $destination_user->profile_middle_name . ' ';
-        $body .= "Dear $destination_user->profile_first_name {$middle}$destination_user->profile_last_name,\n\n";
+        if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+        $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
       }
       $body .= "I have approved the $gradestext for $programme\n\n";
       $body .= "To view your grades go to $base_url/student\n";
