@@ -167,8 +167,8 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
       // ... Sums them and saves result in the student_program found from the students's profile
       $sql = "UPDATE
         {content_type_student_program} sp,
-        {profile_fields} pf1,
-        {profile_values} pv1,
+        {node} nspro1,
+        {content_type_student_profile} spro1,
         (
           SELECT
             exams.field_mat_no_uid AS uid,
@@ -189,8 +189,8 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               {content_type_course_instance} ci,
               {content_type_course} c,
               {program_course} pc,
-              {profile_fields} pf,
-              {profile_values} pv
+              {node} nspro,
+              {content_type_student_profile} spro
             WHERE
               sg.field_mat_no_uid={$uid} AND
               sg.field_course_instance_nid=ci.nid AND
@@ -198,10 +198,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               sg.field_dropped_value=0 AND
               ci.field_course_id_nid=c.nid AND
               ci.field_course_id_nid=pc.course_id AND
-              pc.programme_id=pv.value AND
-              pf.name='profile_first_choice' AND
-              pf.fid=pv.fid AND
-              pv.uid=sg.field_mat_no_uid
+              pc.programme_id=spro.field_profile_first_choice_nid AND
+              nspro.uid=sg.field_mat_no_uid AND
+              nspro.type='student_profile' AND
+              nspro.vid=spro.vid
             ) AS exams
           JOIN (
             SELECT
@@ -213,8 +213,8 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               {content_type_course_instance} ci0,
               {content_type_course} c0,
               {program_course} pc0,
-              {profile_fields} pf0,
-              {profile_values} pv0
+              {node} nspro0,
+              {content_type_student_profile} spro0
             WHERE
               sg0.field_mat_no_uid={$uid} AND
               sg0.field_course_instance_nid=ci0.nid AND
@@ -222,10 +222,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
               sg0.field_dropped_value=0 AND
               ci0.field_course_id_nid=c0.nid AND
               ci0.field_course_id_nid=pc0.course_id AND
-              pc0.programme_id=pv0.value AND
-              pf0.name='profile_first_choice' AND
-              pf0.fid=pv0.fid AND
-              pv0.uid=sg0.field_mat_no_uid
+              pc0.programme_id=spro0.field_profile_first_choice_nid AND
+              nspro0.uid=sg0.field_mat_no_uid AND
+              nspro0.type='student_profile' AND
+              nspro0.vid=spro0.vid
             GROUP BY c0.field_code_value, sg0.field_mat_no_uid
             ) AS most_recent_exam
           ON
@@ -243,10 +243,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
         )
       WHERE
         sp.field_student_ref_sp_uid=cgpatoset.uid AND
-        sp.field_program_ref_sp_nid=pv1.value AND
-        pf1.name='profile_first_choice' AND
-        pf1.fid=pv1.fid AND
-        pv1.uid=cgpatoset.uid";
+        sp.field_program_ref_sp_nid=spro1.field_profile_first_choice_nid AND
+        nspro1.uid=cgpatoset.uid AND
+        nspro1.type='student_profile' AND
+        nspro1.vid=spro1.vid";
       db_query($sql);
 
       // Find the fields for the approval record
@@ -275,20 +275,20 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
       $department = $approvalrow->department;
       $college = $approvalrow->college;
 
-      profile_load_profile($user);
+      $user_profile = new UserProfile($user->uid);
       $name = '';
-      if (!empty($user->profile_first_name) && !empty($user->profile_last_name)) {
+      if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
         $middle = '';
-        if (!empty($user->profile_middle_name)) $middle = $user->profile_middle_name . ' ';
-        $name = "$user->profile_first_name {$middle}$user->profile_last_name";
+        if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+        $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
       }
 
-      $student_user = user_load($uid);
+      $user_profile = new UserProfile($uid);
       $studentname = '';
-      if (!empty($student_user->profile_first_name) && !empty($student_user->profile_last_name)) {
+      if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
         $middle = '';
-        if (!empty($student_user->profile_middle_name)) $middle = $student_user->profile_middle_name . ' ';
-        $studentname = "$student_user->profile_first_name {$middle}$student_user->profile_last_name";
+        if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+        $studentname = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
       }
 
       $gradestexts = array(
