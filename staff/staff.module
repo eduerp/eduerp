@@ -641,14 +641,18 @@ function staff_search_list() {
   else {*/
     $condition  = '';
   /*}*/
-  $query = "SELECT er.uid,
+  $query = "SELECT ur.uid,
       CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS name,
-      GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name
-    FROM {eduerp_roles} er
-    LEFT JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
+      GROUP_CONCAT(CONCAT(er.role, IFNULL(CONCAT('(', d.field_department_name_value, ')'), ''), IFNULL(CONCAT('(', c.field_college_name_value, ')'), '')) ORDER BY er.role SEPARATOR ', ') AS role_name
+    FROM {users_roles} ur
+    INNER JOIN {role} r ON ur.rid=r.rid AND name='Staff'
+    LEFT JOIN {node} npro ON ur.uid=npro.uid AND npro.type='profile'
     LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
+    LEFT JOIN {eduerp_roles} er ON ur.uid=er.uid
+    LEFT JOIN {content_type_department} d ON er.department_id=d.nid
+    LEFT JOIN {content_type_college} c ON er.college_id=c.nid
     $condition
-    GROUP BY er.uid ORDER BY name";
+    GROUP BY ur.uid ORDER BY name";
   $result = db_query($query);
 ?>
     <table border='1' align='center'>
