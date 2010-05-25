@@ -270,22 +270,22 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
       $eduerpapprovalform->gradestexthod = 'Final Exam Grades';
       $showform = TRUE;
     }
-    elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->anylocked4 && $locks->alllocked4 < 5) {
+    elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->anylocked4 && $locks->alllockede < 5) { // If any CA4 locked and VC has not approved the Final Exam
       $eduerpapprovalform->fieldtoapprovehod = 'field_ca4locked_value';
       $eduerpapprovalform->gradestexthod = 'Fourth set of Continuous Assessment Grades';
       $showform = TRUE;
     }
-    elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->anylocked3 && $locks->alllocked3 < 5) {
+    elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->anylocked3 && $locks->alllockede < 5) {
       $eduerpapprovalform->fieldtoapprovehod = 'field_ca3locked_value';
       $eduerpapprovalform->gradestexthod = 'Third set of Continuous Assessment Grades';
       $showform = TRUE;
     }
-    elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->anylocked2 && $locks->alllocked2 < 5) {
+    elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->anylocked2 && $locks->alllockede < 5) {
       $eduerpapprovalform->fieldtoapprovehod = 'field_ca2locked_value';
       $eduerpapprovalform->gradestexthod = 'Second set of Continuous Assessment Grades';
       $showform = TRUE;
     }
-    elseif ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->anylocked1 && $locks->alllocked1 < 5) {
+    elseif ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->anylocked1 && $locks->alllockede < 5) {
       $eduerpapprovalform->fieldtoapprovehod = 'field_ca1locked_value';
       $eduerpapprovalform->gradestexthod = 'First set of Continuous Assessment Grades';
       $showform = TRUE;
