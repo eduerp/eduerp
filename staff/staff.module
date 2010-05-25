@@ -468,7 +468,8 @@ function addrole($uid, $department_id, $college_id, $role) {
     assign_drupal_role($uid, 'SA');
   }
   if ($role === 'Academic Staff' || $role === 'Non-Academic Staff') {
-    assign_drupal_role($uid, 'Staff');
+    // 'Staff' role allocation is now a manual admin process
+    // assign_drupal_role($uid, 'Staff');
   }
 }
 
@@ -517,7 +518,8 @@ function droprole($uid, $eduerp_role_id) {
     drop_drupal_role($uid, 'SA');
   }
   if (!staff_has_eduerp_role($uid, 0, 0, array('Academic Staff', 'Non-Academic Staff'))) {
-    drop_drupal_role($uid, 'Staff');
+    // 'Staff' role allocation is now a manual admin process
+    // drop_drupal_role($uid, 'Staff');
   }
 }
 
