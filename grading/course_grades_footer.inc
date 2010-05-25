@@ -1263,6 +1263,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 
   if ($ca_approved_onebyone) {
     if ($srcfield != 'NONE') {
+drupal_set_message('in !=NONE=5'.$fieldtoapprovedean.$srcfield);
       $setstatement = "SET sg.`{$fieldtoapprovedean}`='5'"; // This is a CA so make it fully approved
     }
     else {
