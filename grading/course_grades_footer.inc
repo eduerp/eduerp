@@ -1151,6 +1151,8 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $message['subject'] = $subject;
       $message['body'] = $body;
       drupal_mail_send($message);
+  drupal_set_message('mailed Approval successfull...'.$destination_user->mail.$user->mail.$name.$user_profile->profile_first_name.$subject.';');
+
     }
   }
 
