@@ -377,26 +377,31 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     if     ($ca_approved_onebyone && $number_of_ca >= 1 && $locks->alllocked1 == 2) {
       $eduerpapprovalform->fieldtoapprovedean = 'field_ca1locked_value';
       $eduerpapprovalform->gradestextdean = 'First set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca1_value';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 2 && $locks->alllocked2 == 2) {
       $eduerpapprovalform->fieldtoapprovedean = 'field_ca2locked_value';
       $eduerpapprovalform->gradestextdean = 'Second set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca2_value';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 3 && $locks->alllocked3 == 2) {
       $eduerpapprovalform->fieldtoapprovedean = 'field_ca3locked_value';
       $eduerpapprovalform->gradestextdean = 'Third set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca3_value';
       $showform = TRUE;
     }
     elseif ($ca_approved_onebyone && $number_of_ca >= 4 && $locks->alllocked4 == 2) {
       $eduerpapprovalform->fieldtoapprovedean = 'field_ca4locked_value';
       $eduerpapprovalform->gradestextdean = 'Fourth set of Continuous Assessment Grades';
+      $eduerpapprovalform->srcfield = 'field_ca4_value';
       $showform = TRUE;
     }
     elseif ($locks->alllockede == 2) {
       $eduerpapprovalform->fieldtoapprovedean = 'field_examscorelocked_value';
       $eduerpapprovalform->gradestextdean = 'Final Exam Grades';
+      $eduerpapprovalform->srcfield = 'NONE';
       $showform = TRUE;
     }
 
@@ -1151,8 +1156,6 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $message['subject'] = $subject;
       $message['body'] = $body;
       drupal_mail_send($message);
-  drupal_set_message('mailed Approval successfull...'.$destination_user->mail.$user->mail.$name.$user_profile->profile_first_name.$subject.';');
-
     }
   }
 
@@ -1221,6 +1224,7 @@ function approve_grades_dean_form($form_state) {
   $form['ca_approved_onebyone'] = array('#type' => 'value', '#value' => $eduerpapprovalform->ca_approved_onebyone);
   $form['fieldtoapprovedean']   = array('#type' => 'value', '#value' => $eduerpapprovalform->fieldtoapprovedean);
   $form['gradestextdean']       = array('#type' => 'value', '#value' => $eduerpapprovalform->gradestextdean);
+  $form['srcfield']             = array('#type' => 'value', '#value' => $eduerpapprovalform->srcfield);
 
   $form['submit'] = array('#type' => 'submit', '#value' => 'Approve ' . $eduerpapprovalform->gradestextdean . '.');
 
@@ -1250,6 +1254,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   $number_of_ca       = $form_state['values']['number_of_ca'];
   $ca_approved_onebyone = $form_state['values']['ca_approved_onebyone'];
   $gradestextdean     = $form_state['values']['gradestextdean'];
+  $srcfield           = $form_state['values']['srcfield'];
 
   if ($semester === 'All') $semesterwhere = '';
   else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
@@ -1263,7 +1268,6 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 
   if ($ca_approved_onebyone) {
     if ($srcfield != 'NONE') {
-drupal_set_message('in !=NONE=5'.$fieldtoapprovedean.$srcfield);
       $setstatement = "SET sg.`{$fieldtoapprovedean}`='5'"; // This is a CA so make it fully approved
     }
     else {
