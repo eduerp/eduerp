@@ -231,10 +231,16 @@ function staff_assign_role() {
     $staffname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
   }
   $_SESSION['eduerpassignrole']->name = $staffname;
-  $_SESSION['eduerpassignrole']->department_id = $user_profile->profile_department_id;
-  $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
-  $row = db_fetch_object($result, $user_profile->profile_department_id);
-  $_SESSION['eduerpassignrole']->college_id = $row->field_college_id_nid;
+  if (empty($user_profile->profile_department_id)) {
+    $_SESSION['eduerpassignrole']->department_id = $user_profile->profile_department_id;
+    $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
+    $row = db_fetch_object($result, $user_profile->profile_department_id);
+    $_SESSION['eduerpassignrole']->college_id = $row->field_college_id_nid;
+  }
+  else {
+    $_SESSION['eduerpassignrole']->department_id = 0;
+    $_SESSION['eduerpassignrole']->college_id = 0;
+  }
 
   ob_start();
 
@@ -274,6 +280,7 @@ function department_role_form($form_state) {
     '#title' => 'Department',
     '#default_value' => $_SESSION['eduerpassignrole']->department_id,
     '#required' => TRUE);
+    if (empty($_SESSION['eduerpassignrole']->department_id)) unset($form['department']['#default_value']);
 
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
@@ -298,6 +305,7 @@ function faculty_role_form($form_state) {
     '#title' => 'Faculty',
     '#default_value' => $_SESSION['eduerpassignrole']->college_id,
     '#required' => TRUE);
+    if (empty($_SESSION['eduerpassignrole']->college_id)) unset($form['faculty']['#default_value']);
 
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
@@ -426,6 +434,7 @@ function move_department_form($form_state) {
     '#title' => 'Department',
     '#default_value' => $_SESSION['eduerpassignrole']->department_id,
     '#required' => TRUE);
+    if (empty($_SESSION['eduerpassignrole']->department_id)) unset($form['department']['#default_value']);
 
   $form['uid'] = array('#type' => 'value', '#value' => $_SESSION['eduerpassignrole']->uid);
 
@@ -747,12 +756,16 @@ EOD;
   drupal_add_js($delete_assignment_js, 'inline');
 
   ob_start();
-  echo  drupal_get_form('staff_course_assign_form1');
-  echo "<div id='assigned_courses'>";
-  course_assign_list();
-  echo "</div>";
-?>
-<?php
+
+  if (empty($user_profile->profile_department_id)) {
+    echo 'You are not a member of a Department, so cannot list courses for your department.';
+  }
+  else {
+    echo  drupal_get_form('staff_course_assign_form1');
+    echo "<div id='assigned_courses'>";
+    course_assign_list();
+    echo "</div>";
+  }
   return ob_get_clean();
 }
 
