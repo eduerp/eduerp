@@ -1370,10 +1370,10 @@ class UserProfile {
           $node_value = $node->$key;
 
           // check the existence of readable values
-          if (array_key_exists('value', $node_value[0])) {
+          if (is_array($node_value) && is_array($node_value[0]) && array_key_exists('value', $node_value[0])) {
             $this->$matches[1] = $node_value[0]['value'];
             $this->field_map[$matches[1]] = $node->type;
-          } elseif (array_key_exists('nid', $node_value[0])) {
+          } elseif (is_array($node_value) && is_array($node_value[0])  && array_key_exists('nid', $node_value[0])) {
             $this->$matches[1] = $node_value[0]['nid'];
             $this->field_map[$matches[1]] = $node->type;
           }
