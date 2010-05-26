@@ -105,6 +105,8 @@ class courseselectionsclass {
 
   private $selected_load;
 
+  private $count_courses_offered = array();
+
   private $scriptforpage;
 
   function __construct() {
@@ -184,6 +186,7 @@ class courseselectionsclass {
         '#suffix' => '</table>'
       );
 
+    $this->count_courses_offered[$semester] = 0;
     $this->selected_load = 0;
     while ($row = db_fetch_object($result)) {
       if (in_array($row->course_code, $this->passedcodes)) continue;
@@ -213,6 +216,8 @@ class courseselectionsclass {
           $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
         }
         $this->currentlevelcis[] = $row->course_instance;
+
+        $this->count_courses_offered[$semester]++;
       }
       $this->form['chosencourses' . $semester][$row->course_instance] = array(
         '#type' => 'checkbox',
@@ -401,6 +406,13 @@ class courseselectionsclass {
   public function finishform() {
     $this->form['#currentlevelcis'] = $this->currentlevelcis;
     $this->form['#failedcodes'] = $this->failedcodes;
+
+    if (isset($this->count_courses_offered[1]) && $this->count_courses_offered[1] == 0) {
+      $this->form['warning1'] = array('#value' => 'Note that no courses for your current level are available for you to take for Semester 1');
+    }
+    if (isset($this->count_courses_offered[2]) && $this->count_courses_offered[2] == 0) {
+      $this->form['warning2'] = array('#value' => 'Note that no courses for your current level are available for you to take for Semester 2');
+    }
 
     $this->form['submit'] = array('#type' => 'submit' , '#value' => 'Submit');
 
