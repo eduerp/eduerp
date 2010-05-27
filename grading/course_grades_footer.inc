@@ -127,8 +127,8 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     echo '<td valign="top" class="table-label">Continuous Assessment 1</td>';
     echo '<td valign="top">';
     if     ($locks->alllocked1 == 0) echo 'Not Submitted by Lecturer';
-    elseif ($locks->alllocked1 == 1) echo 'All Submitted to HOD';
-    elseif ($locks->alllocked1 >= 2) echo 'All Approved by HOD';
+    elseif ($locks->alllocked1 == 1) echo 'All Submitted to Department';
+    elseif ($locks->alllocked1 >= 2) echo 'All Approved by Department';
     echo '</td>';
     echo '</tr>';
   }
@@ -138,8 +138,8 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     echo '<td valign="top" class="table-label">Continuous Assessment 2</td>';
     echo '<td valign="top">';
     if     ($locks->alllocked2 == 0) echo 'Not Submitted by Lecturer';
-    elseif ($locks->alllocked2 == 1) echo 'All Submitted to HOD';
-    elseif ($locks->alllocked2 >= 2) echo 'All Approved by HOD';
+    elseif ($locks->alllocked2 == 1) echo 'All Submitted to Department';
+    elseif ($locks->alllocked2 >= 2) echo 'All Approved by Department';
     echo '</td>';
     echo '</tr>';
   }
@@ -149,8 +149,8 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     echo '<td valign="top" class="table-label">Continuous Assessment 3</td>';
     echo '<td valign="top">';
     if     ($locks->alllocked3 == 0) echo 'Not Submitted by Lecturer';
-    elseif ($locks->alllocked3 == 1) echo 'All Submitted to HOD';
-    elseif ($locks->alllocked3 >= 2) echo 'All Approved by HOD';
+    elseif ($locks->alllocked3 == 1) echo 'All Submitted to Department';
+    elseif ($locks->alllocked3 >= 2) echo 'All Approved by Department';
     echo '</td>';
     echo '</tr>';
   }
@@ -160,8 +160,8 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     echo '<td valign="top" class="table-label">Continuous Assessment 4</td>';
     echo '<td valign="top">';
     if     ($locks->alllocked4 == 0) echo 'Not Submitted by Lecturer';
-    elseif ($locks->alllocked4 == 1) echo 'All Submitted to HOD';
-    elseif ($locks->alllocked4 >= 2) echo 'All Approved by HOD';
+    elseif ($locks->alllocked4 == 1) echo 'All Submitted to Department';
+    elseif ($locks->alllocked4 >= 2) echo 'All Approved by Department';
     echo '</td>';
     echo '</tr>';
   }
@@ -169,9 +169,12 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
   echo '<td valign="top" class="table-label">Exam Score</td>';
   echo '<td valign="top">';
   if     ($locks->alllockede == 0) echo 'Not Submitted by Lecturer';
-  elseif ($locks->alllockede == 1) echo 'All Submitted to HOD';
-  elseif ($locks->alllockede == 2) echo 'All Submitted to Dean';
-  elseif ($locks->alllockede == 3) echo 'All Submitted to Registrar';
+  elseif ($locks->alllockede == 1) echo 'All Submitted to Department';
+  elseif ($locks->alllockede == 2) echo 'All Submitted to Faculty';
+  elseif ($locks->alllockede == 3) {
+    if (variable_get('RegistrarApprovesGrades', 0)) echo 'All Submitted to Registrar';
+    else echo 'All Submitted to Vice Chancellor';
+  }
   elseif ($locks->alllockede == 4) echo 'All Submitted to Vice Chancellor';
   elseif ($locks->alllockede == 5) echo 'All Approved by Vice Chancellor';
   echo '</td>';
@@ -220,7 +223,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 
   // Do we want to show the Approval form for the Lecturer
   if (empty($hod_uid)) {
-    echo 'THERE IS NO HEAD OF DEPARTMENT ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED<br />';
+    echo 'THERE IS NO HEAD OF DEPARTMENT OR EXAMINATION OFFICER ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED<br />';
   }
   elseif ($user->uid == $staff->lecturer_uid || $user->uid == $staff->lecturer_alternate_uid || in_array($user->uid, $lecturerequiv_uid_array)) {
     $showform = FALSE;
@@ -319,7 +322,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 
   // Do we want to show the Approval form for the HOD
   if (empty($dean_uid)) {
-    echo 'THERE IS NO DEAN ASSIGNED FOR THIS FACULTY, ONE MUST BE ASSIGNED<br />';
+    echo 'THERE IS NO DEAN OR EXAMINATION OFFICER ASSIGNED FOR THIS FACULTY, ONE MUST BE ASSIGNED<br />';
   }
   elseif (in_array($user->uid, $hod_uid_array)) {
     $showform = FALSE;
