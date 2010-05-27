@@ -377,6 +377,14 @@ function veritas_admin_settings() {
     '#tree' => TRUE
   );
 
+  $form['RegistrarApprovesGrades'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'RegistrarApprovesGrades',
+    '#default_value' => variable_get('RegistrarApprovesGrades', 0),
+    '#description' => 'This switch determines whether student grades are approved by the Registrar (if not they go straight to the Vice Chancellor)',
+    '#tree' => TRUE
+  );
+
   $form['veritas_bursars_email'] = array(
     '#type' => 'textfield',
     '#size' => 25,
@@ -1296,7 +1304,7 @@ function veritas_st_form_submit($form, & $form_state) {
 /**
  * loads a user's profile for reading and modification
  * @param int $uid specifies the user id of the profile to load
- * @param string $profile_type (optional) specifies the actual 
+ * @param string $profile_type (optional) specifies the actual
  *  profile type to load
  * @return object returns the profile node or false if there's none
  */
@@ -1312,7 +1320,7 @@ function eduerp_load_profile($uid, $profile_type = 'profile') {
  * saves a user profile node - nothing fanciful just a wrapper
  *
  * @param object $node
- * @return void since the node_save api function doesn't return 
+ * @return void since the node_save api function doesn't return
  *  any status, we cannot return one.
  */
 function eduerp_save_profile($node) {
@@ -1343,7 +1351,7 @@ class UserProfile {
     // the fields to the object.
     $content_profiles = content_profile_get_types('names');
 
-    // after obtainining the content profile types, we'll retrieve 
+    // after obtainining the content profile types, we'll retrieve
     // those that have been defined for this user.
     foreach ($content_profiles as $content_profile => $content_profile_name) {
       if ($node = eduerp_load_profile($this->uid, $content_profile)) {
@@ -1362,7 +1370,7 @@ class UserProfile {
     foreach ($this->profile_nodes as $node) {
       // obtain visible properties for nodes and set them
       // it sets $this->profile_first_name = $node->field_profile_first_name
-      // for instance (supports only native type and nodereference 
+      // for instance (supports only native type and nodereference
       // field types)
       // TODO: add support for other node field types
       foreach ($node as $key => $value) {
