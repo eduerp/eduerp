@@ -877,8 +877,8 @@ function _grading_ahah_stats() {
     //elseif ($programmerow->ca3l  == 0) $output .= 'Waiting on some Lecturer Submissions for Continuous Assessment 3';
     //elseif ($programmerow->ca4l  == 0) $output .= 'Waiting on some Lecturer Submissions for Continuous Assessment 4';
     elseif ($programmerow->examl == 0) $output .= 'Waiting on some Lecturer Submissions for Semester Exam';
-    elseif ($programmerow->examl == 2) $output .= 'All HODs have Approved Semester Exam Results';
-    elseif ($programmerow->examl == 3) $output .= 'All Deans have Approved Semester Exam Results';
+    elseif ($programmerow->examl == 2) $output .= 'All Departments have Approved Semester Exam Results';
+    elseif ($programmerow->examl == 3) $output .= 'All Faculties have Approved Semester Exam Results';
     elseif ($programmerow->examl == 4) $output .= 'Registrar has Approved Semester Exam Results';
     else $output .= 'Semester Exam Results Fully Approved';
     $output .= '</td></tr>';
@@ -927,9 +927,9 @@ function _grading_ahah_stats() {
     $output .= '<tr><td colspan="2">All Lecturers have Submitted Semester Exam Results</td></tr>';
   }
   elseif ($summaryrow->examlocked == 2) {
-    $output .= '<tr><td colspan="2">All HODs have Approved Semester Exam Results</td></tr>';
+    $output .= '<tr><td colspan="2">All Departments have Approved Semester Exam Results</td></tr>';
   }
-  elseif ($summaryrow->examlocked == 3) {
+  elseif ($summaryrow->examlocked == 3 && variable_get('RegistrarApprovesGrades', 0)) {
     $registrar_uid_array = explode(',', $registrar_uid);
     if (in_array($user->uid, $registrar_uid_array)) {
       $showregistrarform = true;
@@ -945,10 +945,10 @@ function _grading_ahah_stats() {
       $_SESSION['eduerpregistrarapprovalform']->fieldtoapprove = 'field_examscorelocked_value';
     }
     else {
-      $output .= '<tr><td colspan="2">All Deans have Approved Semester Exam Results</td></tr>';
+      $output .= '<tr><td colspan="2">All Faculties have Approved Semester Exam Results</td></tr>';
     }
   }
-  elseif ($summaryrow->examlocked == 4) {
+  elseif ($summaryrow->examlocked == 4 || $summaryrow->examlocked == 3) {
     $vc_uid_array = explode(',', $vc_uid);
     if (in_array($user->uid, $vc_uid_array)) {
       $showvcform = true;
@@ -963,7 +963,12 @@ function _grading_ahah_stats() {
       $_SESSION['eduerpvcapprovalform']->fieldtoapprove = 'field_examscorelocked_value';
     }
     else {
-      $output .= '<tr><td colspan="2">Registrar has Approved Semester Exam Results</td></tr>';
+      if (variable_get('RegistrarApprovesGrades', 0)) {
+        $output .= '<tr><td colspan="2">Registrar has Approved Semester Exam Results</td></tr>';
+      }
+      else {
+        $output .= '<tr><td colspan="2">All Faculties have Approved Semester Exam Results</td></tr>';
+      }
     }
   }
   elseif ($summaryrow->examlocked == 5) {
@@ -972,7 +977,7 @@ function _grading_ahah_stats() {
 
   $output .= '</tbody></table>';
 
-  if (empty($registrar_uid)) {
+  if (empty($registrar_uid) && variable_get('RegistrarApprovesGrades', 0)) {
     $output .= 'THERE IS NO REGISTRAR, ONE MUST BE ASSIGNED';
   }
   elseif (empty($vc_uid)) {
@@ -1049,7 +1054,7 @@ function _grading_ahah_stats() {
     $output .= '<td><a href="' . $base_url . "/gpa?programme={$programmeenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->programme . '</a></td>';
     //$output .= '<td><a href="' . $base_url . "/grading/stats?department={$departmentenc}&level={$level}&session={$sessionenc}&semester={$semester}" . '">' . $courserow->department . '</a></td>';
 
-    $approvals = array('Lecturers need to Submit', 'Submitted by Lecturers', 'Approved by HOD', 'Approved by Dean', 'Approved by  Registrar', 'Fully Approved');
+    $approvals = array('Lecturers need to Submit', 'Submitted by Lecturers', 'Approved by Department', 'Approved by Faculty', 'Approved by Registrar', 'Fully Approved');
     if ($ca_approved_onebyone && $number_of_ca >= 1) {
       $output .= '<td>' . $approvals[$courserow->ca1l] . '</td>';
     }
