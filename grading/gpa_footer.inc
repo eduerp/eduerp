@@ -81,8 +81,8 @@ if (!empty($_SESSION['views']['gpa']['default']['programme']) &&
 
   if     ($summaryrow->examlocked == 0) echo '<tr><td colspan="2">Waiting on some Lecturer Submissions for Semester Exam</td></tr>';
   elseif ($summaryrow->examlocked == 1) echo '<tr><td colspan="2">All Lecturers have Submitted Semester Exam Results</td></tr>';
-  elseif ($summaryrow->examlocked == 2) echo '<tr><td colspan="2">All HODs have Approved Semester Exam Results</td></tr>';
-  elseif ($summaryrow->examlocked == 3) echo '<tr><td colspan="2">All Deans have Approved Semester Exam Results</td></tr>';
+  elseif ($summaryrow->examlocked == 2) echo '<tr><td colspan="2">All Departments have Approved Semester Exam Results</td></tr>';
+  elseif ($summaryrow->examlocked == 3) echo '<tr><td colspan="2">All Faculties have Approved Semester Exam Results</td></tr>';
   elseif ($summaryrow->examlocked == 4) echo '<tr><td colspan="2">Registrar has Approved Semester Exam Results</td></tr>';
   elseif ($summaryrow->examlocked == 5) echo '<tr><td colspan="2">Semester Exam Results Fully Approved</td></tr>';
 
