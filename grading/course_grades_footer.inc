@@ -34,7 +34,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
   $ca_approved_onebyone = $row->ca_approved_onebyone;
 
   echo 'Maximum marks allowed...';
-  for ($i=1; $i<=$number_of_ca; $i++) echo " CA{$i}: " . $row->{'max_mark_ca' . $i};
+  for ($i=1; $i<=$number_of_ca; $i++) echo " CA{$i}: " . $row->{'max_mark_ca' . $i} . ',';
   echo " Exam Score: {$row->max_mark_exam}<br /><br />";
 
   // Number of grades of each level (A-F)
