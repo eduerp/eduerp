@@ -33,6 +33,33 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
   $number_of_ca = $row->number_of_ca;
   $ca_approved_onebyone = $row->ca_approved_onebyone;
 
+  $sql = "SELECT DISTINCT
+      d.field_college_id_nid AS college_id,
+      c.field_department_nid_nid AS department_id,
+      ci.field_lecturer_uid AS lecturer_uid,
+      ci.field_lecturer_alternate_uid AS lecturer_alternate_uid,
+      ci.field_repeat_value AS repeatexam
+    FROM {content_type_department} d, {content_type_course} c, {content_type_course_instance} ci
+    WHERE
+      d.nid=c.field_department_nid_nid AND
+      c.field_code_value='%s' AND
+      c.nid=ci.field_course_id_nid AND
+      ci.field_sess_name_value='%s'
+      $semesterwhere $locationwhere";
+  $staffresult = db_query($sql, $coursecode, $session);
+  $staff = db_fetch_object($staffresult);
+
+  $singlelecturer = TRUE;
+  if (db_fetch_object($staffresult)) $singlelecturer = FALSE; // Found more records, so there are a number of course_instance(s) with different lecturers
+
+  if (empty($staff->lecturer_uid)) $staff->lecturer_uid = 0;
+  if (empty($staff->lecturer_alternate_uid)) $staff->lecturer_alternate_uid = 0;
+
+  if ($staff->repeatexam) {
+    $number_of_ca = 0;
+    $row->max_mark_exam = 100;
+  }
+
   echo 'Maximum marks allowed...';
   for ($i=1; $i<=$number_of_ca; $i++) echo " CA{$i}: " . $row->{'max_mark_ca' . $i} . ',';
   echo " Exam Score: {$row->max_mark_exam}<br /><br />";
@@ -101,30 +128,6 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
       ci.field_course_id_nid=c.nid";
   $locksresult = db_query($sql, $coursecode, $session);
   $locks = db_fetch_object($locksresult);
-
-  $sql = "SELECT DISTINCT
-      d.field_college_id_nid AS college_id,
-      c.field_department_nid_nid AS department_id,
-      ci.field_lecturer_uid AS lecturer_uid,
-      ci.field_lecturer_alternate_uid AS lecturer_alternate_uid,
-      ci.field_repeat_value AS repeatexam
-    FROM {content_type_department} d, {content_type_course} c, {content_type_course_instance} ci
-    WHERE
-      d.nid=c.field_department_nid_nid AND
-      c.field_code_value='%s' AND
-      c.nid=ci.field_course_id_nid AND
-      ci.field_sess_name_value='%s'
-      $semesterwhere $locationwhere";
-  $staffresult = db_query($sql, $coursecode, $session);
-  $staff = db_fetch_object($staffresult);
-
-  $singlelecturer = TRUE;
-  if (db_fetch_object($staffresult)) $singlelecturer = FALSE; // Found more records, so there are a number of course_instance(s) with different lecturers
-
-  if (empty($staff->lecturer_uid)) $staff->lecturer_uid = 0;
-  if (empty($staff->lecturer_alternate_uid)) $staff->lecturer_alternate_uid = 0;
-
-  if ($staff->repeatexam) $number_of_ca = 0;
 
   if ($ca_approved_onebyone && $number_of_ca >= 1) {
     echo '<tr>';
