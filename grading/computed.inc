@@ -108,7 +108,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
     $sql = "UPDATE {content_type_student_grades} sg SET sg.field_grade_value='{$grade}', sg.field_gradepoint_value='{$gp}'
       WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
     db_query($sql);
-
+error_log($examscorelocked);
     if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (only an examination officer could have submitted this change)
 
       // Because of field access logic in grading module grading_field_access()...
@@ -124,6 +124,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
           sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
           sg.`field_gradeforstudent_value`=sg.`field_grade_value`
         WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
+error_log($sql);
       db_query($sql);
 
       // Set the GPA for this student (code below here is based on code in course_grades_footer, but is simplified to deal with a single student and a specific course_instance)
