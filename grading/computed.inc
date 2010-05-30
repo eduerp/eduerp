@@ -111,6 +111,21 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
 
     if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (only an examination officer could have submitted this change)
 
+      // Because of field access logic in grading module grading_field_access()...
+      // ... This has already been fully approved and is being changed by an examination officer, so set the student visible values
+      $sql = "UPDATE {content_type_student_grades} sg
+        SET
+          sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`,
+          sg.`field_ca1forstudent_value`=sg.`field_ca1_value`,
+          sg.`field_ca2forstudent_value`=sg.`field_ca2_value`,
+          sg.`field_ca3forstudent_value`=sg.`field_ca3_value`,
+          sg.`field_ca4forstudent_value`=sg.`field_ca4_value`,
+          sg.`field_totalscoreforstudent_value`=sg.`field_total_score_value`,
+          sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
+          sg.`field_gradeforstudent_value`=sg.`field_grade_value`
+        WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
+      db_query($sql);
+
       // Set the GPA for this student (code below here is based on code in course_grades_footer, but is simplified to deal with a single student and a specific course_instance)
       $sql = "UPDATE
         {content_type_student_gpa} gpa,
@@ -153,6 +168,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
         gpa.field_gptotal_value=gpatoset.gradepoints,
         gpa.field_credit_load_completed_value=gpatoset.totalload,
         gpa.field_gpa_value=IF(gpatoset.calc_type=3,
+          IF(gpatoset.allpassed=0, '-', 'Pass'),
+          FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
+        ),
+        field_gpaforstudent_value=IF(gpatoset.calc_type=3,
           IF(gpatoset.allpassed=0, '-', 'Pass'),
           FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
         )
@@ -238,6 +257,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
         sp.field_gptotal_sp_value=cgpatoset.gradepoints,
         sp.field_credit_load_completed_sp_value=cgpatoset.totalload,
         sp.field_cgpa_sp_value=IF(cgpatoset.calc_type=3,
+          IF(cgpatoset.allpassed=0, '-', 'Pass'),
+          FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+        ),
+        field_cgpaforstudent_sp_value=IF(cgpatoset.calc_type=3,
           IF(cgpatoset.allpassed=0, '-', 'Pass'),
           FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
         )
