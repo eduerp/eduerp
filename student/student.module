@@ -359,7 +359,7 @@ class courseselectionsclass {
   public function addformelementsforloadcounter($semester) {
     global $user_profile;
 
-    $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green")';
+    $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green");';
 
     $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
     $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
