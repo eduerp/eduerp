@@ -535,6 +535,7 @@ function student_course_form_validate($form, &$form_state) {
   }
 
   foreach ($form['#failedcodes'] as $failedcode) {
+error_log($failedcode);
     if (!in_array($failedcode, $selectedcodes)) form_set_error('', "You must select the previously failed course: $failedcode");
   }
 
