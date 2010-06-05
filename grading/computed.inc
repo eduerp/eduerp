@@ -196,7 +196,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
             MIN(exams.gradepoint) AS allpassed,
             SUM(exams.field_creditload_value) AS totalload
           FROM (
-            SELECT
+            SELECT DISTINCT
               IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
               sg.field_mat_no_uid,
               sg.field_calc_type_value,
