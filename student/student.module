@@ -151,7 +151,7 @@ class courseselectionsclass {
   public function addformelementsforsemester($semester) {
     global $user_profile;
 
-    $sql = "SELECT
+    $sql = "SELECT DISTINCT
         ci.nid AS course_instance,
         ci.field_timetable_value AS timetable,
         c.field_creditload_value AS credit_load,
@@ -238,7 +238,7 @@ class courseselectionsclass {
 
     // Find any failed (and not since passed) courses and see are they being run
     // failedcourses sub-query below borrows from similar query in computed.inc
-    $sql = "SELECT
+    $sql = "SELECT DISTINCT
         ci1.nid AS course_instance,
         ci1.field_timetable_value AS timetable,
         c1.field_creditload_value AS credit_load,
@@ -257,7 +257,7 @@ class courseselectionsclass {
             exams.field_mat_no_uid AS uid,
             exams.field_code_value
           FROM (
-            SELECT
+            SELECT DISTINCT
               IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
               sg.field_mat_no_uid,
               sg.field_calc_type_value,
