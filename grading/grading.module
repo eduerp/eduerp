@@ -466,8 +466,11 @@ function grading_node_access_records($node) {
       error_log("Failed to find department and college records for student_gpa $node->nid");
     }
   }
+  elseif ($node->type === 'student_program') {
+    // Should not be directly seen by anyone
+  }
   elseif ($node->type === 'approval') {
-    // Should not be visible to everyone
+    // Should not be directly seen by anyone (if a Drupal view were to be needed, this would need to be seen by some types of Staff)
   }
   else {
     $grants[] = array(
@@ -479,6 +482,9 @@ function grading_node_access_records($node) {
       'priority' => 0,
     );
   }
+
+  // Give global access to nodes to some special university level users (this will be deleted when 'Rebuilding content access permissions' unless it is here)
+  db_query("INSERT IGNORE INTO {node_access} (nid, gid, realm, grant_view, grant_update, grant_delete) VALUES (0, 0, 'university', 1, 0, 0)");
 
   return $grants;
 }
@@ -547,9 +553,7 @@ function grading_node_grants($account, $op) {
 
   if ($university) {
     // This user has a university role that allows them to see in progress grading
-    $grants['university'] = array(0); // This will match the nid=0, gid=0 system-wide grant
-
-    // Once off/Install SQL to allow this to work: INSERT INTO node_access (nid, gid, realm, grant_view, grant_update, grant_delete) VALUES (0, 0, 'university', 1, 0, 0);
+    $grants['university'] = array(0); // This will match the nid=0, gid=0 system-wide grant created in grading_node_access_records()
   }
 
   if ($universityapproved) { // Could instead base this on the Drupal Staff role (if all such should be allowed)
