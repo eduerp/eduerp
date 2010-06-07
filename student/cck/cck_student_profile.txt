@@ -82,7 +82,7 @@ $content['groups']  = array (
         'label' => 'above',
       ),
     ),
-    'weight' => '11',
+    'weight' => '10',
     'group_name' => 'group_sponsor_information',
   ),
   1 => 
@@ -132,95 +132,19 @@ $content['groups']  = array (
         'label' => 'above',
       ),
     ),
-    'weight' => '12',
+    'weight' => '11',
     'group_name' => 'group_health_information',
   ),
 );
 $content['fields']  = array (
   0 => 
   array (
-    'label' => 'Matriculation No.',
-    'field_name' => 'field_profile_matriculation_no',
-    'type' => 'text',
-    'widget_type' => 'text_textfield',
-    'change' => 'Change basic information',
-    'weight' => 0,
-    'rows' => 5,
-    'size' => '60',
-    'description' => '',
-    'default_value' => 
-    array (
-    ),
-    'default_value_php' => '',
-    'default_value_widget' => NULL,
-    'group' => false,
-    'required' => 0,
-    'multiple' => '0',
-    'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => '',
-    'allowed_values_php' => '',
-    'op' => 'Save field settings',
-    'module' => 'text',
-    'widget_module' => 'text',
-    'columns' => 
-    array (
-      'value' => 
-      array (
-        'type' => 'text',
-        'size' => 'big',
-        'not null' => false,
-        'sortable' => true,
-        'views' => true,
-      ),
-    ),
-    'display_settings' => 
-    array (
-      'label' => 
-      array (
-        'format' => 'above',
-        'exclude' => 0,
-      ),
-      'teaser' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'full' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      4 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      2 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      3 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      'token' => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-    ),
-  ),
-  1 => 
-  array (
     'label' => 'JAMB No.',
     'field_name' => 'field_profile_jambno',
     'type' => 'text',
     'widget_type' => 'text_textfield',
     'change' => 'Change basic information',
-    'weight' => '1',
+    'weight' => 0,
     'rows' => 5,
     'size' => '15',
     'description' => '',
@@ -233,17 +157,7 @@ $content['fields']  = array (
       ),
     ),
     'default_value_php' => '',
-    'default_value_widget' => 
-    array (
-      'field_profile_jambno' => 
-      array (
-        0 => 
-        array (
-          'value' => '',
-          '_error_element' => 'default_value_widget][field_profile_jambno][0][value',
-        ),
-      ),
-    ),
+    'default_value_widget' => NULL,
     'group' => false,
     'required' => 1,
     'multiple' => '0',
@@ -305,14 +219,14 @@ $content['fields']  = array (
       ),
     ),
   ),
-  2 => 
+  1 => 
   array (
     'label' => 'Mode of Entry',
     'field_name' => 'field_profile_mode_of_entry',
     'type' => 'text',
     'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
-    'weight' => '2',
+    'weight' => '1',
     'description' => '',
     'default_value' => 
     array (
@@ -392,14 +306,14 @@ REM',
       ),
     ),
   ),
-  3 => 
+  2 => 
   array (
     'label' => 'Mode of Study',
     'field_name' => 'field_profile_mode_of_study',
     'type' => 'text',
     'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
-    'weight' => '3',
+    'weight' => '2',
     'description' => 'Please specify your mode of study',
     'default_value' => 
     array (
@@ -484,73 +398,51 @@ Distance_Learning',
       ),
     ),
   ),
-  4 => 
+  3 => 
   array (
     'label' => 'Year of Entry',
     'field_name' => 'field_profile_yearofentry',
-    'type' => 'date',
-    'widget_type' => 'date_select',
+    'type' => 'computed',
+    'widget_type' => 'computed',
     'change' => 'Change basic information',
-    'weight' => '4',
-    'default_value' => 'now',
-    'default_value2' => 'same',
-    'default_value_code' => '',
-    'default_value_code2' => '',
-    'input_format' => 'Y-m-d H:i:s',
-    'input_format_custom' => '',
-    'year_range' => '-5:0',
-    'increment' => '1',
-    'advanced' => 
-    array (
-      'label_position' => 'above',
-      'text_parts' => 
-      array (
-        'year' => 0,
-        'month' => 0,
-        'day' => 0,
-        'hour' => 0,
-        'minute' => 0,
-        'second' => 0,
-      ),
-    ),
-    'label_position' => 'above',
-    'text_parts' => 
+    'weight' => '3',
+    'description' => '',
+    'default_value' => 
     array (
     ),
-    'description' => 'Please specify the year of entry',
+    'default_value_php' => '',
     'group' => false,
     'required' => 1,
     'multiple' => '0',
-    'repeat' => 0,
-    'todate' => '',
-    'granularity' => 
-    array (
-      'year' => 'year',
-    ),
-    'default_format' => 'medium',
-    'tz_handling' => 'none',
-    'timezone_db' => 'UTC',
+    'code' => 'if (!$node->nid) node_save($node);
+$node_field[0][\'value\'] = date(\'Y\', $node->created);',
+    'display_format' => '$display = $node_field_item[\'value\'];',
+    'store' => 1,
+    'data_type' => 'int',
+    'data_length' => '4',
+    'data_default' => '1970',
+    'data_not_NULL' => 1,
+    'data_sortable' => 1,
     'op' => 'Save field settings',
-    'module' => 'date',
-    'widget_module' => 'date',
+    'module' => 'computed_field',
+    'widget_module' => 'computed_field',
     'columns' => 
     array (
       'value' => 
       array (
-        'type' => 'varchar',
-        'length' => 20,
-        'not null' => false,
-        'sortable' => true,
-        'views' => true,
+        'type' => 'int',
+        'length' => '4',
+        'not NULL' => 1,
+        'sortable' => 1,
+        'default' => '1970',
       ),
     ),
     'display_settings' => 
     array (
-      'weight' => '41',
-      'parent' => 'group_educational_information',
       'label' => 
       array (
-        'format' => 'inline',
+        'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
@@ -584,17 +476,21 @@ Distance_Learning',
       ),
     ),
   ),
-  5 => 
+  4 => 
   array (
     'label' => 'Registered Session',
     'field_name' => 'field_profile_reg_session',
     'type' => 'text',
     'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
-    'weight' => '5',
+    'weight' => '4',
     'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'value' => '',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
@@ -605,7 +501,7 @@ Distance_Learning',
       ),
     ),
     'group' => false,
-    'required' => 1,
+    'required' => 0,
     'multiple' => '0',
     'text_processing' => '0',
     'max_length' => '',
@@ -667,17 +563,21 @@ return $sessions;',
       ),
     ),
   ),
-  6 => 
+  5 => 
   array (
     'label' => 'Registered Semester',
     'field_name' => 'field_profile_reg_semester',
     'type' => 'number_integer',
     'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
-    'weight' => '6',
+    'weight' => '5',
     'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'value' => '',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
@@ -688,7 +588,7 @@ return $sessions;',
       ),
     ),
     'group' => false,
-    'required' => 1,
+    'required' => 0,
     'multiple' => '0',
     'min' => '',
     'max' => '',
@@ -748,17 +648,21 @@ return $sessions;',
       ),
     ),
   ),
-  7 => 
+  6 => 
   array (
     'label' => 'Level',
     'field_name' => 'field_profile_level_name',
     'type' => 'text',
     'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
-    'weight' => '7',
+    'weight' => '6',
     'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'value' => '',
+      ),
     ),
     'default_value_php' => '',
     'default_value_widget' => 
@@ -769,7 +673,7 @@ return $sessions;',
       ),
     ),
     'group' => false,
-    'required' => 1,
+    'required' => 0,
     'multiple' => '0',
     'text_processing' => '0',
     'max_length' => '',
@@ -833,14 +737,14 @@ return $sessions;',
       ),
     ),
   ),
-  8 => 
+  7 => 
   array (
     'label' => 'First Choice',
     'field_name' => 'field_profile_first_choice',
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '8',
+    'weight' => '7',
     'autocomplete_match' => 'contains',
     'size' => 60,
     'description' => '',
@@ -934,14 +838,14 @@ return $sessions;',
       ),
     ),
   ),
-  9 => 
+  8 => 
   array (
     'label' => 'Second Choice',
     'field_name' => 'field_profile_second_choice',
     'type' => 'nodereference',
     'widget_type' => 'nodereference_select',
     'change' => 'Change basic information',
-    'weight' => '9',
+    'weight' => '8',
     'autocomplete_match' => 'contains',
     'size' => 60,
     'description' => '',
@@ -1035,14 +939,14 @@ return $sessions;',
       ),
     ),
   ),
-  10 => 
+  9 => 
   array (
     'label' => 'Hobbies',
     'field_name' => 'field_profile_hobbies',
     'type' => 'text',
     'widget_type' => 'text_textarea',
     'change' => 'Change basic information',
-    'weight' => '10',
+    'weight' => '9',
     'rows' => '3',
     'size' => 60,
     'description' => '',
@@ -1121,7 +1025,7 @@ return $sessions;',
       ),
     ),
   ),
-  11 => 
+  10 => 
   array (
     'label' => 'Sponsor\'s Name',
     'field_name' => 'field_profile_sponsor_name',
@@ -1207,7 +1111,7 @@ return $sessions;',
       ),
     ),
   ),
-  12 => 
+  11 => 
   array (
     'label' => 'Sponsor\'s Address',
     'field_name' => 'field_profile_sponsor_address',
@@ -1234,8 +1138,7 @@ return $sessions;',
         0 => 
         array (
           'value' => '',
-          '_error_element' => 
-'default_value_widget][field_profile_sponsor_address][0][value',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_address][0][value',
         ),
       ),
     ),
@@ -1299,7 +1202,7 @@ return $sessions;',
       ),
     ),
   ),
-  13 => 
+  12 => 
   array (
     'label' => 'Sponsor\'s Address City',
     'field_name' => 'field_profile_sponsor_city',
@@ -1385,7 +1288,7 @@ return $sessions;',
       ),
     ),
   ),
-  14 => 
+  13 => 
   array (
     'label' => 'Sponsor\'s Address State',
     'field_name' => 'field_profile_sponsor_state',
@@ -1471,7 +1374,7 @@ return $sessions;',
       ),
     ),
   ),
-  15 => 
+  14 => 
   array (
     'label' => 'Sponsor\'s Telephone No.',
     'field_name' => 'field_profile_sponsor_phone',
@@ -1557,7 +1460,7 @@ return $sessions;',
       ),
     ),
   ),
-  16 => 
+  15 => 
   array (
     'label' => 'Sponsor\'s Mobile No.',
     'field_name' => 'field_profile_sponsor_mobile',
@@ -1579,8 +1482,7 @@ return $sessions;',
         0 => 
         array (
           'value' => '',
-          '_error_element' => 
-'default_value_widget][field_profile_sponsor_mobile][0][value',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_mobile][0][value',
         ),
       ),
     ),
@@ -1644,7 +1546,7 @@ return $sessions;',
       ),
     ),
   ),
-  17 => 
+  16 => 
   array (
     'label' => 'Health Status',
     'field_name' => 'field_profile_health_status',
@@ -1725,7 +1627,7 @@ disabled|Disabled',
       ),
     ),
   ),
-  18 => 
+  17 => 
   array (
     'label' => 'Disabilities',
     'field_name' => 'field_profile_health_disability',
@@ -1816,4 +1718,3 @@ $content['extra']  = array (
   'menu' => '-4',
   'path' => '-2',
 );
-
