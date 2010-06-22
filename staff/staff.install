@@ -1,9 +1,93 @@
 <?php
+include_once(dirname(__FILE__) . '/../permissions_api.module');
+
+// staff module installation
+
+/**
+ * initialize the permissions for roles in this module
+ */
+function staff_perms_initialize() {
+  $permissions = array(
+    'Administrator' => array(
+      'create staff_profile content',
+      'delete any staff_profile content',
+      'edit any staff_profile content',
+
+      'edit field_profile_staff_no',
+      'edit field_profile_employment_type',
+      'edit field_profile_staff_type',
+      'edit field_profile_room',
+      'edit field_profile_appointment_date',
+      'edit field_profile_temporary_address',
+      'edit field_profile_temporary_city',
+      'edit field_profile_temporary_state',
+
+      'view field_profile_staff_no',
+      'view field_profile_employment_type',
+      'view field_profile_staff_type',
+      'view field_profile_room',
+      'view field_profile_appointment_date',
+      'view field_profile_temporary_address',
+      'view field_profile_temporary_city',
+      'view field_profile_temporary_state',
+    ),
+
+    'Staff' => array(
+      'create staff_profile content',
+      'edit own staff_profile content',
+
+      'edit field_profile_room',
+      'edit field_profile_temporary_address',
+      'edit field_profile_temporary_city',
+      'edit field_profile_temporary_state',
+
+      'view field_profile_staff_no',
+      'view field_profile_employment_type',
+      'view field_profile_staff_type',
+      'view field_profile_room',
+      'view field_profile_appointment_date',
+      'view field_profile_temporary_address',
+      'view field_profile_temporary_city',
+      'view field_profile_temporary_state',
+    ),
+  );
+
+  return $permissions;
+}
+
 function staff_install() {
+  // Install the content types
+  $staff_profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_staff_profile.txt');
+  $form_state = array(
+    'values' => array(
+      'type_name' => '<create>',
+      'macro' => $staff_profile_content_type,
+    ),
+  );
+  drupal_execute('content_copy_import_form', $form_state);
+  content_clear_type_cache();
+
+  // create staff role
+  permissions_create_role('Staff');
+
+  // set content type permissions
+  $perms = staff_perms_initialize();
+
+  foreach ($perms as $role => $permissions) {
+    permissions_grant_permissions($role, $permissions);
+  }
+
   drupal_set_message('staff module installed');
 }
 
 function staff_uninstall() {
+  // remove content type permissions
+  $perms = staff_perms_initialize();
+
+  foreach ($perms as $role => $permissions) {
+    permissions_revoke_permissions($role, $permissions);
+  }
+
   drupal_set_message('staff module uninstalled');
 }
 
