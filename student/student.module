@@ -178,7 +178,7 @@ class courseselectionsclass {
         pci.programme_id=pc.programme_id AND
         pc.level='%s'
       ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
-    $result = db_query($sql, $user_profile->profile_first_choice, variable_get('veritas_current_session', ''), $semester, $user_profile->profile_level_name);
+    $result = db_query($sql, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester, $user_profile->profile_level_name);
 
     $this->form['chosencourses' . $semester] = array(
         '#tree' => TRUE,
@@ -325,7 +325,7 @@ class courseselectionsclass {
         pci1.semester=pc1.semester AND
         pci1.programme_id=pc1.programme_id
       ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
-    $result = db_query($sql, $user->uid, $user->uid, $user_profile->profile_first_choice, variable_get('veritas_current_session', ''), $semester);
+    $result = db_query($sql, $user->uid, $user->uid, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester);
 
     $first = TRUE;
     while ($row = db_fetch_object($result)) {
@@ -432,8 +432,8 @@ function student_course_form(&$obj) {
   global $user_profile;
   $user_profile = new UserProfile($user->uid);
 
-  $session =  variable_get('veritas_current_session', '');
-  $semester = variable_get('veritas_current_semester', 1);
+  $session =  variable_get('eduerp_current_session', '');
+  $semester = variable_get('eduerp_current_semester', 1);
 
   $gotonextlevel = TRUE;
 
@@ -579,7 +579,7 @@ function student_course_form_submit($form, &$form_state) {
   global $user;
   $user_profile = new UserProfile($user->uid);
 
-  $session = variable_get('veritas_current_session', '');
+  $session = variable_get('eduerp_current_session', '');
 
   $studentname = '';
   if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
@@ -762,7 +762,7 @@ function student_fee_payment_form(&$obj) {
 	// Check if the student has paid his/her fees for this session
 // ALAN 20091113 Allow multiple Payments, Tim's code should handle multiple payments
 //	$q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
-//	$rs = db_query($q, $_SESSION['student']['id'], variable_get('veritas_current_session', ''));
+//	$rs = db_query($q, $_SESSION['student']['id'], variable_get('eduerp_current_session', ''));
 //	if ($rs && ($row = db_fetch_object($rs))) {
 //		drupal_goto('student/course');
 //	}
@@ -1070,7 +1070,7 @@ function student_registration_form_submit($form, &$state) {
     $program = db_fetch_array($rs);
 
     // Attempt to get the highest matno for the current session for the specified program
-    $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
+    $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('eduerp_current_session', ''), 2, 2));
     $sql = "SELECT MAX(SUBSTRING_INDEX(matriculation_no, '/', -1)) AS last_index FROM admitted_student WHERE matriculation_no RLIKE 'VUG/[[:alpha:]]+/[[:digit:]]+/[[:digit:]]+'";
     $rs = db_query($sql);
     $row = db_fetch_array($rs);
@@ -3210,10 +3210,10 @@ function add_exam_detail($form) {
 function make_transaction($form) {
 	// Get the current session_id
 	$q = "SELECT session_id FROM {session} WHERE sess_name='%s'";
-	$current_session = db_fetch_array(db_query($q, variable_get('veritas_current_session', '')));
+	$current_session = db_fetch_array(db_query($q, variable_get('eduerp_current_session', '')));
 
   $query = "SELECT at.receipt_no FROM {admitted_transaction} at INNER JOIN {session} s ON s.session_id=at.session_id WHERE at.student_id=%d AND at.trans_type='sfee' AND s.sess_name='%s' ORDER BY transaction_id DESC";
-  $result = db_query($query, $_SESSION['student']['data']->student_id, variable_get('veritas_current_session', ''));
+  $result = db_query($query, $_SESSION['student']['data']->student_id, variable_get('eduerp_current_session', ''));
   $data = db_result($result);
   if (!$data) {
     $update = TRUE;

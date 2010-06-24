@@ -759,7 +759,7 @@ function _fixmatric() {
     $program = db_fetch_array($rs);
 
     // Attempt to get the highest matno for the current session for the specified program
-    $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('veritas_current_session', ''), 2, 2));
+    $search = sprintf("VUG/%s/%s/", $program['abbr'], substr(variable_get('eduerp_current_session', ''), 2, 2));
     $sql = "SELECT MAX(SUBSTRING_INDEX(matriculation_no, '/', -1)) AS last_index FROM admitted_student WHERE matriculation_no RLIKE 'VUG/[[:alpha:]]+/[[:digit:]]+/[[:digit:]]+'";
     $rs = db_query($sql);
     $row = db_fetch_array($rs);

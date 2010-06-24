@@ -598,7 +598,7 @@ function veritas_student_receipt(& $f, $isprint = false) {
         <tr>
         	<th><b>SESSION : </b></th>
             <td colspan="2" align="left">
-            <? echo variable_get('veritas_current_session', $f->student_data['yearofentry']."/".($f->student_data['yearofentry']+1)); ?>
+            <? echo variable_get('eduerp_current_session', $f->student_data['yearofentry']."/".($f->student_data['yearofentry']+1)); ?>
             </td>
         </tr>
         <tr>
@@ -634,7 +634,7 @@ function veritas_student_receipt(& $f, $isprint = false) {
               WHERE at.student_id = %d
               AND at.session_id = s.session_id
               AND s.sess_name = '%s'";
-          $q = db_query($sql, $f->student_data['student_id'], variable_get('veritas_current_session', ''));
+          $q = db_query($sql, $f->student_data['student_id'], variable_get('eduerp_current_session', ''));
           $trans_history = db_fetch_object($q);
 
           $paid = $f->total_amount;

@@ -2305,7 +2305,7 @@ function view_student_form2($clearanceform) {
     '#suffix' => '</td>');
   $form['extra']['sess1'] = array(
     '#type' => 'item',
-    '#value' => variable_get('veritas_current_session', ''),
+    '#value' => variable_get('eduerp_current_session', ''),
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>',
     '#size' => 15);
@@ -3629,11 +3629,11 @@ function view_student_payments_form2(&$obj) {
   if ($res && ($result=db_fetch_object($res))) {
     $_SESSION['staff']['stud_info']=$result->student_id;
     $results = student_payment_data($result->student_id);
-    $debtor_prefix = "DEBTOR " . variable_get('veritas_current_session', '');
+    $debtor_prefix = "DEBTOR " . variable_get('eduerp_current_session', '');
 
     // Obtain transactions made this session
     $q = "SELECT at.receipt_no, at.trans_amount, at.trans_time FROM {admitted_transaction} at, {session} s WHERE s.session_id=at.session_id AND at.student_id=%d AND s.sess_name='%s'";
-    $rs = db_query($q, $result->student_id, variable_get('veritas_current_session', ''));
+    $rs = db_query($q, $result->student_id, variable_get('eduerp_current_session', ''));
     $payments = array();
     while ($row = db_fetch_array($rs)):
       $payments[] = $row;
@@ -3981,7 +3981,7 @@ function view_student_payments_form2(&$obj) {
     '#suffix' => '</td></tr>');
   $form['payment']['previous_sessions0'] = array(
     '#type' => 'item',
-    '#title' => variable_get('veritas_current_session', '') . " FEE DEBT B/F",
+    '#title' => variable_get('eduerp_current_session', '') . " FEE DEBT B/F",
     '#prefix' => '<tr><td>',
     '#suffix' => '</td>');
   $form['payment']['previous_sessions1'] = array(
@@ -4081,7 +4081,7 @@ function student_payment_data($student_id) {
 
     $qry6 = "SELECT sum(at.trans_amount) AS total_amount FROM admitted_transaction at, session s WHERE
     at.student_id = %d AND at.session_id = s.session_id AND s.sess_name = '%s'";
-    $res6 = db_query($qry6, $result->student_id, variable_get('veritas_current_session', ''));
+    $res6 = db_query($qry6, $result->student_id, variable_get('eduerp_current_session', ''));
     $result_session_payment = db_fetch_object($res6);
     $debtor_acceptance = 100000;
     $debtor_accomodation = str_replace(',', '', $result_accomodation->cost);
@@ -4110,7 +4110,7 @@ function student_payment_data($student_id) {
     // Calculate total amount owed from previous sessions omitting current session
     // this is going to be a problem subsequently when payment fees change
     $qry7 = "SELECT s.sess_name, SUM(at.trans_amount) AS total FROM admitted_transaction at, session s, session s2 WHERE at.student_id=%d AND at.session_id=s.session_id AND at.session_id != s2.session_id AND s2.sess_name='%s' GROUP BY at.session_id";
-    $res7 = db_query($qry7, $result->student_id, variable_get('veritas_current_session', ''));
+    $res7 = db_query($qry7, $result->student_id, variable_get('eduerp_current_session', ''));
     $total_outstanding_previous_sessions = 0;
     while ($result_payment = db_fetch_array($res7)):
       $total_outstanding_previous_sessions += ($total_debt - $result_payment['total']);
@@ -4221,7 +4221,7 @@ function semester_admin() {
 function set_session_form($form_state) {
   global $user;
 
-  $form['top'] = array('#value' => 'The current Session is: ' . variable_get('veritas_current_session', '') . ' and current Semester is: ' . variable_get('veritas_current_semester', ''));
+  $form['top'] = array('#value' => 'The current Session is: ' . variable_get('eduerp_current_session', '') . ' and current Semester is: ' . variable_get('eduerp_current_semester', ''));
 
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
     $current_year = intval(date('Y'));
@@ -4229,21 +4229,21 @@ function set_session_form($form_state) {
     $sessions[sprintf("%s/%s", $current_year - 1, $current_year)] = sprintf("%s/%s", $current_year - 1, $current_year);
     $sessions[sprintf("%s/%s", $current_year, $current_year + 1)] = sprintf("%s/%s", $current_year, $current_year + 1);
 
-    $veritas_current_session = variable_get('veritas_current_session', sprintf("%s/%s", $current_year - 1, $current_year));
+    $eduerp_current_session = variable_get('eduerp_current_session', sprintf("%s/%s", $current_year - 1, $current_year));
 
-    $form['veritas_current_session'] = array(
+    $form['eduerp_current_session'] = array(
       '#type' => 'select',
       '#options' => $sessions,
       '#title' => 'Current Session',
-      '#default_value' => variable_get('veritas_current_session', sprintf("%s/%s", $current_year - 1, $current_year)),
+      '#default_value' => variable_get('eduerp_current_session', sprintf("%s/%s", $current_year - 1, $current_year)),
       '#description' => 'Please specify the current session'
     );
 
-    $form['veritas_current_semester'] = array(
+    $form['eduerp_current_semester'] = array(
       '#type' => 'select',
       '#options' => array(1 => '1', 2 => '2'),
       '#title' => 'Current Semester',
-      '#default_value' => variable_get('veritas_current_semester', 1),
+      '#default_value' => variable_get('eduerp_current_semester', 1),
       '#description' => 'Please specify the current semester'
     );
 
@@ -4255,13 +4255,13 @@ function set_session_form($form_state) {
 
 function set_session_form_submit($form, &$form_state) {
 
-  variable_set('veritas_current_session', $form_state['values']['veritas_current_session']);
-  variable_set('veritas_current_semester', $form_state['values']['veritas_current_semester']);
+  variable_set('eduerp_current_session', $form_state['values']['eduerp_current_session']);
+  variable_set('eduerp_current_semester', $form_state['values']['eduerp_current_semester']);
 
   // Check if the current session is in the session table
-  $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['veritas_current_session']);
+  $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['eduerp_current_session']);
   if (!db_result($session_rs)) {
-    db_query("INSERT INTO {session} (sess_name) VALUES ('%s')", $form_state['values']['veritas_current_session']);
+    db_query("INSERT INTO {session} (sess_name) VALUES ('%s')", $form_state['values']['eduerp_current_session']);
   }
 }
 
@@ -4279,7 +4279,7 @@ function open_close_student_registration_form($form_state) {
     $closeverb = 'Open';
   }
 
-  $form['top'] = array('#value' => "Student Registrations and Initial Payment are $open for the Session " . variable_get('veritas_current_session', '') . '<br />');
+  $form['top'] = array('#value' => "Student Registrations and Initial Payment are $open for the Session " . variable_get('eduerp_current_session', '') . '<br />');
 
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
     $form['submit'] = array('#type' => 'submit', '#value' => "$closeverb Student Registrations for the Session");
@@ -4339,7 +4339,7 @@ function open_close_student_course_registration_form($form_state) {
 
 
 function listofopenprogrammes() {
-  $semester = variable_get('veritas_current_semester', 1);
+  $semester = variable_get('eduerp_current_semester', 1);
 
   $names = array();
   $sql = "SELECT CONCAT(p.field_programme_name_value, '(', pls.level, ')') AS name
@@ -4355,7 +4355,7 @@ function listofopenprogrammes() {
 
 
 function selectlistofprogrammestoopen() {
-  $semester = variable_get('veritas_current_semester', 1);
+  $semester = variable_get('eduerp_current_semester', 1);
 
   $names = array();
   $names[999999] = 'ALL';
@@ -4376,7 +4376,7 @@ function selectlistofprogrammestoopen() {
 
 
 function selectlistofprogrammestoclose() {
-  $semester = variable_get('veritas_current_semester', 1);
+  $semester = variable_get('eduerp_current_semester', 1);
 
   $names = array();
   $names[999999] = 'ALL';
@@ -4397,7 +4397,7 @@ function selectlistofprogrammestoclose() {
 
 
 function open_close_student_course_registration_form_submit($form, &$form_state) {
-  $semester = variable_get('veritas_current_semester', 1);
+  $semester = variable_get('eduerp_current_semester', 1);
 
   if     (!empty($form_state['values']['programmestoopen']) && $form_state['values']['programmestoopen'] == 999999) {
     if (variable_get('RegisterAllCoursesatStartofSession', 0)) $semesterselect = '';
