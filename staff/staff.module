@@ -811,9 +811,7 @@ function staff_view_form(&$obj) {
       d.field_department_name_value,
       vs.staff_no,
       vs.room_number,
-      vs.appointment_date,
-      vs.assumption_date,
-      vs.resumption_date
+      vs.appointment_date
     FROM {eduerp_roles} er
     INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
@@ -845,14 +843,6 @@ function staff_view_form(&$obj) {
     '#type' => 'item',
     '#title' => 'Appointment date',
     '#value' => $data->appointment_date);
-  $form['assumption_date'] = array(
-    '#type' => 'item',
-    '#title' => 'Assumption  date',
-    '#value' => $data->assumption_date);
-  $form['ressumption_date'] = array(
-    '#type' => 'item',
-    '#title' => 'Ressumption  date',
-    '#value' => $data->resumption_date);
   $form['staff_role'] = array(
     '#value' => '<b>Roles:</b><br />' . $data->role_name);
   return $form;
