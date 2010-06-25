@@ -3059,75 +3059,8 @@ function search_staff_form_validate($form, &$state) {
 
 
 function search_staff_form2(&$obj) {
-  global $user;
-  $user_profile = new UserProfile($user->uid);
-
-  $qry = "select * from {veritas_staff} where user_id=%d";
-  $res = db_query($qry, $_SESSION['staff']['user_id']);
-  if ($res && ($result=db_fetch_object($res))) {
-    $_SESSION['staff']['staff_info']=$result->user_id;
-    // TODO: fix the remaining queries
-    $q = "SELECT
-    st.staff_type_name AS staff_type,
-    vsp.name AS staff_position,
-    vsg.amount AS salary,
-    vsg.salary_grade_level AS grade_level,
-    vs.appointment_date,
-    vet.name AS employment_type,
-    vs.staff_title,
-    vs.staff_last_name,
-    vs.staff_first_name,
-    vs.staff_middle_name,
-    vs.dob, vs.nationality,
-    c.country_name AS country,
-    s.state_name AS state,
-    l.lga_name AS lga,
-    vs.gender,
-    vs.marital_status,
-    vs.staff_maiden_name,
-    vs.permanent_home_address,
-    vs.permanent_city_address,
-    vs.temp_home_address,
-    vs.temp_city_address,
-    vs.tel,
-    vs.gsm,
-    vs.gsm2,
-    vs.university_email,
-    vs.personal_email,
-    vsk.name AS kin_name,
-    vsk.relation_id AS kin_relation_id,
-    vsk.address AS kin_address,
-    vsk.city AS kin_city,
-    vsk.telephone AS kin_telephone,
-    vsk.mobile AS kin_mobile,
-    vsk.email AS kin_email,
-    vs.tax_number,
-    b.name AS bank_name,
-    vs.account_id
-    FROM
-    veritas_staff_kin vsk,
-    veritas_bank b,
-    lga l,
-    veritas_staff_type st,
-    veritas_staff vs,
-    veritas_staff_position vsp,
-    veritas_salary_grade vsg,
-    veritas_employment_type vet,
-    country c,
-    state s
-    WHERE s.state_id=vs.state
-    AND l.lga_id=vs.lga
-    AND vsk.staff_id = vs.staff_id
-    AND b.id = vs.bank_id
-    AND vet.id=employment_type_id
-    AND c.country_id=vs.nationality
-    AND vsg.id=vs.grade_level_id
-    AND vsp.id=vs.position_id
-    AND st.staff_type_id=vs.staff_type_id
-    AND vs.user_id=%d";
-    $rs = db_query($q, $_SESSION['staff']['staff_info']);
-    $result2 = db_fetch_object($rs);
-  }
+  $user_profile = new UserProfile($_SESSION['staff']['user_id']);
+  $staff_user = user_load($_SESSION['staff']['user_id']);
 
   $form['extra'] = array(
     '#type' => 'fieldset',
@@ -3163,7 +3096,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['posn1'] = array(
     '#type' => 'item',
-    '#value' => $result2->staff_position,
+    '#value' => '',
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -3174,7 +3107,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['grade1'] = array(
     '#type' => 'item',
-    '#value' => $result2->grade_level,
+    '#value' => '',
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
@@ -3185,7 +3118,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['salary1'] = array(
     '#type' => 'item',
-    '#value' => $result2->salary,
+    '#value' => '',
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -3207,7 +3140,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['extra']['appt_date1'] = array(
     '#type' => 'item',
-    '#value' => date('jS F, Y', strtotime($result2->appointment_date)),
+    '#value' => date('jS F, Y', strtotime($user_profile->profile_appointment_date)),
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>',
     '#size' => 15);
@@ -3256,7 +3189,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['dob1'] = array(
     '#type' => 'item',
-    '#value' => substr($user_profile->profile_dob, 0, 10),
+    '#value' => date('jS F, Y', strtotime($user_profile->profile_dob)),
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
   $form['personal']['gender0'] = array(
@@ -3332,7 +3265,7 @@ function search_staff_form2(&$obj) {
   $form['personal']['t_address1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result2->temp_home_address,
+    '#value' => $user_profile->profile_temporary_address,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
   $form['personal']['t_city0'] = array(
@@ -3342,7 +3275,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['t_city1'] = array(
     '#type' => 'item',
-    '#value' => $result2->temp_city_address,
+    '#value' => $user_profile->profile_temporary_city . ', ' $user_profile->profile_temporary_state,
     '#size' => 20,
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr>');
@@ -3353,7 +3286,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['tel1'] = array(
     '#type' => 'item',
-    '#value' => $result2->tel,
+    '#value' => '',
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -3375,7 +3308,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['mobile21'] = array(
     '#type' => 'item',
-    '#value' => $result2->gsm2,
+    '#value' => '',
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
@@ -3386,7 +3319,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['personal']['email1'] = array(
     '#type' => 'item',
-    '#value' => $result2->university_email,
+    '#value' => $staff_user->mail,
     '#size' => 20,
     '#prefix' => '<td colspan="6">',
     '#suffix' => '</td></tr></table>');
@@ -3403,7 +3336,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_name1'] = array(
     '#type' => 'item',
-    '#value' => $result2->kin_name,
+    '#value' => '',
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['nextofkin']['kin_relation0'] = array(
@@ -3413,7 +3346,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_relation1'] = array(
     '#type' => 'item',
-    '#value' => (is_array(_staff_rel($result2->kin_relation_id))) ? "Not Defined" : _staff_rel($result2->kin_relation_id),
+    '#value' => '',
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['nextofkin']['kin_address0'] = array(
@@ -3423,7 +3356,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_address1'] = array(
     '#type' => 'item',
-    '#value' => $result2->kin_address,
+    '#value' => '',
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['nextofkin']['kin_city0'] =array(
@@ -3433,7 +3366,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_city1'] =array(
     '#type' => 'item',
-    '#value' => $result2->kin_city,
+    '#value' => '',
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['nextofkin']['kin_telephone0'] = array(
@@ -3443,7 +3376,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_telephone1'] = array(
     '#type' => 'item',
-    '#value' => $result2->kin_telephone,
+    '#value' => '',
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['nextofkin']['kin_mobile0'] = array(
@@ -3453,7 +3386,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_mobile1'] = array(
     '#type' => 'item',
-    '#value' => $result2->kin_mobile,
+    '#value' => '',
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['nextofkin']['kin_email0'] = array(
@@ -3463,7 +3396,7 @@ function search_staff_form2(&$obj) {
     '#suffix' => '</td>');
   $form['nextofkin']['kin_email1'] = array(
     '#type' => 'item',
-    '#value' => $result2->kin_email,
+    '#value' => '',
     '#prefix' => '<td colspan="5">',
     '#suffix' => '</td></tr></table>');
 
@@ -3480,7 +3413,7 @@ function search_staff_form2(&$obj) {
       '#suffix' => '</td>');
     $form['payment']['tax1'] = array(
       '#type' => 'item',
-      '#value' => $result2->tax_number,
+      '#value' => '',
       '#size' => 20,
       '#prefix' => '<td>',
       '#suffix' => '</td>');
@@ -3491,7 +3424,7 @@ function search_staff_form2(&$obj) {
       '#suffix' => '</td>');
     $form['payment']['bank1'] = array(
       '#type' => 'item',
-      '#value' => $result2->bank_name,
+      '#value' => '',
       '#size' => 20,
       '#prefix' => '<td>',
       '#suffix' => '</td>');
@@ -3502,7 +3435,7 @@ function search_staff_form2(&$obj) {
       '#suffix' => '</td>');
     $form['payment']['acct1'] = array(
       '#type' => 'item',
-      '#value' => $result2->account_id,
+      '#value' => '',
       '#prefix' => '<td>',
       '#suffix' => '</td></tr></table>');
   }
