@@ -809,14 +809,15 @@ function staff_view_form(&$obj) {
       CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name,
       GROUP_CONCAT(er.role SEPARATOR ', ') AS role_name,
       d.field_department_name_value,
-      vs.staff_no,
-      vs.room_number,
-      vs.appointment_date
+      stpro.field_profile_staff_no_value AS staff_no,
+      stpro.field_profile_room_value AS room_number,
+      stpro.field_profile_appointment_date_value AS appointment_date
     FROM {eduerp_roles} er
     INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+    INNER JOIN {node} nstpro ON er.uid=nstpro.uid AND nstpro.type='staff_profile'
+    INNER JOIN {content_type_staff_profile} stpro ON nstpro.vid=stpro.vid
     LEFT  JOIN {content_type_department} d ON pro.field_profile_department_id_nid=d.nid
-    LEFT  JOIN {veritas_staff} vs ON er.uid=vs.user_id
     WHERE er.uid=%d GROUP BY er.uid";
   $result = db_query($query, arg(2));
   $data = db_fetch_object($result);
