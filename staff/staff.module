@@ -3039,23 +3039,19 @@ function search_staff_form_validate($form, &$state) {
     $values = $form['lbl_or']['#post'];
     $staff_no = $values['staff_no'];
     if ($staff_no != '' && !$form['#post']['user_id']) {
-      $qry = "SELECT * FROM {veritas_staff} WHERE user_id=%d";
-      $res = db_query($qry, $staff_no);
-      if ($res && ($result = db_fetch_object($res))) {
-        $_SESSION['staff']['user_id'] = $result->user_id;
+      if ($staff_no > 0) {
+        $_SESSION['staff']['user_id'] = $staff_no;
       }
       else {
-        form_set_error('staff_no', "Staff number is not valid.");
+        form_set_error('staff_no', "Staff Number is not valid.");
       }
     }
     else {
-      $qry = "select * from {veritas_staff} where user_id=%d";
-      $res = db_query($qry, $form['#post']['user_id']);
-      if ($res && ($result = db_fetch_object($res))) {
-        $_SESSION['staff']['user_id'] = $result->user_id;
+      if ($form['#post']['user_id'] > 0) {
+        $_SESSION['staff']['user_id'] = $form['#post']['user_id'];
       }
       else {
-        form_set_error('user_id', "Please select a staff from the list or enter the Staff Number.");
+        form_set_error('user_id', "Please select a Staff Name from the list or enter the Staff Number.");
       }
     }
   }
