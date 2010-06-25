@@ -2977,12 +2977,12 @@ function _get_staff_list() {
 
 
 function _get_staff_list_number() {
-  $q = "SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS name
+  $q = "SELECT er.uid, CONCAT(stpro.field_profile_staff_no_value, ': ', pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS name
     FROM {eduerp_roles} er
     INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
-    INNER JOIN {profile_fields} pf3 ON pf3.name='profile_staff_no'
-    LEFT  JOIN {profile_values} pv3 ON er.uid=pv3.uid AND pv3.fid=pf3.fid
+    INNER JOIN {node} nstpro ON er.uid=nstpro.uid AND nstpro.type='staff_profile'
+    INNER JOIN {content_type_staff_profile} stpro ON nstpro.vid=stpro.vid
     GROUP BY er.uid ORDER BY name";
   $rs = db_query($q);
   $staff_list = array(0 => "Select One");
