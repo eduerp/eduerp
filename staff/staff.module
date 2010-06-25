@@ -811,7 +811,7 @@ function staff_view_form(&$obj) {
       d.field_department_name_value,
       stpro.field_profile_staff_no_value AS staff_no,
       stpro.field_profile_room_value AS room_number,
-      DATE_FORMAT(stpro.field_profile_appointment_date_value, '%D %b %Y') AS appointment_date
+      DATE_FORMAT(stpro.field_profile_appointment_date_value, '%%D %%b %%Y') AS appointment_date
     FROM {eduerp_roles} er
     INNER JOIN {node} npro ON er.uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
