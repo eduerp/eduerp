@@ -426,6 +426,26 @@ class courseselectionsclass {
   }
 }
 
+function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
+  switch ($op) {
+    case 'insert':
+      if ($node->type == 'student_profile') {
+        // A new student profile is being created
+        // set the level to 100 if the student's mode of entry is UME if not, then it's 200
+        $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? '100' : '200';
+        $node->field_profile_reg_session[0]['value'] = variable_get('eduerp_current_session', "");
+        $node->field_profile_reg_semester[0]['value'] = variable_get('eduerp_current_semester', "1");
+        node_save($node);
+      }
+  }
+}
+
+function student_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'student'),
+  );
+}
 
 function student_course_form(&$obj) {
   global $user;
