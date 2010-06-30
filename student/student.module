@@ -430,14 +430,13 @@ class courseselectionsclass {
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'student_profile') {
     switch ($op) {
-      case 'insert':
-
-        // A new student profile is being created
-        $node->field_profile_yearofentry[0]['value'] = date('Y');
-        $node->field_profile_reg_session[0]['value'] = '';
-        $node->field_profile_reg_semester[0]['value'] = '';
-
-      case 'update':  // And 'insert'!
+      case 'presave':
+        if (empty($node->nid)) {
+          // A new student profile is being created
+          $node->field_profile_yearofentry[0]['value'] = date('Y');
+          $node->field_profile_reg_session[0]['value'] = '';
+          $node->field_profile_reg_semester[0]['value'] = '';
+        }
 
         if (empty($node->field_profile_reg_session[0]['value'])) {  // After courses have been registered for the first time, do not do this
 
@@ -456,8 +455,6 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
 
           // Set the level to 100 (probably) if the student's mode of entry is UME if not, then it's 200 (probably)
           $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? $level1 : $level2;
-
-          node_save($node);
         }
     }
   }
