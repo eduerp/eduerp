@@ -444,13 +444,15 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           $sql = "SELECT DISTINCT level FROM {program_level_semester} WHERE programme_id=%d ORDER BY level";
           $result = db_query($sql, $node->field_profile_first_choice[0]['nid']);
 
-          $row = db_fetch_object($result);
-          if (!empty($row->level)) $level1 = $row->level;
-          else $level1 = '100';
+          $level1 = '100';
+          $level2 = '200';
 
           $row = db_fetch_object($result);
-          if (!empty($row->level)) $level2 = $row->level;
-          else $level2 = '200';
+          if (!empty($row->level)) {
+            $level1 = $row->level;
+            $row = db_fetch_object($result);
+            if (!empty($row->level)) $level2 = $row->level;
+          }
 
           // Set the level to 100 (probably) if the student's mode of entry is UME if not, then it's 200 (probably)
           $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? $level1 : $level2;
