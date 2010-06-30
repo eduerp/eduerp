@@ -30,6 +30,15 @@ $content['type']  = array (
   'comment_subject_field' => '1',
   'comment_preview' => '1',
   'comment_form_location' => '0',
+  'print_display' => 1,
+  'print_display_comment' => 0,
+  'print_display_urllist' => 1,
+  'print_mail_display' => 1,
+  'print_mail_display_comment' => 0,
+  'print_mail_display_urllist' => 1,
+  'print_pdf_display' => 1,
+  'print_pdf_display_comment' => 0,
+  'print_pdf_display_urllist' => 1,
   'ant' => '1',
   'ant_pattern' => '[author-name]\'s student profile',
   'auto_nodetitle_php' => '',
@@ -70,6 +79,11 @@ $content['groups']  = array (
           'exclude' => 0,
         ),
         3 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        5 => 
         array (
           'format' => 'fieldset',
           'exclude' => 0,
@@ -120,6 +134,11 @@ $content['groups']  = array (
           'exclude' => 0,
         ),
         3 => 
+        array (
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        5 => 
         array (
           'format' => 'fieldset',
           'exclude' => 0,
@@ -340,7 +359,7 @@ Part_Time
 Weekend
 Evening
 Sandwich
-Ocassional
+Occasional
 Correspondence
 Distance_Learning',
     'allowed_values_php' => '',
@@ -402,39 +421,45 @@ Distance_Learning',
   array (
     'label' => 'Year of Entry',
     'field_name' => 'field_profile_yearofentry',
-    'type' => 'computed',
-    'widget_type' => 'computed',
+    'type' => 'text',
+    'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
     'weight' => '3',
     'description' => '',
     'default_value' => 
     array (
+      0 => 
+      array (
+        'value' => '',
+      ),
     ),
     'default_value_php' => '',
+    'default_value_widget' => 
+    array (
+      'field_profile_yearofentry' => 
+      array (
+        'value' => '',
+      ),
+    ),
     'group' => false,
-    'required' => 1,
+    'required' => 0,
     'multiple' => '0',
-    'code' => 'if (!$node->nid) node_save($node);
-$node_field[0][\'value\'] = date(\'Y\', $node->created);',
-    'display_format' => '$display = $node_field_item[\'value\'];',
-    'store' => 1,
-    'data_type' => 'int',
-    'data_length' => '4',
-    'data_default' => '1970',
-    'data_not_NULL' => 1,
-    'data_sortable' => 1,
+    'text_processing' => '0',
+    'max_length' => '4',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
     'op' => 'Save field settings',
-    'module' => 'computed_field',
-    'widget_module' => 'computed_field',
+    'module' => 'text',
+    'widget_module' => 'optionwidgets',
     'columns' => 
     array (
       'value' => 
       array (
-        'type' => 'int',
+        'type' => 'varchar',
         'length' => '4',
-        'not NULL' => 1,
-        'sortable' => 1,
-        'default' => '1970',
+        'not null' => false,
+        'sortable' => true,
+        'views' => true,
       ),
     ),
     'display_settings' => 
@@ -465,6 +490,11 @@ $node_field[0][\'value\'] = date(\'Y\', $node->created);',
         'exclude' => 0,
       ),
       3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      5 => 
       array (
         'format' => 'default',
         'exclude' => 0,
@@ -504,12 +534,9 @@ $node_field[0][\'value\'] = date(\'Y\', $node->created);',
     'required' => 0,
     'multiple' => '0',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '30',
     'allowed_values' => '',
-    'allowed_values_php' => '$sessions = array();
-$rs = db_query("SELECT sess_name FROM {eduerp_session} ORDER BY sess_name DESC");
-while ($row = db_fetch_object($rs)) $sessions[$row->sess_name] = $row->sess_name;
-return $sessions;',
+    'allowed_values_php' => '',
     'op' => 'Save field settings',
     'module' => 'text',
     'widget_module' => 'optionwidgets',
@@ -517,8 +544,8 @@ return $sessions;',
     array (
       'value' => 
       array (
-        'type' => 'text',
-        'size' => 'big',
+        'type' => 'varchar',
+        'length' => '30',
         'not null' => false,
         'sortable' => true,
         'views' => true,
@@ -567,7 +594,7 @@ return $sessions;',
   array (
     'label' => 'Registered Semester',
     'field_name' => 'field_profile_reg_semester',
-    'type' => 'number_integer',
+    'type' => 'text',
     'widget_type' => 'optionwidgets_select',
     'change' => 'Change basic information',
     'weight' => '5',
@@ -590,23 +617,22 @@ return $sessions;',
     'group' => false,
     'required' => 0,
     'multiple' => '0',
-    'min' => '',
-    'max' => '',
-    'prefix' => '',
-    'suffix' => '',
-    'allowed_values' => '1
-2',
+    'text_processing' => '0',
+    'max_length' => '30',
+    'allowed_values' => '',
     'allowed_values_php' => '',
     'op' => 'Save field settings',
-    'module' => 'number',
+    'module' => 'text',
     'widget_module' => 'optionwidgets',
     'columns' => 
     array (
       'value' => 
       array (
-        'type' => 'int',
+        'type' => 'varchar',
+        'length' => '30',
         'not null' => false,
         'sortable' => true,
+        'views' => true,
       ),
     ),
     'display_settings' => 
@@ -637,6 +663,11 @@ return $sessions;',
         'exclude' => 0,
       ),
       3 => 
+      array (
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      5 => 
       array (
         'format' => 'default',
         'exclude' => 0,
@@ -676,14 +707,15 @@ return $sessions;',
     'required' => 0,
     'multiple' => '0',
     'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => '100
-200
-300
-400
-500
-600',
-    'allowed_values_php' => '',
+    'max_length' => '30',
+    'allowed_values' => '',
+    'allowed_values_php' => '$sql = "SELECT DISTINCT level AS value FROM {program_level_semester} ORDER BY level";
+$res = db_query($sql);
+$rows = array();
+while ($row = db_fetch_array($res)) {
+  $rows[$row[\'value\']] = $row[\'value\'];
+}
+return $rows;',
     'op' => 'Save field settings',
     'module' => 'text',
     'widget_module' => 'optionwidgets',
@@ -691,8 +723,8 @@ return $sessions;',
     array (
       'value' => 
       array (
-        'type' => 'text',
-        'size' => 'big',
+        'type' => 'varchar',
+        'length' => '30',
         'not null' => false,
         'sortable' => true,
         'views' => true,
@@ -791,6 +823,7 @@ return $sessions;',
       'student_program' => 0,
       'student_grades' => 0,
       'testalan' => 0,
+      'student_record' => false,
     ),
     'advanced_view' => 'registration_allowed_programmes',
     'advanced_view_args' => '',
@@ -900,6 +933,7 @@ return $sessions;',
       'student_program' => 0,
       'student_grades' => 0,
       'testalan' => 0,
+      'student_record' => false,
     ),
     'advanced_view' => 'registration_allowed_programmes',
     'advanced_view_args' => '',
@@ -1733,5 +1767,5 @@ $content['extra']  = array (
   'comment_settings' => '-1',
   'menu' => '-4',
   'path' => '-2',
+  'print' => '12',
 );
-

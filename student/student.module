@@ -426,19 +426,41 @@ class courseselectionsclass {
   }
 }
 
+
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
-  switch ($op) {
-    case 'insert':
-      if ($node->type == 'student_profile') {
+  if ($node->type == 'student_profile') {
+    switch ($op) {
+      case 'insert':
+
         // A new student profile is being created
-        // set the level to 100 if the student's mode of entry is UME if not, then it's 200
-        $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? '100' : '200';
-        $node->field_profile_reg_session[0]['value'] = variable_get('eduerp_current_session', "");
-        $node->field_profile_reg_semester[0]['value'] = variable_get('eduerp_current_semester', "1");
-        node_save($node);
-      }
+        $node->field_profile_yearofentry[0]['value'] = date('Y');
+        $node->field_profile_reg_session[0]['value'] = '';
+        $node->field_profile_reg_semester[0]['value'] = '';
+
+      case 'update':  // And 'insert'!
+
+        if (empty($node->field_profile_reg_session[0]['value'])) {  // After courses have been registered for the first time, do not do this
+
+          $sql = "SELECT DISTINCT level FROM {program_level_semester} WHERE programme_id=%d ORDER BY level";
+          $result = db_query($sql, $node->field_profile_first_choice[0]['nid']);
+
+          $row = db_fetch_object($result);
+          if (!empty($row->level)) $level1 = $row->level;
+          else $level1 = '100';
+
+          $row = db_fetch_object($result);
+          if (!empty($row->level)) $level2 = $row->level;
+          else $level2 = '200';
+
+          // Set the level to 100 (probably) if the student's mode of entry is UME if not, then it's 200 (probably)
+          $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? $level1 : $level2;
+
+          node_save($node);
+        }
+    }
   }
 }
+
 
 function student_views_api() {
   return array(
@@ -446,6 +468,7 @@ function student_views_api() {
     'path' => drupal_get_path('module', 'student'),
   );
 }
+
 
 function student_course_form(&$obj) {
   global $user;
