@@ -437,6 +437,15 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           $node->field_profile_reg_session[0]['value'] = '';
           $node->field_profile_reg_semester[0]['value'] = '';
         }
+        else {
+          // Need to set these each time as they get overwritten and in any case no user should not be allowed set these!
+          $sql = "SELECT field_profile_yearofentry_value, field_profile_reg_session_value, field_profile_reg_semester_value FROM {content_type_student_profile} WHERE nid=%d";
+          $result = db_query($sql);
+          $row = db_fetch_object($result, $node->nid);
+          $node->field_profile_yearofentry[0]['value'] = $row->field_profile_yearofentry_value;
+          $node->field_profile_reg_session[0]['value'] = $row->field_profile_reg_session_value;
+          $node->field_profile_reg_semester[0]['value'] = $row->field_profile_reg_semester_value;
+        }
 
         if (empty($node->field_profile_reg_session[0]['value'])) {  // After courses have been registered for the first time, do not do this
 
