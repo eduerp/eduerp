@@ -447,7 +447,13 @@ Distance_Learning',
     'text_processing' => '0',
     'max_length' => '4',
     'allowed_values' => '',
-    'allowed_values_php' => '',
+    'allowed_values_php' => '$sql = "SELECT DISTINCT field_profile_yearofentry_value AS value FROM {content_type_student_profile} ORDER BY field_profile_yearofentry_value";
+$res = db_query($sql);
+$rows = array();
+while ($row = db_fetch_array($res)) {
+  $rows[$row[\'value\']] = $row[\'value\'];
+}
+return $rows;',
     'op' => 'Save field settings',
     'module' => 'text',
     'widget_module' => 'optionwidgets',
@@ -536,7 +542,13 @@ Distance_Learning',
     'text_processing' => '0',
     'max_length' => '30',
     'allowed_values' => '',
-    'allowed_values_php' => '',
+    'allowed_values_php' => '$sql = "SELECT DISTINCT field_profile_reg_session_value AS value FROM {content_type_student_profile} ORDER BY field_profile_reg_session_value";
+$res = db_query($sql);
+$rows = array();
+while ($row = db_fetch_array($res)) {
+  $rows[$row[\'value\']] = $row[\'value\'];
+}
+return $rows;',
     'op' => 'Save field settings',
     'module' => 'text',
     'widget_module' => 'optionwidgets',
@@ -620,7 +632,13 @@ Distance_Learning',
     'text_processing' => '0',
     'max_length' => '30',
     'allowed_values' => '',
-    'allowed_values_php' => '',
+    'allowed_values_php' => '$sql = "SELECT DISTINCT field_profile_reg_semester_value AS value FROM {content_type_student_profile} ORDER BY field_profile_reg_semester_value";
+$res = db_query($sql);
+$rows = array();
+while ($row = db_fetch_array($res)) {
+  $rows[$row[\'value\']] = $row[\'value\'];
+}
+return $rows;',
     'op' => 'Save field settings',
     'module' => 'text',
     'widget_module' => 'optionwidgets',
