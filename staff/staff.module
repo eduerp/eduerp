@@ -217,7 +217,7 @@ function staff_assign_role() {
     $staffname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
   }
   $_SESSION['eduerpassignrole']->name = $staffname;
-  if (empty($user_profile->profile_department_id)) {
+  if (!empty($user_profile->profile_department_id)) {
     $_SESSION['eduerpassignrole']->department_id = $user_profile->profile_department_id;
     $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
     $row = db_fetch_object($result, $user_profile->profile_department_id);
