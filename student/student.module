@@ -437,6 +437,15 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           $node->field_profile_reg_session[0]['value'] = '';
           $node->field_profile_reg_semester[0]['value'] = '';
         }
+        else {
+          // Need to set these each time as they get overwritten and in any case no user should not be allowed set these!
+          $sql = "SELECT field_profile_yearofentry_value, field_profile_reg_session_value, field_profile_reg_semester_value FROM {content_type_student_profile} WHERE nid=%d";
+          $result = db_query($sql, $node->nid);
+          $row = db_fetch_object($result);
+          $node->field_profile_yearofentry[0]['value'] = $row->field_profile_yearofentry_value;
+          $node->field_profile_reg_session[0]['value'] = $row->field_profile_reg_session_value;
+          $node->field_profile_reg_semester[0]['value'] = $row->field_profile_reg_semester_value;
+        }
 
         if (empty($node->field_profile_reg_session[0]['value'])) {  // After courses have been registered for the first time, do not do this
 
@@ -1170,10 +1179,6 @@ function student_registration_form_submit($form, &$state) {
     // Also update the mat no in the student table
     $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
     db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
-
-    // Next two lines create the profile for the student. They should be removed when Tim has his new student registration code in place (ALAN)
-    require_once './' . drupal_get_path('module', 'veritas') . '/student/student_eduerp_profile.inc';
-    save_student_eduerp_profile($user->uid);
 
     create_student_program($user->uid);
 
