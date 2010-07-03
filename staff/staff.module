@@ -114,9 +114,11 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_NORMAL_ITEM
   );
-  return $items; 
+
+
+  return $items;
 }
- 
+
 
 function _staff_ajax() {
   $task = arg(2);
@@ -202,7 +204,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff clearance','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments', 'new fac');
+  return array('staff register','staff clearance','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments');
 }
 
 
@@ -223,7 +225,7 @@ function staff_assign_role() {
     $staffname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
   }
   $_SESSION['eduerpassignrole']->name = $staffname;
-  if (empty($user_profile->profile_department_id)) {
+  if (!empty($user_profile->profile_department_id)) {
     $_SESSION['eduerpassignrole']->department_id = $user_profile->profile_department_id;
     $result = db_query("SELECT field_college_id_nid FROM {content_type_department} WHERE nid=%d");
     $row = db_fetch_object($result, $user_profile->profile_department_id);
@@ -1044,17 +1046,6 @@ function staff_prg() {
     $titles[$row->nid] = $row->value;
   }
   return $titles;
-}
-function get_faculties() {
-  global $user_profile;
-  
-  $r = db_query("SELECT nid, field_college_name_value AS name, field_college_abbreviation_value AS abbr FROM {content_type_college} ORDER BY field_college_name_value");
-  while ($f = db_fetch_object($r)){
-    $faculties[$f->nid]['faculty_name'] = $f->name;
-    $faculties[$f->nid]['faculty_abbr'] = $f->abbr;
-    $faculties[$f->nid]['faculty_nid'] = $f->nid;
-  }
-  return $faculties;
 }
 function staff_level() {
   $titles['']="";
@@ -3469,24 +3460,6 @@ function download_student_payments() {
   endwhile;
 }
 
-function staff_show_faculty_department_form() {
- $form['#title'] = t('New Faculty & Department');
-  $form['jamb_no'] = array(
-    '#title' => 'JAMB NO',
-    '#type' => 'textfield',
-    '#size' => 20,
-    '#required' => TRUE
-  );
-  $form['dob'] = array(
-    '#type' => 'date',
-    '#title' => 'Date Of Birth'
-  );
-  $form['submit'] = array(
-    '#value' => 'Login',
-    '#type' => 'submit'
-  );
-  return $form;
-}
 
 function semester_admin() {
   ob_start();
@@ -3528,99 +3501,11 @@ function semester_admin() {
 
   echo '<a href="' . url('staff/list') . '">List Staff and Assign Roles</a>';
   echo '<br /><br /><hr /><br />';
-  
-  //echo '<a href="' . url('staff/newfac') . '">Create New Faculty and Department</a>';
-  //echo '<br /><br /><hr /><br />';
-  //return ob_get_clean();
-}
-function staff_edit_faculty_department() {
-  ob_start();
-
-  echo '<br /><hr /><br />';
-
-  echo drupal_get_form('staff_edit_faculty_form');
-  echo '<br /><hr /><br />';
-  //display existing faculties here
-  echo "<b>Available Faculties</b> - Click on any Faculty to edit it<br />
-  <table width='50%'>
-    <tr>
-      <td>s/n</td>
-      <td>Faculty Name</td>
-      <td>Faculty Abbreviation</td>
-    </tr>";$i=1;
-    $faculties = get_faculties();
-    foreach($faculties as $v){
-      echo "
-      <tr>
-        <td>$i</td>
-        <td><a href='staff/editfacultydept?edt=1&nid=". $v['faculty_nid'] ."'>". $v['faculty_name'] ."</a></td>
-        <td>". $v['faculty_abbr'] ."</td>
-      </tr>"; $i++;
-    	}
-  echo "
-  </table>";
-  
-  echo '<br /><hr /><br />';
-  echo drupal_get_form('staff_edit_department_form');
-  echo '<br /><hr /><br />';
 
   return ob_get_clean();
 }
-function staff_edit_faculty_form() {
-// Obviously this is not the proper code which should have faculty selection, college_name, college_abbreviation etc as in spec
-  $form['#title'] = 'Create New Faculty';
-  $form['faculty_name'] = array(
-    '#title' => 'Faculty Name',
-    '#type' => 'textfield',
-    '#size' => 40,
-    '#required' => TRUE
-  );
-  $form['faculty_abbreviation'] = array(
-    '#title' => 'Faculty Abbreviation',
-    '#type' => 'textfield',
-    '#size' => 6,
-    '#required' => TRUE
-  );
-  $form['submit'] = array(
-    '#value' => 'Submit',
-    '#type' => 'submit'
-  );
-  return $form;
-}
-function staff_edit_faculty_form_submit($form, &$form_state) {
-  // college CCK
-  $node = new stdClass();
-  $node->type                                   = 'college';
-  $node->uid                                    = 1;  // Admin
-  $node->status                                 = 1;  // Published
-  $node->promote                                = 0;
-  $node->sticky                                 = 0;
-  $node->comment                                = 0;
-  $node->title                                  = $form_state['values']['faculty_name'];
-  $node->field_college_name[0]['value']         = $form_state['values']['faculty_name'];
-  $node->field_college_abbreviation[0]['value'] = $form_state['values']['faculty_abbreviation'];
-  node_save($node);
-  drupal_set_message($form_state['values']['faculty_name'] . ' Faculty has been created!<br />');
-}
-function staff_edit_department_form() {
-  $form['#title'] = 'Create New Department';
-  
-  $form['programme_id'] = array(
-    '#type' => 'select',
-    '#options' => faculty(),
-    '#title' => 'Faculty');
-  $form['department_name'] = array(
-    '#title' => 'Department Name',
-    '#type' => 'textfield',
-    '#size' => 100,
-    '#required' => TRUE
-  );
-  $form['submit'] = array(
-    '#value' => 'Submit',
-    '#type' => 'submit'
-  );
-  return $form;
-}
+
+
 function set_session_form($form_state) {
   global $user;
 
@@ -3832,4 +3717,122 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
 
     db_query("UPDATE {program_level_semester} pls SET pls.open_for_registrations=0 WHERE pls.programme_id=%d AND pls.level=%d $semesterselect", $prog_lev_sem[0], $prog_lev_sem[1]);
   }
+}
+function get_faculties() {
+  $r = db_query("SELECT nid, field_college_name_value AS name, field_college_abbreviation_value AS abbr FROM {content_type_college} ORDER BY field_college_name_value");
+  while ($f = db_fetch_object($r)){
+    $faculties[$f->nid]['faculty_name'] = $f->name;
+    $faculties[$f->nid]['faculty_abbr'] = $f->abbr;
+    $faculties[$f->nid]['faculty_nid'] = $f->nid;
+  }
+  return $faculties;
+}
+
+function staff_show_faculty_department_form() {
+ $form['#title'] = t('New Faculty & Department');
+  $form['jamb_no'] = array(
+    '#title' => 'JAMB NO',
+    '#type' => 'textfield',
+    '#size' => 20,
+    '#required' => TRUE
+  );
+  $form['dob'] = array(
+    '#type' => 'date',
+    '#title' => 'Date Of Birth'
+  );
+  $form['submit'] = array(
+    '#value' => 'Login',
+    '#type' => 'submit'
+  );
+  return $form;
+}
+function staff_edit_faculty_department() {
+  ob_start();
+ 
+  echo '<br /><hr /><br />';
+ 
+  echo drupal_get_form('staff_edit_faculty_form');
+  echo '<br /><hr /><br />';
+  //display existing faculties here
+  echo "<b>Available Faculties</b> - Click on any Faculty to edit it<br />
+  <table width='50%'>
+    <tr>
+      <td>s/n</td>
+      <td>Faculty Name</td>
+      <td>Faculty Abbreviation</td>
+    </tr>";$i=1;
+    $faculties = get_faculties();
+    foreach($faculties as $v){
+      echo "
+      <tr>
+        <td>$i</td>
+        <td><a href='staff/editfacultydept?edt=1&nid=". $v['faculty_nid'] ."'>". $v['faculty_name'] ."</a></td>
+        <td>". $v['faculty_abbr'] ."</td>
+      </tr>"; $i++;
+    	}
+  echo "
+  </table>";
+  
+  echo '<br /><hr /><br />';
+  echo drupal_get_form('staff_edit_department_form');
+  echo '<br /><hr /><br />';
+
+  return ob_get_clean();
+}
+function staff_edit_faculty_form() {
+// Obviously this is not the proper code which should have faculty selection, college_name, college_abbreviation etc as in spec
+  $form['#title'] = 'Create New Faculty';
+  $form['faculty_name'] = array(
+    '#title' => 'Faculty Name',
+    '#type' => 'textfield',
+    '#size' => 40,
+    '#required' => TRUE
+  );
+  $form['faculty_abbreviation'] = array(
+    '#title' => 'Faculty Abbreviation',
+    '#type' => 'textfield',
+    '#size' => 6,
+    '#required' => TRUE
+  );
+  $form['submit'] = array(
+    '#value' => 'Submit',
+    '#type' => 'submit'
+  );
+  return $form;
+}
+function staff_edit_faculty_form_submit($form, &$form_state) {
+  // college CCK
+  $node = new stdClass();
+  $node->type                                   = 'college';
+  $node->uid                                    = 1;  // Admin
+  $node->status                                 = 1;  // Published
+  $node->promote                                = 0;
+  $node->sticky                                 = 0;
+  $node->comment                                = 0;
+  $node->title                                  = $form_state['values']['faculty_name'];
+  $node->field_college_name[0]['value']         = $form_state['values']['faculty_name'];
+  $node->field_college_abbreviation[0]['value'] = $form_state['values']['faculty_abbreviation'];
+  node_save($node);
+  drupal_set_message($form_state['values']['faculty_name'] . ' Faculty has been created!<br />');
+}
+function staff_edit_department_form() {
+  $form['#title'] = 'Create New Department';
+  
+  $form['programme_id'] = array(
+    '#type' => 'select',
+    '#options' => faculty(),
+    '#title' => 'Faculty');
+  $form['department_name'] = array(
+    '#title' => 'Department Name',
+    '#type' => 'textfield',
+    '#size' => 100,
+    '#required' => TRUE
+  );
+  $form['submit'] = array(
+    '#value' => 'Submit',
+    '#type' => 'submit'
+  );
+
+
+ return $form;
 }

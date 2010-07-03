@@ -168,7 +168,7 @@ function veritas_mail_receipt($f, $email, $name, $img) {
     drupal_mail_send($message);
   }
   if ($f->trans_type == 'tfee') {
-
+  	  ;
   }
 }
 
@@ -305,7 +305,7 @@ function veritas_lga() {
   return $titles;
 }
 function veritas_table_head($str, $head) {
-	;
+ ;
 }
 function veritas_states($state_id = 0) {
   static $ritles;
@@ -403,8 +403,7 @@ function veritas_validuser($name, $email) {
     )));
 
     return false;
-  } else
-    if (drupal_is_denied('user', $name)) {
+  } elseif (drupal_is_denied('user', $name)) {
       form_set_error('mail', t('The e-mail address %email has been denied access.', array (
         '%email' => $email
       )));
@@ -413,14 +412,12 @@ function veritas_validuser($name, $email) {
   if ($error = user_validate_mail($email)) {
     form_set_error('mail', $error);
     return false;
-  } else
-    if (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE  LOWER(mail) = LOWER('%s')", $email)) > 0) {
+  } elseif (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE  LOWER(mail) = LOWER('%s')", $email)) > 0) {
       form_set_error('mail', t('The e-mail address %email is already registered.', array (
         '%email' => $email
       )));
       return false;
-    } else
-      if (drupal_is_denied('mail', $email)) {
+    } elseif (drupal_is_denied('mail', $email)) {
         form_set_error('mail', t('The e-mail address %email has been denied access.', array (
           '%email' => $email
         )));
@@ -445,8 +442,7 @@ function veritas_user_save($type, $mail, $transid) {
 
   if ($type == 'creg') {
     $rolename = 'Contractor';
-  } else
-    if ($type == 'sreg') {
+  } elseif ($type == 'sreg') {
       $rolename = 'Applicant';
     } else
       return;
@@ -491,7 +487,7 @@ function veritas_error_page() {
   return t('A error occurred in processing your request. Please contact the admin');
 }
 
-function veritas_mail($key, &$message, $params) {
+function veritas_mail($key, & $message, $params) {
   /*
   $message[headers] +=
   array( 'MIME-Version'  => '1.0',
@@ -504,63 +500,64 @@ function veritas_receipt($f) {
   global $user;
   ob_start();
 ?>
-		<center><h3>VERITAS UNIVERSITY</h3>
-		<div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
-		<br/><br/>
-		<table cellspacing="2" cellpadding="2">
-		<tr><th>Name:</th><td colspan="2" align="left"><b><?=$f->name?></b></td></tr>
-		<?php
-		
-		
-	if ($f->trans_type == 'cfee') {
-		?>
-		
-		<tr><td></td><td colspan="2" align="left"> <b><?=$f->trans_descr?></b></td></tr>
-		<?php
-		
-		
-		    $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0 order by lot_name", $user->uid, $f->receipt_no);
-		    $i = 1;
-		    while ($fx = db_fetch_object($r)) {
-			?>
-			<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
-			<?php
-			
-			
-		    }
-	}elseif ($f->trans_type == 'tfee') {
-		?>
-		<tr><td></td><td colspan="2"><?=$f->trans_descr?></td></tr>
-		<?php
-		
-		
-		      $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1 order by lot_name", $user->uid, $f->receipt_no);
-		      $i = 1;
-		      while ($fx = db_fetch_object($r)) {
-		?>
-		<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
-		<?php
-		
-		
-		      }
-		
-	} else {
-		?>
-		<tr><td>1</td><td><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
-	<?php } ?>
-		<tr><th colspan="2">Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
-		<br/>
-		<hr/>
-		<b>
-		<table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
-		<tr><td>Date</td><td><?$dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
-		</center>
-		<?php
-		
+<center><h3>VERITAS UNIVERSITY</h3>
+<div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
+<br/><br/>
+<table cellspacing="2" cellpadding="2">
+<tr><th>Name:</th><td colspan="2" align="left"><b><?=$f->name?></b></td></tr>
+<?php
+
+
+  if ($f->trans_type == 'cfee') {
+?>
+
+<tr><td></td><td colspan="2" align="left"> <b><?=$f->trans_descr?></b></td></tr>
+<?php
+
+
+    $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0 order by lot_name", $user->uid, $f->receipt_no);
+    $i = 1;
+    while ($fx = db_fetch_object($r)) {
+?>
+<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<?php
+
+
+    }
+  } //cfee
+  elseif ($f->trans_type == 'tfee') {
+?>
+<tr><td></td><td colspan="2"><?=$f->trans_descr?></td></tr>
+<?php
+
+
+      $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1 order by lot_name", $user->uid, $f->receipt_no);
+      $i = 1;
+      while ($fx = db_fetch_object($r)) {
+?>
+<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
+<?php
+
+
+      }
+
+    } else {
+?>
+<tr><td>1</td><td><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
+<?php } ?>
+<tr><th colspan="2">Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
+<br/>
+<hr/>
+<b>
+<table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
+<tr><td>Date</td><td><?php $dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
+</center>
+<?php
+
 
       return ob_get_clean();
-}
-
+    
+    }
 function veritas_student_receipt(& $f, $isprint = false) {
   ob_start();
 
@@ -598,7 +595,7 @@ function veritas_student_receipt(& $f, $isprint = false) {
         <tr>
         	<th><b>SESSION : </b></th>
             <td colspan="2" align="left">
-            <? echo variable_get('eduerp_current_session', $f->student_data['yearofentry']."/".($f->student_data['yearofentry']+1)); ?>
+            <?php echo variable_get('eduerp_current_session', $f->student_data['yearofentry']."/".($f->student_data['yearofentry']+1)); ?>
             </td>
         </tr>
         <tr>
@@ -669,7 +666,7 @@ function veritas_admin_links($f) {
   ob_start();
 ?>
  <html>
- <body <?if($isprint){?>onload="window.print()"<?}?>>
+ <body <?php if($isprint){?>onload="window.print()"<?php }?>>
 <center><h3>VERITAS UNIVERSITY</h3>
 <hr/>
 <div align="center"><?=$img ?></div>
@@ -723,7 +720,7 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
   ob_start();
 ?>
  <html>
- <body <?php if($isprint){?>onload="window.print()"<?}?>>
+ <body <?php if($isprint){?>onload="window.print()"<?php }?>>
 <center><h3>VERITAS UNIVERSITY</h3>
 <hr/>
 <div align="center"><?=$img ?></div>
@@ -740,7 +737,7 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
   $lots = array ();
   while ($fx = db_fetch_object($r)) {
 ?>
-<tr><td <?php if(!$isprint) {?>width="20" <?php } ?>><?=$i++?></td><td <?if(!$isprint) {?>width="200" style="width:200px;"<?php } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<tr><td <?php if(!$isprint) {?>width="20" <?php } ?>><?=$i++?></td><td <?php if(!$isprint) {?>width="200" style="width:200px;"<?php } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
 <?php
 
 
@@ -749,27 +746,27 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
   elseif ($f->trans_type == 'tfee') {
 ?>
 <tr><td></td><td  align="left"><b><?=$f->trans_descr?></b></td></tr>
-<?
+<?php
 
 
       $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1", $user->uid, $f->receipt_no);
       $i = 1;
       while ($fx = db_fetch_object($r)) {
 ?>
-<tr><td <?if(!$isprint) {?>width="20"<?} ?>><?=$i++?></td><td <?if(!$isprint) {?> width="250" style="width:200px;"<?} ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
-<?
+<tr><td <?php if(!$isprint) {?>width="20"<?php } ?>><?=$i++?></td><td <?php if(!$isprint) {?> width="250" style="width:200px;"<?php } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
+<?php
 
 
       }
 
     } else {
 ?>
-<tr><td <?if(!$isprint) {?>width="20" <?} ?>>1</td><td <?if(!$isprint) {?>width="200" style="width:200px;"<?} ?>><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
+<tr><td <?php if(!$isprint) {?>width="20" <?php } ?>>1</td><td <?php if(!$isprint) {?>width="200" style="width:200px;"<?php } ?>><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
 <?php } ?>
 <tr><td></td><th>Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
 <br/>
 <table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
-<tr><td>Date</td><td><?$dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
+<tr><td>Date</td><td><?php $dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
 
 </center>
 </body></html>
@@ -1122,8 +1119,7 @@ function _assign_keys(& $form, $state) {
       ))) || array_key_exists('#value', $val))) {
       //			echo "for key ".$key."<br/>";
       _assign_keys($val, $state);
-    } else
-      if (is_array($val) && array_key_exists('#type', $val) && !in_array($val['#type'], array (
+    } elseif (is_array($val) && array_key_exists('#type', $val) && !in_array($val['#type'], array (
           'fieldset',
           'markup',
           'item'
@@ -1244,7 +1240,7 @@ function veritas_st_form() {
   );
   return $form;
 }
-function veritas_st_form_validate($form, &$form_state) {
+function veritas_st_form_validate($form, & $form_state) {
 
   $f = veritas_check_upload("payfile");
   if ($f) {
