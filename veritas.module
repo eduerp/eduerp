@@ -305,7 +305,7 @@ function veritas_lga() {
   return $titles;
 }
 function veritas_table_head($str, $head) {
-
+	;
 }
 function veritas_states($state_id = 0) {
   static $ritles;
@@ -483,6 +483,7 @@ function veritas_user_save($type, $mail, $transid) {
 }
 
 function _veritas_insert_student($val, $uid) {
+	;
 }
 
 function veritas_error_page() {
@@ -490,76 +491,75 @@ function veritas_error_page() {
   return t('A error occurred in processing your request. Please contact the admin');
 }
 
-function veritas_mail($key, & $message, $params) {
+function veritas_mail($key, &$message, $params) {
   /*
   $message[headers] +=
   array( 'MIME-Version'  => '1.0',
     'Content-Type'  => 'text/html; charset=UTF-8');
   */
+  ;
 }
 
 function veritas_receipt($f) {
   global $user;
   ob_start();
 ?>
-<center><h3>VERITAS UNIVERSITY</h3>
-<div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
-<br/><br/>
-<table cellspacing="2" cellpadding="2">
-<tr><th>Name:</th><td colspan="2" align="left"><b><?=$f->name?></b></td></tr>
-<?
-
-
-  if ($f->trans_type == 'cfee') {
-?>
-
-<tr><td></td><td colspan="2" align="left"> <b><?=$f->trans_descr?></b></td></tr>
-<?
-
-
-    $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0 order by lot_name", $user->uid, $f->receipt_no);
-    $i = 1;
-    while ($fx = db_fetch_object($r)) {
-?>
-<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
-<?php
-
-
-    }
-  } //cfee
-  else
-    if ($f->trans_type == 'tfee') {
-?>
-<tr><td></td><td colspan="2"><?=$f->trans_descr?></td></tr>
-<?php
-
-
-      $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1 order by lot_name", $user->uid, $f->receipt_no);
-      $i = 1;
-      while ($fx = db_fetch_object($r)) {
-?>
-<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
-<?php
-
-
-      }
-
-    } else {
-?>
-<tr><td>1</td><td><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
-<?php } ?>
-<tr><th colspan="2">Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
-<br/>
-<hr/>
-<b>
-<table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
-<tr><td>Date</td><td><?$dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
-</center>
-<?php
-
+		<center><h3>VERITAS UNIVERSITY</h3>
+		<div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
+		<br/><br/>
+		<table cellspacing="2" cellpadding="2">
+		<tr><th>Name:</th><td colspan="2" align="left"><b><?=$f->name?></b></td></tr>
+		<?php
+		
+		
+	if ($f->trans_type == 'cfee') {
+		?>
+		
+		<tr><td></td><td colspan="2" align="left"> <b><?=$f->trans_descr?></b></td></tr>
+		<?php
+		
+		
+		    $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0 order by lot_name", $user->uid, $f->receipt_no);
+		    $i = 1;
+		    while ($fx = db_fetch_object($r)) {
+			?>
+			<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+			<?php
+			
+			
+		    }
+	}elseif ($f->trans_type == 'tfee') {
+		?>
+		<tr><td></td><td colspan="2"><?=$f->trans_descr?></td></tr>
+		<?php
+		
+		
+		      $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=1 order by lot_name", $user->uid, $f->receipt_no);
+		      $i = 1;
+		      while ($fx = db_fetch_object($r)) {
+		?>
+		<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=$fx->amt ?></td></tr>
+		<?php
+		
+		
+		      }
+		
+	} else {
+		?>
+		<tr><td>1</td><td><?=$f->trans_descr?></td><td>NGN&nbsp;<?=$f->trans_amount ?></td></tr>
+	<?php } ?>
+		<tr><th colspan="2">Grand Total</th><td><b>NGN&nbsp;<?=$f->trans_amount?></b></td></tr></table>
+		<br/>
+		<hr/>
+		<b>
+		<table width="250" style="width:250px;" align="left"><tr><td><u>Receipt Number:</u></b></td><td><?=$f->receipt_no ?></td></tr>
+		<tr><td>Date</td><td><?$dt=explode(' ' ,$f->trans_time);echo $dt[0]?></td></tr></table>
+		</center>
+		<?php
+		
 
       return ob_get_clean();
-    }
+}
 
 function veritas_student_receipt(& $f, $isprint = false) {
   ob_start();
@@ -657,7 +657,7 @@ function veritas_student_receipt(& $f, $isprint = false) {
     </table>
    </body>
    </html>
-<?
+<?php
 
 
   return ob_get_clean();
@@ -679,7 +679,7 @@ function veritas_admin_links($f) {
 </table>
 <table cellspacing="2" cellpadding="2">
 <caption>Tender Approval List</caption>
-<?
+<?php
 
 
   $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0", $user->uid, $f->receipt_no);
@@ -692,7 +692,7 @@ function veritas_admin_links($f) {
     ));
 ?>
 <tr><td width="20"><?=$i++?></td><td width="150">Tender <?=$fx->lot_name ?>:</td><td><a href="<?=$link ?>">Click To Approve</a></td></tr>
-<?
+<?php
 
 
       db_query("update contractor_lots set hstr='%s' where id='%d'", $str, $fx->id);
@@ -700,7 +700,7 @@ function veritas_admin_links($f) {
 ?>
 </table>
 </body></html>
-<?
+<?php
 
 
   $d = ob_get_clean();
@@ -723,16 +723,16 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
   ob_start();
 ?>
  <html>
- <body <?if($isprint){?>onload="window.print()"<?}?>>
+ <body <?php if($isprint){?>onload="window.print()"<?}?>>
 <center><h3>VERITAS UNIVERSITY</h3>
 <hr/>
 <div align="center"><?=$img ?></div>
 <hr/>
 <b>Name:</b><?=$f->name?><br/>
 <table  cellspacing="2" cellpadding="2" align="center">
-<? if($f->trans_type=='cfee'){ ?>
+<?php if($f->trans_type=='cfee'){ ?>
 <tr><td></td><td  align="left"><b><?=$f->trans_descr?></b></td><td></td></tr>
-<?
+<?php
 
 
   $r = db_query("select * from contractor_lots inner join lot using (lot_id) where contractor_id=%d and trans='%s' and paid=0", $user->uid, $f->receipt_no);
@@ -740,14 +740,13 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
   $lots = array ();
   while ($fx = db_fetch_object($r)) {
 ?>
-<tr><td <?if(!$isprint) {?>width="20" <?} ?>><?=$i++?></td><td <?if(!$isprint) {?>width="200" style="width:200px;"<? } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
-<?
+<tr><td <?php if(!$isprint) {?>width="20" <?php } ?>><?=$i++?></td><td <?if(!$isprint) {?>width="200" style="width:200px;"<?php } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<?php
 
 
     }
   } //cfee
-  else
-    if ($f->trans_type == 'tfee') {
+  elseif ($f->trans_type == 'tfee') {
 ?>
 <tr><td></td><td  align="left"><b><?=$f->trans_descr?></b></td></tr>
 <?
@@ -1245,7 +1244,7 @@ function veritas_st_form() {
   );
   return $form;
 }
-function veritas_st_form_validate($form, & $form_state) {
+function veritas_st_form_validate($form, &$form_state) {
 
   $f = veritas_check_upload("payfile");
   if ($f) {
@@ -1415,4 +1414,5 @@ class UserProfile {
     }
   }
 }
+?>
 
