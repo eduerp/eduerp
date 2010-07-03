@@ -1180,10 +1180,6 @@ function student_registration_form_submit($form, &$state) {
     $query = "UPDATE {student} SET matriculation_no='%s' WHERE student_id=%d";
     db_query($query, $mat_number, $_SESSION['student']['data']->student_id);
 
-    // Next two lines create the profile for the student. They should be removed when Tim has his new student registration code in place (ALAN)
-    require_once './' . drupal_get_path('module', 'veritas') . '/student/student_eduerp_profile.inc';
-    save_student_eduerp_profile($user->uid);
-
     create_student_program($user->uid);
 
     $sql = "select * from {admitted_transaction} where transaction_id=%d";
