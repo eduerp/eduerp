@@ -1885,7 +1885,7 @@ function grading_student_details_form(&$obj) {
 function _grading_student_list() {
   $names = array();
   $names[0] = '';
-  $sql = "SELECT CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, ''), ' (', u.name, ' ', u.mail, ' ', u.uid, ')') AS name, u.uid
+  $sql = "SELECT CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, ''), ' (', u.name, ' ', u.mail, ' ', CAST(u.uid AS CHAR), ')') AS name, u.uid
     FROM users u, users_roles ur, role r, {node} npro, {content_type_profile} pro
     WHERE
       u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND
@@ -1902,7 +1902,7 @@ function _grading_student_list() {
 function _grading_mat_list() {
   $names = array();
   $names[0] = '';
-  $sql = "SELECT CONCAT(u.name, ' (', pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, ''), ' ', u.mail, ' ', u.uid, ')') AS name, u.uid
+  $sql = "SELECT CONCAT(u.name, ' (', pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, ''), ' ', u.mail, ' ', CAST(u.uid AS CHAR), ')') AS name, u.uid
     FROM users u, users_roles ur, role r, {node} npro, {content_type_profile} pro
     WHERE
       u.uid=ur.uid AND ur.rid=r.rid AND r.name='Student' AND
