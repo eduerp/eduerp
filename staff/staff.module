@@ -3754,12 +3754,12 @@ function get_departments() {
 }
 function staff_create_edit_faculty() {
   global $user;
-  ob_start();
+  
   if (!staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {
       drupal_set_message('You are not authorized to access this page.');
       drupal_goto('user');
   }
- 
+  ob_start();
   echo '<br /><hr /><br />';
   if(isset($_POST['faculty_nid']))
     echo "<b>Edit Faculty</b> - Make any required changes to the faculty<br />";
@@ -3801,12 +3801,12 @@ function staff_create_edit_faculty() {
 }
 function staff_create_edit_dept() {
   global $user;
-  ob_start();
+  
   if (!staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {
       drupal_set_message('You are not authorized to access this page.');
       drupal_goto('user');
   }
-  
+  ob_start();
   
   echo '<br /><hr /><br />';
   
