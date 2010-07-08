@@ -4133,8 +4133,10 @@ function staff_update_dept_form_submit($form, &$form_state) {
   
 }
 function staff_create_edit_course(){
-    global $user;
-   $isRoleAssigner=false; $canCreateModify=false;
+  global $user;
+  $isRoleAssigner=false; $canCreateModify=false;$hideOthers=false;
+   
+  if(isset($_SESSION['showFullForm'])) $_POST['showFullForm'] = 1;
   
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {//allow for one db call only
     $isRoleAssigner=true;
@@ -4165,27 +4167,34 @@ function staff_create_edit_course(){
         //get the course info
         $course=db_fetch_object(get_Available_Courses(0,arg(3)));
         //allow for some easy navigation
-        echo "<font size='1px'><a href='/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href='./'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Edit Course: <b>". $course->course_code ."</b></font><br /><br />";
-      
-        echo '<br /><hr /><br />';
-        echo "<b>Edite Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
+        $navi= "<font size='1px'><a href='/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href='./'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Edit Course: <b>". $course->course_code ."</b></font><br /><br />";
+        $navi .= '<br /><hr /><br />';
+        $navi .= "<b>Edite Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
       }else{
         //allow for some easy navigation
-        echo "<font size='1px'><a href='/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
-        echo '<br /><hr /><br />';
-        echo "<b>Create Course</b> - Fill the form<br />";
+        $navi= "<font size='1px'><a href='/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href='/staff/createeditcourse/".arg(2)."'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Create New Course</font><br /><br />";
+        $navi .= '<br /><hr /><br />';
+        $navi .= "<b>Create New Course</b> - Please fill the form<br />";
+        ;
       }
     
-    
-      echo drupal_get_form('staff_create_course_form');
+      if(isset($_POST['showFullForm']) || arg(3)) {
+      	echo $navi;
+        echo drupal_get_form('staff_create_course_form');
+        $hideOthers=true;
+      } else {
+      	echo "<font size='1px'><a href='/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
+        echo '<br /><hr /><br />';
+      	echo "<b>Create Course</b> - Click to proceed with Course creation<br /><br />";
+        echo drupal_get_form('staff_create_course_mini_form');
+      }
     }else{//the user cannot create or edit records
       echo Error_Types(104);
-      
     }
-    if(! $authorizeCourseEdit){
+    if(! $authorizeCourseEdit){//only show these things in none edit mode 
       echo '<br /><hr /><br />';
-      if($canCreateModify || $isRoleAssigner) { 
-        echo "<b>Edit Course</b> - Select a Course to edit it<br />";
+      if(($canCreateModify || $isRoleAssigner)) {
+      	echo "<b>Modify Course</b> - Select a Course to modify it<br />";
         echo drupal_get_form('staff_edit_course_form');
       }else{
         echo Error_Types(105);
@@ -4209,7 +4218,7 @@ function staff_create_edit_course(){
   }
   
   
-
+  unset($_SESSION['showFullForm']);
   return ob_get_clean();
   
 }
@@ -4459,6 +4468,16 @@ function staff_create_course_form(){
   );
   if($course) $form['course_description']['#value']=$course->course_description;
   
+  if(isset($_POST['showFullForm'])) {
+    //$form['showFullForm'] = array('#showFullForm' => '1');/*
+    $form['showFullForm'] = array(
+    '#title' => 'Course Description',
+    '#type' => 'hidden',
+    '#default_value'=> 1 
+  );
+    
+  }
+  
   $form['submit'] = array(
     '#value' => 'Create Course',
     '#type' => 'submit'
@@ -4469,6 +4488,9 @@ function staff_create_course_form(){
 	
 }
 function staff_create_course_form_validate($form, $form_state){
+  //if(isset($form_state['showFullForm'])) $_POST['showFullForm'] = 1; //$form['showFullForm'];
+  if(isset($form_state['values']['showFullForm'])) $_POST['showFullForm'] = $form_state['values']['showFullForm'];
+  
   if(arg(3)) {//validate EDIT
     if(is_Course_Code_Existing($form_state['values']['course_code'], arg(3)))
       form_set_error('course_code', Error_Types(108));
@@ -4573,6 +4595,7 @@ function staff_create_course_form_validate($form, $form_state){
 }
 function staff_create_course_form_submit($form, $form_state){
   //if(isset($form_state['values']['course_nid']) && is_numeric($form_state['values']['course_nid'])){//the user is trying to edit a given faculty
+  if(! arg(3)) $_SESSION['showFullForm']=1;
   if(arg(3)){
     //$node= node_load($form_state['values']['course_nid']);
     $node= node_load(arg(3));
@@ -4628,7 +4651,8 @@ function staff_edit_course_form(){
     $form['course_nid'] = array(
       '#type' => 'select',
       '#options' => $courses,
-      '#title' => 'Course Name');
+      '#title' => 'Course Code');
+    
     $form['submit'] = array(
       '#value' => 'Edit Course',
       '#type' => 'submit'
@@ -4640,7 +4664,6 @@ function staff_edit_course_form(){
   return $form;
 }
 function staff_edit_course_form_submit($form, $form_state){
-  //$_SESSION['course_nid']=$form_state['values']['course_nid'];
   drupal_goto(drupal_goto("staff/createeditcourse/" . arg(2) .'/'. $form_state['values']['course_nid']));
 }
 function course_levels() {
@@ -4661,5 +4684,46 @@ function user_has_access_to_department($department_nid) {
   
   if(db_Affected_Rows() > 0) return true;
   return false;
+}
+function staff_create_course_mini_form() {
+  $form['#title'] = 'Start Course Creation';
+  
+  $form['submit'] = array(
+    '#value' => 'Start Course Creation',
+    '#type' => 'submit'
+  );
+  
+  return $form;
+}
+function staff_create_course_mini_form_submit($form, &$form_state) {
+  
+  $_SESSION['showFullForm']=1;
+}
+function staff_assign_course_add_course_form() {
+  ;
+}
+function staff_assign_course_add_course_form_validate($form, &$form_state) {
+  ;
+}
+function staff_assign_course_add_course_form_submit($form, &$form_state) {
+  ; 
+}
+function staff_assign_course_add_staff_form() {
+  ;
+}
+function staff_assign_course_add_staff_form_validate($form, &$form_state) {
+  ;
+}
+function staff_assign_course_add_staff_form_submit($form, &$form_state) {
+  ;
+}
+function staff_assign_course_form() {
+  ;
+}
+function staff_assign_course_form_validate($form, &$form_state) {
+  ;
+}
+function staff_assign_course_form_submit($form, &$form_state) {
+  ;
 }
 ?>
