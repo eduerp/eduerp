@@ -4058,7 +4058,7 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
     $node->field_college_id[0]['nid']        	= $form_state['values']['faculty_nid'];
     
     drupal_set_message($form_state['values']['department_name'] . ' Department was updated!<br />');
-    unset($_SESSION['dept_nid']); unset($_SESSION['dept_recs']);
+    unset($_SESSION['dept_nid']);
   }else{
     $node = new stdClass();
     $node->type                              = 'department';
@@ -4134,29 +4134,41 @@ function staff_update_dept_form_submit($form, &$form_state) {
 }
 function staff_create_edit_course(){
     global $user;
-   $is_Role_Assigner=false; $can_Access_Department=false;
+   $isRoleAssigner=false; $canCreateModify=false;
   
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {
-    $is_Role_Assigner=true;
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {//allow for one db call only
+    $isRoleAssigner=true;
   }
   
   ob_start();
   echo '<br /><hr /><br />';
   $authorizeCourseEdit=false;
   if (arg(2) && is_Valid_Department(arg(2))) {//the department is valid
+     //check if user has access to the department
+     if(! user_has_access_to_department(arg(2)) && ! $isRoleAssigner){
+       drupal_set_message(Error_Types(112));
+       drupal_goto('staff/createeditcourse');
+     }
     //make sure that the user has access to the department
-    if(user_has_access_to_department(arg(2)) || $is_Role_Assigner){
-      $can_Access_Department=true;
+    //check that he can create/modify courses
+    if (staff_has_eduerp_role($user->uid, arg(2), 0, array('Head of Department')) || staff_has_eduerp_role($user->uid, arg(2), 0, array('Department Examination Officer'))) {//allow for one db call only
+      $canCreateModify=true;
+    }
+ 
+    if($canCreateModify || $isRoleAssigner){
+      
       //get the departments info
       $departmentInfo=department(arg(2));
       //check if user is trying to edit record
        if(arg(3) && is_valid_course(arg(3)) && course_belongs_to_department(arg(2), arg(3))){
         $authorizeCourseEdit=true;
+        //get the course info
+        $course=db_fetch_object(get_Available_Courses(0,arg(3)));
         //allow for some easy navigation
-        echo "<font size='1px'><a href='/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href='./'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Edit Course</font><br /><br />";
+        echo "<font size='1px'><a href='/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href='./'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Edit Course: <b>". $course->course_code ."</b></font><br /><br />";
       
         echo '<br /><hr /><br />';
-        echo "<b>Edite Course</b> - Make any required changes to the Course<br />";
+        echo "<b>Edite Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
       }else{
         //allow for some easy navigation
         echo "<font size='1px'><a href='semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='./'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
@@ -4171,8 +4183,8 @@ function staff_create_edit_course(){
       
     }
     if(! $authorizeCourseEdit){
-      if($can_Access_Department || $is_Role_Assigner) {
-        echo '<br /><hr /><br />';
+      echo '<br /><hr /><br />';
+      if($canCreateModify || $is_Role_Assigner) { 
         echo "<b>Edit Course</b> - Select a Course to edit it<br />";
         echo drupal_get_form('staff_edit_course_form');
       }else{
@@ -4188,14 +4200,10 @@ function staff_create_edit_course(){
     
     //allow for some easy navigation
     echo "<font size='1px'><a href='semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Course</font><br /><br />";
-    //if(isset($_POST['department_nid']))
-    //  echo "<b>Edit Department</b> - Make any required changes to the Department<br />";
-    //else
-    //  echo "<b>Create Department</b> - Fill the form below to create a new Department<br />";
     echo "<b>Create/Modify Course</b> - To begin select a department and Click Continue<br />";
     echo drupal_get_form('staff_create_edit_course_select_dept_form');
   
-    //echo '<br /><hr /><br />';
+    echo '<br /><hr /><br />';
     //display existing departmens here
     echo staff_display_available_departments();
   }
@@ -4344,6 +4352,8 @@ function Error_Types($num=0){
     $msg=$prifix1 . 'At least one of the Course Codes entered for Prerequisites / Requisites Codes either does not exist or is Invalid!<br />'; break;
   case '111':
     $msg=$prifix1 . 'Cannot reference self for Prerequisite / Requisite Course!<br />'; break;
+  case '112':
+    $msg=$prifix1 . 'You do not have permission to Access the Department!<br />'; break;
   default:
     $msg= $prifix2 .' Something fatal occured!<br />';
   }
@@ -4578,7 +4588,7 @@ function staff_create_course_form_submit($form, $form_state){
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
     node_save($node);
     drupal_set_message($form_state['values']['course_code'] . ' Course was updated!<br />');
-    unset($_SESSION['course_nid']);
+    
     drupal_goto(drupal_goto("staff/createeditcourse/" . arg(2)));
   }else{
     
