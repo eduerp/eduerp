@@ -426,6 +426,194 @@ class courseselectionsclass {
   }
 }
 
+/**
+  these functions below define a custom field and field widget that enables 
+  the student profile content type to store subject/grade pairs as one field
+  in the content type.
+*/
+function student_field_info() {
+  return array(
+    'exam_record' => array(
+      'label' => t('Exam Record'),
+      'description' => t("Stores a student's examination record which specifies subject and grade"),
+    )
+  );
+}
+
+function student_field($op, &$node, $field, &$items, $teaser, $page) {
+  switch ($op) {
+    case 'view':
+      foreach ($items as $delta => $item) {
+        if ($item['subject'] == '' && $item['grade'] == '') {
+          return;
+        } else {
+          $items[$delta]['view'] = content_format($field, $item, 'default', $node);
+        }
+      }
+      return theme('field', $node, $field, $items, $teaser, $page);
+  }
+}
+
+function student_field_settings($op, $field) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $form['subjects_allowed_values'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Allowed subject values list'),
+        '#default_value' => isset($field['subjects_allowed_values']) ? $field['subjects_allowed_values'] : '',
+        '#required' => TRUE,
+        '#rows' => 10,
+        '#description' => t('The possible values this field can contain.'),
+      );
+      $form['grades_allowed_values'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Allowed grade values list'),
+        '#default_value' => isset($field['grades_allowed_values']) ? $field['grades_allowed_values'] : '',
+        '#required' => TRUE,
+        '#rows' => 10,
+        '#description' => t('The possible values this field can contain.'),
+      );
+      return $form;
+
+    case 'save':
+      return array('subjects_allowed_values', 'grades_allowed_values');
+
+    case 'database columns':
+      $columns['subject'] = array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'sortable' => FALSE,
+        'default' => '',
+      );
+      $columns['grade'] = array(
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => FALSE,
+        'sortable' => FALSE,
+        'default' => '',
+      );
+      return $columns;
+  }
+}
+
+function student_field_formatter_info() {
+  return array(
+    'default' => array(
+      'label' => 'Default',
+      'field types' => array('exam_record'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+  );
+}
+
+function student_theme() {
+  return array(
+    'student_field' => array(
+      'arguments' => array('value' => NULL, 'formatter' => NULL),
+    ),
+    'student_formatter_default' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+}
+
+function theme_student_formatter_default($element) {
+  return theme('student_field', $element);
+}
+
+function theme_student_field($element) {
+  return ($element['#item']['subject'] != "" && $element['#item']['grade'] != "") ? sprintf("%s - %s", $element['#item']['subject'], $element['#item']['grade']) : "";
+}
+
+function student_content_is_empty($item, $field) {
+  if (empty($item['subject']) || empty($item['grade'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function student_widget_info() {
+  return array(
+    'exam_record_exam_record' => array(
+      'label' => t('Subject, Grade'),
+      'field types' => array('exam_record'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array('default value' => CONTENT_CALLBACK_DEFAULT,),
+      'description' => t('A student examination record widget for storing examination grade results'),
+    ),
+  );
+}
+
+function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  $element = array();
+  $element['subject'] = array(
+    '#type' => 'select',
+    '#title' => t('Subject'),
+    '#default_value' => isset($items[$delta]['subject']) ? $items[$delta]['subject'] : NULL,
+    '#options' => _student_content_allowed_values($field, 'subjects_allowed_values'),
+    '#required' => FALSE,
+  );
+  $element['grade'] = array(
+    '#type' => 'select',
+    '#title' => t('Grade'),
+    '#default_value' => isset($items[$delta]['grade']) ? $items[$delta]['grade'] : NULL,
+    '#options' => _student_content_allowed_values($field, 'grades_allowed_values'),
+    '#required' => FALSE,
+  );
+  if (empty($form['#parents'])) {
+    $form['#parents'] = array();
+  }
+  $element['_error_element'] = array(
+    '#type' => 'value',
+    '#value' => implode('][', array_merge($form['#parents'], array('exam_subject'))),
+  );
+
+  return $element;
+}
+
+/**
+ * adapted from the cck content_allowed_values to support
+ * multiple section allowed_values
+ */
+function _student_content_allowed_values($field, $section, $flatten = TRUE) {
+  static $allowed_values;
+
+  $cid = $field['field_name'] .':'. $section .':'. ($flatten ? '1' : '0');
+  if (isset($allowed_values[$cid])) {
+    return $allowed_values[$cid];
+  }
+
+  $allowed_values[$cid] = array();
+
+  if (empty($allowed_values[$cid]) && isset($field[$section])) {
+    $list = explode("\n", $field[$section]);
+    $list = array_map('trim', $list);
+    $list = array_filter($list, 'strlen');
+    foreach ($list as $opt) {
+      // Sanitize the user input with a permissive filter.
+      $opt = content_filter_xss($opt);
+      if (strpos($opt, '|') !== FALSE) {
+        list($key, $value) = explode('|', $opt);
+        $allowed_values[$cid][$key] = (isset($value) && $value !=='') ? $value : $key;
+      }
+      else {
+        $allowed_values[$cid][$opt] = $opt;
+      }
+    }
+    // Allow external modules to translate allowed values list.
+    drupal_alter('content_allowed_values', $allowed_values[$cid], $field);
+  }
+  return $allowed_values[$cid];
+}
+
+function student_form_alter(&$form, $form_state, $form_id) {
+  // change the button title to display "Search" instead of "Apply" (improves user experience)
+  if ($form_state['view']->name == "student_clearance") {
+    $form['submit']['#value'] = t('Search');
+  }
+}
 
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'student_profile') {

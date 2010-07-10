@@ -28,6 +28,20 @@ function student_perms_initialize() {
       'edit field_profile_sponsor_mobile',
       'edit field_profile_health_status',
       'edit field_profile_health_disability',
+      'edit field_profile_kin_address',
+      'edit field_profile_kin_city',
+      'edit field_profile_kin_mobile',
+      'edit field_profile_kin_name',
+      'edit field_profile_kin_relationship',
+      'edit field_profile_kin_telephone',
+      'edit field_profile_kin_title',
+      'edit field_profile_matno',
+      'edit field_profile_olevel_exams_1',
+      'edit field_profile_olevel_insti1',
+      'edit field_profile_olevel_qual_1',
+      'edit field_profile_olevel_exams_2',
+      'edit field_profile_olevel_insti2',
+      'edit field_profile_olevel_qual_2',
 
       'view field_profile_matriculation_no',
       'view field_profile_jambno',
@@ -48,6 +62,20 @@ function student_perms_initialize() {
       'view field_profile_sponsor_mobile',
       'view field_profile_health_status',
       'view field_profile_health_disability',
+      'view field_profile_kin_address',
+      'view field_profile_kin_city',
+      'view field_profile_kin_mobile',
+      'view field_profile_kin_name',
+      'view field_profile_kin_relationship',
+      'view field_profile_kin_telephone',
+      'view field_profile_kin_title',
+      'view field_profile_matno',
+      'view field_profile_olevel_exams_1',
+      'view field_profile_olevel_insti1',
+      'view field_profile_olevel_qual_1',
+      'view field_profile_olevel_exams_2',
+      'view field_profile_olevel_insti2',
+      'view field_profile_olevel_qual_2',
     ),
 
     // A student should not be allowed to
@@ -65,6 +93,13 @@ function student_perms_initialize() {
       'edit field_profile_sponsor_state',
       'edit field_profile_sponsor_phone',
       'edit field_profile_sponsor_mobile',
+      'edit field_profile_kin_address',
+      'edit field_profile_kin_city',
+      'edit field_profile_kin_mobile',
+      'edit field_profile_kin_name',
+      'edit field_profile_kin_relationship',
+      'edit field_profile_kin_telephone',
+      'edit field_profile_kin_title',
 
       'view field_profile_matriculation_no',
       'view field_profile_jambno',
@@ -105,6 +140,20 @@ function student_perms_initialize() {
       'view field_semester_name',
       'view field_sess_name',
       'view field_totalscoreforstudent',
+      'view field_profile_kin_address',
+      'view field_profile_kin_city',
+      'view field_profile_kin_mobile',
+      'view field_profile_kin_name',
+      'view field_profile_kin_relationship',
+      'view field_profile_kin_telephone',
+      'view field_profile_kin_title',
+      'view field_profile_matno',
+      'view field_profile_olevel_exams_1',
+      'view field_profile_olevel_insti1',
+      'view field_profile_olevel_qual_1',
+      'view field_profile_olevel_exams_2',
+      'view field_profile_olevel_insti2',
+      'view field_profile_olevel_qual_2',
     ),
 
     // However, before clearance, the applicant
@@ -129,6 +178,19 @@ function student_perms_initialize() {
       'edit field_profile_sponsor_mobile',
       'edit field_profile_health_status',
       'edit field_profile_health_disability',
+      'edit field_profile_kin_address',
+      'edit field_profile_kin_city',
+      'edit field_profile_kin_mobile',
+      'edit field_profile_kin_name',
+      'edit field_profile_kin_relationship',
+      'edit field_profile_kin_telephone',
+      'edit field_profile_kin_title',
+      'edit field_profile_olevel_exams_1',
+      'edit field_profile_olevel_insti1',
+      'edit field_profile_olevel_qual_1',
+      'edit field_profile_olevel_exams_2',
+      'edit field_profile_olevel_insti2',
+      'edit field_profile_olevel_qual_2',
 
       'view field_profile_jambno',
       'view field_profile_mode_of_entry',
@@ -148,6 +210,19 @@ function student_perms_initialize() {
       'view field_profile_sponsor_mobile',
       'view field_profile_health_status',
       'view field_profile_health_disability',
+      'view field_profile_kin_address',
+      'view field_profile_kin_city',
+      'view field_profile_kin_mobile',
+      'view field_profile_kin_name',
+      'view field_profile_kin_relationship',
+      'view field_profile_kin_telephone',
+      'view field_profile_kin_title',
+      'view field_profile_olevel_exams_1',
+      'view field_profile_olevel_insti1',
+      'view field_profile_olevel_qual_1',
+      'view field_profile_olevel_exams_2',
+      'view field_profile_olevel_insti2',
+      'view field_profile_olevel_qual_2',
     ),
   );
 
@@ -177,6 +252,9 @@ function student_install() {
     permissions_grant_permissions($role, $permissions);
   }
 
+  // make Drupal aware of the exam record field type
+  content_notify('install', 'exam_record');
+
   drupal_set_message('student module installed');
 }
 
@@ -188,7 +266,17 @@ function student_uninstall() {
     permissions_revoke_permissions($role, $permissions);
   }
 
+  content_notify('uninstall', 'exam_record');
+
   drupal_set_message('student module uninstalled');
+}
+
+function student_enable() {
+  content_notify('enable', 'exam_record');
+}
+
+function student_disable() {
+  content_notify('disable', 'exam_record');
 }
 
 ?>
