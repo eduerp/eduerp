@@ -1082,8 +1082,7 @@ function staff_course() {
 
 
 function department($department_nid=0) {
-  static $titles;
-  if (!$titles) {
+  
     $titles = array();
     if($department_nid !=0)
       $r = db_query("SELECT nid, field_department_name_value AS value FROM {content_type_department} WHERE nid=%d ORDER BY field_department_name_value", $department_nid);
@@ -1091,7 +1090,7 @@ function department($department_nid=0) {
       $r = db_query("SELECT nid, field_department_name_value AS value FROM {content_type_department} ORDER BY field_department_name_value");
     while ($f = db_fetch_object($r))
       $titles[$f->nid] = $f->value;
-  }
+  
   return  $titles;
 }
 function course($department_nid) {
@@ -3853,7 +3852,11 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
         <td><b>Requisite Codes</b></td>
         <td><b>Prerequisite Codes</b></td>
         <td><b>Course Description</b></td>
-        <td><b>Course Semester</b></td>
+        <td><b>Course Semester</b></td>";
+        if ($forassigned)
+          $str .="
+          <td><b>Time Table</b></td>";
+          $str .="
       </tr>";$i = 1;
       
       while($course = db_fetch_object($courses)){
@@ -3872,7 +3875,11 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
                <td>". $course->requisites_codes ."</td>
                <td>". $course->prerequisite_codes ."</td>
                <td>". $course->course_description ."</td>
-               <td>". $course->course_semester ."</td>
+               <td>". $course->course_semester ."</td>";
+               if ($forassigned)
+                 $str .="
+               <td>". $course->timetable ."</td>";
+               $str .="
                
              </tr>"; $i++;
       }
@@ -4209,10 +4216,12 @@ function staff_create_edit_course() {
   $authorizeCourseEdit = false;
   if (arg(2) && is_Valid_Department(arg(2))) {//the department is valid
      //check if user has access to the department
+     /*
      if (! user_has_access_to_department(arg(2))) {
        drupal_set_message(Error_Types(112));
        drupal_goto('staff/createeditcourse');
      }
+     */
     //make sure that the user has access to the department
     //check that he can create/modify courses
     if (staff_has_eduerp_role($user->uid, arg(2), 0, array('Head of Department', 'Department Examination Officer'))) {//allow for one db call only
@@ -4256,6 +4265,8 @@ function staff_create_edit_course() {
       	  echo $navi;
           echo drupal_get_form('staff_create_course_form');
           $hideOthers = true;
+          echo '<br /><hr /><br />';
+          echo staff_display_available_courses($departmentInfo);
         } 
         else {
       	  echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
@@ -4465,7 +4476,7 @@ function Error_Types($num = 0) {
   case '112':
     $msg = $prifix1 . 'You do not have permission to Access the Department!<br />'; break;
   case '113':
-    $msg = $prifix1 . 'Course Assignment already exists for the Course for the Semester and for the Session!<br />'; break;
+    $msg = $prifix1 . 'Course Assignment already exists for the Course, for the Timetable, for the Semester and for the Session!<br />'; break;
   case '114':
     $msg = $prifix1 . 'Invalid Data was supplied!<br />'; break;
   default:
@@ -4567,7 +4578,7 @@ function staff_create_course_form() {
   if ($course) $form['credit_load']['#value'] = $course->credit_load;
   
   $form['requisites_codes'] = array(
-    '#title' => 'Requisite Codes  - List of Course code(s), comma separated that have to be completed before this course e.g. MTH201, PHY202 OR CHM203, POL111 etc',
+    '#title' => 'Requisite Codes  - List of Course code(s), comma separated that have to be completed before this course e.g. MTH201, POL111, PHY202/CHM203. - The use of a \'/\' denotes \'alternative\'.',
     '#type' => 'textarea',
     '#size' => 255
     
@@ -4575,7 +4586,7 @@ function staff_create_course_form() {
   if ($course) $form['requisites_codes']['#value'] = $course->requisites_codes;
   
   $form['prerequisites_codes'] = array(
-    '#title' => 'Prerequisite Codes - List of Course code(s), comma separated that can be taken only after this course is completed e.g. MTH201, PHY202 OR CHM203, POL111 etc',
+    '#title' => 'Prerequisite Codes - List of Course code(s), comma separated that can be taken only after this course is completed e.g. MTH201, POL111, PHY202/CHM203. - The use of a \'/\' denotes \'alternative\'.',
     '#type' => 'textarea',
     '#size' => 255
     
@@ -4647,10 +4658,10 @@ function staff_create_course_form_validate($form, $form_state) {
       //looks like he entered more than one course codes
       foreach ($bits as $v) {
       	$v = trim($v);
-      	if (strpos($v, 'or')) {
-      	  //an or was found..ok
+      	if (strpos($v, '/')) {
+      	  //a / was found..ok
       	  //lets break it up
-      	  $morebits =  explode("or ", $v);
+      	  $morebits =  explode("/", $v);
       	  if (is_array($morebits) && sizeof($morebits)) {
       	    //fine now test each
       	    foreach ($morebits as $h) {
@@ -4694,10 +4705,10 @@ function staff_create_course_form_validate($form, $form_state) {
       //looks like he entered more than one course codes
       foreach ($bits as $v) {
       	$v = trim($v);
-      	if (strpos($v, 'or')) {
+      	if (strpos($v, '/')) {
       	  //an or was found..ok
       	  //lets break it up
-      	  $morebits =  explode("or ", $v);
+      	  $morebits =  explode("/", $v);
       	  if (is_array($morebits) && sizeof($morebits)) {
       	    //fine now test each
       	    foreach($morebits as $h) {
@@ -4776,9 +4787,6 @@ function staff_create_course_form_submit($form, $form_state){
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
     
-    
-    
-    
     drupal_set_message($form_state['values']['course_code'] . ' Course has been created!<br />');
   }
   
@@ -4813,6 +4821,9 @@ function staff_edit_course_form_submit($form, $form_state){
 
 function course_levels() {
   foreach (range(100, 900, 100) as $number) {
+    $levels[$number] = $number;
+  }
+  foreach (range(1, 9) as $number) {
     $levels[$number] = $number;
   }
   return $levels;
@@ -4961,7 +4972,7 @@ function staff_assign_course_form() {
       
       );
   if ($course_instance) $form['semester']['#default_value'] = $course_instance->field_semester_name_value;
-  
+  /*
    $form['location'] = array(
       '#type' => 'textfield',
       '#title' => 'Location',
@@ -4969,10 +4980,11 @@ function staff_assign_course_form() {
       
       );
    if ($course_instance) $form['location']['#default_value'] = $course_instance->field_location_value;
-   
+   */
    $form['timetable'] = array(
       '#type' => 'textarea',
-      '#title' => 'Time Table'
+      '#title' => 'Time Table',
+      '#required' => TRUE
       );
    if ($course_instance) $form['timetable']['#default_value'] = $course_instance->field_timetable_value;
    
@@ -5012,13 +5024,13 @@ function staff_assign_course_proceed_form_submit() {
 function staff_assign_course_form_validate($form, &$form_state) {
   //make sure it is unique for course/semester/session
   if (arg(3)) {//validate EDIT
-    if (is_course_assignment_existing($form_state['values']['course_nid'], variable_get('eduerp_current_semester', ''), variable_get('eduerp_current_session', ''), $form_state['values']['location'], arg(3))) {
+    if (is_course_assignment_existing($form_state['values']['course_nid'], variable_get('eduerp_current_semester', ''), variable_get('eduerp_current_session', ''), $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
     }
   	  
   } 
   else {
-    if (is_course_assignment_existing($form_state['values']['course_nid'], variable_get('eduerp_current_semester', ''), variable_get('eduerp_current_session', ''), $form_state['values']['location'])) {
+    if (is_course_assignment_existing($form_state['values']['course_nid'], variable_get('eduerp_current_semester', ''), variable_get('eduerp_current_session', ''), $form_state['values']['timetable'])) {
       form_set_error('course_code', Error_Types(113));
     }
   }
@@ -5041,7 +5053,7 @@ function staff_assign_course_form_submit($form, &$form_state) {
     $node->field_sess_name[0]['value']        = variable_get('eduerp_current_session', '');
     $node->field_semester_name[0]['value']    = $form_state['values']['semester'];
     $node->field_repeat[0]['value']           = ($form_state['values']['semester'] == 3) ? 1 : 0;
-    $node->field_location[0]['value']         = $form_state['values']['location'];
+    //$node->field_location[0]['value']         = $form_state['values']['location'];
     $node->field_timetable[0]['value']        = $form_state['values']['timetable'];
     node_save($node);
     drupal_set_message($course->course_code .' Course was updated!<br />');
@@ -5049,7 +5061,15 @@ function staff_assign_course_form_submit($form, &$form_state) {
     drupal_goto(drupal_goto("staff/createeditcourse/" . arg(2)));
   }
   else {
-    
+    $location = 1;
+    //this check is to know wether to increase the value of Location
+    if (is_course_assignment_existing($form_state['values']['course_nid'], variable_get('eduerp_current_semester', ''), variable_get('eduerp_current_session', ''), $form_state['values']['timetable'], 0, true )) {
+      //it means this course already has an instance for the semester and for the session
+      //now get the max Location ID
+      $max = get_Max_Location_ID($form_state['values']['course_nid'], variable_get('eduerp_current_semester', ''), variable_get('eduerp_current_session', ''));
+      $location = $max->num + 1;
+    	
+    }
     // course_instance CCK
     $node = new stdClass();
     $node->type                               = 'course_instance';
@@ -5065,7 +5085,7 @@ function staff_assign_course_form_submit($form, &$form_state) {
     $node->field_sess_name[0]['value']        = variable_get('eduerp_current_session', '');
     $node->field_semester_name[0]['value']    = $form_state['values']['semester'];
     $node->field_repeat[0]['value']           = ($form_state['values']['semester'] == 3) ? 1 : 0;;
-    $node->field_location[0]['value']         = $form_state['values']['location'];
+    $node->field_location[0]['value']         = $location;
     $node->field_timetable[0]['value']        = $form_state['values']['timetable'];
     node_save($node);
     //$course_instance = $node->nid;
@@ -5131,7 +5151,8 @@ function get_Assigned_Courses($session, $department_nid = 0) {
   
   $r = db_query("SELECT i.nid nid, field_level_value AS course_level, field_code_value AS course_code, 
   	  field_coursetitle_value AS course_title, field_creditload_value AS credit_load, field_prerequisite_value AS prerequisite_codes,
-  	  field_prerequisite_codes_value AS requisites_codes,	field_semester_value AS course_semester, field_course_description_value AS course_description,
+  	  field_prerequisite_codes_value AS requisites_codes,	field_semester_value AS course_semester, field_course_description_value AS course_description, 
+  	  field_timetable_value AS timetable, 
   	  field_department_name_value AS dept_name, field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr,
   	  IFNULL(CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')), ' ') AS staff_name
   	  FROM {content_type_course} k
@@ -5177,20 +5198,41 @@ function get_UnAssigned_Courses($session, $department_nid = 0) {
 }
 
 
-function is_course_assignment_existing($course_nid, $semester, $session, $location, $instance_nid = 0) {
-  if ($instance_nid != 0) {
-    $result = db_query("SELECT nid FROM {content_type_course_instance} 
-  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d AND field_location_value = '%s' ", $course_nid, $semester, $session, $instance_nid, $location);
+function get_Max_Location_ID($course_nid, $semester, $session) {
+  $result = db_query("SELECT IFNULL(MAX(field_location_value), 0) num FROM {content_type_course_instance} 
+  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' ", $course_nid, $semester, $session);
+  return $row = db_fetch_object($result);
+}
+
+
+function is_course_assignment_existing($course_nid, $semester, $session, $timetable, $instance_nid = 0, $for_location_checks=false) {
+  if ($for_location_checks) {//no need to include timetable
+    if ($instance_nid != 0) { 
+      $result = db_query("SELECT nid FROM {content_type_course_instance} 
+  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d ", $course_nid, $semester, $session, $instance_nid);
+  	  
+    }
+    else { 
+      $result = db_query("SELECT nid FROM {content_type_course_instance} 
+  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' ", $course_nid, $semester, $session);
+    }
   	  
   }
-  else {
-    $result = db_query("SELECT nid FROM {content_type_course_instance} 
-  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s'  AND field_location_value = '%s' ", $course_nid, $semester, $session, $location);
+  else {//include timetable
+    if ($instance_nid != 0) {
+      $result = db_query("SELECT nid FROM {content_type_course_instance} 
+  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $instance_nid, $timetable);
+  	  
+    }
+    else {
+      $result = db_query("SELECT nid FROM {content_type_course_instance} 
+  	  WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s'  AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $timetable);
+    }
   }
   if (db_affected_rows() > 0) return true;
   
   return false;
-	
+  
 }
 
 
