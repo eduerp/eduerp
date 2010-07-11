@@ -132,7 +132,12 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-  
+  $items['staff/createmodifyprog']=array(
+    'title'=>'Create/Modify a Programme',
+    'page callback' => 'staff_create_edit_programme',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
   
   return $items; 
 }
@@ -1093,6 +1098,51 @@ function department($department_nid=0) {
   
   return  $titles;
 }
+
+
+function get_programmes($programme_nid = 0) {
+    $where = ""; $args = "";
+    
+    if ($programme_nid != 0) {
+      $where = " WHERE p.nid=%d ";
+      $args = "";
+      $args = $programme_nid;
+    }
+    $r = db_query("SELECT p.nid programme_nid, field_college_name_value faculty_name, d.nid department_nid, field_department_name_value AS department_name, 
+    	    field_programme_name_value programme_name,
+    	    field_duration_value duration, field_program_type_value type, field_max_duration_value max_duration,
+    	    field_min_credit_load_program_value	min_credit_load, field_programme_abbr_value programme_title
+    	    FROM {content_type_program} p 
+    	    INNER JOIN {content_type_department} d ON d.nid = p.field_department_id_nid
+    	    INNER JOIN {content_type_college} c ON c.nid = d.field_college_id_nid
+    	    ". $where ." 
+    	    ORDER BY faculty_name, department_name, programme_name ", $args);
+    
+   
+  return $r;
+}
+
+
+function programme($programme_nid=0) {
+  
+    
+    if($programme_nid !=0)
+      $r = db_query("SELECT nid, CONCAT(field_programme_name_value, ' (', field_programme_abbr_value, ')') AS value FROM { content_type_program} WHERE nid=%d ORDER BY field_programme_name_value", $programme_nid);
+    else
+      $r = db_query("SELECT nid, CONCAT(field_programme_name_value, ' (', field_programme_abbr_value, ')') AS value FROM { content_type_program} ORDER BY field_programme_name_value");
+    
+     
+    if (db_affected_rows($r) > 0) {
+      while ($f = db_fetch_object($r))
+        $programmes[$f->nid] = $f->value;
+    }
+    else
+      $programmes[] = strip_tags(Error_Types(106));
+  
+  return  $programmes;
+}
+
+
 function course($department_nid) {
   
   $course = array();
@@ -1106,6 +1156,22 @@ function course($department_nid) {
  
   return  $course;
 }
+
+/*
+function programme() {
+  
+  $r = db_query("SELECT nid, CONCAT(field_programme_name_value, ' (', field_programme_abbr_value, ')') AS value FROM {content_type_program} ORDER BY field_programme_abbr_value, field_programme_name_value");
+  if (db_affected_rows($r) > 0) {
+    while ($f = db_fetch_object($r))
+      $programmes[$f->nid] = $f->value;
+  }
+  else
+    $programmes[] = strip_tags(Error_Types(106));
+ 
+  return  $programmes;
+}
+*/
+
 function staff_begin_clearance_form(&$obj) {
   if (arg(2)) {
     //echo "<br>2 ".arg(2);
@@ -3527,7 +3593,7 @@ function semester_admin() {
   echo '<a href="' . url('staff/createeditcourse') . '">Creating or Modifying Courses for A Department</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo 'Creating or Modifying a University Programme';
+  echo '<a href="' . url('staff/createmodifyprog') . '">Creating or Modifying a University Programme</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/list') . '">List Staff and Assign Roles</a>';
@@ -3891,6 +3957,54 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
 }
 
 
+function staff_display_available_programmes() {
+  
+  $str  = "<b>Available Programme</b><br />";
+  
+  $programmes = get_programmes();
+  if (db_affected_rows($programmes) <= 0) {
+    $str .= Error_Types(106);
+  } 
+  else {
+    
+    $str .= "
+    <table width = '50%'>
+      <tr>
+        <td><b>#</b></td>
+        <td><b>Faculty Name</b></td>
+        <td><b>Department Name</b></td>
+        <td><b>Programme Name</b></td>
+        <td><b>Title</b></td>
+        <td><b>Duration</b></td>
+        <td><b>Max Duration</b></td>
+        <td><b>Min. Credit Load</b></td>
+        <td><b>Type</b></td>
+      </tr>";$i = 1;
+      
+      while($programme = db_fetch_object($programmes)){
+        if ($i%2){$rcolor = "#E5E5E5";} else {$rcolor = "#FFFFFF";}
+          $str .= "
+             <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+               <td>$i</td>
+               <td>". $programme->faculty_name ."</td>
+               <td>". $programme->department_name ."</td>
+               <td>". $programme->programme_name ."</td>
+               <td>". $programme->programme_title ."</td>
+               <td>". $programme->duration ."</td>
+               <td>". $programme->max_duration ."</td>
+               <td>". $programme->min_credit_load ."</td>
+               <td>". $programme->type ."</td>
+               
+             </tr>"; $i++;
+      }
+      $str .= "
+      </table>";
+  }
+  return $str;
+	
+}
+
+
 function staff_create_edit_faculty() {
   global $user;
   ob_start();
@@ -3905,7 +4019,7 @@ function staff_create_edit_faculty() {
   } 
   else {
     if (isset($_POST['faculty_nid']))
-      echo "<b>Edit Faculty</b> - Make any required changes to the faculty<br />";
+      echo "<b>Modify Faculty</b> - Make any required changes to the faculty<br />";
     else
       echo "<b>Create Faculty</b> - Fill the form below to create a new Faculty<br />";
       
@@ -3920,7 +4034,7 @@ function staff_create_edit_faculty() {
     } 
     else {
       //if edit was selected then do not show the rest of the page
-      echo "<b>Edit Faculty</b> - Select a Faculty to edit it<br />";
+      echo "<b>Modify Faculty</b> - Select a Faculty to edit it<br />";
       echo drupal_get_form('staff_update_faculty_form');
     }
     echo '<br /><hr /><br />';
@@ -3946,7 +4060,7 @@ function staff_create_edit_dept() {
   } 
   else {
       if (isset($_POST['department_nid']))
-        echo "<b>Edit Department</b> - Make any required changes to the Department<br />";
+        echo "<b>Modify Department</b> - Make any required changes to the Department<br />";
       else
         echo "<b>Create Department</b> - Fill the form below to create a new Department<br />";
       
@@ -3959,7 +4073,7 @@ function staff_create_edit_dept() {
     } 
     else {
       //if edit was selected then do not show the rest of the page
-      echo "<b>Edit Department</b> - Select a Department to edit it<br />";
+      echo "<b>Modify Department</b> - Select a Department to edit it<br />";
       echo drupal_get_form('staff_update_dept_form');
   
       echo '<br /><hr /><br />';
@@ -4025,7 +4139,7 @@ function staff_update_faculty_form() {
     '#options' => faculty(),
     '#title' => 'Faculty Name');
   $form['submit'] = array(
-    '#value' => 'Edit Faculty',
+    '#value' => 'Modify Faculty',
     '#type' => 'submit'
   );
   return $form;
@@ -4039,7 +4153,7 @@ function staff_update_dept_form() {
     '#options' => department(),
     '#title' => 'Department Name');
   $form['submit'] = array(
-    '#value' => 'Edit Department',
+    '#value' => 'Modify Department',
     '#type' => 'submit'
   );
   return $form;
@@ -4191,9 +4305,21 @@ function staff_create_edit_dept_form() {
 }
 
 
+function staff_update_faculty_form_validate($form, &$form_state) {
+  if ($form_state['values']['faculty_id'] == 0)
+    form_set_error('faculty_id', Error_Types(114));
+}
+
+
 function staff_update_faculty_form_submit($form, &$form_state) {
   
   $_SESSION['fac_nid'] = $form_state['values']['faculty_id'];
+}
+
+
+function staff_update_dept_form_validate($form, &$form_state) {
+  if ($form_state['values']['department_nid'] == 0)
+    form_set_error('department_nid', Error_Types(114));
 }
 
 
@@ -4215,14 +4341,7 @@ function staff_create_edit_course() {
   echo '<br /><hr /><br />';
   $authorizeCourseEdit = false;
   if (arg(2) && is_Valid_Department(arg(2))) {//the department is valid
-     //check if user has access to the department
-     /*
-     if (! user_has_access_to_department(arg(2))) {
-       drupal_set_message(Error_Types(112));
-       drupal_goto('staff/createeditcourse');
-     }
-     */
-    //make sure that the user has access to the department
+     
     //check that he can create/modify courses
     if (staff_has_eduerp_role($user->uid, arg(2), 0, array('Head of Department', 'Department Examination Officer'))) {//allow for one db call only
       $canCreateModify = true;
@@ -4237,7 +4356,6 @@ function staff_create_edit_course() {
         //allow for some easy navigation        
         $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse/". arg(2) ."'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;<b>Course Assignment</b></font><br /><br />";
         $navi .= '<br /><hr /><br />';
-        //$navi .= "<b>Edite Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
         echo $navi;
         echo staff_show_assign_course();
         $hideOthers=true;
@@ -4249,9 +4367,9 @@ function staff_create_edit_course() {
           //get the course info
           $course = db_fetch_object(get_Available_Courses(0,arg(3)));
           //allow for some easy navigation
-          $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href = './'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Edit Course: <b>". $course->course_code ."</b></font><br /><br />";
+          $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href = './'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Modify Course: <b>". $course->course_code ."</b></font><br /><br />";
           $navi .= '<br /><hr /><br />';
-          $navi .= "<b>Edite Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
+          $navi .= "<b>Modify Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
         }
         else {
           //allow for some easy navigation
@@ -4261,14 +4379,14 @@ function staff_create_edit_course() {
           ;
         }
       
-        if (isset($_POST['showFullForm']) || arg(3)) {
+        if (isset($_POST['showFullForm']) || arg(3)) {//expand the course creation form
       	  echo $navi;
           echo drupal_get_form('staff_create_course_form');
           $hideOthers = true;
           echo '<br /><hr /><br />';
           echo staff_display_available_courses($departmentInfo);
         } 
-        else {
+        else {//some small navigation
       	  echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
           echo '<br /><hr /><br />';
       	  echo "<b>Create Course</b> - Click to proceed with Course creation<br /><br />";
@@ -4276,7 +4394,7 @@ function staff_create_edit_course() {
         }
       }//end of else of if proceed with course assignment 
     }
-    else {//the user cannot create or edit records
+    else {//the user cannot create records
       echo Error_Types(104);
     }
     if (! $hideOthers) {//only show these things in none edit mode 
@@ -4287,13 +4405,12 @@ function staff_create_edit_course() {
         
         
       }
-      else {
+      else {//user cannot modify records
         echo Error_Types(105);
       }
-      //display form for Course assignment
+      //display form for proceed to Course assignment
       echo '<br /><hr /><br />';
-      echo '<b>Assign Course(s) to Lecturer(s)</b> - Click to proceed with assigning Course to Lecturer<br /><br />';
-      //echo staff_show_assign_course();
+      echo '<b>Assign Course(s) to Lecturer(s)</b> - Click to proceed with assigning Course to Lecturer<br /><br />';      
       echo drupal_get_form('staff_assign_course_proceed_form');
       
       //display existing courses in the departmens here
@@ -4319,6 +4436,8 @@ function staff_create_edit_course() {
   return ob_get_clean();
   
 }
+
+
 function staff_create_edit_course_select_dept_form($form_state) {
   
   $form['#title'] = 'Select Department';
@@ -4333,6 +4452,12 @@ function staff_create_edit_course_select_dept_form($form_state) {
   
   return $form;
   
+}
+
+
+function staff_create_edit_course_select_dept_form_validate($form, $form_state) {
+  if ($form_state['values']['department_nid'] == 0)
+    form_set_error('programme_nid', Error_Types(114));
 }
 
 
@@ -4408,6 +4533,20 @@ function is_Faculty_Name_Existing($faculty_name, $nid = 0) {
 }
 
 
+
+function is_Programme_Name_Existing($programme_name, $nid = 0) {
+  //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
+  if ($nid != 0)
+    $result = db_query("SELECT nid FROM {content_type_program} WHERE field_programme_name_value = '%s' AND nid != %d ", $programme_name, $nid);
+  else
+    $result = db_query("SELECT nid FROM {content_type_program} WHERE field_programme_name_value = '%s' ", $programme_name);
+  
+  if (db_fetch_object($result)) return true;
+  
+  return false;
+}
+
+
 function is_Faculty_Abbreviation_Existing($faculty_abbreviation, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -4451,8 +4590,7 @@ function Error_Types($num = 0) {
   $prifix1 = "Sorry, "; $prifix2 = "Warning! ";
   switch($num){
   case '101':
-    $msg = $prifix1 . 'Faculty Name already exists!<br />';
-    break;
+    $msg = $prifix1 . 'Faculty Name already exists!<br />'; break;
   case '102':
     $msg = $prifix1 . 'Faculty Abbreviation already exists!<br />'; break;
   case '103':
@@ -4460,11 +4598,11 @@ function Error_Types($num = 0) {
   case '104':
     $msg = $prifix1 . 'You do not have permission to Create new Records!<br />'; break;
   case '105':
-    $msg = $prifix1 . 'You do not have permission to Edit Records!<br />'; break;
+    $msg = $prifix1 . 'You do not have permission to Modify Records!<br />'; break;
   case '106':
     $msg = $prifix1 . 'No record(s) exists!<br />'; break;
   case '107':
-    $msg = $prifix1 . 'Must be Numeric value!<br />'; break;
+    $msg = $prifix1 . 'Numeric value expected!<br />'; break;
   case '108':
     $msg = $prifix1 . 'Course Name already exists!<br />'; break;
   case '109':
@@ -4479,17 +4617,31 @@ function Error_Types($num = 0) {
     $msg = $prifix1 . 'Course Assignment already exists for the Course, for the Timetable, for the Semester and for the Session!<br />'; break;
   case '114':
     $msg = $prifix1 . 'Invalid Data was supplied!<br />'; break;
+  case '115':
+    $msg = $prifix1 . 'Programme Name already exists!<br />'; break;
   default:
     $msg =  $prifix2 .'Something fatal occured!<br />';
   }
   return $msg;
 }
+
+
 function is_Valid_Department ($department_nid) {
   $result = db_query("SELECT nid FROM {content_type_department} WHERE nid =%d ", $department_nid);
   if (db_affected_rows($result) > 0 ) return true;
   
   return false;
 }
+
+
+function is_Valid_Programme ($programme_nid) {
+  $result = db_query("SELECT nid FROM {content_type_program} WHERE nid =%d ", $programme_nid);
+  if (db_affected_rows($result) > 0 ) return true;
+  
+  return false;
+}
+
+
 function is_valid_course($course_nid) {
   $result = db_query("SELECT nid FROM {content_type_course} WHERE nid =%d ", $course_nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -4497,6 +4649,8 @@ function is_valid_course($course_nid) {
   return false;
 
 }
+
+
 function is_valid_course_instance($instance_nid) {
   $result = db_query("SELECT nid FROM {content_type_course_instance} WHERE nid =%d ", $instance_nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -4805,12 +4959,19 @@ function staff_edit_course_form(){
       '#title' => 'Course Code');
     
     $form['submit'] = array(
-      '#value' => 'Edit Course',
+      '#value' => 'Modify Course',
       '#type' => 'submit'
     );
  
   
   return $form;
+}
+
+
+function staff_edit_course_form_validate($form, $form_state){
+  if ($form_state['values']['course_nid'] == 0)
+    form_set_error('course_nid', Error_Types(114));
+	
 }
 
 
@@ -4908,7 +5069,7 @@ function staff_show_assign_course() {
   if (! arg(3)) {
     //show edit form
     echo '<br /><hr /><br />';
-    echo "<b>Edit Course Assignment</b> ";
+    echo "<b>Modify Course Assignment</b> ";
     if ($canCreateModify)
       echo drupal_get_form('staff_edit_assigned_course_form');
     else
@@ -5119,7 +5280,7 @@ function staff_edit_assigned_course_form(){
       '#default_value' => 1
       );
  $form['submit'] = array(
-      '#value' => 'Edit Assigned Course',
+      '#value' => 'Modify Assigned Course',
       '#type' => 'submit'
     );
  
@@ -5130,7 +5291,7 @@ function staff_edit_assigned_course_form(){
 
 function staff_edit_assigned_course_form_validate($form, &$form_state) {
   if ($form_state['values']['course_instance_nid'] == '0') 
-    form_set_error('course_code', Error_Types(114));
+    form_set_error('course_instance_nid', Error_Types(114));
 }
 
 
@@ -5242,4 +5403,311 @@ function get_Course_Instance($course_instance_nid) {
   	  WHERE nid=%d ", $course_instance_nid);
   return $result;
 }
+
+
+function staff_create_edit_programme() {
+  global $user, $programmeInfo, $canCreateModify, $authorizeEdit;
+  $canCreateModify = false;
+  //$hideOthers = false;
+   
+  //if (isset($_SESSION['showFullForm'])) $_POST['showFullForm'] = 1;
+  //if (isset($_SESSION['showCourseAssignment'])) $_POST['showCourseAssignment'] = 1;
+  
+  ob_start();
+  echo '<br /><hr /><br />';
+  $authorizeEdit = false;
+  if ( staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner')))
+      $canCreateModify = true;
+
+  //check if user is trying to edit record
+  if (arg(2) && is_valid_programme(arg(2))) {//the programme is valid
+     
+    //get the programme info
+    $programmeInfo = db_fetch_object(get_programmes(arg(2)));
+    //check that he can create/modify 
+    //if (staff_has_eduerp_role($user->uid, $programmeInfo->department_nid, 0, array('Head of Department', 'Department Examination Officer'))) {//allow for one db call only
+    
+    
+ 
+    if ($canCreateModify) {
+      
+      //get the program info
+      //$programmeInfo = programme(arg(2));
+       
+      
+        
+         //if (arg(3) && is_valid_programme(arg(3)) && course_belongs_to_department(arg(2), arg(3))) {
+          $authorizeEdit = true;$hideOthers=true;
+          //get the course info
+          //$course = db_fetch_object(get_Available_Courses(0,arg(3)));
+          //allow for some easy navigation
+          $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createmodifyprog'>Create/Modify a University Programme</a>&nbsp; &raquo; &nbsp;Modify Programme: <b>". $programmeInfo->programme_name . ' ('. $programmeInfo->programme_title . ')' ."</b></font><br /><br />";
+          $navi .= '<br /><hr /><br />';
+          $navi .= "<b>Modify Programme</b> - Make any required changes to the Programme: <b>". $programmeInfo->programme_name . ' ('. $programmeInfo->programme_title . ')' ."</b><br />";
+        //}
+        /*
+        else {
+          //allow for some easy navigation
+          $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse/".arg(2)."'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Create New Course</font><br /><br />";
+          $navi .= '<br /><hr /><br />';
+          $navi .= "<b>Create New Course</b> - Please fill the form<br />";
+          ;
+        }
+      */
+      //  if (isset($_POST['showFullForm']) || arg(3)) {//expand the course creation form
+      	  echo $navi;
+          echo drupal_get_form('staff_create_programme_form');
+          $hideOthers = true;
+         // echo '<br /><hr /><br />';
+         // echo ;
+       // } 
+       // else {//some small navigation
+      //	  echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
+       //   echo '<br /><hr /><br />';
+      //	  echo "<b>Create Course</b> - Click to proceed with Course creation<br /><br />";
+      //    echo drupal_get_form('staff_create_course_mini_form');
+      //  }
+      
+    }
+    else {//the user cannot create records
+      echo Error_Types(104);
+    }
+    
+  } 
+  else {
+    
+    //allow for some easy navigation
+    echo "<font size = '1px'><a href = 'semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Programme</font><br /><br />";
+    echo '<br /><hr /><br /><br />';
+    
+    
+    echo "<b>Create Programme</b> - Please fill the form<br /><br />";
+    if ($canCreateModify)
+      echo drupal_get_form('staff_create_programme_form');
+    else
+      echo Error_Types(104);
+    
+    //if (! $hideOthers) {//only show these things in none edit mode 
+      echo '<br /><hr /><br />';
+      echo "<b>Modify Programme</b> - Select a Programme to modify it<br /><br />";
+      if ($canCreateModify)
+        echo drupal_get_form('staff_modify_programme_form');
+      else //user cannot modify records
+        echo Error_Types(105);
+      
+      
+      //display existing programmes here
+    echo '<br /><hr /><br />';
+     // echo staff_display_available_programmes($programmeInfo);
+    
+    //}
+    
+    //display existing programmes here
+    echo staff_display_available_programmes($programmeInfo);
+  }
+  
+  
+  //unset($_SESSION['showFullForm']);unset($_SESSION['showCourseAssignment']);
+  return ob_get_clean();
+  
+}
+
+
+function staff_create_programme_form() {
+  global $authorizeEdit, $programmeInfo;
+  
+ //i am now using global variables as u can see above. Before getting here (for editing), most checks have been done. lets not do anymore db calls hmmm..
+ 
+  if ($authorizeEdit) {
+    if (empty($_POST['programme_name'])) {//trying to edit
+      $programme = $programmeInfo;
+    }
+  }
+  
+  $form['#title'] = 'Create New Programme';
+  $form['programme_name'] = array(
+    '#title' => 'Programme Name',
+    '#type' => 'textfield',
+    '#size' => 100, 
+    '#required' => TRUE
+  );
+  if ($programme) $form['programme_name']['#default_value'] = $programme->programme_name;
+  
+  $form['programme_title'] = array(
+    '#type' => 'select',
+    '#title' => 'Programme Title',
+    '#options' => programme_titles(),
+    '#title' => 'Programme Title'
+  );
+  if ($programme) $form['programme_title']['#default_value'] = $programme->programme_title;
+  
+  $form['department_nid'] = array(
+    '#type' => 'select',
+    '#options' => department(), 
+    '#title' => 'Department');
+  if ($programme) $form['department_nid']['#default_value'] = $programme->department_nid;
+ 
+  $form['duration'] = array(
+    '#title' => 'Programme Duration - Duration in years of this programme e.g. 4',
+    '#type' => 'textfield',
+    '#size' => 2, 
+    '#required' => TRUE
+  );
+  if ($programme) $form['duration']['#value'] = $programme->duration;
+  
+  $form['max_duration'] = array(
+    '#title' => 'Maximum Duration - Maximum semesters a student may spend completing this programme e.g. 12',
+    '#type' => 'textfield',
+    '#size' => 2, 
+    '#required' => TRUE
+  );
+  if ($programme) $form['max_duration']['#value'] = $programme->max_duration;
+  
+  $form['min_credit_load'] = array(
+    '#title' => 'Minimum Credit Load - Minimum completed credit load before graduation',
+    '#type' => 'textfield',
+    '#size' => 4, 
+    '#required' => TRUE
+  );
+  if ($programme) $form['min_credit_load']['#value'] = $programme->min_credit_load;
+  
+  $form['programme_type'] = array(
+    '#type' => 'select',
+    '#options' => programme_types(),
+    '#title' => 'Programme Type',
+    '#required' => TRUE);
+  if ($programme) $form['type']['#default_value'] = $programme->type;
+  
+  
+  $form['submit'] = array(
+    '#value' => 'Create Course',
+    '#type' => 'submit'
+  );
+  if ($authorizeEdit) $form['submit']['#value'] = 'Update Programme';
+  
+  return $form;
+	
+}
+
+
+function staff_create_programme_form_validate($form, &$form_state) {
+  //make sure no duplicates
+  
+  if (arg(2)) {//validate EDIT
+    if (is_Programme_Name_Existing($form_state['values']['programme_name'], arg(2)))
+      form_set_error('programme_name', Error_Types(101));
+      
+  } 
+  else {//validate CREATE
+    if (is_Programme_Name_Existing($form_state['values']['programme_name']))
+      form_set_error('programme_name', Error_Types(115));
+  }
+  
+  //validate for int entry
+  $form_state['values']['duration'] = (int) $form_state['values']['duration'];
+  if(! is_int($form_state['values']['duration']) || $form_state['values']['duration'] <= 0) form_set_error('duration', Error_Types(107));
+  
+  $form_state['values']['max_duration'] = (int) $form_state['values']['max_duration'];
+  if(! is_int($form_state['values']['max_duration']) || $form_state['values']['max_duration'] <= 0) form_set_error('max_duration', Error_Types(107));
+  
+  $form_state['values']['min_credit_load'] = (int) $form_state['values']['min_credit_load'];
+  if(! is_int($form_state['values']['min_credit_load']) || $form_state['values']['min_credit_load'] <= 0) form_set_error('min_credit_load', Error_Types(107));
+  
+  
+}
+
+
+function staff_create_programme_form_submit($form, &$form_state) {
+  
+  if(arg(2)){
+    
+    $node =  node_load(arg(2));
+    $node->title                            = $form_state['values']['programme_name'];
+    $node->field_programme_name[0]['value'] = $form_state['values']['programme_name'];
+    $node->field_programme_abbr[0]['value'] = $form_state['values']['programme_title'];
+    $node->field_department_id[0]['nid']    = $form_state['values']['department_nid'];
+    $node->field_duration[0]['value']       = $form_state['values']['duration'];
+    $node->field_max_duration[0]['value']   = $form_state['values']['max_duration'];
+    $node->field_min_credit_load_program[0]['value'] = $form_state['values']['min_credit_load'];
+    $node->field_program_type[0]['value']   = $form_state['values']['programme_type'];
+    
+    node_save($node);
+    drupal_set_message($form_state['values']['programme_name'] .' Programme was updated!<br />');
+    
+    drupal_goto(drupal_goto("staff/createmodifyprog"));
+  }
+  else {
+    
+    // program CCK
+    $node = new stdClass();
+    $node->type                             = 'program';
+    $node->uid                              = 1;  // Admin
+    $node->status                           = 1;  // Published
+    $node->promote                          = 0;
+    $node->sticky                           = 0;
+    $node->comment                          = 0;
+    $node->title                            = $form_state['values']['programme_name'];
+    $node->field_programme_name[0]['value'] = $form_state['values']['programme_name'];
+    $node->field_programme_abbr[0]['value'] = $form_state['values']['programme_title'];
+    $node->field_department_id[0]['nid']    = $form_state['values']['department_nid'];
+    $node->field_duration[0]['value']       = $form_state['values']['duration'];
+    $node->field_max_duration[0]['value']   = $form_state['values']['max_duration'];
+    $node->field_min_credit_load_program[0]['value'] = $form_state['values']['min_credit_load'];
+    $node->field_program_type[0]['value']   = $form_state['values']['programme_type'];
+
+    drupal_set_message($form_state['values']['programme_name'] .' Programme was created!<br />');
+  }
+  
+  node_save($node);
+}
+
+
+function programme_titles() {
+  $names = array("B.Sc", "LLM", "B.A", "B.Tech.");
+  foreach ($names as $v) {
+    $title[$v] = $v;
+  	  
+  }
+  
+  return $title;
+	
+}
+
+
+function programme_types() {
+ return array(1 => 'Full Time Undergraduate', 'Part Time Undergraduate', 'Medicine Type Grades');
+}
+
+
+function staff_modify_programme_form(){
+  $form['#title'] = 'Update Programme';
+ 
+    
+    $form['programme_nid'] = array(
+      '#type' => 'select',
+      '#options' => programme(),
+      '#title' => 'Programme Name');
+    
+    $form['submit'] = array(
+      '#value' => 'Modify Programme',
+      '#type' => 'submit'
+    );
+ 
+  
+  return $form;
+}
+
+
+function staff_modify_programme_form_validate($form, &$form_state) {
+  if ($form_state['values']['programme_nid'] == 0)
+    form_set_error('programme_nid', Error_Types(114));
+}
+
+
+function staff_modify_programme_form_submit($form, &$form_state) {
+  drupal_goto("staff/createmodifyprog/" . $form_state['values']['programme_nid']);
+	
+}
+
+
 ?>
