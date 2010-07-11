@@ -4367,7 +4367,7 @@ function staff_create_edit_course() {
           //get the course info
           $course = db_fetch_object(get_Available_Courses(0,arg(3)));
           //allow for some easy navigation
-          $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '../'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href = './'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Modify Course: <b>". $course->course_code ."</b></font><br /><br />";
+          $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse/". arg(2) ."'>". $departmentInfo[arg(2)] ." Department</a>&nbsp; &raquo; &nbsp;Modify Course: <b>". $course->course_code ."</b></font><br /><br />";
           $navi .= '<br /><hr /><br />';
           $navi .= "<b>Modify Course</b> - Make any required changes to the Course: <b>". $course->course_code ."</b><br />";
         }
@@ -4422,7 +4422,7 @@ function staff_create_edit_course() {
   else {
     
     //allow for some easy navigation
-    echo "<font size = '1px'><a href = 'semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Course</font><br /><br />";
+    echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Course</font><br /><br />";
     echo "<b>Create/Modify Course</b> - To begin select a department and Click Continue<br />";
     echo drupal_get_form('staff_create_edit_course_select_dept_form');
   
@@ -5477,7 +5477,7 @@ function staff_create_edit_programme() {
   else {
     
     //allow for some easy navigation
-    echo "<font size = '1px'><a href = 'semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Programme</font><br /><br />";
+    echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Programme</font><br /><br />";
     echo '<br /><hr /><br /><br />';
     
     
