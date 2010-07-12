@@ -445,11 +445,11 @@ function current_roles_list_form($form_state) {
 function move_department_form($form_state) {
   $user_profile = new UserProfile($_SESSION['eduerpassignrole']->uid);
   if (empty($user_profile->profile_department_id)) {
-    $dept_text = 'Does not currently have a home department';
+    $dept_text = 'Does not currently have a department';
   }
   else {
     $department_array = department($user_profile->profile_department_id);
-    $dept_text = "Home department is {$department_array[$user_profile->profile_department_id]}";
+    $dept_text = "Department is currently: {$department_array[$user_profile->profile_department_id]}";
   }
 
   $form['top'] = array('#value' => "Move {$_SESSION['eduerpassignrole']->name} to a new department:<br />({$dept_text})");
