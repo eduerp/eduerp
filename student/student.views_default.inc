@@ -137,6 +137,36 @@ function student_views_default_views() {
     ),
   ));
   $handler->override_option('fields', array(
+    'uid' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'link_to_user' => 0,
+      'exclude' => 1,
+      'id' => 'uid',
+      'table' => 'users',
+      'field' => 'uid',
+      'relationship' => 'none',
+    ),
     'field_profile_department_id_nid' => array(
       'label' => 'Department',
       'alter' => array(
