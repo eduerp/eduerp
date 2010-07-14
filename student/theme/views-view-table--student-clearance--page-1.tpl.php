@@ -16,14 +16,18 @@
   <?php endif; ?>
   <tbody>
     <?php 
+      $new_rows = array();
+      foreach ($rows[0] as $field=>$content) {
+        if ($content != "")
+          $new_rows[$field] = $content;
+      }
       $count = 0;
       // Only taking the first record in $rows
-      foreach ($rows[0] as $field => $content): 
+      foreach ($new_rows as $field => $content): 
         // skip fields that have blank content
         if ($content == "") continue;
         $row_class = ($count % 2) ? "even " : "odd ";
         $row_class .= ($count == 0) ? "views-row-first " : "";
-        $row_class .= ($count == count($rows[0]) - 1) ? "views-row-last " : "";
         $row_class = trim($row_class);
     ?>
       <tr class="<?php echo $row_class; ?>">
@@ -34,6 +38,36 @@
         $count++;
       endforeach;
     ?>
+    <?php
+      $row_class = ($count % 2) ? "even" : "odd";
+    ?>
+      <tr class="<?php echo $row_class; ?>">
+        <th style="text-align:right">
+          <input type="checkbox" name="verify" value="1" />
+        </th>
+        <td>Verify Result</td>
+      </tr>
+    <?php
+      $row_class = ($row_class == "even") ? "odd" : "even";
+    ?>
+      <tr class="<?php echo $row_class; ?>">
+        <th style="text-align:right">
+          <input type="checkbox" name="clearance" value="1" />
+        </th>
+        <td>Clear Student</td>
+      </tr>
+    <?php
+      $row_class = ($row_class == "even") ? "odd" : "even";
+    ?>
+      <tr class="<?php echo $row_class; ?> view-row-last">
+        <th style="text-align:right">
+          &nbsp;
+        </th>
+        <td>
+          <input type="hidden" name="student_uid" value="STUDENTID" />
+          <input type="submit" value="Submit" />
+        </td>
+      </tr>
   </tbody>
 </table>
 

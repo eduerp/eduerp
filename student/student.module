@@ -649,6 +649,18 @@ function student_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+/**
+ * Implementing the hook_views_post_render to mutate the student_clearance
+ * so as to enable appending the clearance form
+ */
+function student_views_post_render(&$view, &$output, &$cache) {
+  if ($view->name == "student_clearance") {
+    // view mutation
+    $student_id = $view->result[0]->users_uid;
+    $output = str_replace("STUDENTID", $student_id, $output);
+  }
+}
+
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'student_profile') {
     switch ($op) {
