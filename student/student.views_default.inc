@@ -1423,7 +1423,7 @@ function student_views_default_views() {
   $handler->override_option('title', 'Student Clearance');
   $handler->override_option('use_ajax', TRUE);
   $handler->override_option('items_per_page', 1);
-  $handler->override_option('style_plugin', 'grid');
+  $handler->override_option('style_plugin', 'table');
   $handler = $view->new_display('page', 'Page', 'page_1');
   $handler->override_option('path', 'student/clearance');
   $handler->override_option('menu', array(
