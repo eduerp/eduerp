@@ -509,7 +509,9 @@ function student_field_formatter_info() {
 }
 
 function student_theme() {
-  return array(
+  $theme_path = drupal_get_path('module', 'student') . DIRECTORY_SEPARATOR . 'theme';
+
+  $custom = array(
     'student_field' => array(
       'arguments' => array('value' => NULL, 'formatter' => NULL),
     ),
@@ -517,6 +519,38 @@ function student_theme() {
       'arguments' => array('element' => NULL),
     ),
   );
+
+  $custom = array_merge($custom, _module_views_templates($theme_path));
+  return $custom;
+}
+
+/**
+ * helper function to expose the templates in the module's theme folder for rendering
+ * views
+ */
+function _module_views_templates($templates_path) {
+  $templates = array();
+  $views_templates_types = views_theme();
+  $files = file_scan_directory($templates_path, '^views.*\.tpl\.php$');
+ 
+  foreach ($files as $file) {
+    $template_name = str_replace('.tpl.php', '', $file->basename);
+    $template_info = explode('--', $template_name);
+    $views_hook = str_replace('-', '_', $template_info[0]);
+    $file_path = str_replace('/'. $file->basename, '', $file->filename);
+    $templates[str_replace('-', '_', $template_name)] = array(
+      'arguments' => $views_templates_types[$views_hook]['arguments'],
+      'path' => $file_path,
+      'template' => $template_name,
+      'original hook' => $views_hook,
+      'preprocess functions' => array(
+        'template_preprocess',
+        'template_preprocess_'. $views_hook,
+      ),
+    );
+  }
+ 
+  return $templates;
 }
 
 function theme_student_formatter_default($element) {
@@ -612,6 +646,18 @@ function student_form_alter(&$form, $form_state, $form_id) {
   // change the button title to display "Search" instead of "Apply" (improves user experience)
   if ($form_state['view']->name == "student_clearance") {
     $form['submit']['#value'] = t('Search');
+  }
+}
+
+/**
+ * Implementing the hook_views_post_render to mutate the student_clearance
+ * so as to enable appending the clearance form
+ */
+function student_views_post_render(&$view, &$output, &$cache) {
+  if ($view->name == "student_clearance") {
+    // view mutation
+    $student_id = $view->result[0]->users_uid;
+    $output = str_replace("STUDENTID", $student_id, $output);
   }
 }
 
