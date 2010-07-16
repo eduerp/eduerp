@@ -3955,7 +3955,7 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
         if ($i%2){$rcolor = "#E5E5E5";} else {$rcolor = "#FFFFFF";}
           $str .= "
              <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-               <td>$i</td>";
+               <td>". $i++ ."</td>";
                if ($forassigned)
                  $str .="
                <td>". $course->staff_name ."</td>";
@@ -3973,7 +3973,7 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
                <td>". $course->timetable ."</td>";
                $str .="
 
-             </tr>"; $i++;
+             </tr>";
       }
       $str .= "
       </table>";
@@ -4011,7 +4011,7 @@ function staff_display_available_programmes() {
         if ($i%2){$rcolor = "#E5E5E5";} else {$rcolor = "#FFFFFF";}
           $str .= "
              <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-               <td>$i</td>
+               <td>". $i++ ."</td>
                <td>". $programme->faculty_name ."</td>
                <td>". $programme->department_name ."</td>
                <td>". $programme->programme_name ."</td>
@@ -4021,7 +4021,7 @@ function staff_display_available_programmes() {
                <td>". $programme->min_credit_load ."</td>
                <td>". $programme->type ."</td>
 
-             </tr>"; $i++;
+             </tr>";
       }
       $str .= "
       </table>";
@@ -4505,7 +4505,7 @@ function staff_display_available_faculties() {
       if ($i%2)$rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
       $str .= "
       <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-        <td>$i</td>
+        <td>". $i++ ."</td>
         <td>". $v['faculty_name'] ."</td>
         <td>". $v['faculty_abbr'] ."</td>
       </tr>"; $i++;
@@ -4531,11 +4531,11 @@ function staff_display_available_departments() {
       if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
         $str .= "
          <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-           <td>$i</td>
+           <td>". $i++ ."</td>
            <td>". $v['faculty_name'] ."</td>
            <td>". $v['faculty_abbr'] ."</td>
            <td>". $v['dept_name'] ."</td>
-         </tr>"; $i++;
+         </tr>";
     	}
 
   //}
@@ -6353,7 +6353,7 @@ function get_semester_from_programme_level_semester($programme_nid) {
 function staff_specify_course_proceed_form() {
   $form['#title'] = 'Start Specifying Courses';
   
-  $form['programme_nid'] = array(
+  $form['sprogramme_nid'] = array(
       '#type' => 'select',
       '#options' => programme(),
       '#title' => 'Programme Name');
@@ -6372,14 +6372,14 @@ function staff_specify_course_proceed_form() {
 
 
 function staff_specify_course_proceed_form_submit($form, &$form_state) {
-  drupal_goto("staff/specifycourse/" . $form_state['values']['programme_nid']);
+  drupal_goto("staff/specifycourse/" . $form_state['values']['sprogramme_nid']);
 }
 
 
 function staff_verify_course_proceed_form() {
   $form['#title'] = 'Start Verifying Courses';
   
-  $form['programme_nid'] = array(
+  $form['vprogramme_nid'] = array(
       '#type' => 'select',
       '#options' => programme(),
       '#title' => 'Programme Name');
@@ -6405,7 +6405,7 @@ function staff_verify_course_proceed_form() {
 
 function staff_verify_course_proceed_form_submit($form, &$form_state) {
   $_SESSION['semester'] = $form_state['values']['semester'];
-  drupal_goto("staff/verifycourse/" . $form_state['values']['programme_nid']);
+  drupal_goto("staff/verifycourse/" . $form_state['values']['vprogramme_nid']);
   
 }
 
@@ -6453,13 +6453,13 @@ function course_specify_list($programme_nid) {
   	  $html .= "
   	<th colspan=2 align='center'>Actions</th>";
   	$html .= "
-    </tr>";$i=0;
+    </tr>";$i=1;
   while ($f = db_fetch_object($r)) {
     if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
-    $course_type = array('1' => 'Core', 2 => 'Elective');$i++;
+    $course_type = array('1' => 'Core', 2 => 'Elective');
     $html .="
     <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-      <td>". $i ."</td>
+      <td>". $i++ ."</td>
       <td>". $f->level_name ."</td>
       <td>". $f->semester ."</td>
       <td>". $f->course_title ."</td>
@@ -6527,13 +6527,13 @@ function historical_course_list($programme_nid) {
   	<th>Lecturer</th>
   	<th>Prerequisites Codes</th>
   	<th>Prerequisites Description</th>
-    </tr>";$i=0;
+    </tr>";$i=1;
   while ($f = db_fetch_object($r)) {
     if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
-    $course_type = array('1' => 'Core', 2 => 'Elective');$i++;
+    $course_type = array('1' => 'Core', 2 => 'Elective');
     $html .="
     <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-      <td>". $i ."</td>";
+      <td>". $i++ ."</td>";
   	if ($canCreateModify)
   	  $html .= "
       <td><input type='button' class='delete_btn' value='Make Available' onClick=\"make_available($f->program_course_id);\" /></td>";
