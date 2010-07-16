@@ -190,7 +190,7 @@ function _staff_ajax() {
       break;
     case 'deleteassignprog':
       $allocation_id = arg(3);
-      //$_SESSION['showCourseAssignment'] = 1;
+      //$_SESSION['eduerp_showCourseAssignment'] = 1;
       // Delete this allocation
       $sql = "UPDATE {program_course} SET historical=1 WHERE program_course_id=%d";
       $rs = db_query($sql, $allocation_id);
@@ -200,10 +200,10 @@ function _staff_ajax() {
       break;
     case 'modifyassignprog':
       //$allocation_id = arg(3);
-      $_SESSION['showCourseAssignment'] = 1;
+      $_SESSION['eduerp_showCourseAssignment'] = 1;
       
       
-      //$_SESSION['program_course'] = $rs;
+      
       
       break;
     case 'makeavailable':
@@ -1086,7 +1086,7 @@ function staff_course_assign_form1_submit(&$form, &$state) {
 
 function lecturer() {
   global $user_profile;
-  echo $user_profile->profile_department_id;
+  //echo $user_profile->profile_department_id;
   $titles[''] = 'Select';
   $r = db_query("SELECT er.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
     FROM {eduerp_roles} er
@@ -3898,6 +3898,7 @@ function get_Available_Courses($department_nid = 0, $course_nid = 0) {
 function staff_display_available_courses($departmentInfo = array(), $type = 0) {
   //$type; 0=available course, 1=assigned courses, 2=unassigned courses
   $department_nid = 0;$forassigned=false;
+  
   if (sizeof($departmentInfo)) {
     $key = array_keys($departmentInfo);
     $department_nid = $key[0];
@@ -3907,6 +3908,8 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
       $courses = get_Assigned_Courses(variable_get('eduerp_current_session', ''), $department_nid); break;
     case '2':
       $courses = get_UnAssigned_Courses(variable_get('eduerp_current_session', ''), $department_nid); break;
+    case '3':
+      $courses = get_missing_courses(variable_get('eduerp_current_session', ''), $department_nid); break;
     default:
       $courses = get_Available_Courses($department_nid);
   }
@@ -3917,6 +3920,8 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
     }
     elseif ($type == 2)
       $str  = "<b>UnAssigned Courses for ". $departmentInfo[$department_nid] ." Department</b> for <b>". variable_get('eduerp_current_session', '') ."</b> Session<br />";
+    elseif ($type == 3)
+      $str  = "<b>Missing Courses for ". $departmentInfo[$department_nid] ." Department</b> for <b>". variable_get('eduerp_current_session', '') ."</b> Session<br />";
     else
       $str  = "<b>Available Courses for ". $departmentInfo[$department_nid] ." Department</b><br />";
   }
@@ -3929,25 +3934,27 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
   }
   else {
 
+  $str .= "<div id='assigned_courses'>";
     $str .= "
-    <table width = '50%'>
+    <table border=1>
       <tr>
-        <td><b>#</b></td>";
+        <th><b>#</b></th>";
         if ($forassigned)
           $str .="
-          <td><b>Staff Name</b></td>";
+          <th><b>Staff Name</b></th>";
           $str .="
-        <td><b>Course Level</b></td>
-        <td><b>Course Code</b></td>
-        <td><b>Course Title</b></td>
-        <td><b>Credit load</b></td>
-        <td><b>Prerequisite Codes</b></td>
-        <td><b>Prerequisite Description</b></td>
-        <td><b>Course Description</b></td>
-        <td><b>Course Semester</b></td>";
+        <th><b>Programme Name</b></th>
+        <th><b>Course Level</b></th>
+        <th><b>Course Code</b></th>
+        <th><b>Course Title</b></th>
+        <th><b>Credit load</b></th>
+        <th><b>Prerequisite Codes</b></th>
+        <th><b>Prerequisite Description</b></th>
+        <th><b>Course Description</b></th>
+        <th><b>Course Semester</b></th>";
         if ($forassigned)
           $str .="
-          <td><b>Time Table</b></td>";
+          <th><b>Time Table</b></th>";
           $str .="
       </tr>";$i = 1;
 
@@ -3960,6 +3967,7 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
                  $str .="
                <td>". $course->staff_name ."</td>";
                $str .="
+               <td>". $course->programme_name ."</td>
                <td>". $course->course_level ."</td>
                <td>". $course->course_code ."</td>
                <td>". $course->course_title ."</td>
@@ -3978,6 +3986,7 @@ function staff_display_available_courses($departmentInfo = array(), $type = 0) {
       $str .= "
       </table>";
   }
+  $str .= "</div>";
   return $str;
 
 }
@@ -4115,7 +4124,7 @@ function staff_create_edit_dept() {
 
 function staff_create_edit_faculty_form() {
 
- if (isset($_SESSION['fac_nid']))$_POST['faculty_nid'] = $_SESSION['fac_nid'];
+ if (isset($_SESSION['eduerp_fac_nid']))$_POST['faculty_nid'] = $_SESSION['eduerp_fac_nid'];
 
   if (isset($_POST['faculty_nid'])) {
     if (empty($_POST['faculty_name'])) {
@@ -4215,7 +4224,7 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
     $node->field_college_abbreviation[0]['value'] = $form_state['values']['faculty_abbreviation'];
 
     drupal_set_message($form_state['values']['faculty_name'] . ' Faculty was updated!<br />');
-    unset($_SESSION['fac_nid']);
+    unset($_SESSION['eduerp_fac_nid']);
   }
   else {
     $node = new stdClass();
@@ -4262,7 +4271,7 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
     $node->field_college_id[0]['nid']        	= $form_state['values']['faculty_nid'];
 
     drupal_set_message($form_state['values']['department_name'] . ' Department was updated!<br />');
-    unset($_SESSION['dept_nid']);
+    unset($_SESSION['eduerp_dept_nid']);
   }
   else {
     $node = new stdClass();
@@ -4289,7 +4298,7 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
 
 function staff_create_edit_dept_form() {
 
-  if (isset($_SESSION['dept_nid']))$_POST['department_nid'] = $_SESSION['dept_nid'];
+  if (isset($_SESSION['eduerp_dept_nid']))$_POST['department_nid'] = $_SESSION['eduerp_dept_nid'];
   if (isset($_POST['department_nid'])) {
     if (empty($_POST['department_name'])) {
       $result = db_query('SELECT field_college_id_nid AS college_nid, field_department_name_value AS dept_name FROM {content_type_department} WHERE nid = %d', $_POST['department_nid']);
@@ -4339,7 +4348,7 @@ function staff_update_faculty_form_validate($form, &$form_state) {
 
 function staff_update_faculty_form_submit($form, &$form_state) {
 
-  $_SESSION['fac_nid'] = $form_state['values']['faculty_id'];
+  $_SESSION['eduerp_fac_nid'] = $form_state['values']['faculty_id'];
 }
 
 
@@ -4351,7 +4360,7 @@ function staff_update_dept_form_validate($form, &$form_state) {
 
 function staff_update_dept_form_submit($form, &$form_state) {
 
-  $_SESSION['dept_nid'] = $form_state['values']['department_nid'];
+  $_SESSION['eduerp_dept_nid'] = $form_state['values']['department_nid'];
 
 }
 
@@ -4360,8 +4369,8 @@ function staff_create_edit_course() {
   global $user, $departmentInfo, $canCreateModify;
   $canCreateModify = false;$hideOthers = false;
 
-  if (isset($_SESSION['showFullForm'])) $_POST['showFullForm'] = 1;
-  if (isset($_SESSION['showCourseAssignment'])) $_POST['showCourseAssignment'] = 1;
+  if (isset($_SESSION['eduerp_showFullForm'])) $_POST['showFullForm'] = 1;
+  if (isset($_SESSION['eduerp_showCourseAssignment'])) $_POST['showCourseAssignment'] = 1;
 
   ob_start();
   echo '<br /><hr /><br />';
@@ -4436,7 +4445,7 @@ function staff_create_edit_course() {
       }
       //display form for proceed to Course assignment
       echo '<br /><hr /><br />';
-      echo '<b>Assign Course(s) to Lecturer(s)</b> - Click to proceed with assigning Course to Lecturer<br /><br />';
+      echo '<b>Specify Course(s) to Lecturer(s)</b> - Click to proceed with specifying Course to Lecturer<br /><br />';
       echo drupal_get_form('staff_assign_course_proceed_form');
 
       //display existing courses in the departmens here
@@ -4458,7 +4467,7 @@ function staff_create_edit_course() {
   }
 
 
-  unset($_SESSION['showFullForm']);unset($_SESSION['showCourseAssignment']);
+  unset($_SESSION['eduerp_showFullForm']);unset($_SESSION['eduerp_showCourseAssignment']);
   return ob_get_clean();
 
 }
@@ -4518,13 +4527,14 @@ function staff_display_available_faculties() {
 
 function staff_display_available_departments() {
   $str = "
+  <div id='assigned_courses'>
   <b>Available Departments</b><br />
-  <table width = '50%'>
+  <table border=1>
     <tr>
-      <td><b>#</b></td>
-      <td><b>Faculty Name</b></td>
-      <td><b>Faculty Abbreviation</b></td>
-      <td><b>Department Name</b></td>
+      <th><b>#</b></th>
+      <th><b>Faculty Name</b></th>
+      <th><b>Faculty Abbreviation</b></th>
+      <th><b>Department Name</b></th>
     </tr>";$i = 1;
     $faculties = get_departments();
     foreach ($faculties as $v){
@@ -4540,7 +4550,8 @@ function staff_display_available_departments() {
 
   //}
   $str .= "
-  </table>";
+  </table>
+  </div>";
   return $str;
 
 }
@@ -4922,7 +4933,7 @@ function staff_create_course_form_validate($form, $form_state) {
 
 function staff_create_course_form_submit($form, $form_state){
   //if(isset($form_state['values']['course_nid']) && is_numeric($form_state['values']['course_nid'])){//the user is trying to edit a given faculty
-  if(! arg(3)) $_SESSION['showFullForm'] = 1;
+  if(! arg(3)) $_SESSION['eduerp_showFullForm'] = 1;
   if(arg(3)){
 
     $node =  node_load(arg(3));
@@ -5043,7 +5054,7 @@ function staff_create_course_mini_form() {
 
 function staff_create_course_mini_form_submit($form, &$form_state) {
 
-  $_SESSION['showFullForm'] = 1;
+  $_SESSION['eduerp_showFullForm'] = 1;
 }
 
 
@@ -5096,6 +5107,9 @@ function staff_show_assign_course() {
     else
       echo Error_Types(105);
 
+    //display missing courses in the department here
+    echo '<br /><hr /><br />';
+    echo staff_display_available_courses($departmentInfo, 3);
 
     //display unassigned existing courses in the department here
     echo '<br /><hr /><br />';
@@ -5182,10 +5196,10 @@ function staff_assign_course_form() {
 
 
 function staff_assign_course_proceed_form() {
-  $form['#title'] = 'Start Course Assignment';
+  $form['#title'] = 'Start Specifying Course(s)';
 
   $form['submit'] = array(
-    '#value' => 'Start Course Assignment',
+    '#value' => 'Start Specifying Course(s)',
     '#type' => 'submit'
   );
 
@@ -5195,7 +5209,7 @@ function staff_assign_course_proceed_form() {
 
 
 function staff_assign_course_proceed_form_submit() {
-  $_SESSION['showCourseAssignment'] = 1;
+  $_SESSION['eduerp_showCourseAssignment'] = 1;
 
 }
 
@@ -5218,10 +5232,10 @@ function staff_assign_course_form_validate($form, &$form_state) {
 
 
 function staff_assign_course_form_submit($form, &$form_state) {
-  $_SESSION['showCourseAssignment'] = 1;
+  $_SESSION['eduerp_showCourseAssignment'] = 1;
 
   $course = db_fetch_object(get_Available_Courses(0,$form_state['values']['course_nid']));
-  //if(! arg(3)) $_SESSION['showFullForm'] = 1;
+  //if(! arg(3)) $_SESSION['eduerp_showFullForm'] = 1;
   if(arg(3)){
 
     $node =  node_load(arg(3));
@@ -5314,7 +5328,7 @@ function staff_edit_assigned_course_form_validate($form, &$form_state) {
 
 
 function staff_edit_assigned_course_form_submit($form, $form_state) {
-  $_SESSION['showCourseAssignment'] = 1;
+  $_SESSION['eduerp_showCourseAssignment'] = 1;
   drupal_goto(drupal_goto("staff/createeditcourse/" . arg(2) .'/'. $form_state['values']['course_instance_nid']));
 }
 
@@ -5331,18 +5345,52 @@ function get_Assigned_Courses($session, $department_nid = 0) {
   $r = db_query("SELECT i.nid nid, field_level_value AS course_level, field_code_value AS course_code,
   	  field_coursetitle_value AS course_title, field_creditload_value AS credit_load, field_prerequisite_value AS prerequisite_desc,
   	  field_prerequisite_codes_value AS prerequisite_codes,	field_semester_value AS course_semester, field_course_description_value AS course_description,
-  	  field_timetable_value AS timetable,
+  	  field_timetable_value AS timetable, field_programme_name_value programme_name,
   	  field_department_name_value AS dept_name, field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr,
   	  IFNULL(CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')), ' ') AS staff_name
   	  FROM {content_type_course} k
   	  INNER JOIN {content_type_department} d ON k.field_department_nid_nid = d.nid
   	  INNER JOIN {content_type_college} c ON d.field_college_id_nid = c.nid
+  	  INNER JOIN {content_type_program} AS p ON p.field_department_id_nid = d.nid
   	  INNER JOIN {content_type_course_instance} i ON k.nid = i.field_course_id_nid
   	  LEFT JOIN {node} npro ON i.field_lecturer_uid=npro.uid AND npro.type='profile'
           LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
   	  ". $where ."
-  	  ORDER BY field_college_name_value, dept_name, course_level, course_code ", $arg);
+  	  ORDER BY field_college_name_value, dept_name, programme_name, course_level, course_code ", $arg);
   return $r;
+}
+
+
+function get_missing_courses($session, $department_nid) {
+  $sql = "SELECT DISTINCT
+        pc.level course_level,
+        c.field_code_value course_code,
+        p.field_programme_name_value programme_name,
+        d.field_department_name_value dept_name,
+        co.field_college_name_value,
+        
+        field_creditload_value AS credit_load,
+        field_prerequisite_codes_value AS prerequisite_codes,
+        field_prerequisite_value AS prerequisite_desc,
+        pc.semester course_semester,
+        field_course_description_value AS course_description,
+        field_coursetitle_value AS course_title
+        
+      FROM {program_course} pc
+      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
+      LEFT JOIN {content_type_course_instance} ci
+      ON
+        c.nid=ci.field_course_id_nid AND
+        pc.semester=ci.field_semester_name_value AND
+        ci.field_sess_name_value='%s' AND
+        ci.field_semester_name_value='%s'
+      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
+      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
+      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
+      WHERE d.nid=%d
+      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
+    $result = db_query($sql, $session,variable_get('eduerp_current_semester', ''), $department_nid);
+  return $result;
 }
 
 
@@ -5363,12 +5411,13 @@ function get_unassigned_courses($session, $department_nid = 0) {
   SELECT k.nid nid, field_level_value AS course_level, field_code_value AS course_code, field_coursetitle_value AS course_title,
   	  field_creditload_value AS credit_load, field_prerequisite_value AS prerequisite_desc, field_prerequisite_codes_value AS prerequisite_codes,
   	  field_semester_value AS course_semester, field_course_description_value AS course_description, field_department_name_value AS dept_name,
-  	  field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr
+  	  field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr, field_programme_name_value programme_name
   	  FROM {content_type_course} AS k
   	  INNER JOIN {content_type_department} AS d ON k.field_department_nid_nid = d.nid
   	  INNER JOIN {content_type_college} AS c ON d.field_college_id_nid = c.nid
+  	  INNER JOIN {content_type_program} AS p ON p.field_department_id_nid = d.nid
   	  ". $where ."
-  	  ORDER BY field_college_name_value, dept_name, course_level, course_code ";
+  	  ORDER BY field_college_name_value, dept_name, programme_name, course_level, course_code ";
 
 
   $r = db_query($sql);
@@ -5428,8 +5477,8 @@ function staff_create_edit_programme() {
   $canCreateModify = false;
   //$hideOthers = false;
   
-  if (isset($_SESSION['showOn'])) $_POST['showOn'] = 1;
-  if (isset($_SESSION['showCourseAssignment'])) $_POST['showCourseAssignment'] = 1;
+  if (isset($_SESSION['eduerp_showOn'])) $_POST['showOn'] = 1;
+  if (isset($_SESSION['eduerp_showCourseAssignment'])) $_POST['showCourseAssignment'] = 1;
   ob_start();
   echo '<br /><hr /><br />';
   $authorizeEdit = false;
@@ -5465,8 +5514,8 @@ function staff_create_edit_programme() {
         echo drupal_get_form('staff_create_programme_back_form') . "<br />";
         echo "<b>Modify Programme continued...Step 2 of 2</b> - Please make all required changes<br /><br />";
         if (isset($_POST['showOn'])) {
-          echo "Programme Name: <b>" . $_SESSION['bkinfo']->programme_name . "</b><br /><br />";
-          echo "Programme Duration: <b>" . $_SESSION['bkinfo']->duration . "</b><br />";
+          echo "Programme Name: <b>" . $_SESSION['eduerp_bkinfo']->programme_name . "</b><br /><br />";
+          echo "Programme Duration: <b>" . $_SESSION['eduerp_bkinfo']->duration . "</b><br />";
         }
         echo drupal_get_form('staff_create_programme_form2') . "<br />";
         echo drupal_get_form('staff_create_programme_back_form') . "<br />";
@@ -5488,8 +5537,8 @@ function staff_create_edit_programme() {
       echo drupal_get_form('staff_create_programme_back_form') . "<br />";
       echo "<b>Create Programme continued...Step 2 of 2</b> - Please fill the form<br /><br />";
       if (isset($_POST['showOn'])) {
-        echo "Programme Name: <b>" . $_SESSION['bkinfo']->programme_name . "</b><br /><br />";
-        echo "Programme Duration: <b>" . $_SESSION['bkinfo']->duration . "</b><br />";
+        echo "Programme Name: <b>" . $_SESSION['eduerp_bkinfo']->programme_name . "</b><br /><br />";
+        echo "Programme Duration: <b>" . $_SESSION['eduerp_bkinfo']->duration . "</b><br />";
       	   	
       }
       echo drupal_get_form('staff_create_programme_form2') . "<br />";
@@ -5516,7 +5565,7 @@ function staff_create_edit_programme() {
   }
 
   
-  unset($_SESSION['showOn']); unset($_SESSION['goBack']); unset($_SESSION['Uniprogramme']);
+  unset($_SESSION['eduerp_showOn']); unset($_SESSION['eduerp_goBack']);
   
   return ob_get_clean();
 
@@ -5527,15 +5576,15 @@ function staff_create_programme_form() {
   global $authorizeEdit, $programmeInfo;
   
  //i am now using global variables as u can see above. Before getting here (for editing), most checks have been done. lets not do anymore db calls hmmm..
- if (isset($_SESSION['goBack']) && $_SESSION['bkinfo']) {$programme = $_SESSION['bkinfo']; }
+ if (isset($_SESSION['eduerp_goBack']) && $_SESSION['eduerp_bkinfo']) {$programme = $_SESSION['eduerp_bkinfo']; }
   
   if ($authorizeEdit) {
     if (empty($_POST['programme_name'])) {//trying to edit
       //check if data exists in program_level_semester
-      if($_SESSION['bkinfo']) 
-        $programme = $_SESSION['bkinfo'];
+      if($_SESSION['eduerp_bkinfo']) 
+        $programme = $_SESSION['eduerp_bkinfo'];
       else
-        $programme = $programmeInfo; //$_SESSION['bkinfo']; //$programmeInfo;
+        $programme = $programmeInfo; //$_SESSION['eduerp_bkinfo']; //$programmeInfo;
       //ok fine we need to get the previous start_level that was set
       $result = db_query("SELECT * FROM {program_level_semester} WHERE programme_id = %d ORDER BY level ",arg(2));
       if (db_affected_rows($result) > 0) {
@@ -5562,9 +5611,16 @@ function staff_create_programme_form() {
   );
   if ($programme) $form['programme_abbr']['#default_value'] = $programme->programme_abbr;
 
+  //during modification, department_nid should not be changed so lets deal with it
+  if ($programme) {//for modification
+    $id = $programme->department_nid;
+  }
+  else {
+    $id = 0;
+  }
   $form['department_nid'] = array(
     '#type' => 'select',
-    '#options' => department(),
+    '#options' => department($id),
     '#title' => 'Department');
   if ($programme) $form['department_nid']['#default_value'] = $programme->department_nid;
 
@@ -5601,7 +5657,7 @@ function staff_create_programme_form() {
 
   $form['start_level'] = array(
     '#type' => 'select',
-    '#options' => array(1 => '1', 100 => '100'),
+    '#options' => array(100 => '100', 1 => '1'),
     '#title' => 'Start Level',
     '#required' => TRUE);
   if ($programme) $form['start_level']['#default_value'] = $programme->start_level;
@@ -5620,7 +5676,7 @@ function staff_create_programme_form() {
 
 function staff_create_programme_form_validate($form, &$form_state) {
   global $user;
-  unset($_SESSION['bkinfo']);
+  unset($_SESSION['eduerp_bkinfo']);
   //make sure he can create/modify
   if (staff_has_eduerp_role($user->uid, $form_state['values']['department_nid'], 0, array('Head of Department', 'Department Examination Officer'))) {
       
@@ -5660,11 +5716,11 @@ function staff_create_programme_form_validate($form, &$form_state) {
 function staff_create_programme_form_submit($form, &$form_state) {
 
   //the form has been validated. put all in a session variable and show the next form
-  $_SESSION['showOn'] = 1; $_POST['showOn'] = 1;
+  $_SESSION['eduerp_showOn'] = 1; $_POST['showOn'] = 1;
   foreach ($form_state['values'] as $k  => $v) 
     $bkinfo->{$k} = $v;
   
-  $_SESSION['bkinfo'] = $bkinfo;
+  $_SESSION['eduerp_bkinfo'] = $bkinfo;
   
  
 }
@@ -5672,15 +5728,15 @@ function staff_create_programme_form_submit($form, &$form_state) {
 
 function staff_create_programme_form2() {
   global $authorizeEdit;
-  if (isset($_SESSION['bkinfo'])) {
+  if (isset($_SESSION['eduerp_bkinfo'])) {
     
     $form['#title'] = 'Create New Programme continued...';
     if ($authorizeEdit && empty($_POST['credit_desc11'])) {
       //check if previous rec exists in program_level_semester table
       $result = db_query("SELECT * FROM {program_level_semester} WHERE programme_id = %d ORDER BY level", arg(2));
-      if (db_affected_rows($result) > 0 && db_affected_rows($result) ==  ($_SESSION['bkinfo']->duration * 2)) {
+      if (db_affected_rows($result) > 0 && db_affected_rows($result) ==  ($_SESSION['eduerp_bkinfo']->duration * 2)) {
       	//the record is up for edit and the user did not change the duration. so show whats in the db as defaults
-      	if (strlen($_SESSION['bkinfo']->start_level) > 1) $mul = 100; else $mul = 1;$id=$mul;$g=1;
+      	if (strlen($_SESSION['eduerp_bkinfo']->start_level) > 1) $mul = 100; else $mul = 1;$id=$mul;$g=1;
       	while($row = db_fetch_object($result)) {
           $credit_desc[$id][$row->semester] = $row->min_credit_load .', '. $row->max_credit_load;
           if ($g >= 2) {$id += $mul; $g=1;} else $g++;
@@ -5688,15 +5744,15 @@ function staff_create_programme_form2() {
       }
     }
     
-    for ($i = 1; $i <= $_SESSION['bkinfo']->duration; $i++) {
+    for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
       for ($p = 1; $p <= 2; $p++) {
         $form['credit_desc'.$i.$p] = array(
-          '#title' => 'Level '. $i * $_SESSION['bkinfo']->start_level .', Semester '. $p .':<br /> min_credit_load (enterable & required), max_credit_load (enterable & required). Note: (The Min and Max must be separated by \', \' e.g. 10,60) ',
+          '#title' => 'Level '. $i * $_SESSION['eduerp_bkinfo']->start_level .', Semester '. $p .':<br /> Minimum and Maximum Credit Load a Student is allowed select when Registering Courses for this Semester. Note: (The Min and Max must be separated by \', \' e.g. 10,60) ',
           '#type' => 'textfield',
           '#size' => 10,
           '#required' => TRUE
         );
-        if ($credit_desc) $form['credit_desc'.$i.$p]['#default_value'] = $credit_desc[$i * $_SESSION['bkinfo']->start_level][$p];
+        if ($credit_desc) $form['credit_desc'.$i.$p]['#default_value'] = $credit_desc[$i * $_SESSION['eduerp_bkinfo']->start_level][$p];
         
       }
         
@@ -5719,7 +5775,7 @@ function staff_create_programme_form2() {
 
 function staff_create_programme_form2_validate($form, &$form_state) {
   
-  for ($i = 1; $i <= $_SESSION['bkinfo']->duration; $i++) {
+  for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
       for ($p = 1; $p <= 2; $p++) {
       	if (strpos($form_state['values']['credit_desc'.$i.$p], ",")) {
       		$prog_credit_load = explode(',', $form_state['values']['credit_desc'.$i.$p]);
@@ -5746,34 +5802,34 @@ function staff_create_programme_form2_submit($form, &$form_state) {
   
   if(arg(2)){
     $node =  node_load(arg(2));
-    $node->title                            = $_SESSION['bkinfo']->programme_name;
-    $node->field_programme_name[0]['value'] = $_SESSION['bkinfo']->programme_name;
-    $node->field_programme_abbr[0]['value'] = $_SESSION['bkinfo']->programme_abbr;
-    $node->field_department_id[0]['nid']    = $_SESSION['bkinfo']->department_nid;
-    $node->field_duration[0]['value']       = $_SESSION['bkinfo']->duration;
-    $node->field_max_duration[0]['value']   = $_SESSION['bkinfo']->max_duration;
-    $node->field_min_credit_load_program[0]['value'] = $_SESSION['bkinfo']->min_credit_load;
-    $node->field_program_type[0]['value']   = $_SESSION['bkinfo']->programme_type;
+    $node->title                            = $_SESSION['eduerp_bkinfo']->programme_name;
+    $node->field_programme_name[0]['value'] = $_SESSION['eduerp_bkinfo']->programme_name;
+    $node->field_programme_abbr[0]['value'] = $_SESSION['eduerp_bkinfo']->programme_abbr;
+    $node->field_department_id[0]['nid']    = $_SESSION['eduerp_bkinfo']->department_nid;
+    $node->field_duration[0]['value']       = $_SESSION['eduerp_bkinfo']->duration;
+    $node->field_max_duration[0]['value']   = $_SESSION['eduerp_bkinfo']->max_duration;
+    $node->field_min_credit_load_program[0]['value'] = $_SESSION['eduerp_bkinfo']->min_credit_load;
+    $node->field_program_type[0]['value']   = $_SESSION['eduerp_bkinfo']->programme_type;
 
     node_save($node);
-    drupal_set_message($_SESSION['bkinfo']->programme_name .' Programme was updated!<br />');
+    drupal_set_message($_SESSION['eduerp_bkinfo']->programme_name .' Programme was updated!<br />');
     //delete all entries reping the programme.
     db_query("DELETE FROM program_level_semester WHERE programme_id = '". arg(2) ."'");
     
     //insert program_level_semester
-    if (isset($_SESSION['bkinfo'])) { 
+    if (isset($_SESSION['eduerp_bkinfo'])) { 
       $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load, open_for_registrations) VALUES  ";
-      for ($i = 1; $i <= $_SESSION['bkinfo']->duration; $i++) {
+      for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
         for ($p = 1; $p <= 2; $p++) {
           $prog_credit_load = explode(',', $form_state['values']['credit_desc'.$i.$p]);
-            $level = $_SESSION['bkinfo']->start_level * $i;
+            $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
             $sql .= "('". arg(2) ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."', 0), ";
         }
       
       }
       $sql = substr($sql, 0, -2);
       db_query($sql);
-      unset($_SESSION['bkinfo']);
+      unset($_SESSION['eduerp_bkinfo']);
     }
     
     drupal_goto("staff/createmodifyprog");
@@ -5788,32 +5844,32 @@ function staff_create_programme_form2_submit($form, &$form_state) {
     $node->promote                          = 0;
     $node->sticky                           = 0;
     $node->comment                          = 0;
-    $node->title                            = $_SESSION['bkinfo']->programme_name;
-    $node->field_programme_name[0]['value'] = $_SESSION['bkinfo']->programme_name;
-    $node->field_programme_abbr[0]['value'] = $_SESSION['bkinfo']->programme_abbr;
-    $node->field_department_id[0]['nid']    = $_SESSION['bkinfo']->department_nid;
-    $node->field_duration[0]['value']       = $_SESSION['bkinfo']->duration;
-    $node->field_max_duration[0]['value']   = $_SESSION['bkinfo']->max_duration;
-    $node->field_min_credit_load_program[0]['value'] = $_SESSION['bkinfo']->min_credit_load;
-    $node->field_program_type[0]['value']   = $_SESSION['bkinfo']->programme_type;
+    $node->title                            = $_SESSION['eduerp_bkinfo']->programme_name;
+    $node->field_programme_name[0]['value'] = $_SESSION['eduerp_bkinfo']->programme_name;
+    $node->field_programme_abbr[0]['value'] = $_SESSION['eduerp_bkinfo']->programme_abbr;
+    $node->field_department_id[0]['nid']    = $_SESSION['eduerp_bkinfo']->department_nid;
+    $node->field_duration[0]['value']       = $_SESSION['eduerp_bkinfo']->duration;
+    $node->field_max_duration[0]['value']   = $_SESSION['eduerp_bkinfo']->max_duration;
+    $node->field_min_credit_load_program[0]['value'] = $_SESSION['eduerp_bkinfo']->min_credit_load;
+    $node->field_program_type[0]['value']   = $_SESSION['eduerp_bkinfo']->programme_type;
     node_save($node);
     $programme_nid = $node->nid;
-    drupal_set_message($_SESSION['bkinfo']->programme_name .' Programme was created!<br />');
+    drupal_set_message($_SESSION['eduerp_bkinfo']->programme_name .' Programme was created!<br />');
     
     //insert into program_level_semester
-    if (isset($_SESSION['bkinfo'])) { 
+    if (isset($_SESSION['eduerp_bkinfo'])) { 
       $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load, open_for_registrations) VALUES  ";
-      for ($i = 1; $i <= $_SESSION['bkinfo']->duration; $i++) {
+      for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
         for ($p = 1; $p <= 2; $p++) {
           $prog_credit_load = explode(',', $form_state['values']['credit_desc'.$i.$p]);
-            $level = $_SESSION['bkinfo']->start_level * $i;
+            $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
             $sql .= "('". $programme_nid ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."', 0), ";
         }
       
       }
       $sql = substr($sql, 0, -2);
       db_query($sql);
-      unset($_SESSION['bkinfo']);
+      unset($_SESSION['eduerp_bkinfo']);
     }
   }
 	
@@ -5838,12 +5894,12 @@ function staff_create_programme_back_form() {
 
 
 function staff_create_programme_back_form_validate($form, &$form_state) {
-  $_SESSION['goBack'] = 1;
+  $_SESSION['eduerp_goBack'] = 1;
 }
 
 
 function staff_create_programme_back_form_submit($form, &$form_state) {
-  $_SESSION['goBack'] = 1;
+  $_SESSION['eduerp_goBack'] = 1;
 }
 
 
@@ -5863,7 +5919,7 @@ function staff_create_programme_cancel_form_submit($form, &$form_state) {
 	
 }
 
-
+/*
 function programme_titles() {
   $names = array("B.Sc", "LLM", "B.A", "B.Tech.");
   foreach ($names as $v) {
@@ -5874,10 +5930,10 @@ function programme_titles() {
   return $title;
 
 }
-
+*/
 
 function programme_types() {
- return array(1 => 'Full Time Undergraduate', 'Part Time Undergraduate', 'Medicine Type Grades');
+ return array(1 => 'Full Time Undergraduate', 2 => 'Part Time Undergraduate', 3 => 'Medicine Type Grades', '-1' => 'Closed to new entrants, Full Time Undergraduate', '-2' => 'Closed to new entrants, Part Time Undergraduate', '-3' => 'Closed to new entrants, Medicine Type Grades');
 }
 
 
@@ -5902,7 +5958,7 @@ function staff_modify_programme_form(){
 
 function staff_modify_programme_form_validate($form, &$form_state) {
   global $user;
-  unset($_SESSION['bkinfo']);
+  unset($_SESSION['eduerp_bkinfo']);
   //get the department attached to the programme
   $program = get_programmes($form_state['values']['programme_nid']);
   if (db_affected_rows($program) > 0) {
@@ -6023,12 +6079,12 @@ function staff_verify_assigned_course() {
     $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createmodifyprog'>Create/Modify a Programme</a>&nbsp; &raquo; &nbsp;Verified Assigned Course(s): <b>". $programmeInfo->programme_name ."</b> Programme</font><br /><br />";
     $navi .= '<br /><hr /><br />';
     echo $navi;
-    echo "<b>Verified Assigned Course(s)</b> | Programme: <b>". $programmeInfo->programme_name ."</b> | Semester: ". $_SESSION['semester'] ."<br /><br />"; //. variable_get('eduerp_current_session', '') ."</b> | Semester: <b>". variable_get('eduerp_current_semester', '') ."</b><br /><br />";
+    echo "<b>Verified Assigned Course(s)</b> | Programme: <b>". $programmeInfo->programme_name ."</b> | Semester: ". $_SESSION['eduerp_session'] ."<br /><br />"; //. variable_get('eduerp_current_session', '') ."</b> | Semester: <b>". variable_get('eduerp_current_semester', '') ."</b><br /><br />";
   
     echo '<br /><hr /><br />';
-    echo "List of Assigned Courses for <b>". $programmeInfo->programme_name  ."</b> Programme for ". $_SESSION['semester'] ." Semester<br/><br />";
+    echo "List of Assigned Courses for <b>". $programmeInfo->programme_name  ."</b> Programme for ". $_SESSION['eduerp_session'] ." Semester<br/><br />";
     
-    $assigned = get_verified_assigned_courses($programmeInfo->programme_nid, $_SESSION['semester']);
+    $assigned = get_verified_assigned_courses($programmeInfo->programme_nid, $_SESSION['eduerp_session']);
     if (db_affected_rows($assigned) <= 0) {
       echo  strip_tags(Error_Types(106));
     }
@@ -6046,7 +6102,7 @@ function staff_verify_assigned_course() {
       if (db_affected_rows($assigned) > 0) 
         echo "<b>All Courses for ". $programmeInfo->programme_name ." have been assigned!</b>";
       else
-        echo "<b>Courses have not been setup for ". $programmeInfo->programme_name ." Programme for ". $_SESSION['semester'] ." Semester!</b>";
+        echo "<b>Courses have not been setup for ". $programmeInfo->programme_name ." Programme for ". $_SESSION['eduerp_session'] ." Semester!</b>";
     
     }
     else {
@@ -6245,7 +6301,7 @@ function staff_assign_course_to_programme_form() {
   
   $form['user_id'] = array(
     '#type' => 'select',
-    '#options' => lecturer(),
+    '#options' => array('' => '' ) + get_Staff_in_Department($programmeInfo->department_nid), //lecturer(),
     '#title' => 'Lecturer',
     '#required' => FALSE,
     '#form_panel_col' => 5,
@@ -6404,7 +6460,7 @@ function staff_verify_course_proceed_form() {
 
 
 function staff_verify_course_proceed_form_submit($form, &$form_state) {
-  $_SESSION['semester'] = $form_state['values']['semester'];
+  $_SESSION['eduerp_session'] = $form_state['values']['semester'];
   drupal_goto("staff/verifycourse/" . $form_state['values']['vprogramme_nid']);
   
 }
