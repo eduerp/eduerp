@@ -5346,7 +5346,7 @@ function get_Assigned_Courses($session, $department_nid = 0) {
 }
 
 
-function get_UnAssigned_Courses($session, $department_nid = 0) {
+function get_unassigned_courses($session, $department_nid = 0) {
   $where = ""; $args = "";
   if ($department_nid != 0) {
      $where = "
@@ -6027,22 +6027,40 @@ function staff_verify_assigned_course() {
   
     echo '<br /><hr /><br />';
     echo "List of Assigned Courses for <b>". $programmeInfo->programme_name  ."</b> Programme for ". $_SESSION['semester'] ." Semester<br/><br />";
-    echo "<div id='assigned_courses'>";
-    show_verified_assigned_courses($programmeInfo->programme_nid, $_SESSION['semester']);
-    echo "</div>";
+    
+    $assigned = get_verified_assigned_courses($programmeInfo->programme_nid, $_SESSION['semester']);
+    if (db_affected_rows($assigned) <= 0) {
+      echo  strip_tags(Error_Types(106));
+    }
+    else {
+      echo "<div id='assigned_courses'>";
+      show_verified_assigned_courses($assigned);
+      echo "</div>";
+    }
     
     
     echo '<br /><hr /><br />';
-    echo "<b>List of unAssigned Courses for ". variable_get('eduerp_current_session', '') ." Session and Semester ". variable_get('eduerp_current_semester', '') ."</b><br/><br />";
-    echo "<div id='assigned_courses'>";
-    show_unassigned_courses($programmeInfo->programme_nid);
-    echo "</div>";
+    //test for unassigned courses for the programme
+    $unassigned = get_programme_unassigned_courses ($programmeInfo->programme_nid);
+    if (db_affected_rows($unassigned) <= 0) {
+      if (db_affected_rows($assigned) > 0) 
+        echo "<b>All Courses for ". $programmeInfo->programme_name ." have been assigned!</b>";
+      else
+        echo "<b>Courses have not been setup for ". $programmeInfo->programme_name ." Programme for ". $_SESSION['semester'] ." Semester!</b>";
+    
+    }
+    else {
+      echo "<b>List of unAssigned Courses for ". variable_get('eduerp_current_session', '') ." Session and Semester ". variable_get('eduerp_current_semester', '') ."</b><br/><br />";
+      echo "<div id='assigned_courses'>";
+      show_unassigned_courses($unassigned);
+      echo "</div>";
+    }
     
   return ob_get_clean();
 }
 
 
-function show_verified_assigned_courses($programme_nid, $semester) {
+function get_verified_assigned_courses($programme_nid, $semester) {
   db_query("DELETE FROM {program_course_instance} WHERE session='%s' AND semester='%s' AND programme_id=%d", variable_get('eduerp_current_session', ''), $semester, $programme_nid);
    $sql = "INSERT INTO {program_course_instance}
      SELECT DISTINCT
@@ -6068,11 +6086,13 @@ function show_verified_assigned_courses($programme_nid, $semester) {
    WHERE p.programme_id=%d AND p.session='%s' AND p.semester = '%s'";
    
    $result = db_query($sql, $programme_nid, variable_get('eduerp_current_session', ''), $semester);
-   
-   if (db_affected_rows($result) <= 0) {
-    echo  strip_tags(Error_Types(106));
-    return;
-   }
+   return $result;
+	
+}
+
+
+function show_verified_assigned_courses(&$result) {
+  
   $html = "
   <table border ='1'>
     <tr>
@@ -6107,9 +6127,8 @@ function show_verified_assigned_courses($programme_nid, $semester) {
 }
 
 
-function show_unassigned_courses($programme_nid) {
-   
-   $sql = "SELECT DISTINCT
+function get_programme_unassigned_courses ($programme_nid) {
+  $sql = "SELECT DISTINCT
         pc.level,
         c.field_code_value,
         d.field_department_name_value
@@ -6127,10 +6146,13 @@ function show_unassigned_courses($programme_nid) {
       ORDER BY d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
     $result = db_query($sql, variable_get('eduerp_current_session', ''), variable_get('eduerp_current_semester', ''), $programme_nid);
    
-   if (db_affected_rows($result) <= 0) {
-    echo  strip_tags(Error_Types(106));
-    return;
-   }
+   
+  return $result;
+}
+
+
+function show_unassigned_courses(&$result) {
+   
   $html = "
   <table border ='1'>
     <tr>
@@ -6146,14 +6168,14 @@ function show_unassigned_courses($programme_nid) {
     $html .="
     <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
       <td>". $i++ ."</td>
-      <td>". $f->level ."</td>
-      <td>". $f->field_code_value ."</td>
-      <td>". $f->field_department_name_value ."</td>
+      <td><font color='#ff0000'>". $f->level ."</font></td>
+      <td><font color='#ff0000'>". $f->field_code_value ."</font></td>
+      <td><font color='#ff0000'>". $f->field_department_name_value ."</font></td>
    </tr>";
   }
   $html .="
   </table><br />";
-  $html .= "<b>Note: The HODs for each of the course(s) above will have to assign a lecturer for the course for this semester</b>";
+  $html .= "<b><font color='#ff0000'>Note: The HODs for each of the course(s) above will have to assign a lecturer for the course for this semester</font></b>";
   echo $html;
 }
 
@@ -6491,6 +6513,7 @@ function historical_course_list($programme_nid) {
     return;
   }
   $html = "
+  <table border ='1'>
     <tr>
     	<th>#</th>";
   	if ($canCreateModify)
@@ -6526,11 +6549,10 @@ function historical_course_list($programme_nid) {
    </tr>";
 
   }
-?>
-<table border ="1">
-<?php echo  $html; ?>
-</table>
-<?php
+  $html .= "
+  </table>";
+  echo  $html;
+
 }
 
 
