@@ -10,6 +10,14 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  // TODO: configure proper permissions
+  $items['student/clearance/post'] = array(
+    'title' => 'Student Clearance',
+    'page callback' => 'student_clearance',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
   $items['student/registration2'] = array(
    'title' => 'Student Registration Form',
    'page callback' => 'drupal_get_form',
@@ -425,6 +433,70 @@ class courseselectionsclass {
 // (*) TAKE OUT 'header', FALSE, FALSE WHEN IT WORKS
   }
 }
+/**
+ * perform student clearance
+ */
+function student_clearance() {
+  global $user;
+  $student_id = $_POST['student_uid'];
+
+  $row = false;
+  $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+  if ($rs):
+    $row = db_fetch_object($rs);
+  endif;
+
+  if ($row) {
+    // node exists
+    $node = array();
+    $node['type'] = 'student_clearance';
+    $node['nid'] = $row->nid;
+    $student_clearance = node_load($node);
+
+    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']):
+      $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
+      $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+      drupal_set_message('Student\'s results verified');
+    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
+      $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
+      $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+
+      // TODO: perform other clearance related tasks
+      drupal_set_message('Student has been cleared');
+    elseif ($_POST['clearance']):
+      drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
+    endif;
+
+    node_save($student_clearance);
+  } else {
+    // node doesn't exist
+    if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
+      $node = new stdClass;
+      $node->is_new = 1;
+      $node->uid = $user->uid;
+      $node->type = 'student_clearance';
+      $node->field_student[0]['uid'] = $student_id;
+
+      if (isset($_POST['verify']) && $_POST['verify'] == '1'):
+        $node->field_staff_verification[0]['uid'] = $user->uid;
+        $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+        drupal_set_message('Student\'s results verified');
+      endif;
+      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
+        $node->field_staff_clearance[0]['uid'] = $user->uid;
+        $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+
+        // TODO: perform other clearance related tasks
+        drupal_set_message('Student has been cleared');
+      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
+        drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
+      endif;
+      node_save($node);
+    }
+  }
+
+  return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+}
 
 /**
   these functions below define a custom field and field widget that enables 
@@ -658,6 +730,30 @@ function student_views_post_render(&$view, &$output, &$cache) {
     // view mutation
     $student_id = $view->result[0]->users_uid;
     $output = str_replace("STUDENTID", $student_id, $output);
+
+    $row = false;
+    $verified = false;
+    $cleared = false;
+    $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+    if ($rs):
+      $row = db_fetch_object($rs);
+    endif;
+
+    if ($row) {
+      $node = array();
+      $node['type'] = 'student_clearance';
+      $node['nid'] = $row->nid;
+      $student_clearance = node_load($node);
+
+      if ($student_clearance->field_staff_verification[0]['uid']) $verified = true;
+      if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
+    }
+
+    // snippet to determine whether or not to place the checkmark to the options
+    // viz a viz results verification and student clearance
+    $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
   }
 }
 

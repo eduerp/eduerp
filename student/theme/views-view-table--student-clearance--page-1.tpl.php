@@ -41,9 +41,10 @@
     <?php
       $row_class = ($count % 2) ? "even" : "odd";
     ?>
+<form action="<?php echo url('student/clearance/post'); ?>" method="post">
       <tr class="<?php echo $row_class; ?>">
         <th style="text-align:right">
-          <input type="checkbox" name="verify" value="1" />
+          <input type="checkbox" name="verify" value="1" VERIFY_OPTIONS />
         </th>
         <td>Verify Result</td>
       </tr>
@@ -52,7 +53,7 @@
     ?>
       <tr class="<?php echo $row_class; ?>">
         <th style="text-align:right">
-          <input type="checkbox" name="clearance" value="1" />
+          <input type="checkbox" name="clearance" value="1" CLEARANCE_OPTIONS />
         </th>
         <td>Clear Student</td>
       </tr>
@@ -65,9 +66,10 @@
         </th>
         <td>
           <input type="hidden" name="student_uid" value="STUDENTID" />
-          <input type="submit" value="Submit" />
+          <input type="submit" value="Submit" SUBMIT_OPTIONS />
         </td>
       </tr>
+</form>
   </tbody>
 </table>
 
