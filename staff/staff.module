@@ -151,6 +151,13 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
   
+  $items['staff/unregstudents']=array(
+    'title'=>'List of Students who have Not Registered for a Semester',
+    'page callback' => 'staff_unregistered_students',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+  
   return $items;
 }
 
@@ -3694,6 +3701,9 @@ function semester_admin() {
 
   echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Qualification</a>';
   echo '<br /><br /><hr /><br />';
+  
+  echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
+  echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/department') . '">View Departments and Courses</a>';
   echo '<br /><br /><hr /><br />';
@@ -6283,7 +6293,7 @@ EOD;
 function staff_verify_assigned_course() {
   global $user, $all_sessions, $programmeInfo;
   ob_start();
-  
+   
   if (! arg(2) || ! is_valid_programme(arg(2)))
     drupal_goto("/staff/createmodifyprog");
   
@@ -6918,18 +6928,21 @@ function show_progress_qualification_form() {
     '#options' => $sessions,
     '#required' => TRUE,
     '#title' => 'Session');
+  if ($_SESSION['eduerp_qualification']) $form['session']['#default_value'] = $_SESSION['eduerp_qualification']['session'];
   
   $form['programme_nid'] = array(
     '#type' => 'select',
     '#options' => $programmes,
     '#required' => TRUE, 
-    '#title' => 'Programme');
+    '#title' => 'Programme Name');
+  if ($_SESSION['eduerp_qualification']) $form['programme_nid']['#default_value'] = $_SESSION['eduerp_qualification']['programme_nid'];
   
   $form['level'] = array(
     '#type' => 'select',
     '#options' => $levels,
     '#required' => TRUE,
     '#title' => 'Level');
+  if ($_SESSION['eduerp_qualification']) $form['level']['#default_value'] = $_SESSION['eduerp_qualification']['level'];
   
   $form['submit'] = array(
       '#value' => 'Check Now',
@@ -6952,20 +6965,53 @@ function show_progress_qualification_form_submit($form, &$form_state) {
 }
 
 
-function display_progress_towards_qualification($result) {
+function display_progress_towards_qualification(&$result) {
   $html = "
   <table border ='1'>
     <tr>
     	<th>#</th>
   	<th>Student Name</th>
+  	
+  	<th>Credit Load Completed</th>
+  	<th>Session</th>
+  	<th>Semester</th>
+  	<th>Level</th>
+  	<th>GPA</th>
+  	
+  	<th>C. Credit Load Completed</th>
+  	<th>Elapsed Year</th>
+  	<th>Duration</th>
+  	
+  	<th>Programme Min. Credit</th>
+  	<th>Programme Max. Duration</th>
+  	<th>Mode of Entry</th>
+  	
+  	<th>CGPA</th>
     </tr>";$i=1;
-  while ($f = db_fetch_object($result)) {
+  //while ($f = db_fetch_object($result)) {
+  foreach ($result as $v) {
     if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
-    $course_type = array('1' => 'Core', 2 => 'Elective');
+    
     $html .="
     <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
       <td>". $i++ ."</td>
-      <td>". $f->student_name ."</td>
+      <td>". $v['student_name'] ."</td>
+      
+      <td>". $v['field_credit_load_completed_value'] ."</td>
+      <td>". $v['field_sess_name_gpa_value'] ."</td>
+      <td>". $v['field_semester_name_gpa_value'] ."</td>
+      <td>". $v['field_level_name_gpa_value'] ."</td>
+      <td>". $v['field_gpa_value'] ."</td>
+      
+      <td>". $v['field_credit_load_completed_sp_value'] ."</td>
+      <td>". $v['elapsed_years'] ."</td>
+      <td>". $v['field_duration_value'] ."</td>
+      
+      <td>". $v['field_min_credit_load_program_value'] ."</td>
+      <td>". $v['field_max_duration_value'] ."</td>
+      <td>". $v['field_profile_mode_of_entry_value'] ."</td>
+      
+      <td>". $v['field_cgpa_sp_value'] ."</td>
    </tr>";
 
   }
@@ -6976,12 +7022,110 @@ function display_progress_towards_qualification($result) {
 }
 
 
-function get_progress_qualification_details() {
+function  get_progress_qualification_details() {
+
+  $all_sessions = get_all_sessions();
+  $programme_nid = $_SESSION['eduerp_qualification']['programme_nid'];
+  $session = $all_sessions[$_SESSION['eduerp_qualification']['session']];
+  $level = $_SESSION['eduerp_qualification']['level'];
+  //note i am using  pro.nid student_key as the index key
+  $cgpa = get_students_CGPA($session, $programme_nid, $level);
+  if (db_affected_rows($cgpa) > 0) {
+    $cgpa_arr = array("field_cgpa_sp_value", "field_credit_load_completed_sp_value", "field_min_credit_load_program_value", "elapsed_years",
+        "field_duration_value","field_max_duration_value", "field_profile_mode_of_entry_value");
+    while ($f = db_fetch_object($cgpa)) {
+      foreach ($cgpa_arr as $v)
+        $studentProgess[$f->student_key][$v] = $f->{$v};
+    }
+  }
+  
+  $gpa = get_students_GPA($session, $programme_nid, $level);
+  if (db_affected_rows($gpa) > 0) {
+    $gpa_arr = array("field_gpa_value", "field_credit_load_completed_value", "field_sess_name_gpa_value", "field_semester_name_gpa_value", "field_level_name_gpa_value");
+    while ($f = db_fetch_object($gpa)) {
+      foreach ($gpa_arr as $v)
+        $studentProgess[$f->student_key][$v] = $f->{$v};
+    }
+  }
+  
+  $failed_courses = get_cumulative_list_of_failed_courses($session, $programme_nid, $level);
+  if (db_affected_rows($failed_courses) > 0) {
+    $failed_arr = array("failedlist", "student_name");
+    while ($f = db_fetch_object($failed_courses)) {
+      foreach ($failed_arr as $v)
+        $studentProgess[$f->student_key][$v] = $f->{$v};
+    }
+  }
+  return $studentProgess;
+  //unset($_SESSION['eduerp_qualification']);
+}
+
+
+function get_students_CGPA($session, $programme_nid, $level) {
+  $sql = "SELECT
+        sp.field_cgpa_sp_value,
+        sp.field_credit_load_completed_sp_value,
+        p.field_min_credit_load_program_value,
+        SUBSTRING(spro.field_profile_reg_session_value, 1, 4) - spro.field_profile_yearofentry_value + 1 AS elapsed_years,
+        p.field_duration_value,
+        p.field_max_duration_value,
+        CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key,
+        spro.field_profile_mode_of_entry_value
+      FROM {content_type_student_program} sp
+      INNER JOIN {node} npro ON sp.field_student_ref_sp_uid=npro.uid AND npro.type='profile'
+      INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+      INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
+      INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+      INNER JOIN {content_type_program} p
+      WHERE
+        sp.field_student_ref_sp_uid IN (
+          SELECT nspro0.uid
+          FROM {node} nspro0
+          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
+          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
+        ) AND
+        sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
+        sp.field_program_ref_sp_nid=p.nid
+      ORDER BY student_name";
+    $result = db_query($sql, $programme_nid, $session, $level);
+  return $result;
+	
+}
+
+
+function get_students_GPA($session, $programme_nid, $level) {
+  $sql = "SELECT
+        gpa.field_gpa_value,
+        gpa.field_credit_load_completed_value,
+        gpa.field_sess_name_gpa_value,
+        gpa.field_semester_name_gpa_value,
+        gpa.field_level_name_gpa_value,
+        CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key
+      FROM {content_type_student_gpa} gpa
+      INNER JOIN {node} npro ON gpa.field_student_ref_gpa_uid=npro.uid AND npro.type='profile'
+      INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+      INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
+      INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+      WHERE
+        gpa.field_student_ref_gpa_uid IN (
+          SELECT nspro0.uid
+          FROM {node} nspro0
+          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
+          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
+        ) AND
+        gpa.field_program_ref_gpa_nid=spro.field_profile_first_choice_nid
+      ORDER BY student_name, gpa.field_level_name_gpa_value, gpa.field_sess_name_gpa_value, gpa.field_semester_name_gpa_value";
+    $result = db_query($sql, $programme_nid, $session, $level);
+  return $result;
+}
+
+
+function get_cumulative_list_of_failed_courses($session, $programme_nid, $level) {
   // Find any failed (and not since passed) courses for each student in this program/session/level
     // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
     $sql = "SELECT
         failedcourses.failedlist,
-        CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name
+        CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key
       FROM
         (
           SELECT
@@ -7058,15 +7202,8 @@ function get_progress_qualification_details() {
       INNER JOIN {node} npro ON failedcourses.uid=npro.uid AND npro.type='profile'
       INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
       ORDER BY student_name";
-    $result = db_query($sql, $_SESSION['eduerp_qualification']['programme_nid'], 
-    	    $_SESSION['eduerp_qualification']['session'], 
-    	    $_SESSION['eduerp_qualification']['level'], 
-    	    $_SESSION['eduerp_qualification']['program'], 
-    	    $_SESSION['eduerp_qualification']['session'], 
-    	    $_SESSION['eduerp_qualification']['level']);
-
-  unset($_SESSION['eduerp_qualification']);
-	
+    $result = db_query($sql, $programme_nid, $session, $level, $programme_nid, $session, $level);
+  return $result;	
 }
 
 
@@ -7106,6 +7243,128 @@ function get_unassigned_for_programme($programme, $session, $semester) {
     $result = db_query($sql, $session, $semester, $programme);
     return $result;
 	
+}
+
+
+function staff_unregistered_students() {
+ global $sessions;
+  ob_start();
+  $sessions = get_all_sessions();
+  $str = "
+  <br /><hr /><br />
+  
+  <font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;List of Students who have Not Registered for a Semester</b></font><br /><br />
+  <br /><hr /><br />
+  
+  <b>List of Students who have Not Registered for a Semester</b> - Please fill the form as appropriate<br /><br />";
+  
+  $str .= drupal_get_form('show_unregistered_course_form');
+
+  
+  if ($_SESSION['eduerp_unreg']) {
+    
+    
+    $unregStudents = get_unregistered_students($sessions[$_SESSION['eduerp_unreg']['session']], $_SESSION['eduerp_unreg']['semester']);
+    
+    $str .=" 
+    <br /><hr /><br />
+    <b>List of Students who have Not Registered for ". $sessions[$_SESSION['eduerp_unreg']['session']] ." Session | Semester ". $_SESSION['eduerp_unreg']['semester'] ."</b><br /><br />";
+    if (db_affected_rows($unregStudents) > 0) {
+      $str  .= display_list_of_unregistered_students($unregStudents);
+    }
+    else
+      $str .= Error_Types(106);
+  }
+  
+  echo $str;
+  return ob_get_clean();
+}
+
+
+function display_list_of_unregistered_students(&$result) {
+  $html = "
+  <table border ='1'>
+    <tr>
+    	<th>#</th>
+  	<th>Student Name</th>
+    </tr>";$i=1;
+  //while ($f = db_fetch_object($result)) {
+  foreach ($result as $v) {
+    if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+    
+    $html .="
+    <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+      <td>". $i++ ."</td>
+      <td>". $v['student_name'] ."</td>
+      
+   </tr>";
+
+  }
+  $html .= "
+  </table>";
+  return  $html;
+	
+}
+
+
+function show_unregistered_course_form() {
+  global $sessions;
+  $form['#title'] = 'Unregistered Course form';
+  
+  $form['session'] = array(
+    '#type' => 'select',
+    '#options' => $sessions,
+    '#required' => TRUE,
+    '#title' => 'Session');
+  if ($_SESSION['eduerp_unreg']) $form['session']['#default_value'] = $_SESSION['eduerp_unreg']['session'];
+  
+  
+  $form['semester'] = array(
+    '#type' => 'select',
+    '#options' => array(1=>'1', 2=>'2'),
+    '#required' => TRUE,
+    '#title' => 'Semester');
+  if ($_SESSION['eduerp_unreg']) $form['semester']['#default_value'] = $_SESSION['eduerp_unreg']['semester'];
+  
+  $form['submit'] = array(
+      '#value' => 'Check Now',
+      '#type' => 'submit'
+    );
+  return $form;
+}
+
+
+function show_unregistered_course_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  $_SESSION['eduerp_unreg']['session'] = $values['session'];
+  $_SESSION['eduerp_unreg']['semester'] = $values['semester'];
+	
+}
+
+
+function get_unregistered_students($session, $semester) {
+	
+  $sql = "
+  SELECT DISTINCT ur.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
+  FROM {role} r
+  INNER JOIN {users_roles} ur ON r.rid=ur.rid
+  INNER JOIN {node} npro ON ur.uid=npro.uid AND npro.type='profile'
+  INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+  INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
+  INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+  INNER JOIN {content_type_student_program} sp ON ur.uid=sp.field_student_ref_sp_uid AND spro.field_profile_first_choice_nid=sp.field_program_ref_sp_nid
+  LEFT JOIN {content_type_student_record} sr
+  ON ur.uid=sr.field_student_ref_sr_uid AND
+   sp.nid=sr.field_student_program_sr_nid AND
+   sr.field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+  WHERE
+  r.name='Student' AND
+  spro.field_profile_reg_session_value!='%s' AND
+  spro.field_profile_reg_semester_value!='%s' AND
+  sr.field_student_ref_sr_uid IS NULL
+  ";
+  $result = db_query($sql, $session, $semester);
+  return $result;
 }
 
 
