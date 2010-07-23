@@ -301,7 +301,7 @@ function _staff_ajax() {
       $programmes = get_programmes(0, true);
       $studentUID = arg(4);
       $programmeNID = arg(3);
-      
+
       $degrees = array("First Class", "Second Class Upper", "Second Class Lower", "Third Class", "Pass");
       $proceed = true;
       if(($event == 'Graduated' && $degree == 'None') || ($event != 'Graduated' && in_array($degree, $degrees))) {
@@ -309,8 +309,8 @@ function _staff_ajax() {
         $_SESSION['eduerp_return_msg'] = "Wrong 'Degree' specified for 'Event'";
         $_SESSION['eduerp_return_msg'] = $event;
       }
-      
-      
+
+
       if($proceed) {
         // student_record CCK
         $node = new stdClass();
@@ -329,11 +329,11 @@ function _staff_ajax() {
         $node->field_approver_sr[0]['uid']        = $user->uid; //uid of user who created this record;
         $node->field_comment_sr[0]['value']	= ! empty($comment) ? $comment : null;
         node_save($node);
-        
+
         $_SESSION['eduerp_return_msg'] = '<b>' . $event .'</b> with <b>'. $degree .'</b> for <b>'. $session .'</b> session was applied to <b>'. $studentName .'</b>';
       }
-      
-      
+
+
     break;
   endswitch;
   exit();
@@ -5566,7 +5566,7 @@ function get_Assigned_Courses($session, $department_nid, $semester) {
       INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
       WHERE " . $morewhere . " d.nid='". $department_nid ."'
       ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";*/
-  
+
     /*
   $r = db_query("SELECT DISTINCT
         ci.nid,
@@ -6895,7 +6895,7 @@ function staff_student_progress_qualification() {
   global $levels, $sessions, $programmes;
   ob_start();
   if($_SESSION['eduerp_return_msg']) drupal_set_message($_SESSION['eduerp_return_msg']);
-  
+
   $levels = course_levels();
   $sessions = get_all_sessions();
   $programmes = get_programmes(0, true);
@@ -7041,7 +7041,7 @@ function  get_progress_qualification_details() {
   $programme_nid = $_SESSION['eduerp_qualification']['programme_nid'];
   $session = $all_sessions[$_SESSION['eduerp_qualification']['session']];
   $level = $_SESSION['eduerp_qualification']['level'];
-  
+
   $delete_assignment_js =<<< EOD
 function student_action(id) {
   if (confirm('Do you want to perform the requested action?')) {
@@ -7051,13 +7051,13 @@ function student_action(id) {
 
 EOD;
   drupal_add_js($delete_assignment_js, 'inline');
-  
-  
-  
+
+
+
   //note i am using  pro.nid student_key as the index key
-  
+
   //arrange the CGPA
-  
+
   $cgpa = get_students_CGPA($session, $programme_nid, $level);
   if (db_affected_rows($cgpa) > 0) {
     $cgpa_arr = array("field_cgpa_sp_value", "field_credit_load_completed_sp_value", "field_min_credit_load_program_value", "elapsed_years",
@@ -7067,19 +7067,19 @@ EOD;
         $cGPA[$f->student_key][$v] = $f->{$v};
     }
   }
-  
+
   /*
   //test data
   $cGPA[1] = array('student_name'=>'Olu Jacobs','field_cgpa_sp_value'=>'40','field_credit_load_completed_sp_value'=>'39',
   	  'field_min_credit_load_program_value'=>'30','elapsed_years'=>'1',
   	  'field_duration_value'=>'4','field_max_duration_value'=>'12','field_profile_mode_of_entry_value'=>'UME');
-  
+
   $cGPA[2] = array('student_name'=>'Obi Johnson','field_cgpa_sp_value'=>'60','field_credit_load_completed_sp_value'=>'55',
   	  'field_min_credit_load_program_value'=>'48','elapsed_years'=>'2',
   	  'field_duration_value'=>'4','field_max_duration_value'=>'12','field_profile_mode_of_entry_value'=>'UME');
   */
   //arrange the GPA
-  
+
   $gpa = get_students_GPA($session, $programme_nid, $level);
   if (db_affected_rows($gpa) > 0) {
     $gpa_arr = array("field_gpa_value", "field_credit_load_completed_value", "field_sess_name_gpa_value", "field_semester_name_gpa_value", "field_level_name_gpa_value");
@@ -7088,39 +7088,39 @@ EOD;
         $GPA[$f->student_key][$f->field_sess_name_gpa_value][$f->field_semester_name_gpa_value][$v] = $f->{$v};
     }
   }
-  
+
   /*
   //test data
-  $GPA[1]['2008/2009'][1] = array("field_gpa_value"=>'34.3', "field_credit_load_completed_value"=>'50', "field_sess_name_gpa_value"=>'2008/2009', 
+  $GPA[1]['2008/2009'][1] = array("field_gpa_value"=>'34.3', "field_credit_load_completed_value"=>'50', "field_sess_name_gpa_value"=>'2008/2009',
   	  "field_semester_name_gpa_value"=>'1', "field_level_name_gpa_value"=>'100');
-  $GPA[1]['2008/2009'][2] = array("field_gpa_value"=>'20.3', "field_credit_load_completed_value"=>'5', "field_sess_name_gpa_value"=>'2008/2009', 
+  $GPA[1]['2008/2009'][2] = array("field_gpa_value"=>'20.3', "field_credit_load_completed_value"=>'5', "field_sess_name_gpa_value"=>'2008/2009',
   	  "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'100');
-  
-  $GPA[1]['2009/2010'][1] = array("field_gpa_value"=>'11.3', "field_credit_load_completed_value"=>'45', "field_sess_name_gpa_value"=>'2009/2010', 
+
+  $GPA[1]['2009/2010'][1] = array("field_gpa_value"=>'11.3', "field_credit_load_completed_value"=>'45', "field_sess_name_gpa_value"=>'2009/2010',
   	  "field_semester_name_gpa_value"=>'1', "field_level_name_gpa_value"=>'200');
-  $GPA[1]['2009/2010'][2] = array("field_gpa_value"=>'67.3', "field_credit_load_completed_value"=>'75', "field_sess_name_gpa_value"=>'2009/2010', 
+  $GPA[1]['2009/2010'][2] = array("field_gpa_value"=>'67.3', "field_credit_load_completed_value"=>'75', "field_sess_name_gpa_value"=>'2009/2010',
   	  "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'200');
-  
-  $GPA[2]['2008/2009'][1] = array("field_gpa_value"=>'90.3', "field_credit_load_completed_value"=>'70', "field_sess_name_gpa_value"=>'2008/2009', 
+
+  $GPA[2]['2008/2009'][1] = array("field_gpa_value"=>'90.3', "field_credit_load_completed_value"=>'70', "field_sess_name_gpa_value"=>'2008/2009',
   	  "field_semester_name_gpa_value"=>'1', "field_level_name_gpa_value"=>'200');
-  $GPA[2]['2008/2009'][2] = array("field_gpa_value"=>'70.3', "field_credit_load_completed_value"=>'5', "field_sess_name_gpa_value"=>'2008/2009', 
+  $GPA[2]['2008/2009'][2] = array("field_gpa_value"=>'70.3', "field_credit_load_completed_value"=>'5', "field_sess_name_gpa_value"=>'2008/2009',
   	  "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'200');
   */
   //arrange the faled courses
-  
+
   $failed_courses = get_cumulative_list_of_failed_courses($session, $programme_nid, $level);
   if (db_affected_rows($failed_courses) > 0) {
     $failed_arr = array("failedlist");
     while ($f = db_fetch_object($failed_courses)) {
       foreach ($failed_arr as $v)
         $failed[$f->student_key] = $f->{$v};
-        
+
     }
   }
-  
+
   //test data for failed course
   //$failed[2] = "code1, code2";
-  
+
   //build the table
   //note i am using cGPA as the root iterator because cGPA must exist for all students
   //print_r($cGPA);
@@ -7190,7 +7190,7 @@ EOD;
     	      <th>Level</th>
     	    </tr>";
     	    $GPA_details = array_slice($GPA, 2);
-    	     
+
     	    foreach($GPA[$k] as $p) {
     	    	    $b = array_keys($p);
     	    	    //echo sizeof($b) .'<br />';
@@ -7227,7 +7227,7 @@ EOD;
                 <option value='Repeat Session'>Repeat Session</option>
                 <option value='Defer Session'>Defer Session</option>
                 <option value='Left Forced'>Left Forced</option>
-                
+
                 </select>
               </td>
               <td nowrap>Degree:<select name='studentdegree' >
@@ -7237,7 +7237,7 @@ EOD;
                 <option value='Second Class Lower'>Second Class Lower</option>
                 <option value='Third Class'>Third Class</option>
                 <option value='Pass'>Pass</option>
-                
+
                 </select>
               </td>";
               $all_sessions = get_all_sessions();
@@ -7255,7 +7255,7 @@ EOD;
         </td>
       </tr>
       ";
-      
+
   }
   $html .= "
   </table>";
@@ -7269,6 +7269,7 @@ EOD;
 
 function get_students_CGPA($session, $programme_nid, $level) {
   $sql = "SELECT
+        sp.field_student_ref_sp_uid AS uid,
         sp.field_cgpa_sp_value,
         sp.field_credit_load_completed_sp_value,
         p.field_min_credit_load_program_value,
@@ -7301,6 +7302,7 @@ function get_students_CGPA($session, $programme_nid, $level) {
 
 function get_students_GPA($session, $programme_nid, $level) {
   $sql = "SELECT
+        gpa.field_student_ref_gpa_uid AS uid,
         gpa.field_gpa_value,
         gpa.field_credit_load_completed_value,
         gpa.field_sess_name_gpa_value,
@@ -7330,6 +7332,7 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
   // Find any failed (and not since passed) courses for each student in this program/session/level
     // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
     $sql = "SELECT
+        failedcourses.uid,
         failedcourses.failedlist,
         CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key
       FROM
