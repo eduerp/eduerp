@@ -10,6 +10,13 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['student/test'] = array(
+    'title' => 'Testing Screen',
+    'page callback' => 'student_testing',
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
   // TODO: configure proper permissions
   $items['student/clearance/post'] = array(
     'title' => 'Student Clearance',
@@ -462,6 +469,8 @@ function student_clearance() {
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
       // TODO: perform other clearance related tasks
+      // create programme information for the student
+      create_student_program($student_id);
       drupal_set_message('Student has been cleared');
     elseif ($_POST['clearance']):
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
@@ -496,6 +505,37 @@ function student_clearance() {
   }
 
   return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+}
+
+/**
+ * module function for testing purposes
+ */
+function student_testing() {
+  global $user;
+  $node = array();
+  $node['type'] = 'student_clearance';
+  $result = node_load($node);
+  var_dump($result);
+  /**
+   * $result->field_staff_verification[0]['uid'];
+   * $result->field_staff_clearance[0]['uid'];
+   * $result->field_student[0]['uid'];
+   * $result->field_clearance_date...
+   * $result->field_verification_date[0]['value'] = '2010-07-14 11:27:16';
+   * $result->field_verification_date[0]['timezone'] = 'Africa/Lagos';
+   * $result->field_verification_date[0]['date_type'] = 'datetime';
+  */
+  $node = new stdClass;
+  $node->is_new = 1;
+  $node->uid = $user->uid;
+  $node->type = 'student_clearance';
+  $node->field_student[0]['uid'] = '440';
+  $node->field_staff_verification[0]['uid'] = $user->uid;
+  $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+  $node->field_staff_clearance[0]['uid'] = $user->uid;
+  $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+  node_save($node);
+
 }
 
 /**
