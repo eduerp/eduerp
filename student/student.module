@@ -17,7 +17,6 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
-  // TODO: configure proper permissions
   $items['student/clearance/post'] = array(
     'title' => 'Student Clearance',
     'page callback' => 'student_clearance',
@@ -468,9 +467,7 @@ function student_clearance() {
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
-      // TODO: perform other clearance related tasks
-      // create programme information for the student
-      create_student_program($student_id);
+      _perform_clearance($student_id);
       drupal_set_message('Student has been cleared');
     elseif ($_POST['clearance']):
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
@@ -495,7 +492,7 @@ function student_clearance() {
         $node->field_staff_clearance[0]['uid'] = $user->uid;
         $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
-        // TODO: perform other clearance related tasks
+        _perform_clearance($student_id);
         drupal_set_message('Student has been cleared');
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
@@ -507,15 +504,36 @@ function student_clearance() {
   return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
 }
 
+// Bundle of actions to be performed on clearance
+function _perform_clearance($student_id) {
+  // create programme information for the student
+  create_student_program($student_id);
+
+  // Generate the matriculation number for this student
+  $results = module_invoke_all('matno', $student_id);
+  if (is_array($results) && count($results) > 0) {
+    // We don't expect more than one implementation of the hook
+    // if so, we only take the first result.
+    $matno = $results[0];
+
+    // Change the username to the matno and also change the student profile
+    $student = user_load($student_id);
+    $student->name = $matno;
+    user_save($student);
+
+    $student_profile = new UserProfile($student_id);
+    $student_profile->profile_matno = $matno;
+    $student_profile->save();
+
+    // Change role of the student from Applicant to Student
+    veritas_set_role($student, 'Student');
+  }
+}
+
 /**
  * module function for testing purposes
  */
 function student_testing() {
-  global $user;
-  $node = array();
-  $node['type'] = 'student_clearance';
-  $result = node_load($node);
-  var_dump($result);
   /**
    * $result->field_staff_verification[0]['uid'];
    * $result->field_staff_clearance[0]['uid'];
@@ -525,16 +543,8 @@ function student_testing() {
    * $result->field_verification_date[0]['timezone'] = 'Africa/Lagos';
    * $result->field_verification_date[0]['date_type'] = 'datetime';
   */
-  $node = new stdClass;
-  $node->is_new = 1;
-  $node->uid = $user->uid;
-  $node->type = 'student_clearance';
-  $node->field_student[0]['uid'] = '440';
-  $node->field_staff_verification[0]['uid'] = $user->uid;
-  $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
-  $node->field_staff_clearance[0]['uid'] = $user->uid;
-  $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
-  node_save($node);
+  $results = module_invoke_all('matno', 440);
+  var_dump($results);
 
 }
 
@@ -4347,5 +4357,3 @@ function student_user($type, &$edit, &$user, $category = NULL) {
   }
 }
 
-function generate_matriculation_number($user) {
-}
