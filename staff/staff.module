@@ -52,19 +52,6 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  $items['staff/clearance']=array(
-    'title'=>'Clearance',
-    'page callback' => '_staff_clearance',
-    'access arguments' => array('staff clearance'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['staff/begin_clearance']=array(
-    'title'=>'Begin Clearance',
-    'page callback' => 'drupal_get_form',
-    'page arguments'=>array('staff_begin_clearance_form'),
-    'access arguments' => array('staff clearance'),
-    'type' => MENU_CALLBACK,
-  );
   $items['staff/viewstudent']=array(
     'title' => 'View Student',
     'page callback' => 'drupal_get_form',
@@ -90,16 +77,6 @@ function staff_menu() {
     'title' => 'Download Student Payments',
     'page callback' => 'download_student_payments',
     'access arguments' => array('student payments'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['staff/cleared']=array(
-    'page callback' => 'staff_cleared_student',
-    'access arguments' => array('staff clearance'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['staff/not_cleared']=array(
-    'page callback' => 'staff_notcleared_student',
-    'access arguments' => array('staff clearance'),
     'type' => MENU_CALLBACK,
   );
   $items['staff/ajax']=array(
@@ -300,7 +277,7 @@ function _staff_ajax() {
       $_SESSION['eduerp_fix_course']->field_lecturer_uid = $row->lecturer_id;
       $_SESSION['eduerp_return_url'] = "staff/verifycourse/" . arg(3);
     break;
-    
+
   endswitch;
   exit();
 }
@@ -346,7 +323,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff clearance','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments');
+  return array('staff register','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments');
 }
 
 
@@ -481,8 +458,7 @@ function eduerp_faculty_roles() {
   $options = array(
     'Faculty Examination Viewer' => 'Faculty Examination Viewer',
     'Faculty Examination Officer' => 'Faculty Examination Officer',
-    'Dean of Faculty' => 'Dean of Faculty',
-    'Faculty Registry Officer' => 'Faculty Registry Officer'
+    'Dean of Faculty' => 'Dean of Faculty'
   );
   return $options;
 }
@@ -885,9 +861,6 @@ Additionally they will be notified when grades are approved for a course in the 
 They can also second level approve grades for all courses in the specified faculty.<br />
 <br />
 
-<b><i>'Faculty Registry Officer'</i></b> allows a staff member clear student applications for the specified faculty.<br />
-<br />
-
 <b>University roles...</b><br />
 <br />
 <b><i>'University Examination Viewer'</i></b> allows a staff member to see grades for all courses.<br />
@@ -943,6 +916,7 @@ They also can do all the same things as <b><i>'Bursary'</i></b>.<br />
 <br />
 
 <b><i>'Academic Staff'</i></b> can view all fully approved grading.<br />
+They can be a lecturer in a course.<br />
 <br />
 
 <b><i>'Role Assigner'</i></b> can assign any of the above roles to any Staff Drupal user.";
@@ -1296,27 +1270,6 @@ function course($department_nid) {
   return  $course;
 }
 
-function staff_begin_clearance_form(&$obj) {
-  if (arg(2)) {
-    //echo "<br>2 ".arg(2);
-    $_SESSION['staff']['mat']=arg(2);
-    //$_SESSION['staff']['mat'];
-    $obj['storage']['step']=2;
-    return view_student_form2(TRUE);
-  }
-  if (!$obj['storage']['step'])
-    $obj['storage']['step']=1;
-  $st=$obj['storage']['step'];
-  if ($st == 1)
-    return staff_begin_clearance_form1($obj);
-  else if ($st == 2)
-    return view_student_form2(TRUE);
-  //else if ($st==3)
-    //return staff_begin_clearance_form3($obj);
-  //else if ($st==4)
-    //return staff_begin_clearance_form($obj);
-}
-
 
 function view_student_form(&$obj) {
   if (!$obj['storage']['step'])
@@ -1347,228 +1300,6 @@ function view_student_payments_form(&$obj) {
 }
 
 
-function _staff_clearance() {
-  ob_start();
-
-  $qry2 = "SELECT a.*, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
-    FROM {admitted_student} a, {content_type_program} p, {content_type_department} d, {content_type_college} c
-    WHERE a.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid AND a.clearance_status=1 ORDER BY a.last_name ASC";
-  $result2 = db_query($qry2);
-  $found = FALSE;
-?>
-  <table border='1' align='center'>
-  <tr bgcolor='#ACCFCC'><td colspan='7'><b>Cleared Student List</b></td></tr>
-  <tr><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name</b></td><td><b>Mat. No.</b></td><td><b>College</b></td><td><b>Department</b></td><td><b>Clearance Date</b></td></tr>
-<?php
-  while ($f = db_fetch_object($result2)) {
-    $found = TRUE;
-?>
-    <tr>
-    <td><?php echo $f->last_name; ?></td>
-    <td><?php echo $f->middle_name; ?></td>
-    <td><?php echo $f->first_name; ?></td>
-    <td><?php echo $f->matriculation_no; ?></td>
-    <td><?php echo $f->college_name; ?></td>
-    <td><?php echo $f->department_name; ?></td>
-    <td><?php echo $f->clearance_date; ?></td>
-    </tr>
-<?php
-  }
-?>
-  </table>
-<?php
-  if (!$found) {
-    drupal_set_message('No students found.');
-  }
-  return ob_get_clean();
-}
-
-
-function staff_begin_clearance_form1(&$obj) {
-  if (isset($_SESSION['staff']['mat'])) {
-    unset($_SESSION['staff']['mat']);
-  }
-  if (isset($_SESSION['staff']['jamb'])) {
-    unset($_SESSION['staff']['jamb']);
-  }
-  $form['#title'] = t('Begin Clearance');
-  $form['matno'] = array(
-    '#title' => 'Matriculation No .',
-    '#type' => 'textfield',
-    '#default_value' => $_POST['matno'],
-    '#size' => 20);
-  $form['lbl_or'] = array(
-    '#type' => 'fieldset',
-    '#title' => 'Or');
-  $form['lbl_or']['jambno'] = array(
-    '#title' => 'JAMB No .',
-    '#default_value' => $_POST['jambno'],
-    '#type' => 'textfield',
-    '#size' => 20);
-  $form['submit'] = array(
-    '#value' => 'Next',
-    '#type' => 'submit',
-    '#id' => 'edit-next');
-  return $form;
-}
-     /* Code adding ended on 27/02/2009 for student clearance page. */
-
-    /* Code adding started on 27/02/2009 for student clearance page validation. */
-function staff_begin_clearance_form_submit($form, &$state) {
-  if ($state['clicked_button']['#id'] == 'edit-previous') {
-    $state['storage']['step']--;
-   // $state['#rebuild']=true;
-    return;
-  }
-  elseif ($state['clicked_button']['#id'] == 'edit-next') {
-    /*$values=$form['verify']['#post'];
-if ($values['result']=='yes') {
-
-//die;
- //echo $values['result'];
- $state['storage']['step']= 2;
-}else if ($values['result']=='no') {
-
- $state['storage']['step']= 3;
-}*/
-    $state['storage']['values'][$state['storage']['step']]=$state['values'];
-    $state['storage']['step']++;
-    $state['#rebuild']=TRUE;
-  }
-  else
-    return;
-}
-function staff_begin_clearance_form_validate($form, &$state) {
-  global $user;
-
-  if ($state['storage']['step'] == 1) {
-    //print_R($form);
-    $values=$form['lbl_or']['#post'];
-    $jambno=$values['jambno'];
-    if ($form['#post']['matno'] != '' && $jambno!='') {
-      drupal_set_message('Please enter either Matriculation no or JAMB no.');
-    }
-    else {
-      if ($jambno != '' && $form['#post']['matno']=='') {
-        $qry = "select * from {admitted_student} where jambno='%s'";
-        $res = db_query($qry, $jambno);
-        if ($res && ($result = db_fetch_object($res))) {
-          $_SESSION['staff']['mat']=$result->matriculation_no;
-          $_SESSION['staff']['jamb']=$jambno;
-        }
-        else {
-          form_set_error('jambno', "Jamb number not valid.");
-        }
-        if ($result->clearance_status == 1 && $result->verify_status == 1) form_set_error('jambno', 'This student has already been cleared');
-      }
-      else {
-        $qry = "select * from {admitted_student} where matriculation_no='%s'";
-        $res = db_query($qry, $form['#post']['matno']);
-        if ($res && ($result = db_fetch_object($res))) {
-          $_SESSION['staff']['mat']=$result->matriculation_no;
-        }
-        else {
-          form_set_error('matno', "Matriculation number not valid.");
-        }
-        if ($result->clearance_status == 1 && $result->verify_status == 1) form_set_error('matno', 'This student has already been cleared');
-      }
-    }
-  }
-  if ($state['storage']['step'] == 2) {
-    $results=$form['verify']['#post'];
-    $results1=$form['clear']['#post'];
-    $results2=$form['approve']['#post'];
-    if (!veritas_has_role($user, 'Registry')) {
-      if ($results['result'] == '' && $results1['cleared']=='') {
-        drupal_set_message('Please specify verify and clearance status');
-      }
-      if ($results1['cleared'] == 'no' && $results1['reject'] == '') {
-        drupal_set_message('Please explain reason for rejection.');
-      }
-      if ($results1['cleared'] == 'no' && $results['result'] == 'no') {
-        $dt = date('Y-m-d');
-        $qry = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res = db_query($qry);
-        if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          //drupal_set_message('Student status updated sucessfully.');
-          drupal_goto('staff/cleared');
-        }
-      }
-      if ($results1['cleared'] == 'yes' && $results['result'] == 'yes') {
-        $dt = date('Y-m-d');
-        $qry = "update {admitted_student} set clearance_status=1, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res = db_query($qry);
-        if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          drupal_set_message(sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance')));
-          $userid = db_fetch_object(db_query("SELECT user_id FROM {admitted_student} WHERE student_id=%d", $_SESSION['staff']['stud_info']));
-          $user_account = user_load($userid->user_id);
-          veritas_set_role($user_account, 'Student');
-          drupal_goto('staff/cleared');
-        }
-      }
-      if ($results1['cleared'] == 'no' && $results['result'] == 'yes') {
-        $dt = date('Y-m-d');
-        $qry = "update {admitted_student} set clearance_status=0, verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res = db_query($qry);
-        if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          //drupal_set_message('Student status updated sucessfully.');
-          drupal_goto('staff/cleared');
-        }
-      }
-      if ($results['result'] == 'yes') {
-        $dt = date('Y-m-d');
-        $qry = "update {admitted_student} set verify_status=1, clearance_date='". $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res = db_query($qry);
-        if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          //drupal_set_message('Student status updated sucessfully.');
-          drupal_goto('staff/cleared');
-        }
-      }
-      if ($results['result'] == 'no') {
-        $dt = date('Y-m-d');
-        $qry = "update {admitted_student} set verify_status=0, clearance_date='" . $dt ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res = db_query($qry);
-        if ($res && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          //drupal_set_message('Student status updated sucessfully.');
-          drupal_goto('staff/cleared');
-        }
-      }
-      if ($results1['cleared'] == 'yes' && $results['result'] == 'no') {
-          $_SESSION['staff']['msg']= sprintf('Students can only be cleared when their data are verified. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-        drupal_set_message(sprintf('Students can only be cleared when their data are verified. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance')));
-      }
-    }
-    if (veritas_has_role($user, 'Registry')) {
-      if ($results2['accept'] == 'no') {
-        $dt1 = date('Y-m-d');
-        $qry_rej = "update {admitted_student} set clearance_status=0, verify_status=0, clearance_date='". $dt1 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res_rej = db_query($qry_rej);
-        if ($res_rej && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          //drupal_set_message('Student status updated sucessfully.');
-          drupal_goto('staff/cleared');
-        }
-      }
-      if ($results2['accept'] == 'yes') {
-        $dt2 = date('Y-m-d');
-        $qry_acc = "update {admitted_student} set clearance_status=2, clearance_date='". $dt2 ."' where student_id='". $_SESSION['staff']['stud_info'] ."'";
-        $res_acc = db_query($qry_acc);
-        if ($res_acc && db_affected_rows()>0) {
-          $_SESSION['staff']['msg']= sprintf('Student status updated sucessfully. <a href="%s">Continue Clearance</a>', url('staff/begin_clearance'));
-          //drupal_set_message('Student status updated sucessfully.');
-          drupal_goto('staff/cleared');
-        }
-      }
-    }
-  }
-}
-    /* Code adding ended on 27/02/2009 for student clearance page validation. */
-
 function load_image() {
   global $result;
   $qry9 = "select a . pic_id, b . filepath from `admitted_student` as a join files as b on a . pic_id=b . fid where a . student_id='". $_SESSION['staff']['stud_info'] ."'";
@@ -1590,6 +1321,8 @@ function load_image() {
   }
   return $file_path;
 }
+
+
 function load_signature() {
   //global $result;
   $qry10 = "select a . signature_pic_id, b . filepath from `admitted_student` as a join files as b on a . signature_pic_id=b . fid where a . student_id='". $_SESSION['staff']['stud_info'] ."'";
@@ -1610,79 +1343,6 @@ function load_signature() {
     //$path='No Images Available';
   }
   return $file_path;
-}
-function staff_begin_clearance_form4(&$obj) {
-  $message=drupal_mail(
-    'staff',
-    'rejection',
-    $_SESSION['student']['data']->email_address,
-    language_default(),
-    array(),
-    NULL,
-    FALSE);
-  $message['body']=veritas_student_receipt($f, TRUE);
-  $message['subject']='Transaction Receipt';
-  $message['headers'] = array_merge(
-    $message['headers'],
-    array( 'MIME-Version' => '1.0',
-      'Content-Type'  => 'text/html;
- charset=UTF-8'));
-  drupal_mail_send($message);
-}
-function staff_cleared_student() {
-  $msg=$_SESSION['staff']['msg'];
-  ob_start();
-?>
-  <center><h5><? echo $msg; ?></h5>
-<?php
-  $d=ob_get_clean();
-  return $d;
-}
-function staff_notcleared_student() {
-  global $user;
-
-  if (!veritas_has_role($user, 'Registry')) {
-    $_SESSION['staff']['msg']='You are not authorized to access this page.';
-    drupal_goto('staff/cleared');
-  }
-  ob_start();
-  if (isset($_SESSION['staff']['mat'])) {
-    unset($_SESSION['staff']['mat']);
-  }
-  /*Query to fetch all the data's from student, department and college table.*/
-  $qry2 = "
-    SELECT `as`.*, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
-    FROM {admitted_student} `as`, {content_type_program} p, {content_type_department} d, {content_type_college} c
-    WHERE as.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid AND as.clearance_status=2 ORDER BY a.last_name ASC";
-  $result2 = db_query($qry2);
-  //echo db_error();
-  if (!db_fetch_object($result2)) {
-    drupal_set_message('No students for clearance.');
-  }
-?>
-  <table border='1' align='center'>
-  <tr bgcolor='#ACCFCC'><td colspan='7'><b>Not Cleared Student List</b></td></tr>
-  <tr><td><b>Mat. No.</b></td><td><b>Last Name</b></td><td><b>Middle Name</b></td><td><b>First Name </b></td><td><b>College</b></td><td><b>Department</b></td><!--<td><b>Clearance Date</b></td>--></tr>
-<?php
-  while ($f=db_fetch_object($result2)) {
-?>
-    <tr>
-    <td><a href='<?php echo 'begin_clearance/'. $f->matriculation_no;?>'><?php echo $f->matriculation_no;?></a></td>
-    <!--<td><? url('begin_clearance');?><? $data[]=$f->matriculation_no; $_SESSION['staff']['mat']=$data; echo $f->matriculation_no; ?></td>-->
-    <td><?php echo $f->last_name; ?></td>
-    <td><?php echo $f->middle_name; ?></td>
-    <td><? echo $f->first_name; ?></td>
-    <!--<td><? echo $f->matriculation_no; ?></td>-->
-    <td><?php echo $f->college_name; ?></td>
-    <td><?php echo $f->department_name; ?></td>
-    <!--<td><? echo $f->clearance_date; ?></td>-->
-    </tr>
-<?php
-  }
-?>
-  </table>
-<?php
-  return ob_get_clean();
 }
 
 
@@ -5242,11 +4902,11 @@ function get_Staff_in_Department($department_nid = 0, $staff_uid = 0) {
 
 function staff_show_assign_course() {
   global $departmentInfo, $canCreateModify;
-  
+
   //because of referal from LIST OF COURSES NOT RUNNING, WE SHALL DEFAULT THE SESSION AND SEMESTER
   if(! isset($_SESSION['eduerp_assign_course_session'])) variable_get('eduerp_current_session', '');
   if(! isset($_SESSION['eduerp_assign_course_semester'])) variable_get('eduerp_current_semester', '');
-  
+
   //variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
   if (arg(3))
     echo "<b>Modify Assigned Lecturers and Timetables for Courses</b> | Sesssion: <b>". $_SESSION['eduerp_assign_course_session'] ."</b> | Semester: <b>". $_SESSION['eduerp_assign_course_semester'] ."</b><br /><br />";
@@ -5365,14 +5025,14 @@ function staff_assign_course_form() {
 
 function staff_assign_course_proceed_form() {
   $form['#title'] = 'Start Assigning Lecturers to Courses';
-  
+
   $form['session'] = array(
     '#type' => 'select',
     '#options' => get_all_sessions(),
     '#title' => 'Session',
     '#default_value'=>variable_get('eduerp_current_session', ''),
     '#required' => TRUE,
-    
+
     );
   $form['semester'] = array(
     '#type' => 'select',
@@ -5380,7 +5040,7 @@ function staff_assign_course_proceed_form() {
     '#title' => 'Semester',
     '#default_value'=>variable_get('eduerp_current_semester', ''),
     '#required' => TRUE,
-    
+
     );
   $form['submit'] = array(
     '#value' => 'Start Assigning Lecturers to Courses',
@@ -5401,8 +5061,8 @@ function staff_assign_course_proceed_form_submit($form, &$state) {
 
 function staff_assign_course_form_validate($form, &$form_state) {
   //make sure it is unique for course/semester/session
-  
-  
+
+
   if (arg(3)) {//validate EDIT variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
@@ -7035,13 +6695,13 @@ function display_progress_towards_qualification(&$result) {
 
 function  get_progress_qualification_details() {
   global $uid, $programmeName, $programme_nid, $studentName;
-  
+
   $programme_nid = $_SESSION['eduerp_qualification']['programme_nid'];
   $session = $_SESSION['eduerp_qualification']['session'];
   $level = $_SESSION['eduerp_qualification']['level'];
 
   //arrange the CGPA
-  
+
   $cgpa = get_students_CGPA($session, $programme_nid, $level);
   if (db_affected_rows($cgpa) > 0) {
     $cgpa_arr = array("field_cgpa_sp_value", "field_credit_load_completed_sp_value", "field_min_credit_load_program_value", "elapsed_years",
@@ -7051,7 +6711,7 @@ function  get_progress_qualification_details() {
         $cGPA[$f->uid][$v] = $f->{$v};
     }
   }
-  
+
   /*
   //test data
   $cGPA[1] = array('student_name'=>'Olu Jacobs','field_cgpa_sp_value'=>'40','field_credit_load_completed_sp_value'=>'39',
@@ -7063,7 +6723,7 @@ function  get_progress_qualification_details() {
   	  'field_duration_value'=>'4','field_max_duration_value'=>'12','field_profile_mode_of_entry_value'=>'UME', 'uid'=>'2');
   */
   //arrange the GPA
-  
+
   $gpa = get_students_GPA($session, $programme_nid, $level);
   if (db_affected_rows($gpa) > 0) {
     $gpa_arr = array("field_gpa_value", "field_credit_load_completed_value", "field_sess_name_gpa_value", "field_semester_name_gpa_value", "field_level_name_gpa_value", "uid");
@@ -7072,7 +6732,7 @@ function  get_progress_qualification_details() {
         $GPA[$f->uid][$f->field_sess_name_gpa_value][$f->field_semester_name_gpa_value][$v] = $f->{$v};
     }
   }
-  
+
   /*
     //test data
   $GPA[1]['2008/2009'][1] = array("field_gpa_value"=>'34.3', "field_credit_load_completed_value"=>'50', "field_sess_name_gpa_value"=>'2008/2009',
@@ -7091,7 +6751,7 @@ function  get_progress_qualification_details() {
   	  "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'200');
   */
   //arrange the faled courses
-  
+
   $failed_courses = get_cumulative_list_of_failed_courses($session, $programme_nid, $level);
   if (db_affected_rows($failed_courses) > 0) {
     $failed_arr = array("failedlist");
@@ -7101,7 +6761,7 @@ function  get_progress_qualification_details() {
 
     }
   }
-  
+
   //test data for failed course
   //$failed[2] = "code1, code2";
 
@@ -7112,7 +6772,7 @@ function  get_progress_qualification_details() {
   $html = "
   <table border=1>";$i=1;
   foreach($cGPA as $k=> $v){
-    
+
   //	  drupal_set_message($v['field_cgpa_sp_value']);
     //build cGPA
     $html .= "
@@ -7588,7 +7248,7 @@ function staff_student_action_form() {
     '#theme' => 'form_panel_table',
     '#form_panel_table_attributes' => array('border' => 0));
   $form['#title'] = 'Student Action';
-   
+
 
   $form['comment'] = array(
     '#title' => 'Comment',
@@ -7597,30 +7257,30 @@ function staff_student_action_form() {
     '#form_panel_col' => 1,
     '#form_panel_row' => 1
   );
-  
+
   $form['uid'] = array(
     '#title' => 'uid',
     '#type' => 'hidden',
     '#default_value' => $uid
-    
+
   );
   $form['programmeName'] = array(
     '#title' => 'programmeName',
     '#type' => 'hidden',
     '#default_value' => $programmeName
-    
+
   );
   $form['programmeUID'] = array(
     '#title' => 'programmeUID',
     '#type' => 'hidden',
     '#default_value' => $programme_nid
-    
+
   );
   $form['studentName'] = array(
     '#title' => 'studentName',
     '#type' => 'hidden',
     '#default_value' => $studentName
-    
+
   );
   $form['event'] = array(
     '#type' => 'select',
@@ -7629,7 +7289,7 @@ function staff_student_action_form() {
     '#form_panel_col' => 2,
     '#form_panel_row' => 1
     );
-  
+
     $form['degree'] = array(
     '#type' => 'select',
     '#options' => array('None'=>'None','First Class'=>'First Class', 'Second Class Upper'=>'Second Class Upper', 'Second Class Lower'=>'Second Class Lower','Third Class'=>'Third Class', 'Pass'=>'Pass'),
@@ -7645,25 +7305,25 @@ function staff_student_action_form() {
     '#form_panel_col' => 4,
     '#form_panel_row' => 1
     );
-  
+
   $form['submit'] = array(
     '#value' => 'Perform Action',
     '#type' => 'submit',
     '#form_panel_col' => 5,
     '#form_panel_row' => 1
   );
-  
+
 
   return $form;
-  
+
 }
 
 
 function staff_student_action_form_validate($form, &$state) {
   $values = $state['values'];
- 
+
   $degrees = array("First Class", "Second Class Upper", "Second Class Lower", "Third Class", "Pass");
-  
+
   if(($values['event'] == 'Graduated' && $values['degree'] == 'None') || ($values['event'] != 'Graduated' && in_array($values['degree'], $degrees))) {
     form_set_error('degree1', "Wrong 'Degree' specified for 'Event'.");
   }
