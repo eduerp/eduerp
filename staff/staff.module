@@ -157,6 +157,13 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
+  
+  $items['staff/dropcoursereg']=array(
+    'title'=>'Mark a Course Registration as dropped',
+    'page callback' => 'staff_drop_registered_course',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
 
   return $items;
 }
@@ -3705,6 +3712,9 @@ function semester_admin() {
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
+  echo '<br /><br /><hr /><br />';
+  
+  echo '<a href="' . url('staff/dropcoursereg') . '">Mark a Course Registration as Dropped</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/department') . '">View Departments and Courses</a>';
@@ -7692,4 +7702,59 @@ function staff_student_action_form_submit($form, &$state) {
 }
 
 
+function staff_drop_registered_course() {
+  ob_start();
+  echo '<br /><hr /><br />';
+  $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
+  //echo "<b>Mark a Course Registration as Dropped</b><br /><br />"; //. variable_get('eduerp_current_session', '') ."</b> | Semester: <b>". variable_get('eduerp_current_semester', '') ."</b><br /><br />";
+  
+  //echo '<br /><hr /><br />';
+  echo "<b>Get Student Registered Courses</b> - Please fill the form as appropriate<br /><br />";
+  echo drupal_get_form('get_student_course_instance_form');
+  return ob_get_clean();
+}
+
+
+function get_student_course_instance_form() {
+  $form['#title'] = 'Get Student Registered Courses By Session and Semester ';
+
+  $form['mat_no'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Matriculation Number',
+    '#required' => TRUE
+  );
+  
+ $form['session'] = array(
+    '#type' => 'select',
+    '#options' => get_all_sessions(),
+    '#title' => 'Session'
+  );
+  $form['semester'] = array(
+      '#type' => 'select',
+      '#options' => array(1 => '1', 2 => '2', 3=>'3'),
+      '#title' => 'Semester'
+   );
+  $form['submit'] = array(
+      '#value' => 'Get Registered Courses',
+      '#type' => 'submit'
+  );
+
+
+  return $form;
+	
+}
+
+
+function get_student_course_instance_form_validate($form, &$state) {
+	
+	
+}
+
+
+function get_student_course_instance_form_submit($form, &$state) {
+	
+	
+}
 ?>
