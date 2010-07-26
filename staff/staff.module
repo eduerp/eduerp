@@ -6702,6 +6702,7 @@ function display_progress_towards_qualification(&$result) {
 
 
 function  get_progress_qualification_details() {
+  global $base_url;
   global $uid, $programmeName, $programme_nid, $studentName;
 
   $programme_nid = $_SESSION['eduerp_qualification']['programme_nid'];
@@ -6876,7 +6877,7 @@ function  get_progress_qualification_details() {
               <th>Student Grade View</th>
             </tr>
             <tr>
-              <td><a href=" . '"' . url('studentgradedetails?uid=' . rawurlencode($v['mat'])) . '"' . ">View Student Grade Details</a></td>
+              <td><a href=" . '"' . $base_url . '/studentgradedetails?uid=' . rawurlencode($v['mat']) . '"' . ">View Student Grade Details</a></td>
           </table>
         </td>
       </tr>";
