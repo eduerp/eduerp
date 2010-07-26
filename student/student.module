@@ -509,6 +509,15 @@ function _perform_clearance($student_id) {
   // create programme information for the student
   create_student_program($student_id);
 
+  set_matriculation_number($student_id);
+
+  // Change role of the student from Applicant to Student
+  $student = user_load($student_id);
+  veritas_set_role($student, 'Student');
+}
+
+
+function set_matriculation_number($student_id) {
   // Generate the matriculation number for this student
   $results = module_invoke_all('matno', $student_id);
   if (is_array($results) && count($results) > 0) {
@@ -524,11 +533,9 @@ function _perform_clearance($student_id) {
     $student_profile = new UserProfile($student_id);
     $student_profile->profile_matno = $matno;
     $student_profile->save();
-
   }
-  // Change role of the student from Applicant to Student
-  veritas_set_role($student, 'Student');
 }
+
 
 /**
  * module function for testing purposes
@@ -549,7 +556,7 @@ function student_testing() {
 }
 
 /**
-  these functions below define a custom field and field widget that enables 
+  these functions below define a custom field and field widget that enables
   the student profile content type to store subject/grade pairs as one field
   in the content type.
 */
@@ -654,7 +661,7 @@ function _module_views_templates($templates_path) {
   $templates = array();
   $views_templates_types = views_theme();
   $files = file_scan_directory($templates_path, '^views.*\.tpl\.php$');
- 
+
   foreach ($files as $file) {
     $template_name = str_replace('.tpl.php', '', $file->basename);
     $template_info = explode('--', $template_name);
@@ -671,7 +678,7 @@ function _module_views_templates($templates_path) {
       ),
     );
   }
- 
+
   return $templates;
 }
 
@@ -1745,7 +1752,7 @@ function change_student_program(&$user, $first_choice, $level) {
 
   create_student_program($user->uid);
 
-  // Change matriculation number (link to Tim's code)
+  set_matriculation_number($user->uid);
 }
 
 
