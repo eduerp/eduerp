@@ -134,7 +134,7 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-  
+
   $items['staff/dropcoursereg']=array(
     'title'=>'Mark a Course Registration as Dropped',
     'page callback' => 'staff_drop_registered_course',
@@ -3373,7 +3373,7 @@ function semester_admin() {
 
   echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
   echo '<br /><br /><hr /><br />';
-  
+
   echo '<a href="' . url('staff/dropcoursereg') . '">Mark a Course Registration as Dropped</a>';
   echo '<br /><br /><hr /><br />';
 
@@ -6713,7 +6713,7 @@ function  get_progress_qualification_details() {
   $cgpa = get_students_CGPA($session, $programme_nid, $level);
   if (db_affected_rows($cgpa) > 0) {
     $cgpa_arr = array("field_cgpa_sp_value", "field_credit_load_completed_sp_value", "field_min_credit_load_program_value", "elapsed_years",
-        "field_duration_value","field_max_duration_value", "field_profile_mode_of_entry_value", "student_name", "uid");
+        "field_duration_value","field_max_duration_value", "field_profile_mode_of_entry_value", "student_name", "uid", "mat");
     while ($f = db_fetch_object($cgpa)) {
       foreach ($cgpa_arr as $v)
         $cGPA[$f->uid][$v] = $f->{$v};
@@ -6797,7 +6797,7 @@ function  get_progress_qualification_details() {
    </tr>
    <tr>
             <td>". $i++ ."</td>
-            <td>". $v['student_name'] ."</td>
+            <td>". $v['student_name'] . "<br />(" . $v['mat'] . ")</td>
             <td>". $v['field_cgpa_sp_value'] ."</td>
             <td>". $v['field_credit_load_completed_sp_value'] ."</td>
             <td>". $v['field_min_credit_load_program_value'] ."</td>
@@ -6876,7 +6876,7 @@ function  get_progress_qualification_details() {
               <th>Student Grade View</th>
             </tr>
             <tr>
-              <td>Click<a '/staff/studentgradeview/?uid=". $v['uid'] ."'>here to view student grade</a></td>
+              <td><a href=" . '"' . url('studentgradedetails?uid=' . rawurlencode($v['mat'])) . '"' . ">View Student Grade Details</a></td>
           </table>
         </td>
       </tr>";
@@ -6946,6 +6946,7 @@ function  get_progress_qualification_details() {
 function get_students_CGPA($session, $programme_nid, $level) {
   $sql = "SELECT
         sp.field_student_ref_sp_uid AS uid,
+        u.name AS mat,
         sp.field_cgpa_sp_value,
         sp.field_credit_load_completed_sp_value,
         p.field_min_credit_load_program_value,
@@ -6960,6 +6961,7 @@ function get_students_CGPA($session, $programme_nid, $level) {
       INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
       INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
       INNER JOIN {content_type_program} p
+      INNER JOIN {users} u ON sp.field_student_ref_sp_uid=u.uid
       WHERE
         sp.field_student_ref_sp_uid IN (
           SELECT nspro0.uid
@@ -6970,9 +6972,8 @@ function get_students_CGPA($session, $programme_nid, $level) {
         sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
         sp.field_program_ref_sp_nid=p.nid
       ORDER BY student_name";
-    $result = db_query($sql, $programme_nid, $session, $level);
+  $result = db_query($sql, $programme_nid, $session, $level);
   return $result;
-
 }
 
 
@@ -7377,28 +7378,28 @@ function staff_drop_registered_course() {
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
       $navi .= '<br /><hr /><br />';
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry'))) {
-  	  
+
     if (! isset($_SESSION['eduerp_drop_on']) && ! isset($_POST['eduerp_drop_on'])) {
-      
+
       echo $navi;
       echo "<b>Get Student Registered Courses</b> - Please fill the form as appropriate<br /><br />";
       echo drupal_get_form('get_student_course_instance_form');
-  
-    } 
+
+    }
     else {//show form to allow him drop courses
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/dropcoursereg'>Mark a Course Registration as Dropped</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ."</b></font><br /><br />";
       $navi .= '<br /><hr /><br />';
       echo $navi;
       echo "<b>List of Registered Courses by ". $_SESSION['eduerp_drop_course_info']['studentInfo']['fname'] ." - ". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ." | ". $_SESSION['eduerp_drop_course_info']['session'] ." Session  |  Semester ". $_SESSION['eduerp_drop_course_info']['semester'] ."</b> - Select a Course to Drop it<br /><br />";
       echo drupal_get_form('get_student_drop_course_form');
-  	  
+
     }
-  
+
   }
   else {
     echo $navi;
     echo Error_Types(127);
-  	  
+
   }
   unset($_SESSION['eduerp_drop_on']);
   return ob_get_clean();
@@ -7410,41 +7411,41 @@ function get_student_drop_course_form() {
   $courses = array();
   if(isset($_SESSION['eduerp_drop_course_info'])) {
     $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
-    
+
     if (db_affected_rows($result) > 0) {
       while($r = db_fetch_object($result))
       $courses[$r->nid] = $r->course_code;
     }
   }
-  
+
  $form['student_grade_nid'] = array(
     '#type' => 'select',
     '#options' => array(''=>'') + $courses,
     '#title' => 'Registered Courses',
     '#required' =>TRUE
   );
-  
+
   $form['eduerp_drop_on'] = array(
     '#type' => 'hidden',
     '#default_value'=>1,
     '#title' => 'keep showing form'
   );
-  
-  
+
+
   $form['submit'] = array(
       '#value' => 'Drop Courses',
       '#type' => 'submit'
   );
 
 
-  return $form;	
-	
+  return $form;
+
 }
 
 
 function get_student_drop_course_form_validate($form, &$state) {
   $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
-  
+
   //check for remainders
   $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
   if(db_affected_rows($result) <= 0)
@@ -7457,7 +7458,7 @@ function get_student_drop_course_form_submit($form, &$state) {
   $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
   $sql = "UPDATE {content_type_student_grades} SET field_dropped_value = 1 WHERE nid = %d";
   db_query($sql, $values['student_grade_nid']);
-  
+
   drupal_set_message('The Course has been dropped!');
   //check for remainders
   $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
@@ -7474,7 +7475,7 @@ function get_student_course_instance_form() {
     '#title' => 'Matriculation Number',
     '#required' => TRUE
   );
-  
+
  $form['session'] = array(
     '#type' => 'select',
     '#options' => get_all_sessions(),
@@ -7492,14 +7493,14 @@ function get_student_course_instance_form() {
 
 
   return $form;
-	
+
 }
 
 
 function get_student_course_instance_form_validate($form, &$state) {
   $values = $state['values'];
   $studentInfo = is_valid_mat_number($values['mat_no']);
-  
+
   if(db_affected_rows($studentInfo) <= 0) {
     form_set_error('mat_no', Error_Types(125));
   }
@@ -7514,10 +7515,10 @@ function get_student_course_instance_form_validate($form, &$state) {
     $registeredCourses = get_student_registered_courses($studInfo['uid'], $values['session'], $values['semester']);
     if (db_affected_rows($registeredCourses) <= 0) {
       drupal_set_message(Error_Types(124));
-      
+
     }
     else {//course reg info exists
-      
+
       $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
       $_SESSION['eduerp_drop_course_info'] = array('studentInfo' => $studInfo, 'session'=>$values['session'] , 'semester'=>$values['semester'] );
     }
@@ -7527,10 +7528,10 @@ function get_student_course_instance_form_validate($form, &$state) {
 
 function is_valid_mat_number($matno) {
   $sql = "SELECT student_id, first_name, last_name, matriculation_no FROM {admitted_student} WHERE matriculation_no = '%s'";
-  
+
   $result = db_query($sql, $matno);
   return $result;
-	
+
 }
 
 
@@ -7538,13 +7539,13 @@ function get_student_registered_courses($studentUID, $session, $semester) {
   $sql = "SELECT g.nid nid, c.field_code_value course_code
   FROM {content_type_student_grades} g
   	INNER JOIN {content_type_course_instance} t ON g.field_course_instance_nid = t.nid AND t.field_sess_name_value = '%s' AND t.field_semester_name_value = '%s'
-  	INNER JOIN {content_type_course} c ON t.field_course_id_nid = c.nid 
+  	INNER JOIN {content_type_course} c ON t.field_course_id_nid = c.nid
   	WHERE g.field_mat_no_uid = %d AND g.field_dropped_value=0 ";
   $result = db_query($sql, $session, $semester, $studentUID);
-  
+
   return $result;
-  
-  
+
+
 }
 
 
