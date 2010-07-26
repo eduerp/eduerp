@@ -136,7 +136,7 @@ function staff_menu() {
   );
   
   $items['staff/dropcoursereg']=array(
-    'title'=>'Mark a Course Registration as dropped',
+    'title'=>'Mark a Course Registration as Dropped',
     'page callback' => 'staff_drop_registered_course',
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
@@ -4451,7 +4451,7 @@ function Error_Types($num = 0) {
   case '104':
     $msg = $prifix1 . 'You do not have permission to Create new Records!<br />'; break;
   case '105':
-    $msg = $prifix1 . 'You do not have permission to Modify Records!<br />'; break;
+    $msg = $prifix1 . 'You do not have permission to Modify Records!<br /><br /><br />'; break;
   case '106':
     $msg = $prifix1 . 'No record(s) exists!<br />'; break;
   case '107':
@@ -4475,7 +4475,7 @@ function Error_Types($num = 0) {
   case '116':
     $msg = $prifix1 . 'Prerequisite Description cannot be empty!<br />'; break;
   case '117':
-    $msg = $prifix1 . 'You do not have permission to Create or Modify records in the selected Department!<br />'; break;
+    $msg = $prifix1 . 'You do not have permission to Create or Modify records in the selected Department!<br /><br /><br />'; break;
   case '118':
     $msg = $prifix1 . 'Input Data not in expected format!<br />'; break;
   case '119':
@@ -4488,8 +4488,16 @@ function Error_Types($num = 0) {
     $msg = $prifix1 . 'There is a problem with the setup of this Programme!<br />'; break;
   case '123':
     $msg = $prifix1 . 'The selected Course already exists for the Semester, for the Programme and for the Level!<br />'; break;
+  case '124':
+    $msg = $prifix1 . 'Either no Course Registration information exists or all have been dropped for the student for the selected Session and Semester!<br />'; break;
+  case '125':
+    $msg = $prifix1 . 'Either the Matriculation Number does not exist or it is invalid!<br />'; break;
+  case '126':
+    $msg = $prifix1 . 'No more record(s) exists!<br />'; break;
+  case '127':
+    $msg = $prifix1 . 'You do not have permission to access this module!<br /><br /><br />'; break;
   default:
-    $msg =  $prifix2 .'Something fatal occured!<br />';
+    $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
   return $msg;
 }
@@ -7363,17 +7371,98 @@ function staff_student_action_form_submit($form, &$state) {
 
 
 function staff_drop_registered_course() {
+  global $user;
   ob_start();
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
-  $navi .= '<br /><hr /><br />';
-  echo $navi;
-  //echo "<b>Mark a Course Registration as Dropped</b><br /><br />"; //. variable_get('eduerp_current_session', '') ."</b> | Semester: <b>". variable_get('eduerp_current_semester', '') ."</b><br /><br />";
+      $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
+      $navi .= '<br /><hr /><br />';
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry'))) {
+  	  
+    if (! isset($_SESSION['eduerp_drop_on']) && ! isset($_POST['eduerp_drop_on'])) {
+      
+      echo $navi;
+      echo "<b>Get Student Registered Courses</b> - Please fill the form as appropriate<br /><br />";
+      echo drupal_get_form('get_student_course_instance_form');
   
-  //echo '<br /><hr /><br />';
-  echo "<b>Get Student Registered Courses</b> - Please fill the form as appropriate<br /><br />";
-  echo drupal_get_form('get_student_course_instance_form');
+    } 
+    else {//show form to allow him drop courses
+      $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/dropcoursereg'>Mark a Course Registration as Dropped</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ."</b></font><br /><br />";
+      $navi .= '<br /><hr /><br />';
+      echo $navi;
+      echo "<b>List of Registered Courses by ". $_SESSION['eduerp_drop_course_info']['studentInfo']['fname'] ." - ". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ." | ". $_SESSION['eduerp_drop_course_info']['session'] ." Session  |  Semester ". $_SESSION['eduerp_drop_course_info']['semester'] ."</b> - Select a Course to Drop it<br /><br />";
+      echo drupal_get_form('get_student_drop_course_form');
+  	  
+    }
+  
+  }
+  else {
+    echo $navi;
+    echo Error_Types(127);
+  	  
+  }
+  unset($_SESSION['eduerp_drop_on']);
   return ob_get_clean();
+}
+
+
+function get_student_drop_course_form() {
+  $form['#title'] = 'Drop Course Form';
+  $courses = array();
+  if(isset($_SESSION['eduerp_drop_course_info'])) {
+    $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
+    
+    if (db_affected_rows($result) > 0) {
+      while($r = db_fetch_object($result))
+      $courses[$r->nid] = $r->course_code;
+    }
+  }
+  
+ $form['student_grade_nid'] = array(
+    '#type' => 'select',
+    '#options' => array(''=>'') + $courses,
+    '#title' => 'Registered Courses',
+    '#required' =>TRUE
+  );
+  
+  $form['eduerp_drop_on'] = array(
+    '#type' => 'hidden',
+    '#default_value'=>1,
+    '#title' => 'keep showing form'
+  );
+  
+  
+  $form['submit'] = array(
+      '#value' => 'Drop Courses',
+      '#type' => 'submit'
+  );
+
+
+  return $form;	
+	
+}
+
+
+function get_student_drop_course_form_validate($form, &$state) {
+  $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
+  
+  //check for remainders
+  $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
+  if(db_affected_rows($result) <= 0)
+    drupal_set_message(Error_Types(126));
+}
+
+
+function get_student_drop_course_form_submit($form, &$state) {
+  $values = $state['values'];
+  $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
+  $sql = "UPDATE {content_type_student_grades} SET field_dropped_value = 1 WHERE nid = %d";
+  db_query($sql, $values['student_grade_nid']);
+  
+  drupal_set_message('The Course has been dropped!');
+  //check for remainders
+  $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
+  if(db_affected_rows($result) <= 0)
+    drupal_set_message(Error_Types(126));
 }
 
 
@@ -7408,13 +7497,55 @@ function get_student_course_instance_form() {
 
 
 function get_student_course_instance_form_validate($form, &$state) {
-	
+  $values = $state['values'];
+  $studentInfo = is_valid_mat_number($values['mat_no']);
+  
+  if(db_affected_rows($studentInfo) <= 0) {
+    form_set_error('mat_no', Error_Types(125));
+  }
+  else {
+    //check for registered course
+    //build tableField=>formElement array
+    $info = array("student_id"=>'uid', "first_name"=>'fname', "matriculation_no"=>'mat_no');
+    while($r = db_fetch_object($studentInfo)){
+      foreach($info as $k => $v)
+        $studInfo[$v] = $r->{$k};
+    }
+    $registeredCourses = get_student_registered_courses($studInfo['uid'], $values['session'], $values['semester']);
+    if (db_affected_rows($registeredCourses) <= 0) {
+      drupal_set_message(Error_Types(124));
+      
+    }
+    else {//course reg info exists
+      
+      $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
+      $_SESSION['eduerp_drop_course_info'] = array('studentInfo' => $studInfo, 'session'=>$values['session'] , 'semester'=>$values['semester'] );
+    }
+  }
+}
+
+
+function is_valid_mat_number($matno) {
+  $sql = "SELECT student_id, first_name, last_name, matriculation_no FROM {admitted_student} WHERE matriculation_no = '%s'";
+  
+  $result = db_query($sql, $matno);
+  return $result;
 	
 }
 
 
-function get_student_course_instance_form_submit($form, &$state) {
-	
-	
+function get_student_registered_courses($studentUID, $session, $semester) {
+  $sql = "SELECT g.nid nid, c.field_code_value course_code
+  FROM {content_type_student_grades} g
+  	INNER JOIN {content_type_course_instance} t ON g.field_course_instance_nid = t.nid AND t.field_sess_name_value = '%s' AND t.field_semester_name_value = '%s'
+  	INNER JOIN {content_type_course} c ON t.field_course_id_nid = c.nid 
+  	WHERE g.field_mat_no_uid = %d AND g.field_dropped_value=0 ";
+  $result = db_query($sql, $session, $semester, $studentUID);
+  
+  return $result;
+  
+  
 }
+
+
 ?>
