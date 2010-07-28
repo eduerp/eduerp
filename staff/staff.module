@@ -6763,7 +6763,7 @@ function  get_progress_qualification_details() {
   $cgpa = get_students_CGPA($session, $programme_nid, $level);
   if (db_affected_rows($cgpa) > 0) {
     $cgpa_arr = array("field_cgpa_sp_value", "field_credit_load_completed_sp_value", "field_min_credit_load_program_value", "elapsed_years",
-        "field_duration_value","field_max_duration_value", "field_profile_mode_of_entry_value", "student_name", "uid");
+        "field_duration_value","field_max_duration_value", "field_profile_mode_of_entry_value", "student_name", "uid", "mat");
     while ($f = db_fetch_object($cgpa)) {
       foreach ($cgpa_arr as $v)
         $cGPA[$f->uid][$v] = $f->{$v};
@@ -6847,7 +6847,7 @@ function  get_progress_qualification_details() {
    </tr>
    <tr>
             <td>". $i++ ."</td>
-            <td>". $v['student_name'] ."</td>
+            <td>". $v['student_name'] . "<br />(" . $v['mat'] . ")</td>
             <td>". $v['field_cgpa_sp_value'] ."</td>
             <td>". $v['field_credit_load_completed_sp_value'] ."</td>
             <td>". $v['field_min_credit_load_program_value'] ."</td>
@@ -6926,7 +6926,7 @@ function  get_progress_qualification_details() {
               <th>Student Grade View</th>
             </tr>
             <tr>
-              <td>Click<a '/staff/studentgradeview/?uid=". $v['uid'] ."'>here to view student grade</a></td>
+              <td><a href=" . '"' . $base_url . '/studentgradedetails?uid=' . rawurlencode($v['mat']) . '"' . ">View Student Grade Details</a></td>
           </table>
         </td>
       </tr>";
@@ -6996,6 +6996,7 @@ function  get_progress_qualification_details() {
 function get_students_CGPA($session, $programme_nid, $level) {
   $sql = "SELECT
         sp.field_student_ref_sp_uid AS uid,
+        u.name AS mat,
         sp.field_cgpa_sp_value,
         sp.field_credit_load_completed_sp_value,
         p.field_min_credit_load_program_value,
@@ -7010,6 +7011,7 @@ function get_students_CGPA($session, $programme_nid, $level) {
       INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
       INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
       INNER JOIN {content_type_program} p
+      INNER JOIN {users} u ON sp.field_student_ref_sp_uid=u.uid
       WHERE
         sp.field_student_ref_sp_uid IN (
           SELECT nspro0.uid
@@ -7020,9 +7022,8 @@ function get_students_CGPA($session, $programme_nid, $level) {
         sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
         sp.field_program_ref_sp_nid=p.nid
       ORDER BY student_name";
-    $result = db_query($sql, $programme_nid, $session, $level);
+  $result = db_query($sql, $programme_nid, $session, $level);
   return $result;
-
 }
 
 
