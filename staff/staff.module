@@ -3190,7 +3190,7 @@ function semester_admin() {
   echo '<a href="' . url('grading/statsuni') . '">Grading Statistics for University</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/changeprogmme') . '">Change of programme by student</a>';
+  echo '<a href="' . url('staff/changeprogmme') . '">Change of Programme by Student</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Qualification</a>';
@@ -7600,18 +7600,11 @@ function get_student_reg_course_form_submit($form, &$state) {
   }
 
   $student->uid = $studentUID;
-  $student_gpa = create_student_gpa($student, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
-  
-  create_student_grades($student, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
-  
+  $student_gpa = create_student_gpa($student->uid, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
 
-
-  $student_gpa = create_student_gpa($studentUID, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
-
-  create_student_grades($studentUID, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
-
-
+  create_student_grades($student->uid, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
   drupal_set_message('Course was Registered Successfully!');
+  
   //check for remainders
   $result = get_student_unregistered_courses($_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $session, $semester);
   if(db_affected_rows($result) <= 0)
@@ -7813,8 +7806,19 @@ function staff_change_student_programme() {
     }
     else {//show form to allow him drop courses
 
-      if ($_POST['eduerp_change_prog_on'] == 2) {
-      	$navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
+      if ($_POST['eduerp_change_prog_on'] == 1) { //page 1
+      	$navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
+        $navi .= '<br /><hr /><br />';
+        echo $navi;
+        echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
+        | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b> 
+        | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b> 
+        <br /><br />- Select a New Programme to map to the Student<br /><br />";
+        echo drupal_get_form('get_student_select_new_prog_form');
+      	
+      }
+      elseif($_POST['eduerp_change_prog_on'] == 2) { //page 2
+        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
         echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
@@ -7840,25 +7844,20 @@ function staff_change_student_programme() {
         echo "<br /><hr /><br />- Map the new Programme<br /><br />";
         echo drupal_get_form('get_student_change_prog_form');
       }
-      else {
-        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
+      /*
+      else {//page after student auth
+
+        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b></font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
         echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
-        | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b> 
-        | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b> 
+        | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b>
+        | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b>
         <br /><br />- Select a New Programme to map to the Student<br /><br />";
-        echo drupal_get_form('get_student_select_new_prog_form');
-      }	  
-
-      $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b></font><br /><br />";
-      $navi .= '<br /><hr /><br />';
-      echo $navi;
-      echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
-      | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b>
-      | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b>
-      <br /><br />- Select a New Programme to map to the Student<br /><br />";
-      echo drupal_get_form('get_student_change_prog_form');
+        echo drupal_get_form('get_student_change_prog_form');
+      
+      }
+      */
     }
 
   }
@@ -7983,23 +7982,18 @@ function get_student_select_new_prog_form() {
     '#disabled' => TRUE,
     '#required' => TRUE
   );
- /*
+ 
  $form['eduerp_change_prog_on'] = array(
     '#type' => 'hidden',
     '#default_value'=>2,
     '#title' => 'keep showing form'
   );
- */
+ 
   $form['submit'] = array(
       '#value' => 'Continue to next page',
       '#type' => 'submit'
   );
-
-
-
   return $form;	
-
-  return $form;
 }
 
 
@@ -8069,13 +8063,6 @@ function get_student_change_prog_form_submit($form, &$state) {
 function show_student_previous_programme_results($studentUID, $programmeNID) {
   
 	
-
-  $first_choice = $_SESSION['eduerp_change_prog_info']['current_programme_nid'];
-  $level = $_SESSION['eduerp_change_prog_info']['level_name'];
-  //so go ahead with the change
-  change_student_program($user, $first_choice, $level);
-  drupal_set_message('The Student\'s Programme was changed successfully!');
-
 
 }
 
