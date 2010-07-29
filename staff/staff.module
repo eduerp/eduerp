@@ -302,7 +302,7 @@ function _staff_ajax() {
       $form['level_name'] = array(
         '#type' => 'select',
         '#options' => $levels,
-        '#title' => 'Start Level',
+        '#title' => 'New Start Level',
         '#attributes' => array(
       'style' => 'width:100px'),
         '#required' => TRUE
@@ -7807,10 +7807,10 @@ function get_student_reg_course_form_submit($form, &$state) {
     drupal_set_message(Error_Types(129));
     return ;
   }
+  $student->uid = $studentUID;
+  $student_gpa = create_student_gpa($student, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
   
-  $student_gpa = create_student_gpa($studentUID, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
-  
-  create_student_grades($studentUID, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
+  create_student_grades($student, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
   
   drupal_set_message('Course was Registered Successfully!');
   //check for remainders
@@ -7912,6 +7912,7 @@ function get_min_max_credits($programme_nid, $level, $semester) {
 }
 
 
+/*
 function create_student_grades($studentUID, $course_instance, $student_gpa, $studentname, $program_type) {
   //borrowd function from student module
   // student_grades CCK
@@ -7953,6 +7954,7 @@ function create_student_grades($studentUID, $course_instance, $student_gpa, $stu
 }
 
 
+/*
 function create_student_gpa($studentUID, $user_profile, $studentname, $student_program, $session, $semester, $creditload) {
   // Check if there is an existing student_gpa, must avoid a duplicate
   //borrowed function from student module
@@ -7990,6 +7992,7 @@ function create_student_gpa($studentUID, $user_profile, $studentname, $student_p
   node_save($node);
   return $node->nid;
 }
+*/
 
 
 function staff_change_student_programme() {
@@ -7998,6 +8001,8 @@ function staff_change_student_programme() {
   echo '<br /><hr /><br />';
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Change of Programme by Student</font><br /><br />";
       $navi .= '<br /><hr /><br />';
+  if(isset($_SESSION['eduerp_change_prog_on'])) $_POST['eduerp_change_prog_on'] = $_SESSION['eduerp_change_prog_on'];
+  
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
   	  
     if (! isset($_SESSION['eduerp_change_prog_on']) && ! isset($_POST['eduerp_change_prog_on'])) {
@@ -8008,15 +8013,43 @@ function staff_change_student_programme() {
   
     } 
     else {//show form to allow him drop courses
-      $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b></font><br /><br />";
-      $navi .= '<br /><hr /><br />';
-      echo $navi;
-      echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
-      | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b> 
-      | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b> 
-      <br /><br />- Select a New Programme to map to the Student<br /><br />";
-      echo drupal_get_form('get_student_change_prog_form');
-  	  
+      if ($_POST['eduerp_change_prog_on'] == 2) {
+      	$navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
+        $navi .= '<br /><hr /><br />';
+        echo $navi;
+        echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
+        | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b> 
+        | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b> ";
+        
+        echo '<br /><br />';
+        echo "<b>Student New Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <i>Matriculation Number will change</i> 
+        | <b>". $_SESSION['eduerp_change_prog_info']['new_programme_name'] ."</b> 
+        | <b>". $_SESSION['eduerp_change_prog_info']['new_programme_level'] ." Level </b> ";
+        
+        echo '<br /><hr /><br />';
+        echo '<b>List of Passed Courses</b>';
+        echo '<br /><br />';
+        echo "Below is the list of all Courses previously entered for and passed by this student.<br />
+        The student most probably is expected to move with all his earned credits to the new programme.<br />
+        The ticked Courses indicates that they are available in the new programme while the unticked ones indicate otherwise.<br />
+        If you expect the student to carry the credits of the unticked Courses over to the new Programme then you might have to <br />
+        create them (by clicking on them), in the new programme and most probably immediatly tagging them as 'Historical'";
+        
+        //echo show_student_previous_programme_results($_SESSION['eduerp_change_prog_info']['uid'], $_SESSION['eduerp_change_prog_info']['current_programme_nid']);
+        
+        echo "<br /><hr /><br />- Map the new Programme<br /><br />";
+        echo drupal_get_form('get_student_change_prog_form');
+      }
+      else {
+        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
+        $navi .= '<br /><hr /><br />';
+        echo $navi;
+        echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
+        | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b> 
+        | <b>". $_SESSION['eduerp_change_prog_info']['level'] ." Level </b> 
+        <br /><br />- Select a New Programme to map to the Student<br /><br />";
+        echo drupal_get_form('get_student_select_new_prog_form');
+      }	  
     }
   
   }
@@ -8120,8 +8153,8 @@ function get_student_info_form_validate($form, &$state) {
 }
 
 
-function get_student_change_prog_form() {
-  $form['#title'] = 'Change Student Programme';
+function get_student_select_new_prog_form() {
+  $form['#title'] = 'Continue to Change Student Programme';
 
  $form['programme_nid'] = array(
     '#type' => 'select',
@@ -8133,7 +8166,7 @@ function get_student_change_prog_form() {
  $form['level_name'] = array(
     '#type' => 'select',
     '#options' => staff_level(),
-    '#title' => 'Start Level',
+    '#title' => 'New Start Level',
     '#attributes' => array(
       'style' => 'width:100px'),
     '#prefix' => "<div id='programmelevels'>",
@@ -8141,24 +8174,26 @@ function get_student_change_prog_form() {
     '#disabled' => TRUE,
     '#required' => TRUE
   );
+ /*
  $form['eduerp_change_prog_on'] = array(
     '#type' => 'hidden',
-    '#default_value'=>1,
+    '#default_value'=>2,
     '#title' => 'keep showing form'
   );
+ */
   $form['submit'] = array(
-      '#value' => 'Change Programme',
+      '#value' => 'Continue to next page',
       '#type' => 'submit'
   );
 
 
-  return $form;
-	
+  return $form;	
 }
 
 
-function get_student_change_prog_form_validate($form, &$state) {
-  $values = $state['values'];
+function get_student_select_new_prog_form_validate($form, &$state) {
+ $values = $state['values'];
+ drupal_set_message('ok');
   if(! empty($values['programme_nid'])) {
     //make sure that the new selected is not within the faculty
     $currentFaculty = get_programme_faculty($_SESSION['eduerp_change_prog_info']['current_programme_nid']);
@@ -8170,19 +8205,54 @@ function get_student_change_prog_form_validate($form, &$state) {
       form_set_error('programme_nid', Error_Types(132));
       
     }
+    else {
+      $rs = get_programmes($values['programme_nid']);
+      $programmeInfo = db_fetch_object($rs);
+      
+      $_SESSION['eduerp_change_prog_info']['new_programme_nid'] = $values['programme_nid'];
+      $_SESSION['eduerp_change_prog_info']['new_programme_name'] = $programmeInfo->programme_name;
+      $_SESSION['eduerp_change_prog_info']['new_programme_level'] = $values['level_name'];
+      $_SESSION['eduerp_change_prog_on'] = 2;
+      drupal_set_message('done');
+    }
    
   }
+	
+}
+
+
+function get_student_change_prog_form() {
+	
+  $form['eduerp_change_prog_on'] = array(
+    '#type' => 'hidden',
+    '#default_value'=>2,
+    '#title' => 'keep showing form'
+  );
+  
+  $form['#title'] = 'Change Student Programme';
+  $form['submit'] = array(
+      '#value' => 'Change Student Programme Now',
+      '#type' => 'submit'
+  );
+  return $form;
 }
 
 
 function get_student_change_prog_form_submit($form, &$state) {
   $values = $state['values'];
   $user->uid = $_SESSION['eduerp_change_prog_info']['uid'];
-  $first_choice = $_SESSION['eduerp_change_prog_info']['current_programme_nid'];
-  $level = $_SESSION['eduerp_change_prog_info']['level_name'];
+  $first_choice = $_SESSION['eduerp_change_prog_info']['new_programme_nid'];
+  $level = $_SESSION['eduerp_change_prog_info']['new_programme_level'];
   //so go ahead with the change 
-  change_student_program($user, $first_choice, $level);
+  //change_student_program($user, $first_choice, $level);
   drupal_set_message('The Student\'s Programme was changed successfully!');
+  
+  $_SESSION['eduerp_change_prog_on'] = 2; //this line will go
+	
+}
+
+
+function show_student_previous_programme_results($studentUID, $programmeNID) {
   
 	
 }
@@ -8209,7 +8279,7 @@ function get_programme_faculty($programm_nid) {
   return $r->nid;
 }
 
-
+/*
 function change_student_program(&$user, $first_choice, $level) {
   $user_profile = new UserProfile($user->uid);
   $user_profile->profile_first_choice = $first_choice;
@@ -8282,6 +8352,7 @@ function set_matriculation_number($student_id) {
     $student_profile->save();
   }
 }
+*/
 
 
 ?>
