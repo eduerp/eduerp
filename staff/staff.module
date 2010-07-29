@@ -1034,7 +1034,7 @@ function get_programmes($programme_nid = 0, $forSelectList = false) {
       //$args = $programme_nid;
     }
     $r = db_query("SELECT p.nid programme_nid, field_college_name_value faculty_name, d.nid department_nid, field_department_name_value AS department_name,
-          field_programme_name_value programme_name,
+          field_programme_name_value programme_name, c.nid faculty_nid,
           field_duration_value duration, field_program_type_value programme_type, field_max_duration_value max_duration,
           field_min_credit_load_program_value min_credit_load, field_programme_abbr_value programme_abbr
           FROM {content_type_program} p
@@ -6395,7 +6395,7 @@ function historical_course_list($programme_nid) {
 
 
 function staff_student_progress_qualification() {
-  global $levels, $sessions, $programmes, $programmeName;
+  global $levels, $sessions, $programmes, $programmeName, $user;
   ob_start();
   if($_SESSION['eduerp_return_msg']) drupal_set_message($_SESSION['eduerp_return_msg']);
 
@@ -6407,11 +6407,12 @@ function staff_student_progress_qualification() {
 
   <font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Qualification</b></font><br /><br />
   <br /><hr /><br />";
-
-
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor',
-      'Department Examination Viewer', 'Department Examination Officer', 'Head of Department', 'Faculty Examination Viewer', 'Faculty Examination Officer',
-      'Dean of Faculty'))) {
+  //get faculty and department info of the programme
+   $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
+   
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) ||
+     staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Viewer', 'Department Examination Officer', 'Head of Department')) ||
+     staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Viewer', 'Faculty Examination Officer', 'Dean of Faculty'))) {
 
     $str .= "<b>Student Progress Towards Qualification</b> - Please fill the form as appropriate<br /><br />";
     $str .= drupal_get_form('show_progress_qualification_form');
