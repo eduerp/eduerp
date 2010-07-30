@@ -82,13 +82,13 @@ function staff_menu() {
     'title' => 'Create/Modify Faculty',
     'page callback' => 'staff_create_edit_faculty',
     'access arguments' => array('staff register course'),
-    'type' => MENU_NORMAL_ITEM
+    'type' => MENU_CALLBACK
   );
   $items['staff/createeditdept'] = array(
     'title' => 'Create/Modify Department',
     'page callback' => 'staff_create_edit_dept',
     'access arguments' => array('staff register course'),
-    'type' => MENU_NORMAL_ITEM
+    'type' => MENU_CALLBACK
   );
   $items['staff/createeditcourse']=array(
     'title'=>'Create/Modify a Course',
@@ -3172,13 +3172,13 @@ function semester_admin() {
   echo drupal_get_form('set_session_form');
   echo '<br /><hr /><br />';
 
-  echo 'Highlight Missing Courses for';
+  echo 'Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)[Feature #436]';
   echo '<br /><br /><hr /><br />';
 
-  echo 'Check have all existing Courses required for a Programme been Verified/Assigned for';
+  echo 'Check have all existing Courses required for a Programme been Verified (Associated with the Programme)[Feature #435]';
   echo '<br /><br /><hr /><br />';
 
-  echo 'List the Fees for all Programmes by Level & Semester';
+  echo 'List the Fees for all Programmes by Level & Semester[Code from Tim or Remove]';
   echo '<br /><br /><hr /><br />';
 
   echo drupal_get_form('open_close_student_registration_form');
@@ -3190,22 +3190,25 @@ function semester_admin() {
   echo '<a href="' . url('grading/statsuni') . '">Grading Statistics for University</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/changeprogmme') . '">Change of Programme by Student</a>';
-  echo '<br /><br /><hr /><br />';
-
   echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Qualification</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/dropcoursereg') . '">Mark a Course Registration as Dropped</a>';
-  echo '<br /><br /><hr /><br />';
-
-  echo '<a href="' . url('staff/manualcoursereg') . '">Manual Additions of Course Registrations incl 3rd Semester</a>';
-  echo '<br /><br /><hr /><br />';
-
   echo '<a href="' . url('staff/department') . '">View Departments and Courses</a>';
+  echo '<br /><br /><hr /><br />';
+
+/*
+  $items['staff/liststaff'] = array(
+    'title' => 'List Staff',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('liststudents'),
+    'access arguments' => array('staff data'),
+    'type' => MENU_CALLBACK,
+  );
+*/
+  echo '<a href="' . url('liststaff') . '">List Staff</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/createeditcourse') . '">Create or Modify Courses for A Department</a>';
@@ -3214,7 +3217,22 @@ function semester_admin() {
   echo '<a href="' . url('staff/createmodifyprog') . '">Create or Modify a University Programme</a>';
   echo '<br /><br /><hr /><br />';
 
+  echo '<a href="' . url('staff/createeditdept') . '">Create or Modify a Department</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/createeditfaculty') . '">Create or Modify a Faculty</a>';
+  echo '<br /><br /><hr /><br />';
+
   echo '<a href="' . url('staff/list') . '">List Staff and Assign Roles</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/manualcoursereg') . '">Manually Register a Student in a Course</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/dropcoursereg') . '">Mark a Student as Not being Required to take an Exam for a course they have enrolled in</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/changeprogmme') . '">Change a Student to a Differnt Programme</a>';
   echo '<br /><br /><hr /><br />';
 
   return ob_get_clean();
