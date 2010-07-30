@@ -1913,6 +1913,7 @@ function grading_student_details_form_submit($form, &$state) {
 
 
 function _grading_ahah_studentdetails() {
+  global $user;
   global $base_url;
 
   if (empty($_POST['studentname']) && empty($_POST['studentmat'])) {
@@ -1921,6 +1922,22 @@ function _grading_ahah_studentdetails() {
   }
   elseif (!empty($_POST['studentname'])) $uid = (int)$_POST['studentname'];
   else                                   $uid = (int)$_POST['studentmat'];
+
+  $student_profile = new UserProfile($uid)
+
+  $sql = "SELECT d.nid, d.field_college_id_nid
+    FROM {content_type_program} p
+    INNER JOIN {content_type_department} d ON p.field_department_id_nid=d.nid
+    WHERE p.nid=%d";
+  $rs = db_query($sql, $student_profile->profile_first_choice);
+  $r = db_fetch_object($rs);
+
+  if (!staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) &&
+    !staff_has_eduerp_role($user->uid, $r->nid, 0, array('Department Examination Viewer', 'Department Examination Officer', 'Head of Department')) &&
+    !staff_has_eduerp_role($user->uid, 0, $r->field_college_id_nid, array('Faculty Examination Viewer', 'Faculty Examination Officer', 'Dean of Faculty'))) {
+    print drupal_to_js(array('data' => 'You do Not have Rights to see data for this Student', 'status' => true));
+    exit();
+  }
 
   $output = '<br /><table class="body-table"><tbody>';
   $output .= '<tr><th valign="top" class="table-label" colspan="14">Courses for this Student</th></tr>';
