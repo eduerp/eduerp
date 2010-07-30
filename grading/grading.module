@@ -101,15 +101,6 @@ function grading_menu() {
     'type' => MENU_CALLBACK,
   );
 
-// DEBUG/TEST ONLY
-  $items['grading/testgrants'] = array(
-    'title'=>'TEST GRANTS',
-    'page callback' => 'drupal_get_form',
-    'page arguments'=> array('grading_testgrants_form'),
-    'access arguments' => array('view grading'),
-    'type' => MENU_NORMAL_ITEM,
-  );
-
   return $items;
 }
 
@@ -2121,58 +2112,4 @@ function grading_cron() {
     db_query("DELETE FROM cron_notification WHERE approver_uid=%d AND student_uid=%d AND gradestext='%s' AND programme='%s'", $notification->approver_uid, $notification->student_uid, $notification->gradestext, $notification->programme);
   }
 }
-
-
-
-
-//TEST
-function grading_testgrants_form(&$obj) {
-
-  $form['submit'] = array('#type' => 'submit', '#value' => 'Generate Test student_grades node for Grants Test');
-
-  return $form;
-}
-
-
-function grading_testgrants_form_submit($form, &$state) {
-    $node = new stdClass();
-    $node->type                                    = 'student_grades';
-    $node->uid                                     = 1;  // Admin
-    $node->status                                  = 1;  // Published
-    $node->promote                                 = 0;
-    $node->sticky                                  = 0;
-    $node->comment                                 = 0;
-    $node->title                                   = 'TEST FOR GRANTS';
-    $node->field_mat_no[0]['uid']                  = 664;
-    $node->field_course_instance[0]['nid']         = 3387;
-    $node->field_student_gpa[0]['nid']             = 3388;
-    $node->field_ca1[0]['value']                   = 0;
-    $node->field_ca1forstudent[0]['value']         = 0;
-    $node->field_ca1locked[0]['value']             = 0;
-    $node->field_ca2[0]['value']                   = 0;
-    $node->field_ca2forstudent[0]['value']         = 0;
-    $node->field_ca2locked[0]['value']             = 0;
-    $node->field_ca3[0]['value']                   = 0;
-    $node->field_ca3forstudent[0]['value']         = 0;
-    $node->field_ca3locked[0]['value']             = 0;
-    $node->field_ca4[0]['value']                   = 0;
-    $node->field_ca4forstudent[0]['value']         = 0;
-    $node->field_ca4locked[0]['value']             = 0;
-    $node->field_exam_score[0]['value']            = 0;
-    $node->field_examscoreforstudent[0]['value']   = 0;
-    $node->field_examscorelocked[0]['value']       = 0;
-    $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_totalscoreforstudent[0]['value']  = '-';
-    $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_gradeforstudent[0]['value']       = '-';
-    $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
-    $node->field_gradepointforstudent[0]['value']  = '-';
-    node_save($node);
-
-
-  drupal_set_message("Submitted node: {$node->nid}<br />");
-}
-
-
-
 ?>
