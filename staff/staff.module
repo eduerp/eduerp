@@ -911,6 +911,7 @@ They also can do all the same things as <b><i>'Registry'</i></b>.<br />
 <b><i>'Registry'</i></b><br />
 They can perform manual additions of course registrations for a particular student including the 3rd Semester.<br />
 They can mark a particular course registration for a specific student as dropped (so the student is not required to take the exam).<br />
+They can change a student's programme.<br />
 They can view all fully approved grading.<br />
 They can see all student profiles.<br />
 They can perform clearances of student applications to the university.<br />
@@ -6419,7 +6420,7 @@ function staff_student_progress_qualification() {
   //get faculty and department info of the programme
    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) ||
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) ||
      staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Viewer', 'Department Examination Officer', 'Head of Department')) ||
      staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Viewer', 'Faculty Examination Officer', 'Dean of Faculty'))) {
 
@@ -7220,7 +7221,7 @@ function staff_drop_registered_course() {
   echo '<br /><hr /><br />';
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
       $navi .= '<br /><hr /><br />';
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry'))) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
 
     if (! isset($_SESSION['eduerp_drop_on']) && ! isset($_POST['eduerp_drop_on'])) {
 
@@ -7414,7 +7415,7 @@ function staff_manual_course_reg() {
   echo '<br /><hr /><br />';
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Manual Course Registration</font><br /><br />";
       $navi .= '<br /><hr /><br />';
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry'))) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
 
     if (! isset($_SESSION['eduerp_reg_on']) && ! isset($_POST['eduerp_reg_on'])) {
 
