@@ -1932,7 +1932,7 @@ function _grading_ahah_studentdetails() {
   $rs = db_query($sql, $student_profile->profile_first_choice);
   $r = db_fetch_object($rs);
 
-  if (!staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) &&
+  if (!staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) &&
     !staff_has_eduerp_role($user->uid, $r->nid, 0, array('Department Examination Viewer', 'Department Examination Officer', 'Head of Department')) &&
     !staff_has_eduerp_role($user->uid, 0, $r->field_college_id_nid, array('Faculty Examination Viewer', 'Faculty Examination Officer', 'Dean of Faculty'))) {
     print drupal_to_js(array('data' => 'You do Not have Rights to see data for this Student', 'status' => true));
