@@ -865,6 +865,57 @@ function student_views_api() {
 }
 
 
+function student_next_level($uid, $session) {
+  // This takes the student uid and also the session they are going to pay for and returns...
+  //  FALSE, if they are not eligible to register for the program because they have graduated or left the university.
+  //  Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
+
+  // $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
+
+  $user_profile = new UserProfile($uid);
+
+  $gotonextlevel = TRUE;
+
+  $sql = "SELECT field_event_sr_value FROM {content_type_student_record}
+    WHERE
+      field_student_ref_sr_uid=%d AND
+      field_student_program_sr_nid=%d AND
+      (
+        field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+        OR
+        (
+          field_event_sr_value='Repeat Session' AND
+          field_session_sr_value='%s'
+        )
+      )";
+  $rows = db_query($sql, $uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
+  if ($row = db_fetch_object($rows)) {
+    if ($row->field_event_sr_value === 'Repeat Session') {
+      $gotonextlevel = FALSE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  if (empty($user_profile->profile_reg_session) || $user_profile->profile_reg_session === $session) $gotonextlevel = FALSE;
+
+  $level_name = $user_profile->profile_level_name;
+
+  if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
+    if ($level_name >= 100) $level_name += 100;
+    else                    $level_name += 1;
+  }
+
+  return (string)$level_name;
+}
+
+
+function student_meets_fee_requirements($uid) {
+  return TRUE;
+}
+
+
 function student_course_form(&$obj) {
   global $user;
   global $user_profile;
@@ -914,10 +965,7 @@ function student_course_form(&$obj) {
     return FALSE;
   }
 
-  // Check if the student has paid his/her fees for this session
-  $q = "SELECT at.* FROM {admitted_transaction} at, {session} s WHERE at.student_id=%d AND at.session_id=s.session_id AND s.sess_name='%s' AND at.trans_type='sfee'";
-  $rs = db_query($q, $user->uid, $session);
-  if ($rs && ($row = db_fetch_object($rs))) {
+  if (student_meets_fee_requirements($user->uid)) {
 
     if ($gotonextlevel) $user_profile->profile_level_name = $level_name;
     $user_profile->profile_reg_session = $session;
