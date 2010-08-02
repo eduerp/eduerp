@@ -136,14 +136,14 @@ function staff_menu() {
   );
 
   $items['staff/manualcoursereg']=array(
-    'title'=>'Manual Additions of Course Registrations incl 3rd Semester',
+    'title'=>'Manually Register a Student in a Course',
     'page callback' => 'staff_manual_course_reg',
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
 
   $items['staff/changeprogmme']=array(
-    'title'=>'Change of Programme by Student',
+    'title'=>"Change a Student's Programme",
     'page callback' => 'staff_change_student_programme',
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
@@ -7456,7 +7456,7 @@ function staff_manual_course_reg() {
       $navi .= '<br /><hr /><br />';
       echo $navi;
       //echo "<b>List of unRegistered Courses</b> | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['mat_no'] ."</b> | <b>". $_SESSION['eduerp_reg_course_info']['session'] ." Session</b>  |  <b>Semester ". $_SESSION['eduerp_reg_course_info']['semester'] ."</b> - Select a Course to Register it<br /><br />";
-      echo "<b>List of unRegistered Courses by </b> | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['mat_no'] ."</b>
+      echo "<b>List of unRegistered Courses for</b> | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['mat_no'] ."</b>
       | <b>". $_SESSION['eduerp_reg_course_info']['session'] ." Session</b>  |  <b>Semester ". $_SESSION['eduerp_reg_course_info']['semester'] ."</b>
       | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['current_programme_name'] ."</b>
       |  Student current level <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['level'] ." </b>
@@ -7572,7 +7572,7 @@ function get_student_reg_course_form() {
 
 
   $form['submit'] = array(
-      '#value' => 'Register Courses',
+      '#value' => 'Register Course',
       '#type' => 'submit'
   );
 
@@ -7828,7 +7828,7 @@ function staff_change_student_programme() {
   global $user;
   ob_start();
   echo '<br /><hr /><br />';
-      $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Change of Programme by Student</font><br /><br />";
+      $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Change a Student's Programme</font><br /><br />";
       $navi .= '<br /><hr /><br />';
   if(isset($_SESSION['eduerp_change_prog_on'])) $_POST['eduerp_change_prog_on'] = $_SESSION['eduerp_change_prog_on'];
 
@@ -7844,18 +7844,18 @@ function staff_change_student_programme() {
     elseif ($_POST['eduerp_change_prog_on'] == 1) {//page1
 
 
-        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
+        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change a Student's Programme</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
         echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
         | <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b>
         | Student current level <b>". $_SESSION['eduerp_change_prog_info']['level'] ."</b>
-        <br /><br />- Select a New Programme to map to the Student<br /><br />";
+        <br /><br />- Select a New Programme for the Student<br /><br />";
         echo drupal_get_form('staff_student_change_programme_form');
 
       }
       elseif($_POST['eduerp_change_prog_on'] == 2) { //page 2
-        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change of Programme by Student</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
+        $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='/staff/changeprogmme'>Change a Student's Programme</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
         //echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
@@ -8047,12 +8047,12 @@ function staff_student_change_programme_form_validate($form, &$state) {
   */
 }
 function staff_student_change_programme_form() {
-  $form['#title'] = 'Staff Student Change Programme';
+  $form['#title'] = "Change a Student's Programme";
 
  $form['programme_nid'] = array(
     '#type' => 'select',
     '#options' => array(' '=>' ') + get_programmes(0, true),
-    '#title' => 'Map New Programme',
+    '#title' => 'New Programme for Student',
     '#ahah' => array('path' => 'staff/ajax/programmelevel', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'programmelevels'),
     '#required' => TRUE
 
@@ -8097,7 +8097,7 @@ function get_student_prog_form() {
     '#type' => 'select',
     '#required' => TRUE,
     '#options' => array(' '=>' ') + get_programmes(0, true),
-    '#title' => 'Map New Programme',
+    '#title' => 'New Programme for Student',
     '#ahah' => array('path' => 'staff/ajax/programmelevel', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'programmelevels')
 
   );
