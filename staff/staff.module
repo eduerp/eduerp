@@ -5830,7 +5830,6 @@ function staff_verify_assigned_course() {
     else
       echo "<b>All Courses for ". $programmeInfo->programme_name ." have been assigned for <b>". $_SESSION['eduerp_verify']['session'] ." Session</b> and <b>Semester ". $_SESSION['eduerp_verify']['semester'] ."</b>!</b><br /><br /><br /><hr /><br />";
 
-    /*
     //test for unassigned courses for the programme
     $runningCourse = get_programme_running_courses ($programmeInfo->programme_nid, $_SESSION['eduerp_verify']['session'], $_SESSION['eduerp_verify']['semester']);
 
@@ -5838,7 +5837,7 @@ function staff_verify_assigned_course() {
       echo "<div id='assigned_courses'>";
       display_course_result($runningCourse);
       echo "</div>";
-      */
+
       unset($_SESSION['eduerp_return_url']);
   return ob_get_clean();
 }
@@ -5956,12 +5955,9 @@ EOD;
   <table border ='1'>
     <tr>
       <th>#</th>
-      <th>Faculty</th>
-      <th>Department</th>
-      <th>Programme</th>
       <th>Level</th>
       <th>Course Code</th>
-      ";
+      <th>Department</th>";
     if ($formissing)
       $html .= "<th>Action</th>";
 
@@ -5983,12 +5979,9 @@ EOD;
     $html .="
     <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
       <td><font $rowColor >". $i++ ."</font></td>
-      <td><font $rowColor >". $f->faculty_name ."</font></td>
-      <td><font $rowColor >". $f->department_name ."</font></td>
-      <td><font $rowColor >". $f->programme_name ."</font></td>
       <td><font $rowColor >". $f->level ."</font></td>
       <td><font $rowColor >". $f->course_code ."</font></td>
-      ";
+      <td><font $rowColor >". $f->department_name ."</font></td>";
       if ($formissing)
         $html .= "<td><input type='button' class='delete_btn' value='Fix Problem' onClick=\"fix_course({$f->program_course_id});\" /></td>";
       $html .= "
@@ -6947,33 +6940,6 @@ function get_all_sessions() {
 
 
 function get_unassigned_for_programme($programme, $session, $semester) {
-  $sql = "SELECT DISTINCT
-        pc.level,
-        c.field_code_value course_code,
-        p.field_programme_name_value programme_name,
-        d.field_department_name_value department_name,
-        co.field_college_name_value faculty_name
-      FROM {program_course} pc
-      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
-      INNER JOIN {content_type_course_instance} ci
-      ON
-        c.nid=ci.field_course_id_nid AND
-        pc.semester=ci.field_semester_name_value AND
-        ci.field_sess_name_value='%s' AND
-        ci.field_semester_name_value='%s'
-      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
-      INNER JOIN {content_type_department} d ON p.field_department_id_nid=d.nid
-      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
-      LEFT JOIN {program_course_instance} pci
-      ON
-        ci.nid=pci.course_instance_id AND
-        pc.programme_id=pci.programme_id AND
-        pc.semester=pci.semester AND
-        ci.field_sess_name_value=pci.session
-      WHERE pci.programme_id is NULL
-      ORDER BY co.field_college_name_value, d.field_department_name_value, p.field_programme_name_value, pc.level, c.field_code_value";
-    $result = db_query($sql, $session, $semester, $programme);
-  /*
   $sql ="
   SELECT DISTINCT
         pc.level,
@@ -6992,8 +6958,6 @@ function get_unassigned_for_programme($programme, $session, $semester) {
       WHERE pc.semester='%s' AND p.nid=%d AND ci.nid IS NULL
       ORDER BY d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
     $result = db_query($sql, $session, $semester, $programme);
-    */
-
     return $result;
 }
 
