@@ -7601,16 +7601,19 @@ function get_student_reg_course_form_submit($form, &$state) {
   $student_profile = new UserProfile($studentUID);
   $session = $_SESSION['eduerp_reg_course_info']['session'];
   $semester = $_SESSION['eduerp_reg_course_info']['semester'];
-  $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
-  $level = $student_profile->profile_level_name;
-  //borrowed codes
+  $studentname = '';
+  if (!empty($student_profile->profile_first_name) && !empty($student_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($student_profile->profile_middle_name)) $middle = ' ' . $student_profile->profile_middle_name;
+    $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
+  }
+
   // Find the program type
   $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
   $result = db_query($sql, $student_profile->profile_first_choice);
   $row = db_fetch_object($result);
   $program_type = abs($row->field_program_type_value);
   if ($program_type == 3 && $student_profile->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
-
 
   // Find the existing student_program
   $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
@@ -7626,27 +7629,17 @@ function get_student_reg_course_form_submit($form, &$state) {
 
   $totalCreditLoad = $courseCreditLoad + $regCreditLoad;
 
-  //get max credit load for the programm for the level
-  $programmeCredits = get_min_max_credits($student_profile->profile_first_choice, $level, $semester);
-
-  //make sure that the student is not over registering
-  if($totalCreditLoad > $programmeCredits['max_credit_load']) {
-
-    drupal_set_message(Error_Types(129));
-    return ;
-  }
-
   $student->uid = $studentUID;
   $student_gpa = create_student_gpa($student, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
 
   create_student_grades($student, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
+
   drupal_set_message('Course was Registered Successfully!');
 
   //check for remainders
   $result = get_student_unregistered_courses($_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $session, $semester);
   if(db_affected_rows($result) <= 0)
     drupal_set_message(Error_Types(126));
-
 }
 
 
