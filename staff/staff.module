@@ -82,13 +82,13 @@ function staff_menu() {
     'title' => 'Create/Modify Faculty',
     'page callback' => 'staff_create_edit_faculty',
     'access arguments' => array('staff register course'),
-    'type' => MENU_NORMAL_ITEM
+    'type' => MENU_CALLBACK
   );
   $items['staff/createeditdept'] = array(
     'title' => 'Create/Modify Department',
     'page callback' => 'staff_create_edit_dept',
     'access arguments' => array('staff register course'),
-    'type' => MENU_NORMAL_ITEM
+    'type' => MENU_CALLBACK
   );
   $items['staff/createeditcourse']=array(
     'title'=>'Create/Modify a Course',
@@ -911,6 +911,7 @@ They also can do all the same things as <b><i>'Registry'</i></b>.<br />
 <b><i>'Registry'</i></b><br />
 They can perform manual additions of course registrations for a particular student including the 3rd Semester.<br />
 They can mark a particular course registration for a specific student as dropped (so the student is not required to take the exam).<br />
+They can change a student's programme.<br />
 They can view all fully approved grading.<br />
 They can see all student profiles.<br />
 They can perform clearances of student applications to the university.<br />
@@ -3172,13 +3173,13 @@ function semester_admin() {
   echo drupal_get_form('set_session_form');
   echo '<br /><hr /><br />';
 
-  echo 'Highlight Missing Courses for';
+  echo 'Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)[Feature #436]';
   echo '<br /><br /><hr /><br />';
 
-  echo 'Check have all existing Courses required for a Programme been Verified/Assigned for';
+  echo 'Check have all existing Courses required for a Programme been Verified (Associated with the Programme)[Feature #435]';
   echo '<br /><br /><hr /><br />';
 
-  echo 'List the Fees for all Programmes by Level & Semester';
+  echo 'List the Fees for all Programmes by Level & Semester[Feature #444]';
   echo '<br /><br /><hr /><br />';
 
   echo drupal_get_form('open_close_student_registration_form');
@@ -3190,22 +3191,16 @@ function semester_admin() {
   echo '<a href="' . url('grading/statsuni') . '">Grading Statistics for University</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/changeprogmme') . '">Change of Programme by Student</a>';
-  echo '<br /><br /><hr /><br />';
-
   echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Qualification</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/dropcoursereg') . '">Mark a Course Registration as Dropped</a>';
-  echo '<br /><br /><hr /><br />';
-
-  echo '<a href="' . url('staff/manualcoursereg') . '">Manual Additions of Course Registrations incl 3rd Semester</a>';
-  echo '<br /><br /><hr /><br />';
-
   echo '<a href="' . url('staff/department') . '">View Departments and Courses</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('liststaff') . '">List Staff</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/createeditcourse') . '">Create or Modify Courses for A Department</a>';
@@ -3214,7 +3209,22 @@ function semester_admin() {
   echo '<a href="' . url('staff/createmodifyprog') . '">Create or Modify a University Programme</a>';
   echo '<br /><br /><hr /><br />';
 
+  echo '<a href="' . url('staff/createeditdept') . '">Create or Modify a Department</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/createeditfaculty') . '">Create or Modify a Faculty</a>';
+  echo '<br /><br /><hr /><br />';
+
   echo '<a href="' . url('staff/list') . '">List Staff and Assign Roles</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/manualcoursereg') . '">Manually Register a Student in a Course</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/dropcoursereg') . '">Mark a Student as Not being Required to take an Exam for a course they have enrolled in</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/changeprogmme') . '">Change a Student to a Different Programme</a>';
   echo '<br /><br /><hr /><br />';
 
   return ob_get_clean();
@@ -6408,7 +6418,7 @@ function staff_student_progress_qualification() {
   //get faculty and department info of the programme
    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) ||
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) ||
      staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Viewer', 'Department Examination Officer', 'Head of Department')) ||
      staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Viewer', 'Faculty Examination Officer', 'Dean of Faculty'))) {
 
@@ -7238,7 +7248,7 @@ function staff_drop_registered_course() {
   echo '<br /><hr /><br />';
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
       $navi .= '<br /><hr /><br />';
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry'))) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
 
     if (! isset($_SESSION['eduerp_drop_on']) && ! isset($_POST['eduerp_drop_on'])) {
 
@@ -7432,7 +7442,7 @@ function staff_manual_course_reg() {
   echo '<br /><hr /><br />';
       $navi = "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Manual Course Registration</font><br /><br />";
       $navi .= '<br /><hr /><br />';
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry'))) {
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
 
     if (! isset($_SESSION['eduerp_reg_on']) && ! isset($_POST['eduerp_reg_on'])) {
 
