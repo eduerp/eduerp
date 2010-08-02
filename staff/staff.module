@@ -7651,64 +7651,42 @@ function get_student_reg_course_form_submit($form, &$state) {
 
 
 function get_student_unregistered_courses($studentUID, $session, $semester) {
-
   //get the student's profile info
-    $student_profile = new UserProfile($studentUID);
-    $studInfo['fname'] = $student_profile->profile_first_name;
-    //we need to get the courses he may have registered for reason being we will not be including those
-    $registeredCourses = get_student_registered_courses($studentUID, $session, $semester);
-    $strRegisteredCourses = "";
-    if(db_affected_rows($registeredCourses) > 0) {
-      //these are the courses he already registered for the session/semester
-      //build content_type_instance_id array
-      while($r = db_fetch_object($registeredCourses)) {
-        $exclude[] = $r->ctci_nid;
+  $student_profile = new UserProfile($studentUID);
+  $studInfo['fname'] = $student_profile->profile_first_name;
 
-      }
-      if (is_array($exclude) && sizeof($exclude)) {
-        $registered_nids = implode (", ", $exclude);
-        $strRegisteredCourses = " AND ci.nid NOT IN (". $registered_nids .") ";
-      }
+  //we need to get the courses he may have registered for reason being we will not be including those
+  $registeredCourses = get_student_registered_courses($studentUID, $session, $semester);
+  $strRegisteredCourses = "";
+  if(db_affected_rows($registeredCourses) > 0) {
+    //these are the courses he already registered for the session/semester
+    //build content_type_instance_id array
+    while ($r = db_fetch_object($registeredCourses)) {
+      $exclude[] = $r->ctci_nid;
     }
-    $firstChoice = $student_profile->profile_first_choice;
-    $level = $student_profile->profile_level_name;
+    if (is_array($exclude) && sizeof($exclude)) {
+      $registered_nids = implode (", ", $exclude);
+      $strRegisteredCourses = " AND ci.nid NOT IN (". $registered_nids .") ";
+    }
+  }
 
-
-  //this SQL was borrowed from the student module
   $sql = "SELECT DISTINCT
         ci.nid AS course_instance,
-        ci.field_timetable_value AS timetable,
-        c.field_creditload_value AS credit_load,
-        c.field_code_value AS course_code,
-        c.field_coursetitle_value AS course_title,
-        c.field_course_description_value AS course_description,
-        c.field_prerequisite_codes_value AS prerequisite_codes,
-        c.field_prerequisite_value,
-        pc.level AS level,
-        pc.course_type AS course_type
+        CONCAT(c.field_code_value, IF(ci.field_location_value > 1, CONCAT(' (', CAST(ci.field_location_value AS CHAR), ': ', LEFT(ci.field_timetable_value, 100), ')'), '')) AS course_code
       FROM
-        {program_course_instance} pci,
         {content_type_course_instance} ci,
         {content_type_course} c,
         {program_course} pc
       WHERE
-        pci.programme_id=%d AND
-        pci.session='%s' AND
-        pci.semester='%s' AND
-        pci.course_instance_id=ci.nid AND
+        ci.field_sess_name_value='%s' AND
+        ci.field_semester_name_value='%s' AND
         ci.field_course_id_nid=c.nid AND
         c.nid=pc.course_id AND
-        pci.semester=pc.semester AND
-        pci.programme_id=pc.programme_id AND
-        pc.level='%s'
+        pc.programme_id=%d
         ". $strRegisteredCourses ."
-      ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
-    $result = db_query($sql, $firstChoice, $session, $semester, $level);
-    return $result;
-  //$result = db_query($sql, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester, $user_profile->profile_level_name);
-
-
-
+      ORDER BY course_code";
+  $result = db_query($sql, $session, $semester, $student_profile->profile_first_choice);
+  return $result;
 }
 
 
