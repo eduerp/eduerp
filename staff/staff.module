@@ -7585,11 +7585,22 @@ function get_student_reg_course_form() {
 function get_student_reg_course_form_validate($form, &$state) {
   $_SESSION['eduerp_reg_on'] = 1;//keep showing the form
 
+  $values = $state['values'];
+
+  // Insure that there is no already existing 'student_grades' CCK for the same student, course_instance, session and semester
+  $sql = "SELECT sg.nid
+  FROM {content_type_student_grades} sg
+  INNER JOIN {content_type_course_instance} ci ON sg.field_course_instance_nid = ci.nid AND ci.field_sess_name_value = '%s' AND ci.field_semester_name_value = '%s'
+  WHERE sg.field_mat_no_uid = %d AND sg.field_dropped_value = 0 AND ci.nid = %d";
+  $result = db_query($sql, $_SESSION['eduerp_reg_course_info']['session'], $_SESSION['eduerp_reg_course_info']['semester'], $_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $values['course_instance_id']);
+
+  if (db_affected_rows($result) > 0)
+    drupal_set_message('That course is already registered for this session and semester');
+
   //check for remainders
   $result = get_student_unregistered_courses($_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $_SESSION['eduerp_reg_course_info']['session'], $_SESSION['eduerp_reg_course_info']['semester']);
   if(db_affected_rows($result) <= 0)
     drupal_set_message(Error_Types(126));
-
 }
 
 
