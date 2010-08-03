@@ -243,18 +243,47 @@ function student_perms_initialize() {
 }
 
 function student_install() {
+  // make Drupal aware of the exam record field type
+  content_notify('install', 'exam_record');
+
+  drupal_set_message('student module installed');
+}
+
+function student_uninstall() {
+  content_notify('uninstall', 'exam_record');
+
+  drupal_set_message('student module uninstalled');
+}
+
+function student_disable() {
+  // remove content type permissions
+  $perms = student_perms_initialize();
+
+  foreach ($perms as $role => $permissions) {
+    permissions_revoke_permissions($role, $permissions);
+  }
+
+  content_notify('disable', 'exam_record');
+}
+
+function student_enable() {
   // Install the content types
   $student_profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_student_profile.txt');
   $student_clearance_content_type = file_get_contents(dirname(__FILE__). '/cck/cck_student_clearance.txt');
 
+  // determine if to replace content type or create it
+  $student_profile_info = content_types('student_profile');
+  $student_clearance_info = content_types('student_clearance');
+
   $form_state = array(
     'values' => array(
-      'type_name' => '<create>',
+      'type_name' => (is_array($student_profile_info) && array_key_exists('type', $student_profile_info)) ? 'student_profile' : '<create>',
       'macro' => $student_profile_content_type,
     ),
   );
   drupal_execute('content_copy_import_form', $form_state);
 
+  $form_state['values']['type_name'] = (is_array($student_clearance_info) && array_key_exists('type', $student_clearance_info)) ? 'student_clearance' : '<create>';
   $form_state['values']['macro'] = $student_clearance_content_type;
   drupal_execute('content_copy_import_form', $form_state);
 
@@ -271,31 +300,7 @@ function student_install() {
     permissions_grant_permissions($role, $permissions);
   }
 
-  // make Drupal aware of the exam record field type
-  content_notify('install', 'exam_record');
-
-  drupal_set_message('student module installed');
-}
-
-function student_uninstall() {
-  // remove content type permissions
-  $perms = student_perms_initialize();
-
-  foreach ($perms as $role => $permissions) {
-    permissions_revoke_permissions($role, $permissions);
-  }
-
-  content_notify('uninstall', 'exam_record');
-
-  drupal_set_message('student module uninstalled');
-}
-
-function student_enable() {
   content_notify('enable', 'exam_record');
-}
-
-function student_disable() {
-  content_notify('disable', 'exam_record');
 }
 
 ?>

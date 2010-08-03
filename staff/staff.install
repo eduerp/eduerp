@@ -300,11 +300,20 @@ function staff_perms_initialize() {
 }
 
 function staff_install() {
+  drupal_set_message('staff module installed');
+}
+
+function staff_enable() {
   // Install the content types
   $staff_profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_staff_profile.txt');
+
+  // determine replacement or new installation of content type
+  $staff_profile_info = content_types('staff_profile');
+  $is_new = (is_array($staff_profile_info) && array_key_exists('type', $staff_profile_info)) ? false : true;
+
   $form_state = array(
     'values' => array(
-      'type_name' => '<create>',
+      'type_name' => ($is_new) ? '<create>' : 'staff_profile',
       'macro' => $staff_profile_content_type,
     ),
   );
@@ -323,19 +332,19 @@ function staff_install() {
   foreach ($perms as $role => $permissions) {
     permissions_grant_permissions($role, $permissions);
   }
-
-  drupal_set_message('staff module installed');
 }
 
 function staff_uninstall() {
+  drupal_set_message('staff module uninstalled');
+}
+
+function staff_disable() {
   // remove content type permissions
   $perms = staff_perms_initialize();
 
   foreach ($perms as $role => $permissions) {
     permissions_revoke_permissions($role, $permissions);
   }
-
-  drupal_set_message('staff module uninstalled');
 }
 
 function staff_schema() {
