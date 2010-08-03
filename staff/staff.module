@@ -7291,6 +7291,8 @@ function get_student_drop_course_form_submit($form, &$state) {
   $sql = "UPDATE {content_type_student_grades} SET field_dropped_value = 1 WHERE nid = %d";
   db_query($sql, $values['student_grade_nid']);
 
+  update_credit_load_registered($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
+
   drupal_set_message('The Course has been dropped!');
   //check for remainders
   $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
@@ -7588,18 +7590,12 @@ function get_student_reg_course_form_submit($form, &$state) {
   $row = db_fetch_object($result);
   $student_program = $row->nid;
 
-  //get course credit load
-  $courseCreditLoad = get_course_credit_load($values['course_instance_id']);
-
-  //get the cumulative credits already registered for
-  $regCreditLoad = get_total_credit_load_registered($studentUID, $session, $semester);
-
-  $totalCreditLoad = $courseCreditLoad + $regCreditLoad;
-
   $student->uid = $studentUID;
-  $student_gpa = create_student_gpa($student, $student_profile, $studentname, $student_program, $session, $semester, $totalCreditLoad);
+  $student_gpa = create_student_gpa($student, $student_profile, $studentname, $student_program, $session, $semester, 0);
 
   create_student_grades($student, $values['course_instance_id'], $student_gpa, $studentname, $program_type);
+
+  update_credit_load_registered($studentUID, $session, $semester);
 
   drupal_set_message('Course was Registered Successfully!');
 
@@ -7650,32 +7646,22 @@ function get_student_unregistered_courses($studentUID, $session, $semester) {
 }
 
 
-function get_total_credit_load_registered($studentUID, $session, $semester) {
-  $sql = "SELECT IFNULL(field_credit_load_registered_value, 0) credit_load FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid = %d AND field_sess_name_gpa_value = '%s' AND field_semester_name_gpa_value = '%s' LIMIT 1 ";
-  $result = db_query($sql, $studentUID, $session, $semester);
+function update_credit_load_registered($uid, $session, $semester) {
+  $sql = "
+    SELECT SUM(c.field_creditload_value) AS total_registered
+    FROM {content_type_student_gpa} gpa
+    INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
+    INNER JOIN {content_type_course_instance} ci ON sg.field_course_instance_nid = ci.nid
+    INNER JOIN {content_type_course} c ON ci.field_course_id_nid = c.nid
+    WHERE
+      gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
+      sg.field_dropped_value = 0";
+  $result = db_query($sql, $uid, $session, $semester);
   $r = db_fetch_object($result);
-  return $r->credit_load;
 
-}
-
-
-function get_course_credit_load($course_instance_id) {
-  $sql = "SELECT IFNULL(field_creditload_value, 0) credit_load FROM {content_type_course} c
-  INNER JOIN {content_type_course_instance} ci ON c.nid = ci.field_course_id_nid
-  WHERE ci.nid = %d ";
-  $result = db_query($sql, $course_instance_id);
-  $r = db_fetch_object($result);
-  return $r->credit_load;
-}
-
-
-function get_min_max_credits($programme_nid, $level, $semester) {
-  $sql = "SELECT min_credit_load, max_credit_load FROM  {program_level_semester} WHERE programme_id = %d AND level = '%s' AND semester = '%s' LIMIT 1 ";
-  $result = db_query($sql, $programme_nid, $level, $semester);
-  $r = db_fetch_object($result);
-  $info = array('min_credit_load'=>$r->min_credit_load, 'max_credit_load'=>$r->max_credit_load);
-  return $info;
-
+  $sql = "UPDATE {content_type_student_gpa} gpa1 SET field_credit_load_registered_value = %d
+    WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
+  db_query($sql, $r->total_registered, $uid, $session, $semester);
 }
 
 
