@@ -7071,7 +7071,7 @@ function get_unregistered_students($session, $semester) {
   INNER JOIN {content_type_student_program} sp ON ur.uid=sp.field_student_ref_sp_uid AND spro.field_profile_first_choice_nid=sp.field_program_ref_sp_nid
   LEFT JOIN {content_type_student_record} sr
   ON ur.uid=sr.field_student_ref_sr_uid AND
-   sp.nid=sr.field_student_program_sr_nid AND
+   sp.field_program_ref_sp_nid=sr.field_student_program_sr_nid AND
    sr.field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
   WHERE
   r.name='Student' AND
@@ -7189,7 +7189,7 @@ function staff_student_action_form_submit($form, &$state) {
   $node->field_event_sr[0]['value']         = $values['event']; //select from Graduated, Left Voluntarily, Left Forced, Repeat Session
   $node->field_degree_sr[0]['value']        = $values['degree']; //select from degree class (None, First Class, Second Class Upper, Second Class Lower, Third Class, Pass
   $node->field_session_sr[0]['value']       = $values['session']; //session user graduated from or has been forced to repeat e.g. 2009/2010
-  $node->field_student_program_sr[0]['nid'] = $values['programmeNID']; //node ID of student_program CCK that this record refers to
+  $node->field_student_program_sr[0]['nid'] = $values['programmeNID']; //node ID of program CCK that this record refers to
   $node->field_approver_sr[0]['uid']        = $user->uid; //uid of user who created this record;
   $node->field_comment_sr[0]['value'] = ! empty($values['comment']) ? $values['comment'] : null;
   //node_save($node);
