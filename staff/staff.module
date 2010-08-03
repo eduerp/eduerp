@@ -7560,7 +7560,7 @@ function get_student_reg_course_form_validate($form, &$state) {
   $result = db_query($sql, $_SESSION['eduerp_reg_course_info']['session'], $_SESSION['eduerp_reg_course_info']['semester'], $_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $values['course_instance_id']);
 
   if (db_affected_rows($result) > 0)
-    drupal_set_message('That course is already registered for this session and semester');
+    form_set_error('course_instance_id', 'That course is already registered for this session and semester');
 
   //check for remainders
   $result = get_student_unregistered_courses($_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $_SESSION['eduerp_reg_course_info']['session'], $_SESSION['eduerp_reg_course_info']['semester']);
