@@ -884,13 +884,13 @@ function student_next_level($uid, $session) {
         field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
         OR
         (
-          field_event_sr_value='Repeat Session' AND
+          field_event_sr_value IN ('Repeat Session', 'Changed from Old Programme') AND
           field_session_sr_value='%s'
         )
       )";
   $rows = db_query($sql, $uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
   if ($row = db_fetch_object($rows)) {
-    if ($row->field_event_sr_value === 'Repeat Session') {
+    if ($row->field_event_sr_value === 'Repeat Session' || $row->field_event_sr_value === 'Changed from Old Programme') {
       $gotonextlevel = FALSE;
     }
     else {
@@ -934,13 +934,13 @@ function student_course_form(&$obj) {
         field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
         OR
         (
-          field_event_sr_value='Repeat Session' AND
+          field_event_sr_value IN ('Repeat Session', 'Changed from Old Programme') AND
           field_session_sr_value='%s'
         )
       )";
   $rows = db_query($sql, $user->uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
   if ($row = db_fetch_object($rows)) {
-    if ($row->field_event_sr_value === 'Repeat Session') {
+    if ($row->field_event_sr_value === 'Repeat Session' || $row->field_event_sr_value === 'Changed from Old Programme') {
       $gotonextlevel = FALSE;
     }
     else {
