@@ -314,6 +314,24 @@ function _staff_ajax() {
       $output = _staff_ahah_render($form);
       print drupal_to_js(array('data' => $output, 'status' => true));
       break;
+    case 'getdeflecturer':
+    	 $course_nid = $_POST['course_nid']; $id = "";
+    	 //get the default lecturer for the course
+        $sql = "SELECT lecturer_id id FROM {program_course} WHERE course_id = %d LIMIT 1 ";
+        $rs = db_query($sql, $course_nid);
+        while($row = db_fetch_object($rs))
+          $id = $row->id;   
+  
+  	$form['chief_staff_nid'] = array(
+      '#type' => 'select',
+      '#options' => array(''=>'') + get_Staff_in_Department(), 
+      '#title' => 'Chief Lecturer',
+      '#required'  => TRUE,
+      '#default_value' => $id
+        );
+        $output = _staff_ahah_render($form);
+        print drupal_to_js(array('data' => $output, 'status' => true));
+    	    break;
   endswitch;
   exit();
 }
@@ -1089,10 +1107,13 @@ function programme($programme_nid=0) {
 }
 
 
-function course($department_nid) {
+function course($department_nid, $semester = 0) {
 
   $course = array();
-  $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} WHERE field_department_nid_nid=%d ORDER BY field_level_value, field_code_value", $department_nid);
+  if ($semester != 0)
+    $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} WHERE field_department_nid_nid=%d AND field_semester_value=%d ORDER BY field_level_value, field_code_value", $department_nid, $semester);
+  else
+    $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} WHERE field_department_nid_nid=%d ORDER BY field_level_value, field_code_value", $department_nid);
   if (db_affected_rows($r) > 0) {
     while ($f = db_fetch_object($r))
       $course[$f->nid] = $f->value;
@@ -4821,25 +4842,38 @@ function staff_assign_course_form() {
    if (empty($_POST['location'])) {//trying to edit
      $result = get_Course_Instance(arg(3));
      $course_instance = db_fetch_object($result);
+     $courses[$course_instance->nid] = $course_instance->course_code;
    }
   }
+  
+  if(! isset($courses))
+  $courses = course(arg(2), $_SESSION['eduerp_assign_course_semester']);
+
   $form['#title'] = 'Assign Lecturers and Timetable for Course';
 
   $form['course_nid'] = array(
   '#type' => 'select',
-  '#options' => course(arg(2)),
-  '#title' => 'Course Code'
+  '#options' => $courses,
+  '#title' => 'Course Code',
+  '#ahah' => array('path' => 'staff/ajax/getdeflecturer', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'getdeflecturerz'),
+  '#required'  => TRUE
   );
+  
   if ($course_instance) $form['course_nid']['#default_value'] = $course_instance->field_course_id_nid;
 
   $form['chief_staff_nid'] = array(
       '#type' => 'select',
       '#options' => array(''=>'') + get_Staff_in_Department(), //arg(2)),
       '#title' => 'Chief Lecturer',
+      '#attributes' => array(
+      'style' => 'width:100px'),
+      '#prefix' => "<div id='getdeflecturerz'>",
+      '#suffix' => "</div>",
+      '#disabled' => TRUE,
       '#required'  => TRUE
 
       );
- if ($course_instance) $form['chief_staff_nid']['#default_value'] = $course_instance->field_lecturer_uid;
+  if ($course_instance) {$form['chief_staff_nid']['#default_value'] = $course_instance->field_lecturer_uid; $form['chief_staff_nid']['#disabled'] = FALSE; }
 
   $form['assist_staff_nid'] = array(
       '#type' => 'select',
@@ -4848,24 +4882,7 @@ function staff_assign_course_form() {
 
       );
   if ($course_instance) $form['assist_staff_nid']['#default_value'] = (int) $course_instance->field_lecturer_alternate_uid ;
-  /*
-  $form['semester'] = array(
-      '#type' => 'select',
-      '#options' => semesters(),
-      '#title' => 'Semester'
-
-      );
-  if ($course_instance) $form['semester']['#default_value'] = $course_instance->field_semester_name_value;
-  */
-  /*
-   $form['location'] = array(
-      '#type' => 'textfield',
-      '#title' => 'Location',
-      '#required' => TRUE
-
-      );
-   if ($course_instance) $form['location']['#default_value'] = $course_instance->field_location_value;
-   */
+  
    $form['timetable'] = array(
       '#type' => 'textarea',
       '#title' => 'Time Table',
@@ -5218,9 +5235,10 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
 
 
 function get_Course_Instance($course_instance_nid) {
-  $result = db_query("SELECT nid, field_lecturer_uid, field_sess_name_value, field_semester_name_value, field_lecturer_alternate_uid, field_repeat_value, field_course_id_nid,  field_location_value, field_timetable_value
-      FROM {content_type_course_instance}
-      WHERE nid=%d ", $course_instance_nid);
+  $result = db_query("SELECT field_code_value course_code, ci.nid, ci.field_lecturer_uid, ci.field_sess_name_value, ci.field_semester_name_value, ci.field_lecturer_alternate_uid, ci.field_repeat_value, ci.field_course_id_nid,  ci.field_location_value, ci.field_timetable_value
+      FROM {content_type_course_instance} ci
+      INNER JOIN {content_type_course} c0 ON ci.field_course_id_nid = c0.nid 
+      WHERE ci.nid=%d ", $course_instance_nid);
   return $result;
 }
 
