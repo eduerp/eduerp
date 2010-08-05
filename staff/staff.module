@@ -6571,7 +6571,7 @@ function display_progress_towards_qualification(&$result) {
 
 
 function  get_progress_qualification_details() {
-  global $eduerp_programmeName, $eduerp_programme_nid, $eduerp_studentName;
+  global $eduerp_uid, $eduerp_programmeName, $eduerp_programme_nid, $eduerp_studentName;
 
   $eduerp_programme_nid = $_SESSION['eduerp_qualification']['programme_nid'];
   $session = $_SESSION['eduerp_qualification']['session'];
@@ -6754,7 +6754,7 @@ function  get_progress_qualification_details() {
       <tr>
         <td colspan=2>&nbsp;</td>
         <td colspan=7>";
-          $uid = $v['uid'];
+          $eduerp_uid = $v['uid'];
           $eduerp_studentName = $v['student_name'];
           //$stud = new student_action_class($v['uid'], $programmeName, $programme_nid, $v['student_name']);
           $html .= drupal_get_form('staff_student_action_form');
@@ -7121,7 +7121,7 @@ function get_unregistered_students($session, $semester) {
 
 
 function staff_student_action_form() {
-  global $eduerp_programmeName, $eduerp_programme_nid, $eduerp_studentName;
+  global $eduerp_uid, $eduerp_programmeName, $eduerp_programme_nid, $eduerp_studentName;
   $form = array(
     '#theme' => 'form_panel_table',
     '#form_panel_table_attributes' => array('border' => 0));
@@ -7135,14 +7135,14 @@ function staff_student_action_form() {
     '#form_panel_col' => 1,
     '#form_panel_row' => 1
   );
-  /*
+
   $form['uid'] = array(
     '#title' => 'uid',
     '#type' => 'hidden',
-    '#default_value' => $uid
+    '#default_value' => $eduerp_uid
 
   );
-  */
+
   $form['programmeName'] = array(
     '#title' => 'programmeName',
     '#type' => 'hidden',
