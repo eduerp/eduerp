@@ -5862,7 +5862,7 @@ function staff_verify_assigned_course() {
       echo '<br /><hr /><br />';
     }
     else
-      echo "<b>All Courses for ". $programmeInfo->programme_name ." have been assigned for <b>". $_SESSION['eduerp_verify']['session'] ." Session</b> and <b>Semester ". $_SESSION['eduerp_verify']['semester'] ."</b>!</b><br /><br /><br /><hr /><br />";
+      echo "<b>All Courses for ". $programmeInfo->programme_name ." HAVE BEEN VERIFIED (assigned a lecturer & timetable) for <b>". $_SESSION['eduerp_verify']['session'] ." Session</b> and <b>Semester ". $_SESSION['eduerp_verify']['semester'] ."</b>!!!</b><br /><br /><br /><hr /><br />";
 
     //test for unassigned courses for the programme
     $runningCourse = get_programme_running_courses ($programmeInfo->programme_nid, $_SESSION['eduerp_verify']['session'], $_SESSION['eduerp_verify']['semester']);
@@ -8456,7 +8456,8 @@ function display_verify_required_courses_for_programme() {
      $html .="
       </table>
       <br />
-      Address the above issues here: <a href='createmodifyprog'>Create or Modify a University Programme</a>
+      Address the above issues here: <a href='createmodifyprog'>Create or Modify a University Programme</a><br />
+      (Address the issue in the section \"Verify all Courses needed for a Programme are being run for a Semester\".)
       <br />";
     return $html;
     }
