@@ -4969,7 +4969,7 @@ function staff_assign_course_form_submit($form, &$form_state) {
 
     $node =  node_load(arg(3));
     $node->title                              = $course->course_code .' - '. $_SESSION['eduerp_assign_course_session'] .' - '. $_SESSION['eduerp_assign_course_semester'] .' - '. $course->course_level .' - '. $form_state['values']['location']; //[Course Title] . ' - ' . [Session Name] . ' - ' . [Semester Name] . ' - ' . [Level Name];
-    $node->field_course_id[0]['nid']          = $form_state['values']['course_nid'];
+    //$node->field_course_id[0]['nid']          = $form_state['values']['course_nid'];
     $node->field_lecturer[0]['uid']           = $form_state['values']['chief_staff_nid'];
     $node->field_lecturer_alternate[0]['uid'] = ($form_state['values']['assist_staff_nid'] != 0) ? $form_state['values']['assist_staff_nid'] : NULL;
     $node->field_sess_name[0]['value']        = $_SESSION['eduerp_assign_course_session'];
@@ -5059,7 +5059,7 @@ function staff_edit_assigned_course_form_validate($form, &$form_state) {
 
 function staff_edit_assigned_course_form_submit($form, $form_state) {
   $_SESSION['eduerp_showCourseAssignment'] = 1;
-  drupal_goto(drupal_goto("staff/createeditcourse/" . arg(2) .'/'. $form_state['values']['course_instance_nid']));
+  drupal_goto("staff/createeditcourse/" . arg(2) .'/'. $form_state['values']['course_instance_nid']);
 }
 
 
