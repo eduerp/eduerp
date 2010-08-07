@@ -1110,8 +1110,22 @@ function programme($programme_nid=0) {
 function course($department_nid, $semester = 0) {
 
   $course = array();
-  if ($semester != 0)
+  if ($semester != 0) {
     $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} WHERE field_department_nid_nid=%d AND field_semester_value=%d ORDER BY field_level_value, field_code_value", $department_nid, $semester);
+    while ($f = db_fetch_object($r)) {
+      $course[$f->nid] = $f->value;
+    }
+
+    // Add any other department courses at the bottom of the list
+    $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} WHERE field_department_nid_nid=%d AND field_semester_value!=%d ORDER BY field_level_value, field_code_value", $department_nid, $semester);
+    while ($f = db_fetch_object($r)) {
+      $course[$f->nid] = $f->value;
+    }
+
+    if (empty($course)) $course[] = strip_tags(Error_Types(106));
+
+    return  $course;
+  }
   else
     $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} WHERE field_department_nid_nid=%d ORDER BY field_level_value, field_code_value", $department_nid);
   if (db_affected_rows($r) > 0) {
