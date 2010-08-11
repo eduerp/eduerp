@@ -1154,6 +1154,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
       d.field_department_name_value='%s'
       $protectVC";
   db_query($sql, $level, $session, $semester, $department);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   $sql = "SELECT co.field_college_name_value AS college
     FROM {content_type_department} d, {content_type_college} co
@@ -1329,6 +1330,7 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       p.field_department_id_nid=d.nid AND
       d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   $sql = "UPDATE {content_type_student_gpa} gpa, {content_type_student_program} sp, {content_type_program} p, {content_type_department} d
     SET
@@ -1343,6 +1345,7 @@ function approve_grades_vc_form_submit($form, &$form_state) {
       p.field_department_id_nid=d.nid AND
       d.field_department_name_value='%s'";
   db_query($sql, $level, $session, $semester, $department);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   $sql = "SELECT co.field_college_name_value AS college
     FROM {content_type_department} d, {content_type_college} co
