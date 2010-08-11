@@ -7434,6 +7434,7 @@ function get_student_drop_course_form_submit($form, &$state) {
   $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
   $sql = "UPDATE {content_type_student_grades} SET field_dropped_value = 1 WHERE nid = %d";
   db_query($sql, $values['student_grade_nid']);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   update_credit_load_registered($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
 
@@ -7813,6 +7814,7 @@ function update_credit_load_registered($uid, $session, $semester) {
   $sql = "UPDATE {content_type_student_gpa} gpa1 SET field_credit_load_registered_value = %d
     WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
   db_query($sql, $r->total_registered, $uid, $session, $semester);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 }
 
 
