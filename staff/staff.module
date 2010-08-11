@@ -4553,38 +4553,38 @@ function staff_create_course_form() {
  $form['assessment'] = array(
       '#type' => 'fieldset',
       '#title' => t('Continuous Assessment Maximum Marks'),
-      '#description' => t('e.g. If the number of CA\'s for this course is 2, select 2 in <b>Number of CA\'s</b>, enter appropriate values in fields <b>Max. Mark 1<sup>st</sup> CA</b>, <b>Max. Mark 2<sup>nd</sup> CA</b> and <b>Max. Exam Mark</b> then enter 0 (zero) in fields <b>Max. Mark 3<sup>rd</sup> CA.</b> and <b>Max. Mark 4<sup>th</sup> CA</b>. <br /><b>Note:</b> Arithmetic Sum of all marks MUST be equal to 100!'), 
+      '#description' => t('e.g. If the number of CA\'s for this course is 2, select 2 in <b>Number of CA\'s</b>, enter appropriate values in fields <b>Max. Mark 1<sup>st</sup> CA</b>, <b>Max. Mark 2<sup>nd</sup> CA</b> and <b>Max. Exam Mark</b> then enter 0 (zero) in fields <b>Max. Mark 3<sup>rd</sup> CA.</b> and <b>Max. Mark 4<sup>th</sup> CA</b>. <br /><b>Note:</b> Arithmetic Sum of all marks MUST be equal to 100!'),
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
  //print_r($_SESSION['eduerp_course_grade_weightings']);
  $caApproval = array (0 => 'Approved Along with Exams', 1 => 'Approved Individually');
  $caNum = array(0=>'0', 1=>'1', 2=>'2', 3=>'3', 4=>'4');
- 
+
  $form['assessment']['caNum'] = array('#type' => 'select', '#title' => t('Number of CA\'s'), '#options' => $caNum, '#description' => t('Describes total number of CA\'s for the course'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['caNum']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['number_of_ca'];
- 
+
  $form['assessment']['caApproval'] = array('#type' => 'select', '#title' => t('CA Approval Method'), '#options' => $caApproval, '#description' => t('Describes how the CA\'s should be approved'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['caApproval']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['ca_approved_onebyone'];
- 
+
  $form['assessment']['ca1'] = array('#type' => 'textfield', '#title' => t('Max. Mark 1<sup>st</sup> CA'), '#description' => t('Maximum allowable marks for 1<sup>st</sup> CA.'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['ca1']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['max_mark_ca1'];
- 
+
  $form['assessment']['ca2'] = array('#type' => 'textfield', '#title' => t('Max. Mark 2<sup>nd</sup> CA'), '#description' => t('Maximum allowable marks for 2<sup>nd</sup> CA.'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['ca2']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['max_mark_ca2'];
- 
+
  $form['assessment']['ca3'] = array('#type' => 'textfield', '#title' => t('Max. Mark 3<sup>rd</sup> CA'), '#description' => t('Maximum allowable marks for 3<sup>rd</sup> CA.'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['ca3']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['max_mark_ca3'];
- 
+
  $form['assessment']['ca4'] = array('#type' => 'textfield', '#title' => t('Max. Mark 4<sup>th</sup> CA'), '#description' => t('Maximum allowable marks for 4<sup>th</sup> CA.'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['ca4']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['max_mark_ca4'];
- 
+
  $form['assessment']['exam_mark'] = array('#type' => 'textfield', '#title' => t('Max. Exam Mark'), '#description' => t('Note: If the exam is a repeat, this will be overridden to 100'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['exam_mark']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['max_mark_exam'];
- 
- 
+
+
  if(isset($_SESSION['eduerp_course_grade_weightings'])) unset($_SESSION['eduerp_course_grade_weightings']);
- 
+
   $form['submit'] = array(
     '#value' => 'Create Course',
     '#type' => 'submit'
@@ -4673,14 +4673,14 @@ function staff_create_course_form_validate($form, $form_state) {
   if(! preg_match("/^[0-9]{1,3}$/", $values['ca2'])) form_set_error('ca2', Error_Types(130));
   if(! preg_match("/^[0-9]{1,3}$/", $values['ca3'])) form_set_error('ca3', Error_Types(130));
   if(! preg_match("/^[0-9]{1,3}$/", $values['ca4'])) form_set_error('ca4', Error_Types(130));
-  
+
   // add up the enteries and make sure it is not < 0 or > 100
   $totalMarks = $values['ca1'] + $values['ca2'] + $values['ca3'] + $values['ca4'] + $values['exam_mark'];
   if ($totalMarks < 0 || $totalMarks > 100) {
     form_set_error('exam_mark', Error_Types(129));
-    
+
   }
-  
+
 }
 
 
@@ -4697,12 +4697,12 @@ function staff_create_course_form_submit($form, &$form_state){
       $found = true;
       break;
     }
-  	  
+
   }
-  
+
   //get default values again
   $_SESSION['eduerp_course_grade_weightings'] = $defaults;
-  
+
   if(! arg(3)) $_SESSION['eduerp_showFullForm'] = 1;
   if(arg(3)){
 
@@ -4713,15 +4713,15 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ''; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : '';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
     node_save($node);
-    
+
     $values['course_nid'] = $node->nid;
     if ($found) create_course_weighting_entries($values);
-    
+
     drupal_set_message($form_state['values']['course_code'] . ' Course was updated!<br />');
 
     drupal_goto("staff/createeditcourse/" . arg(2));
@@ -4742,8 +4742,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ''; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : '';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
 
@@ -4751,7 +4751,7 @@ function staff_create_course_form_submit($form, &$form_state){
   }
 
   node_save($node);
-  
+
   $values['course_nid'] = $node->nid;
   if ($found) create_course_weighting_entries($values);
 }
@@ -4896,7 +4896,7 @@ function staff_show_assign_course() {
     echo drupal_get_form('staff_assign_course_form');
   else
     echo Error_Types(104);
-  
+
 
   if (! arg(3)) {
     //show edit form
@@ -4906,7 +4906,7 @@ function staff_show_assign_course() {
       echo drupal_get_form('staff_edit_assigned_course_form');
     else
       echo Error_Types(105);
- 
+
     //display missing courses in the department here
     echo '<br /><hr /><br />';
     echo staff_display_available_courses($_SESSION['eduerp_assign_course_session'], $_SESSION['eduerp_assign_course_semester'], $departmentInfo, 3);
@@ -4920,7 +4920,7 @@ function staff_show_assign_course() {
     //echo '<br /><hr /><br />';
     //echo staff_display_available_courses($departmentInfo, 1);
   }
-  
+
   if(isset($_SESSION['eduerp_fix_course'])) unset($_SESSION['eduerp_fix_course']); if(isset($_SESSION['eduerp_return_url'])) unset($_SESSION['eduerp_return_url']);
 }
 
@@ -8562,37 +8562,37 @@ function display_verify_required_courses_for_programme() {
 
 
 function get_course_grade_weighting($course_nid = 0) {
-  
+
   $sql = "SELECT number_of_ca, ca_approved_onebyone, max_mark_ca1, max_mark_ca2, max_mark_ca3, max_mark_ca4, max_mark_exam FROM course_grade_weightings WHERE course_id = $course_nid LIMIT 1 ";
   $result = db_query($sql);
   if (db_affected_rows($result) <= 0) {
     $sql = "SELECT number_of_ca, ca_approved_onebyone, max_mark_ca1, max_mark_ca2, max_mark_ca3, max_mark_ca4, max_mark_exam FROM course_grade_weightings WHERE course_id = 0 LIMIT 1 ";
     $result = db_query($sql);
   }
-  
+
   $dbFields = array('number_of_ca', 'ca_approved_onebyone', 'max_mark_ca1', 'max_mark_ca2', 'max_mark_ca3', 'max_mark_ca4', 'max_mark_exam');
   while ($r = db_fetch_object($result)) {
-    foreach($dbFields as $v) 
+    foreach($dbFields as $v)
       $ca[$v] = $r->$v;
   }
-  
+
   return $ca;
 }
 
 
 function create_course_weighting_entries(&$values) {
-  
+
   if ($values['course_nid'] != 0) {
     //delete previous enteries
     $sql = "DELETE FROM course_grade_weightings WHERE course_id = %d ";
     db_query($sql, $values['course_nid']);
-    
+
     $sql = "INSERT INTO course_grade_weightings (course_id, number_of_ca, ca_approved_onebyone, max_mark_ca1, max_mark_ca2, max_mark_ca3, max_mark_ca4, max_mark_exam  ) VALUES
     	(%d, %d, %d, %d, %d, %d, %d, %d) ";
-    	
+
     db_query($sql, $values['course_nid'], $values['caNum'], $values['caApproval'], $values['ca1'], $values['ca2'], $values['ca3'], $values['ca4'], $values['exam_mark']);
-    
+
   }
-	
+
 }
 ?>
