@@ -116,7 +116,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
       WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid} AND sg.field_dropped_value=0";
     db_query($sql);
     cache_clear_all('content:'. $sgnid->nid .':', content_cache_tablename(), TRUE);
-error_log('content:'. $sgnid->nid .':');
+
     if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (only an examination officer could have submitted this change)
 
       // Because of field access logic in grading module grading_field_access()...
