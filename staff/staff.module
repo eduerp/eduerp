@@ -3544,7 +3544,7 @@ function get_Available_Courses($department_nid = 0, $course_nid = 0) {
 function staff_display_available_courses($session, $semester, $departmentInfo = array(), $type = 0) {
   //$type; 0=available course, 1=assigned courses, 2=unassigned courses
   $department_nid = 0;$forassigned=false;
-
+  $str = "";
   if (sizeof($departmentInfo)) {
     $key = array_keys($departmentInfo);
     $department_nid = $key[0];
@@ -3567,7 +3567,7 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
     elseif ($type == 2)
       $str  = "<b>UnAssigned Courses for ". $departmentInfo[$department_nid] ." Department</b> for <b>". $session ."</b> Session </b><br />";
     elseif ($type == 3)
-      $str  = "<b>List of courses that need to be run for ". $departmentInfo[$department_nid] ." Department</b> for <b>". $session ."</b> Session for Semester <b>". $semester ."<br />";
+      $str  = "<b>List of courses that need to be run for ". $departmentInfo[$department_nid] ." Department</b> for <b>". $session ."</b> Session for Semester <b>". $semester ."</b><br />";
     else
       $str  = "<b>Available Courses for ". $departmentInfo[$department_nid] ." Department</b><br />";
   }
@@ -3626,7 +3626,7 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
                    $course->staff_name = $staffInfo[$course->lecturer_uid];
                  }
                  else
-                   $course->staff_name = '<i>Not Assigned yet!<i>';
+                   $course->staff_name = "<i>Not Assigned yet!</i>";
 
                    $str .="
                  <td><font $rowColor >". $course->staff_name ."</font></td>";
@@ -3653,9 +3653,10 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
              </tr>";
       }
       $str .= "
-      </table>";
+      </table>
+      </div>";
   }
-  $str .= "</div><br /><br />";
+  $str .= "<br /><br />";
   if ($found)
     $str .= "<b><font color='#ff0000'>Note: The HODs for the course(s) highlighted in Red above will have to assign a lecturer for the course(s) for this semester<br />
        If you are the HOD for those courses, you will be able to fix the problem yourself.<br />In any case, when the problem is resolved, you MUST come back to this screen to complete verification!</font></b>";
@@ -4712,8 +4713,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = $form_state['values']['prerequisites_codes']; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = $form_state['values']['prerequisite_desc'];
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
     node_save($node);
@@ -4741,8 +4742,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = $form_state['values']['prerequisites_codes']; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = $form_state['values']['prerequisite_desc'];
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
 
@@ -4895,17 +4896,17 @@ function staff_show_assign_course() {
     echo drupal_get_form('staff_assign_course_form');
   else
     echo Error_Types(104);
-
+  
 
   if (! arg(3)) {
     //show edit form
     echo '<br /><hr /><br />';
-    echo "<b>Modify Assigned Lecturers and Timetables for Courses</b> ";
+    echo "<b>Modify Assigned Lecturers and Timetables for Courses</b><br /> ";
     if ($canCreateModify)
       echo drupal_get_form('staff_edit_assigned_course_form');
     else
       echo Error_Types(105);
-
+ 
     //display missing courses in the department here
     echo '<br /><hr /><br />';
     echo staff_display_available_courses($_SESSION['eduerp_assign_course_session'], $_SESSION['eduerp_assign_course_semester'], $departmentInfo, 3);
@@ -4919,6 +4920,7 @@ function staff_show_assign_course() {
     //echo '<br /><hr /><br />';
     //echo staff_display_available_courses($departmentInfo, 1);
   }
+  
   if(isset($_SESSION['eduerp_fix_course'])) unset($_SESSION['eduerp_fix_course']); if(isset($_SESSION['eduerp_return_url'])) unset($_SESSION['eduerp_return_url']);
 }
 
@@ -5222,7 +5224,7 @@ function get_Assigned_Courses($session, $department_nid, $semester) {
 function get_department_running_courses($session, $department_nid, $semester = 0) {
   $morewhere = "";
   if ($semester != 0)
-    $morewhere = "pc.semester='". $semester ."' AND";
+    $morewhere = " pc.semester='". $semester ."' AND ";
 
   $sql = "SELECT DISTINCT
         pc.level course_level,
@@ -5249,10 +5251,10 @@ function get_department_running_courses($session, $department_nid, $semester = 0
       INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
       INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
       INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
-      WHERE " . $morewhere . " d.nid='". $department_nid ."'
-      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
-    $result = db_query($sql);
-  return $result;
+      WHERE  $morewhere d.nid='". $department_nid ."'
+      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level ";
+    $r = db_query($sql);
+  return $r;
 }
 
 
@@ -5962,7 +5964,7 @@ function staff_verify_assigned_course() {
       echo "<b>List of Courses that need to be run for <b>". $programmeInfo->programme_name  ."</b> Programme for ". $_SESSION['eduerp_verify']['session'] ." Session for Semester ". $_SESSION['eduerp_verify']['semester'] ."</b><br/><br />";
       echo "<div id='assigned_courses'>";
       display_course_result($runningCourse);
-      echo "</div>";
+      echo "</div><br /><br />";
 
       unset($_SESSION['eduerp_return_url']);
   return ob_get_clean();
