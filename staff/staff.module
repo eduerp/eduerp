@@ -3248,7 +3248,7 @@ function semester_admin() {
   echo '<a href="' . url('liststaff') . '">List Staff</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/createeditcourse') . '">Create or Modify Courses for A Department</a>';
+  echo '<a href="' . url('staff/createeditcourse') . '">Create or Modify Courses for a Department</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/createmodifyprog') . '">Create or Modify a University Programme</a>';
@@ -7132,24 +7132,26 @@ function display_list_of_unregistered_students(&$result) {
   <table border ='1'>
     <tr>
       <th>#</th>
-    <th>Student Name</th>
+      <th>Student Name</th>
+      <th>Matriculation Number</th>
+      <th>Programme</th>
+      <th>Level</th>
     </tr>";$i=1;
   while ($f = db_fetch_object($result)) {
-  //foreach ($result as $v) {
     if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
 
     $html .="
     <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
       <td>". $i++ ."</td>
       <td>". $f->student_name ."</td>
-
-   </tr>";
-
-  }//$v['student_name']
+      <td>". $f->mat ."</td>
+      <td>". $f->programme_name ."</td>
+      <td>". $f->level ."</td>
+    </tr>";
+  }
   $html .= "
   </table>";
   return  $html;
-
 }
 
 
@@ -7184,14 +7186,17 @@ function show_unregistered_course_form_submit($form, &$form_state) {
   $values = $form_state['values'];
   $_SESSION['eduerp_unreg']['session'] = $values['session'];
   $_SESSION['eduerp_unreg']['semester'] = $values['semester'];
-
 }
 
 
 function get_unregistered_students($session, $semester) {
-
   $sql = "
-  SELECT DISTINCT ur.uid, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name
+  SELECT DISTINCT
+    ur.uid,
+    u.name AS mat,
+    p.field_programme_name_value AS programme_name,
+    spro.field_profile_level_name_value AS level,
+    CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name
   FROM {role} r
   INNER JOIN {users_roles} ur ON r.rid=ur.rid
   INNER JOIN {node} npro ON ur.uid=npro.uid AND npro.type='profile'
@@ -7199,15 +7204,18 @@ function get_unregistered_students($session, $semester) {
   INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
   INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
   INNER JOIN {content_type_student_program} sp ON ur.uid=sp.field_student_ref_sp_uid AND spro.field_profile_first_choice_nid=sp.field_program_ref_sp_nid
+  INNER JOIN {content_type_program} p ON spro.field_profile_first_choice_nid=p.nid
+  INNER JOIN {users} u ON ur.uid=u.uid
   LEFT JOIN {content_type_student_record} sr
   ON ur.uid=sr.field_student_ref_sr_uid AND
-   sp.field_program_ref_sp_nid=sr.field_student_program_sr_nid AND
-   sr.field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+    sp.field_program_ref_sp_nid=sr.field_student_program_sr_nid AND
+    sr.field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
   WHERE
-  r.name='Student' AND
-  spro.field_profile_reg_session_value!='%s' AND
-  spro.field_profile_reg_semester_value!='%s' AND
-  sr.field_student_ref_sr_uid IS NULL
+    r.name='Student' AND
+    spro.field_profile_reg_session_value!='%s' AND
+    spro.field_profile_reg_semester_value!='%s' AND
+    sr.field_student_ref_sr_uid IS NULL
+  ORDER BY programme_name, level, student_name
   ";
   $result = db_query($sql, $session, $semester);
   return $result;
