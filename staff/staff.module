@@ -7212,8 +7212,7 @@ function get_unregistered_students($session, $semester) {
     sr.field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
   WHERE
     r.name='Student' AND
-    spro.field_profile_reg_session_value!='%s' AND
-    spro.field_profile_reg_semester_value!='%s' AND
+    (spro.field_profile_reg_session_value!='%s' OR spro.field_profile_reg_semester_value!='%s') AND
     sr.field_student_ref_sr_uid IS NULL
   ORDER BY programme_name, level, student_name
   ";
