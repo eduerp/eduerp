@@ -533,6 +533,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       c.field_code_value='%s'
       $protectVC";
   db_query($sql, $session, $coursecode);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   if ($fieldtoapprove === 'field_examscorelocked_value') {
     // Set the GPA for all students in this view
@@ -697,6 +698,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       nspro1.type='student_profile' AND
       nspro1.vid=spro1.vid";
     db_query($sql, $session, $coursecode, $session, $coursecode);
+    cache_clear_all('content:', content_cache_tablename(), TRUE);
   }
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
@@ -870,6 +872,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
       c.field_code_value='%s'
       $protectVC";
   db_query($sql, $session, $coursecode);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 
@@ -1073,6 +1076,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       c.field_code_value='%s'
       $protectVC";
   db_query($sql, $session, $coursecode);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   if ($srcfield != 'NONE') {
     // Make the CAs visible to students
@@ -1086,6 +1090,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
         ci.field_sess_name_value='%s' $semesterwhere $locationwhere AND
         c.field_code_value='%s'";
     db_query($sql, $session, $coursecode);
+    cache_clear_all('content:', content_cache_tablename(), TRUE);
   }
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
@@ -1303,6 +1308,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
       c.field_code_value='%s'
       $protectVC";
   db_query($sql, $session, $coursecode);
+  cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   list($level, $sem, $loc, $department, $college) = findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere);
 

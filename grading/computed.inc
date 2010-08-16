@@ -1,7 +1,8 @@
 <?php
 // computed.inc Alan Barrett 20090724
 // Grade calculations
-
+// Some of these calculations get rerun a number of times when a mark is changed, be very careful about trying to optimise as it may cause bugs
+// ... as the sequence of events is quite complex involving editablefields & computed fields.
 
 function calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid) {
   static $repeatbycinid = array(); // Cache
@@ -105,9 +106,16 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
       else               $grade = 'F';
     }
 
+    $sql = "SELECT sg.nid FROM {content_type_student_grades} sg
+      WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid} AND sg.field_dropped_value=0";
+    $r = db_query($sql);
+    $sgnid = db_fetch_object($r);
+
+    // $sgnid->nid could be used here, but would involve a re-test
     $sql = "UPDATE {content_type_student_grades} sg SET sg.field_grade_value='{$grade}', sg.field_gradepoint_value='{$gp}'
-      WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
+      WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid} AND sg.field_dropped_value=0";
     db_query($sql);
+    cache_clear_all('content:'. $sgnid->nid .':', content_cache_tablename(), TRUE);
 
     if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (only an examination officer could have submitted this change)
 
@@ -123,7 +131,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
           sg.`field_totalscoreforstudent_value`=sg.`field_total_score_value`,
           sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
           sg.`field_gradeforstudent_value`=sg.`field_grade_value`
-        WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid}";
+        WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid} AND sg.field_dropped_value=0";
       db_query($sql);
 
       // Set the GPA for this student (code below here is based on code in course_grades_footer, but is simplified to deal with a single student and a specific course_instance)
@@ -271,6 +279,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
         nspro1.type='student_profile' AND
         nspro1.vid=spro1.vid";
       db_query($sql);
+      cache_clear_all('content:', content_cache_tablename(), TRUE);
 
       // Find the fields for the approval record
       $sql = "SELECT
