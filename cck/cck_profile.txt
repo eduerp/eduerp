@@ -30,15 +30,6 @@ $content['type']  = array (
   'comment_subject_field' => '1',
   'comment_preview' => '1',
   'comment_form_location' => '0',
-  'print_display' => 1,
-  'print_display_comment' => 0,
-  'print_display_urllist' => 1,
-  'print_mail_display' => 1,
-  'print_mail_display_comment' => 0,
-  'print_mail_display_urllist' => 1,
-  'print_pdf_display' => 1,
-  'print_pdf_display_comment' => 0,
-  'print_pdf_display_urllist' => 1,
   'ant' => '1',
   'ant_pattern' => '[field_profile_first_name-formatted]\'s profile',
   'auto_nodetitle_php' => '',
@@ -79,11 +70,6 @@ $content['groups']  = array (
           'exclude' => 0,
         ),
         3 => 
-        array (
-          'format' => 'fieldset',
-          'exclude' => 0,
-        ),
-        5 => 
         array (
           'format' => 'fieldset',
           'exclude' => 0,
@@ -138,11 +124,6 @@ $content['groups']  = array (
           'format' => 'fieldset',
           'exclude' => 0,
         ),
-        5 => 
-        array (
-          'format' => 'fieldset',
-          'exclude' => 0,
-        ),
         'token' => 
         array (
           'format' => 'fieldset',
@@ -189,11 +170,6 @@ $content['groups']  = array (
           'exclude' => 0,
         ),
         3 => 
-        array (
-          'format' => 'fieldset',
-          'exclude' => 0,
-        ),
-        5 => 
         array (
           'format' => 'fieldset',
           'exclude' => 0,
@@ -268,7 +244,7 @@ Rev',
       ),
       'teaser' => 
       array (
-        'format' => 'hidden',
+        'format' => 'default',
         'exclude' => 0,
       ),
       'full' => 
@@ -439,11 +415,10 @@ Rev',
     ),
     'display_settings' => 
     array (
-      'weight' => '46',
-      'parent' => 'group_personal_information',
       'label' => 
       array (
         'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
@@ -531,7 +506,7 @@ Rev',
     ),
     'display_settings' => 
     array (
-      'weight' => '47',
+      'weight' => '46',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -623,11 +598,10 @@ Rev',
     ),
     'display_settings' => 
     array (
-      'weight' => '48',
-      'parent' => 'group_personal_information',
       'label' => 
       array (
         'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
@@ -709,7 +683,7 @@ male|Male',
     ),
     'display_settings' => 
     array (
-      'weight' => '49',
+      'weight' => '47',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -794,7 +768,7 @@ male|Male',
     ),
     'default_format' => 'medium',
     'tz_handling' => 'none',
-    'timezone_db' => 'UTC',
+    'timezone_db' => 'Africa/Lagos',
     'op' => 'Save field settings',
     'module' => 'date',
     'widget_module' => 'date',
@@ -811,7 +785,7 @@ male|Male',
     ),
     'display_settings' => 
     array (
-      'weight' => '50',
+      'weight' => '48',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -819,7 +793,7 @@ male|Male',
       ),
       'teaser' => 
       array (
-        'format' => 'hidden',
+        'format' => 'default',
         'exclude' => 0,
       ),
       'full' => 
@@ -903,7 +877,7 @@ male|Male',
     ),
     'display_settings' => 
     array (
-      'weight' => '51',
+      'weight' => '49',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -989,7 +963,7 @@ married|Married',
     ),
     'display_settings' => 
     array (
-      'weight' => '52',
+      'weight' => '50',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1057,8 +1031,8 @@ married|Married',
     'text_processing' => '0',
     'max_length' => '50',
     'allowed_values' => '',
-    'allowed_values_php' => '$list = array(\'Nigeria\' => \'Nigeria\');
-$rs = db_query(\'SELECT country_name FROM {eduerp_countries} ORDER BY country_name\');
+    'allowed_values_php' => '$list = array();
+$rs = db_query(\'SELECT * FROM {eduerp_countries} ORDER BY country_name\');
 while ($row = db_fetch_object($rs)) $list[$row->country_name] = $row->country_name;
 return $list;',
     'op' => 'Save field settings',
@@ -1077,7 +1051,7 @@ return $list;',
     ),
     'display_settings' => 
     array (
-      'weight' => '53',
+      'weight' => '51',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1085,7 +1059,7 @@ return $list;',
       ),
       'teaser' => 
       array (
-        'format' => 'default',
+        'format' => 'hidden',
         'exclude' => 0,
       ),
       'full' => 
@@ -1104,11 +1078,6 @@ return $list;',
         'exclude' => 0,
       ),
       3 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      5 => 
       array (
         'format' => 'default',
         'exclude' => 0,
@@ -1151,7 +1120,7 @@ return $list;',
     'max_length' => '50',
     'allowed_values' => '',
     'allowed_values_php' => '$list = array();
-$rs = db_query(\'SELECT state_name FROM {eduerp_states} ORDER BY state_name\');
+$rs = db_query(\'SELECT * FROM {eduerp_states} ORDER BY state_name\');
 while ($row = db_fetch_object($rs)) $list[$row->state_name] = $row->state_name;
 return $list;',
     'op' => 'Save field settings',
@@ -1170,7 +1139,7 @@ return $list;',
     ),
     'display_settings' => 
     array (
-      'weight' => '54',
+      'weight' => '52',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1178,7 +1147,7 @@ return $list;',
       ),
       'teaser' => 
       array (
-        'format' => 'default',
+        'format' => 'hidden',
         'exclude' => 0,
       ),
       'full' => 
@@ -1197,11 +1166,6 @@ return $list;',
         'exclude' => 0,
       ),
       3 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      5 => 
       array (
         'format' => 'default',
         'exclude' => 0,
@@ -1258,12 +1222,11 @@ return $list;',
         'length' => '50',
         'not null' => false,
         'sortable' => true,
-        'views' => true,
       ),
     ),
     'display_settings' => 
     array (
-      'weight' => '55',
+      'weight' => '53',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1290,11 +1253,6 @@ return $list;',
         'exclude' => 0,
       ),
       3 => 
-      array (
-        'format' => 'default',
-        'exclude' => 0,
-      ),
-      5 => 
       array (
         'format' => 'default',
         'exclude' => 0,
@@ -1355,7 +1313,7 @@ Other',
     ),
     'display_settings' => 
     array (
-      'weight' => '56',
+      'weight' => '54',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1447,7 +1405,7 @@ Other',
     ),
     'display_settings' => 
     array (
-      'weight' => '57',
+      'weight' => '55',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1539,7 +1497,7 @@ Other',
     ),
     'display_settings' => 
     array (
-      'weight' => '58',
+      'weight' => '56',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1608,7 +1566,7 @@ Other',
     'max_length' => '',
     'allowed_values' => '',
     'allowed_values_php' => '$states = array();
-$rs = db_query("SELECT * FROM {eduerp_states} ORDER BY state_name");
+$rs = db_query("SELECT state_name FROM {eduerp_states} ORDER BY state_name");
 while ($row = db_fetch_object($rs)) $states[$row->state_name] = $row->state_name;
 return $states;',
     'op' => 'Save field settings',
@@ -1627,7 +1585,7 @@ return $states;',
     ),
     'display_settings' => 
     array (
-      'weight' => '59',
+      'weight' => '57',
       'parent' => 'group_personal_information',
       'label' => 
       array (
@@ -1719,7 +1677,7 @@ return $states;',
       'student_grades' => 0,
       'testalan' => 0,
       'student_profile' => false,
-      'student_record' => false,
+      'student_clearance' => false,
     ),
     'advanced_view' => '--',
     'advanced_view_args' => '',
@@ -1738,11 +1696,10 @@ return $states;',
     ),
     'display_settings' => 
     array (
-      'weight' => '42',
-      'parent' => 'group_educational_information',
       'label' => 
       array (
         'format' => 'above',
+        'exclude' => 0,
       ),
       'teaser' => 
       array (
@@ -1973,5 +1930,5 @@ $content['extra']  = array (
   'comment_settings' => '2',
   'menu' => '-1',
   'path' => '1',
-  'print' => '30',
 );
+
