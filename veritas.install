@@ -144,27 +144,31 @@ function veritas_install(){
   drupal_execute('content_copy_import_form', $form_state);
   content_clear_type_cache();
   
+  drupal_set_message('veritas module installed');
+}
+
+function veritas_enable() {
   // set content type permissions
   $perms = veritas_perms_initialize();
 
   foreach ($perms as $role => $permissions) {
     permissions_grant_permissions($role, $permissions);
   }
-
-  drupal_set_message('veritas module installed');
 }
 
-function veritas_uninstall(){
-  // uninstall the schemas
-  drupal_uninstall_schema('veritas');
-  
+function veritas_disable() {
   // remove content type permissions
   $perms = veritas_perms_initialize();
 
   foreach ($perms as $role => $permissions) {
     permissions_revoke_permissions($role, $permissions);
   }
+}
 
+function veritas_uninstall(){
+  // uninstall the schemas
+  drupal_uninstall_schema('veritas');
+  
   drupal_set_message('veritas module uninstalled');
 }
 
