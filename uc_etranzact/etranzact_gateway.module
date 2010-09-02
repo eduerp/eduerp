@@ -22,8 +22,6 @@ function etranzact_gateway_payment_gateway() {
 function etranzact_gateway_charge($order_id, $amount, $data) {
   global $user;
   $order = uc_order_load($order_id);
-  var_dump($order);
-  exit;
 
   $order->payment_details = unserialize($order->data['etranzact_data']);
 
