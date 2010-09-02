@@ -4,3 +4,197 @@
  */
 function uc_etranzact_menu() {
 }
+
+function uc_etranzact_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'uc_cart_checkout_form':
+      if (isset($_POST['receipt_no'])) {
+        $order = new stdClass();
+        uc_payment_method_etranzact('cart-process', $order, TRUE);
+      }
+      break;
+  }
+}
+
+function uc_etranzact_cron() {
+  // There might be a need for cron tasks
+}
+
+function uc_etranzact_order($op, &$arg1, $arg2) {
+  switch ($op) {
+    case 'submit':
+      if ($arg1->payment_method == 'etranzact') {
+        // process payment
+
+        $gateway_id = uc_etranzact_default_gateway();
+        $data = array();
+        $pass = uc_payment_process('etranzact', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
+
+
+        // If the payment failed, halt the checkout process
+        if (!$pass) {
+          $message = variable_get('uc_etranzact_fail_message', t('We are unable to process your Etranzact payment. Please verify your payment details and try again. If the problem persists, contact us to complete your payment.'));
+          return array(array('pass' => FALSE, 'message'=>$message));
+        }
+      }
+      break;
+    case 'save':
+      // save payment details with order
+      if ($arg1->payment_method == 'etranzact') {
+        $etranzact_data = array('receipt_no' => $arg1->payment_details['receipt_no'], 'confirmation_no' => $arg1->payment_details['confirmation_no']);
+        _save_etranzact_data_to_order($etranzact_data, $arg1->order_id);
+      }
+      break;
+    case 'load':
+      if ($arg1->payment_method == 'etranzact') {
+      }
+      break;
+  }
+}
+
+function _save_etranzact_data_to_order($etranzact_data, $order_id) {
+  // Load up the existing data array.
+  $data = db_result(db_query("SELECT data FROM {uc_orders} WHERE order_id = %d", $order_id));
+  $data = unserialize($data);
+
+  // Stuff the serialized and encrypted CC details into the array.
+  $data['etranzact_data'] = serialize($etranzact_data);
+
+  // Save it again.
+  db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $order_id);
+}
+
+// Adds Etranzact settings to the payment method settings form
+function uc_payment_method_etranzact($op, &$arg1) {
+  switch ($op) {
+    case 'settings':
+      $form['uc_etranzact_terminal_id'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Terminal ID'),
+        '#description' => t('Your Terminal ID as given to you by Etranzact'),
+        '#default_value' => variable_get('uc_etranzact_terminal_id', '0000000001'),);
+      $form['uc_etranzact_demo_mode'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Demo Mode'),
+        '#description' => t('Turns the payment mode in either demo or live mode'),
+        '#default_value' => variable_get('uc_etranzact_demo_mode', 1),
+      );
+      return $form;
+      break;
+    case 'cart-details':
+      $details = drupal_get_form('uc_payment_method_etranzact_form', $arg1);
+      return uc_strip_form($details);
+      break;
+    case 'cart-process':
+      // fetch data from $_POST directly
+      var_dump($_POST);
+      $etranzact_data = array(
+        'receipt_no' => check_plain($_POST['receipt_no']),
+        'confirmation_no' => check_plain($_POST['confirmation_no']),
+      );
+      $arg1->payment_details = $etranzact_data;
+      return TRUE;
+      break;
+    case 'cart-review':
+      $arg1->payment_details = unserialize($arg1->data['etranzact_data']);
+      $review[] = array('title' => t('Receipt Number'), 'data' => check_plain($arg1->payment_details['receipt_no']));
+      $review[] = array('title' => t('Confirmation Number'), 'data' => check_plain($arg1->payment_details['confirmation_no']));
+      return $review;
+      break;
+    case 'order-view':
+     $output = '<table  style="widt:auto;">';
+     $output .= '<tr><td>'. t('Receipt Number') .'</td><td>'. $arg1->payment_details['receipt_no'] .'</td></tr>';
+     $output .= '<tr><td>'. t('Conirmation Number') .'</td><td>'. $arg1->payment_details['confirmation_no'] .'</td></tr>';
+     $output .= '</table>';
+     return $output;
+  }
+}
+
+// hook_payment_method() 
+function uc_etranzact_payment_method() {
+  $methods[] = array(
+    'id' => 'etranzact',
+    'name' => t('Etranzact'),
+    'title' => t('Etranzact'),
+    'desc' => t('Payment via Etranzact WebConnect'),
+    'callback' => 'uc_payment_method_etranzact',
+    'weight' => 2,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+  return $methods;
+}
+
+function uc_payment_method_etranzact_form($form_state, $order) {
+  $form['receipt_no'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Receipt Number'),
+    '#size' => 20,
+  );
+  $form['confirmation_no'] = array(
+    '#type' => 'textfield', 
+    '#title' => t('Confirmation Number'),
+    '#size' => 32,
+  );
+  return $form;
+}
+
+function uc_etranzact_order_view_form($form_state, $order_id) {
+  $form['order_id'] = array(
+    '#type' => 'hidden',
+    '#value' => $order_id,
+  );
+  $form['submit'] = array(
+    '#type' => 'submit', 
+    '#value' => t('Process Payment'),
+  );
+  return $form;
+}
+
+function theme_uc_payment_method_etranzact_form($form) {
+  // Comment out this function to just straight display the form.
+  $form['receipt_no']['#title'] = '';
+  $form['confirmation_no']['#title'] = '';
+
+  if (arg(1) == 'checkout') {
+    $path = base_path() . drupal_get_path('module', 'uc_etranzact');
+    $output = '<table class="inline-pane-table" cellpadding="2">';
+    $output .= '<tr><td class="field-label">'. t('Receipt Number:') .'</td><td>'
+             . drupal_render($form['receipt_no']) .'</td></tr>';
+    $output .= '<tr><td class="field-label">'. t('Confirmation Number:') .'</td><td>'
+               . drupal_render($form['confirmation_no']) .'</td></tr>';
+    $output .= '</table>';
+  }
+  else {
+    $output = '<table class="order-edit-table"><tbody style="border-top: 0px;">';
+    $output .= '<tr><td class="oet-label">'. t('Receipt Number:') .'</td><td>'
+             . drupal_render($form['receipt_no']) .'</td></tr>';
+    $output .= '<tr><td class="oet-label">'. t('Confirmation Number:') .'</td><td>'
+             . drupal_render($form['confirmation_no']) .'</td></tr>';
+    $output .= '</tbody></table>';
+  }
+  return $output;
+}
+
+function uc_etranzact_default_gateway() {
+  // Get an array of enabled payment gateways available for the payment method
+  $gateways = _payment_gateway_list('etranzact', TRUE);
+
+  // Return FALSE if we found no gateways
+  if (empty($gateways)) {
+    return FALSE;
+  }
+
+  // Get the payment gateway array and store its ID
+  $gateway = array_shift($gateways);
+  $gateway_id = $gateway['id'];
+
+  // Store the callback for this gateway
+  $callback = $gateway['etranzact'];
+
+  if (!function_exists($callback)) return FALSE;
+
+  return $gateway_id;
+}
+

@@ -1,0 +1,93 @@
+<?php
+/*******************************************************************************
+ * Hook Functions (Ubercart)
+ ******************************************************************************/
+
+function etranzact_gateway_payment_gateway() {
+  $gateways[] = array(
+    'id' => 'etranzact_gateway',
+    'title' => t('Etranzact Gateway'),
+    'description' => t('Process Etranzact payments payments through the Etranzact Gateway.'),
+    'etranzact' => 'etranzact_gateway_charge',
+  );
+
+  return $gateways;
+}
+
+
+/*******************************************************************************
+ * Module and Helper Functions
+ ******************************************************************************/
+
+function etranzact_gateway_charge($order_id, $amount, $data) {
+  global $user;
+  $order = uc_order_load($order_id);
+  var_dump($order);
+  exit;
+
+  $order->payment_details = unserialize($order->data['etranzact_data']);
+
+  // Search local database first
+
+  $req = array (
+    'RESPONSE_URL' => 'http://localhost/',
+    'RECEIPT_NO' => $order->payment_details['receipt_no'],
+    'CONFIRMATION_NO' => $order->payment_details['confirmation_no'],
+    'AMOUNT' => sprintf('%.2f', $order->order_total), // Expected amount
+    'TERMINAL_ID' => variable_get('uc_etranzact_terminal_id', '0000000001'),
+  );
+
+  $query = http_build_query($req);
+
+  $curl = curl_init();
+  curl_setopt($curl, CURLOPT_URL, variable_get('uc_etranzact_demo_mode', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 
+'https://www.etranzact.net/WebConnect/verifypin.jsp');
+  curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+  curl_setopt($curl, CURLOPT_POST, 1);
+  curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+  curl_setopt($curl, CURLOPT_POSTFIELDS, $query);
+  $return = curl_exec($curl);
+
+  preg_match_all('/<input.*name=[\'"]([^\'"]*)[\'"].*value=[\'"]([^\'"]*)[\'"]>/', $return, $matches);
+  foreach ($matches[1] as $key => $value):
+    $status[$value] = $matches[2][$key];
+  endforeach;
+
+/*  if ($order->payment_details['receipt_no'] == '0000') {
+    $success = FALSE;
+  }
+  else {
+    $success = TRUE;
+  }
+*/
+  if (is_array($status) && $status['SUCCESS'] == '0' && $status['AMOUNT'] == $order->order_total) {
+    // Log the transaction
+    $success = TRUE;
+  } else {
+    $success = FALSE;
+  }
+
+  if ($success) {
+    $context = array(
+      'revision' => 'formatted-original',
+      'type' => 'amount',
+    );
+    $message = t('Amount paid: !amount', array('!amount' => uc_price($amount, $context)));
+    uc_order_comment_save($order_id, $user->uid, $message, 'admin');
+  }
+  else {
+    $message = t('Etranzact payment failed.');
+    uc_order_comment_save($order_id, $user->uid, $message, 'admin');
+  }
+
+  $result = array(
+    'success' => $success,
+    'comment' => t('Etranzact payment processed.'),
+    'message' => $success ? t('Etranzact payment processed successfully.') : t('Etranzact payment failed.'),
+    'uid' => $user->uid,
+    // 'data' => $data,
+  );
+
+  return $result;
+}
