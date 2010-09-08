@@ -1,2 +1,41 @@
 <?php
 
+function payments_menu() {
+  $items['payments/add'] = array(
+    'title' => t('Add Payment Item'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('payments_add_item_form'),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  $items['paments/%item/add/criterion'] = array(
+    'title' => t('Add Payment Criterion'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('payments_add_item_criterion_form'),
+    'access arguments' => array('access content'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+function payments_add_item_form($form_state) {
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Payment Item Title'),
+    '#description' => t('A title describing the payment item'),
+  );
+  $form['amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Payment Amount'),
+    '#description' => t('The amount to be paid for this payment item'),
+    '#size' => 16,
+  );
+
+  return $form;
+}
+
+function payments_add_item_form_submit($form, &$form_state) {
+  //$form_state['values']['title']
+}
