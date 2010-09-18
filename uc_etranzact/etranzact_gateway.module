@@ -26,63 +26,67 @@ function etranzact_gateway_charge($order_id, $amount, $data) {
   $order->payment_details = unserialize($order->data['etranzact_data']);
 
   // Search local database first
-
-  $req = array (
-    'RESPONSE_URL' => 'http://localhost/',
-    'RECEIPT_NO' => $order->payment_details['receipt_no'],
-    'CONFIRMATION_NO' => $order->payment_details['confirmation_no'],
-    'AMOUNT' => sprintf('%.2f', $order->order_total), // Expected amount
-    'TERMINAL_ID' => variable_get('uc_etranzact_terminal_id', '0000000001'),
-  );
-
-  $query = http_build_query($req);
-
-  $curl = curl_init();
-  curl_setopt($curl, CURLOPT_URL, variable_get('uc_etranzact_demo_mode', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 
-'https://www.etranzact.net/WebConnect/verifypin.jsp');
-  curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-  curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-  curl_setopt($curl, CURLOPT_POST, 1);
-  curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
-  curl_setopt($curl, CURLOPT_POSTFIELDS, $query);
-  $return = curl_exec($curl);
-
-  preg_match_all('/<input.*name=[\'"]([^\'"]*)[\'"].*value=[\'"]([^\'"]*)[\'"]>/', $return, $matches);
-  foreach ($matches[1] as $key => $value):
-    $status[$value] = $matches[2][$key];
-  endforeach;
-
-/*  if ($order->payment_details['receipt_no'] == '0000') {
+  $rs = db_query("SELECT * FROM {uc_etranzact_pin_transactions} WHERE confirmation_no='%s'", $order->payment_details['confirmation_no']);
+  if (db_fetch_object($rs)) {
+    // we found an already existing transaction - reject this transaction with an appropriate error message
     $success = FALSE;
+    $message = t('Your payment was unsuccessful because the payment details you supplied have been used. Please contact the administrator if you are receiving this message in error.');
   }
   else {
-    $success = TRUE;
-  }
-*/
-  if (is_array($status) && $status['SUCCESS'] == '0' && $status['AMOUNT'] == $order->order_total) {
-    // Log the transaction
-    $success = TRUE;
-  } else {
-    $success = FALSE;
-  }
-
-  if ($success) {
-    $context = array(
-      'revision' => 'formatted-original',
-      'type' => 'amount',
+    $req = array (
+      'RECEIPT_NO' => $order->payment_details['receipt_no'],
+      'CONFIRMATION_NO' => $order->payment_details['confirmation_no'],
+      'TERMINAL_ID' => variable_get('uc_etranzact_terminal_id', '0000000001'),
     );
-    $message = t('Amount paid: !amount', array('!amount' => uc_price($amount, $context)));
-    uc_order_comment_save($order_id, $user->uid, $message, 'admin');
-  }
-  else {
-    $message = t('Etranzact payment failed.');
-    uc_order_comment_save($order_id, $user->uid, $message, 'admin');
+
+    $query = http_build_query($req);
+    $query = preg_replace('/\&amp;/', '&', $query);
+
+    $curl = curl_init();
+    $apiurl = variable_get('uc_etranzact_demo_mode', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 'https://www.etranzact.net/WebConnect/verifypin.jsp';
+    $apiurl = sprintf('%s?%s', $apiurl, $query);
+    curl_setopt($curl, CURLOPT_URL, $apiurl);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($curl, CURLOPT_FOLLOWLOCATION, 1);
+    $return = curl_exec($curl);
+
+    $return = strip_tags($return);
+    preg_match_all('/([A-Z]*)=([0-9A-Za-z]*)/', $return, $matches);
+
+    foreach ($matches[1] as $key => $value):
+      $status[$value] = $matches[2][$key];
+    endforeach;
+
+    if (is_array($status) && $status['SUCCESS'] == '0' && $status['AMOUNT'] == $order->order_total) {
+      // Log the transaction
+      $success = TRUE;
+      $context = array(
+        'revision' => 'formatted-original',
+        'type' => 'amount',
+      );
+      $order_message = t('Amount paid: !amount', array('!amount' => uc_price($amount, $context)));
+      uc_order_comment_save($order_id, $user->uid, $order_message, 'admin');
+      $message = t('Your payment was successful!');
+      // Record this payment
+      $rs = db_query("INSERT INTO {uc_etranzact_pin_transactions} ('confirmation_no', 'receipt_no', 'user_id', 'payment_date') VALUES ('%s', '%s', %d, NOW())", $order->payment_details['confirmation_no'], $order->payment_details['receipt_no'], $user->uid);
+      if (!db_affected_rows($rs)) {
+        $success = FALSE;
+        $message = t('We are experiencing some technical difficulty in recording your payment information. Please try again.');
+      }
+
+    } else {
+      $success = FALSE;
+      $message = t('Etranzact payment authorization failed.');
+      uc_order_comment_save($order_id, $user->uid, $message, 'admin');
+      $message = t('We are unable to process your payment because your payment details are incorrect. Please try again.');
+    }
   }
 
   $result = array(
     'success' => $success,
-    'comment' => t('Etranzact payment processed.'),
-    'message' => $success ? t('Etranzact payment processed successfully.') : t('Etranzact payment failed.'),
+    'comment' => t('Etranzact payment processing.'),
+    'message' => $message,
     'uid' => $user->uid,
     // 'data' => $data,
   );

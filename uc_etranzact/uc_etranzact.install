@@ -5,5 +5,43 @@
  */
 function uc_etranzact_uninstall() {
   db_query("DELETE FROM {variable} WHERE name LIKE 'uc_etranzact_%%'");
+  drupal_uninstall_schema('uc_etranzact');
 }
 
+function uc_etranzact_install() {
+  drupal_install_schema('uc_etranzact');
+}
+
+function uc_etranzact_schema() {
+  $schema['uc_etranzact_pin_transactions'] = array(
+    'description' => t('Table for storing successful transactions'),
+    'fields' => array(
+      'transaction_id' => array(
+        'description' => t('Transaction ID'),
+        'type' => 'serial'
+      ),
+      'user_id' => array(
+        'description' => t('User ID for drupal user that made the payment'),
+        'type' => 'int'
+      ),
+      'confirmation_no' => array(
+        'description' => t('The confirmation number on the payment slip'),
+        'type' => 'varchar',
+        'length' => '30',
+        'not null' => TRUE,
+      ),
+      'receipt_no' => array(
+        'description' => t('Receipt no for the payment'),
+        'type' => 'varchar',
+        'length' => '30',
+      ),
+      'payment_date' => array(
+        'description' => t('Date of this payment'),
+        'type' => 'datetime'
+      )
+    ),
+    'primary key' => array('transaction_id')
+  );
+
+  return $schema;
+}
