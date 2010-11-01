@@ -1,4 +1,299 @@
 <?php
-// $Id$
+
+//include(drupal_get_path('module', 'veritas') . '/veritas_global.inc');
+
+
+function hostel_allocation_menu() {
+  $items['hostel_allocation/alloc_admin'] = array(
+    'title' => 'Hostel Administration',
+    'page callback' => 'hostel_admin',
+    'access arguments' => array('hostel_allocation admin'),
+    'type' => MENU_NORMAL_ITEM,
+    
+  );
+  
+  $items['hostel_allocation/create_modify_hostel']=array(
+    'title'=>"Create or Modify Hostel",
+    'page callback' => 'hostel_allocation_create_modify_hostel',
+    'access arguments' => array('hostel_allocation user'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+  
+ }
+ 
+ 
+function hostel_allocation_perm() {
+  return array('hostel_allocation user', 'hostel_allocation admin');
+}
+
+
+function hostel_admin() {
+  ob_start();
+
+  echo '<br /><hr /><br />';
+
+  echo drupal_get_form('set_session_form');
+  echo '<br /><hr /><br />';
+
+  echo '<a href="' . url('hostel_allocation/create_modify_hostel') . '">Create or Modify Hostel</a>';
+  echo '<br /><br /><hr /><br />';
+  
+  echo 'Create or Modify Blocks';
+  echo '<br /><br /><hr /><br />';
+  
+  echo 'Create or Modify Rooms';
+  echo '<br /><br /><hr /><br />';
+  
+  echo 'Create or Modify Allocation Rules';
+  echo '<br /><br /><hr /><br />';
+  
+  echo 'Modify Global Settings';
+  echo '<br /><br /><hr /><br />';
+  return ob_get_clean();
+}
+  
+
+function hostel_allocation_create_modify_hostel() {
+  global $user;
+  ob_start();
+  //perform single check for editing
+  $forModify = (arg(2) && is_valid_hostel(arg(2))) ? true : false;
+  
+  $isAuthorized = true;
+  //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+
+  echo '<br /><hr /><br />';
+  
+  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
+  
+  if (! $isAuthorized) {
+    echo Error_Types(104);
+
+  }
+  else {
+
+    if($forModify)
+      echo "<b>Modify Hostel</b> - Please make any required change(s) to the hostel<br />";
+    else
+      echo "<b>Create Hostel</b> - Please fill the form below to create a new Hostel<br />";
+
+
+    echo drupal_get_form('hostel_allocation_create_edit_hostel_form');
+    
+  }
+  
+  echo '<br /><hr /><br />';
+  
+  if(! $forModify) {
+    //display existing hostels here
+    echo hostel_allocation_display_available_hostels();
+
+    echo '<br /><hr /><br />';
+  }
+  
+  return ob_get_clean();
+}
+
+
+function is_valid_hostel ($hostel_nid) {
+  $result = db_query("SELECT nid FROM {content_type_hostels} WHERE nid =%d ", $hostel_nid);
+  if (db_affected_rows($result) > 0 ) return true;
+
+  return false;
+}
+
+
+function hostel_allocation_create_edit_hostel_form() {
+  if (isset($_SESSION['eduerp_hostel_nid']))$_POST['hostel_nid'] = $_SESSION['eduerp_hostel_nid'];
+  //echo arg(2);
+  //if (isset($_POST['hostel_nid'])) {
+  if (arg(2) && is_valid_hostel(arg(2))) {
+    if (empty($_POST['hostel_name'])) {
+      $result = db_query('SELECT field_hostel_name_value AS name, field_description_value AS description, field_hostel_status_value AS hostel_status FROM {content_type_hostels} WHERE nid = %d', arg(2));
+      $hostel_edit_record = db_fetch_object($result);
+    }
+  }
+  $form['#title'] = 'Create New Hostel';
+  $form['hostel_name'] = array(
+    '#title' => 'Hostel Name',
+    '#type' => 'textfield',
+    '#size' => 40,
+    '#required' => TRUE
+  );
+  if ($hostel_edit_record) $form['hostel_name']['#value'] = $hostel_edit_record->name;
+
+  $form['hostel_description'] = array(
+    '#title' => 'Hostel Description',
+    '#type' => 'textarea',
+    '#size' => 255,
+    '#required' => TRUE
+  );
+  if ($hostel_edit_record) $form['hostel_description']['#value'] = $hostel_edit_record->description;
+  
+  $form['hostel_status'] = array(
+    '#type' => 'select',
+    '#options' => array(0=>'Not Active', 1=>'Activate'),
+    '#title' => 'Hostel Status',
+    '#required' => TRUE
+    );
+  if ($hostel_edit_record) $form['hostel_status']['#value'] = $hostel_edit_record->hostel_status;
+  
+  if (isset($_POST['hostel_nid'])) {
+    $form['hostel_nid'] = array(
+    '#title' => 'Hostel nid',
+    '#type' => 'hidden',
+    '#value' => $_POST['hostel_nid']
+    );
+
+  }
+  $form['submit'] = array(
+    '#value' => 'Create Hostel',
+    '#type' => 'submit'
+  );
+  //if (isset($_POST['hostel_nid'])) $form['submit']['#value'] = 'Update Hostel';
+  if(arg(2)) $form['submit']['#value'] = 'Update Hostel';
+
+  return $form;
+
+
+}
+
+
+function hostel_allocation_create_edit_hostel_form_validate($form, &$form_state){
+ // if (isset($_POST['hostel_nid'])) {//validate MODIFY
+  if(arg(2) && is_valid_hostel(arg(2))) {
+    if (is_Hostel_Name_Existing($form_state['values']['hostel_name'], arg(2)))
+      form_set_error('hostel_name', Error_Types(131));
+
+  }
+  else {//validate CREATE
+    if(is_Hostel_Name_Existing($form_state['values']['hostel_name']))
+      form_set_error('hostel_name', Error_Types(131));
+  }
+
+
+}
+
+
+function hostel_allocation_create_edit_hostel_form_submit($form, &$form_state) {
+  //if (isset($form_state['values']['hostel_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['hostel_nid'])) {//the user is trying to edit a given hostel. OK!
+  if (arg(2)) {//the user is trying to edit a given hostel. OK!
+    $node = node_load(arg(2));
+    $node->title                            = $form_state['values']['hostel_name'];
+    $node->field_hostel_name[0]['value']    = $form_state['values']['hostel_name'];
+    $node->field_description[0]['value']    = $form_state['values']['hostel_description'];
+    $node->field_hostel_status[0]['value']  = $form_state['values']['hostel_status'];
+
+    drupal_set_message($form_state['values']['hostel_name'] . ' Hostel was modified successfully!<br />');
+    node_save($node);
+    drupal_goto("/hostel_allocation/create_modify_hostel/");
+    //unset($_SESSION['eduerp_hostel_nid']);
+  }
+  else {
+    $node = new stdClass();
+    $node->type                              = 'hostels';
+    $node->uid                               = 1;  // Admin
+    $node->status                            = 1;  // Published
+    $node->promote                           = 0;
+    $node->sticky                            = 0;
+    $node->comment                           = 0;
+    $node->title                             = $form_state['values']['hostel_name'];
+    $node->field_hostel_name[0]['value'] 	 = $form_state['values']['hostel_name'];
+	$node->field_description[0]['value'] 	 = $form_state['values']['hostel_description'];
+    $node->field_hostel_status[0]['value'] 	 = $form_state['values']['hostel_status'];
+
+    //$department = $node->nid;
+
+    drupal_set_message($form_state['values']['hostel_name'] . ' Hostel has been created!<br />');
+    node_save($node);
+  }
+
+  
+
+
+}
+
+
+function is_Hostel_Name_Existing($hostel_name, $nid = 0) {
+  //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
+  if ($nid != 0)
+    $result = db_query("SELECT nid FROM {content_type_hostels} WHERE field_hostel_name_value = '%s' AND nid != %d ", $hostel_name, $nid);
+  else
+    $result = db_query("SELECT nid FROM {content_type_hostels} WHERE field_hostel_name_value='%s' ", $hostel_name);
+
+  if (db_fetch_object($result)) return true;
+
+  return false;
+}
+
+
+function hostel_allocation_display_available_hostels() {
+  $hostels = get_hostels(0, false);
+  $html = "
+  <div id='assigned_courses'>
+  <b>Available Hostels</b> - Please click on a Hostel name to Modify it.<br /> ";
+  if (isset($hostels) && is_array($hostels) && sizeof($hostels)) {
+    $html .="
+    <table border=1>
+      <tr>
+        <th><b>#</b></th>
+        <th><b>Hostel Name</b></th>
+        <th><b>Hostel Description</b></th>
+        <th><b>Hostel Status</b></th>
+      </tr>";$i = 1;
+    
+    
+      foreach ($hostels as $v){
+        if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+          $html .= "
+           <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+             <td>". $i++ ."</td>
+             <td><a href='". url("hostel_allocation/create_modify_hostel/" . $v['hostel_nid'])  . "'>". $v['hostel_name'] ."</a></td>
+             <td>". $v['hostel_description'] ."</td>
+             <td>". $v['hostel_status'] ."</td>
+           </tr>";
+      }
+     $html .= "
+    </table>";
+   }
+   else {
+     $html .= Error_Types(106);
+   
+   
+   }
+  $html .= "
+
+  </div>";
+  return $html;
+
+}
+
+
+function get_hostels($hostel_nid = 0, $forCombo = true) {
+  $r = db_query("SELECT nid, field_hostel_name_value AS hostel_name, field_description_value AS hostel_description, IF(field_hostel_status_value = 1, 'Active', 'Not Active') AS hostel_status
+      FROM {content_type_hostels} 
+      ORDER BY field_hostel_name_value");
+  if (db_affected_rows($r) > 0 ){
+    while ($f = db_fetch_object($r)){
+      $hostels[$f->nid]['hostel_name'] = $f->hostel_name;
+      $hostels[$f->nid]['hostel_description'] = $f->hostel_description;
+      $hostels[$f->nid]['hostel_status'] = $f->hostel_status;
+      $hostels[$f->nid]['hostel_nid'] = $f->nid;
+
+    }
+  }
+  else {
+    if ($forCombo)
+      $hostels[] = strip_tags(Error_Types(106));
+    else
+      $hostels = array();
+    
+  }
+  return $hostels;
+}
+
 
 ?>
