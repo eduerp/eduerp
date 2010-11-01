@@ -18,6 +18,14 @@ function hostel_allocation_menu() {
     'access arguments' => array('hostel_allocation user'),
     'type' => MENU_CALLBACK,
   );
+  
+  $items['hostel_allocation/create_modify_block']=array(
+    'title'=>"Create or Modify Block",
+    'page callback' => 'hostel_allocation_create_modify_block',
+    'access arguments' => array('hostel_allocation user'),
+    'type' => MENU_CALLBACK,
+  );
+  
   return $items;
   
  }
@@ -39,7 +47,7 @@ function hostel_admin() {
   echo '<a href="' . url('hostel_allocation/create_modify_hostel') . '">Create or Modify Hostel</a>';
   echo '<br /><br /><hr /><br />';
   
-  echo 'Create or Modify Blocks';
+  echo '<a href="' . url('hostel_allocation/create_modify_block') . '">Create or Modify Blocks</a>';
   echo '<br /><br /><hr /><br />';
   
   echo 'Create or Modify Rooms';
@@ -278,10 +286,16 @@ function get_hostels($hostel_nid = 0, $forCombo = true) {
       ORDER BY field_hostel_name_value");
   if (db_affected_rows($r) > 0 ){
     while ($f = db_fetch_object($r)){
-      $hostels[$f->nid]['hostel_name'] = $f->hostel_name;
-      $hostels[$f->nid]['hostel_description'] = $f->hostel_description;
-      $hostels[$f->nid]['hostel_status'] = $f->hostel_status;
-      $hostels[$f->nid]['hostel_nid'] = $f->nid;
+      if($forCombo) {
+        $hostels[$f->nid] = $f->hostel_name;
+      
+      }
+      else{
+        $hostels[$f->nid]['hostel_name'] = $f->hostel_name;
+        $hostels[$f->nid]['hostel_description'] = $f->hostel_description;
+        $hostels[$f->nid]['hostel_status'] = $f->hostel_status;
+        $hostels[$f->nid]['hostel_nid'] = $f->nid;
+      }
 
     }
   }
@@ -293,6 +307,265 @@ function get_hostels($hostel_nid = 0, $forCombo = true) {
     
   }
   return $hostels;
+}
+
+
+function hostel_allocation_create_modify_block() {
+  global $user;
+  ob_start();
+  //perform single check for editing
+  $forModify = (arg(2) && is_valid_block(arg(2))) ? true : false;
+  
+  $isAuthorized = true;
+  //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+
+  echo '<br /><hr /><br />';
+  
+  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
+  
+  if (! $isAuthorized) {
+    echo Error_Types(104);
+
+  }
+  else {
+
+    if($forModify)
+      echo "<b>Modify Block</b> - Please make any required change(s) to the Block<br />";
+    else
+      echo "<b>Create Block</b> - Please fill the form below to create a new Block<br />";
+
+
+    echo drupal_get_form('hostel_allocation_create_edit_block_form');
+    
+  }
+  
+  echo '<br /><hr /><br />';
+  
+  if(! $forModify) {
+    //display existing hostels here
+    echo hostel_allocation_display_available_blocks();
+
+    echo '<br /><hr /><br />';
+  }
+  
+  return ob_get_clean();
+}
+
+
+function hostel_allocation_create_edit_block_form() {
+  //if (isset($_SESSION['eduerp_hostel_nid']))$_POST['hostel_nid'] = $_SESSION['eduerp_hostel_nid'];
+  //echo arg(2);
+  //if (isset($_POST['hostel_nid'])) {
+  if (arg(2) && is_valid_block(arg(2))) {
+    if (empty($_POST['block_name'])) {
+      $result = db_query('SELECT field_block_name_value AS block_name, field_block_type_value AS block_type, field_block_status_value AS block_status, field_hostel_id_nid AS hostel_nid FROM {content_type_blocks} WHERE nid = %d', arg(2));
+      $block_edit_record = db_fetch_object($result);
+    }
+  }
+  $form['#title'] = 'Create New Block';
+  
+  $form['hostel_nid'] = array(
+    '#title' => 'Hostel Name',
+    '#type' => 'select',
+    '#options' => get_hostels(0, true), //array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only'),
+    '#required' => TRUE
+  );
+  if ($block_edit_record) $form['block_name']['#value'] = $block_edit_record->block_name;
+  
+  $form['block_name'] = array(
+    '#title' => 'Block Name',
+    '#type' => 'textfield',
+    '#size' => 40,
+    '#required' => TRUE
+  );
+  if ($block_edit_record) $form['block_name']['#value'] = $block_edit_record->block_name;
+
+  $form['block_type'] = array(
+    '#title' => 'Block Type',
+    '#type' => 'select',
+    '#options' => array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only'),
+    '#required' => TRUE
+  );
+  if ($block_edit_record) $form['block_type']['#value'] = $block_edit_record->block_type;
+  
+  $form['block_status'] = array(
+    '#type' => 'select',
+    '#options' => array(0=>'Not Active', 1=>'Activate'),
+    '#title' => 'Block Status',
+    '#required' => TRUE
+    );
+  if ($block_edit_record) $form['block_status']['#value'] = $block_edit_record->block_status;
+  
+  if (isset($_POST['block_nid'])) {
+    $form['block_nid'] = array(
+    '#title' => 'Block nid',
+    '#type' => 'hidden',
+    '#value' => $_POST['block_nid']
+    );
+
+  }
+  $form['submit'] = array(
+    '#value' => 'Create Block',
+    '#type' => 'submit'
+  );
+  //if (isset($_POST['hostel_nid'])) $form['submit']['#value'] = 'Update Hostel';
+  if(arg(2)) $form['submit']['#value'] = 'Update Block';
+
+  return $form;
+
+
+}
+
+
+function hostel_allocation_display_available_blocks() {
+  $blocks = get_blocks(0, false);
+  $html = "
+  <div id='assigned_courses'>
+  <b>Available Blocks</b> - Please click on a Block name to Modify it.<br /> ";
+  if (isset($blocks) && is_array($blocks) && sizeof($blocks)) {
+    $html .="
+    <table border=1>
+      <tr>
+        <th><b>#</b></th>
+        <th><b>Hostel Name</b></th>
+        <th><b>Block Name</b></th>
+        <th><b>Block Type</b></th>
+        <th><b>Block Status</b></th>
+      </tr>";$i = 1;
+    
+    
+      foreach ($blocks as $v){
+        if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+          $html .= "
+           <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+             <td>". $i++ ."</td>
+             <td>". $v['hostel_name'] ."</td>
+             <td><a href='". url("hostel_allocation/create_modify_block/" . $v['block_nid'])  . "'>". $v['block_name'] ."</a></td>
+             <td>". $v['block_type'] ."</td>
+             <td>". $v['block_status'] ."</td>
+           </tr>";
+      }
+     $html .= "
+    </table>";
+   }
+   else {
+     $html .= Error_Types(106);
+   
+   
+   }
+  $html .= "
+
+  </div>";
+  return $html;
+
+}
+
+
+function get_blocks($block_nid = 0, $forCombo = true) {
+  $r = db_query("SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
+      FROM {content_type_blocks} b INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
+      ORDER BY field_hostel_name_value");
+  if (db_affected_rows($r) > 0 ){
+    while ($f = db_fetch_object($r)){
+      if($forCombo) {
+        $blocks[$f->nid] = $f->block_name;
+      
+      }
+      else{
+        $blocks[$f->nid]['hostel_name'] = $f->hostel_name;
+        $blocks[$f->nid]['block_name'] = $f->block_name;
+        $blocks[$f->nid]['block_type'] = $f->block_type;
+        $blocks[$f->nid]['block_status'] = $f->block_status;
+        $blocks[$f->nid]['block_nid'] = $f->nid;
+      }
+
+    }
+  }
+  else {
+    if ($forCombo)
+      $blocks[] = strip_tags(Error_Types(106));
+    else
+      $blocks = array();
+    
+  }
+  return $blocks;
+}
+
+
+function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
+ // if (isset($_POST['hostel_nid'])) {//validate MODIFY
+  if(arg(2) && is_valid_block(arg(2))) {
+    if (is_Block_Name_Existing($form_state['values']['block_name'], $form_state['values']['hostel_nid'], arg(2)))
+      form_set_error('block_name', Error_Types(132));
+
+  }
+  else {//validate CREATE
+    if(is_Block_Name_Existing($form_state['values']['block_name'], $form_state['values']['hostel_nid']))
+      form_set_error('block_name', Error_Types(132));
+  }
+
+
+}
+
+
+function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
+  //if (isset($form_state['values']['hostel_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['hostel_nid'])) {//the user is trying to edit a given hostel. OK!
+  if (arg(2)) {//the user is trying to edit a given hostel. OK!
+    $node = node_load(arg(2));
+    $node->title                           = $form_state['values']['block_name'];
+    $node->field_block_name[0]['value']    = $form_state['values']['block_name'];
+    $node->field_block_type[0]['value']    = $form_state['values']['block_type'];
+    $node->field_block_status[0]['value']  = $form_state['values']['block_status'];
+    $node->field_hostel_id[0]['nid']  = $form_state['values']['hostel_nid'];
+
+    drupal_set_message($form_state['values']['block_name'] . ' Block was modified successfully!<br />');
+    node_save($node);
+    drupal_goto("/hostel_allocation/create_modify_block/");
+    //unset($_SESSION['eduerp_hostel_nid']);
+  }
+  else {
+    $node = new stdClass();
+    $node->type                              = 'blocks';
+    $node->uid                               = 1;  // Admin
+    $node->status                            = 1;  // Published
+    $node->promote                           = 0;
+    $node->sticky                            = 0;
+    $node->comment                           = 0;
+    $node->title                             = $form_state['values']['block_name'];
+    $node->field_block_name[0]['value'] 	 = $form_state['values']['block_name'];
+	$node->field_block_type[0]['value'] 	 = $form_state['values']['block_type'];
+	$node->field_block_status[0]['value'] 	 = $form_state['values']['block_status'];
+    $node->field_hostel_id[0]['nid'] 	 = $form_state['values']['hostel_nid'];
+
+    //$department = $node->nid;
+
+    drupal_set_message($form_state['values']['block_name'] . ' Block has been created!<br />');
+    node_save($node);
+  }
+
+}
+
+
+function is_Block_Name_Existing($block_name, $hostel_nid, $nid = 0) {
+  //we are checking hostel_nid because we will allow two block names to exist but in different hostels
+  //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
+  if ($nid != 0)
+    $result = db_query("SELECT nid FROM {content_type_blocks} WHERE field_block_name_value = '%s' AND field_hostel_id_nid=%d AND nid != %d ", $block_name, $hostel_nid, $nid);
+  else
+    $result = db_query("SELECT nid FROM {content_type_blocks} WHERE field_block_name_value='%s' AND field_hostel_id_nid=%d ", $block_name, $hostel_nid);
+
+  if (db_fetch_object($result)) return true;
+
+  return false;
+}
+
+function is_valid_block($block_nid) {
+  $result = db_query("SELECT nid FROM {content_type_blocks} WHERE nid =%d ", $block_nid);
+  if (db_affected_rows($result) > 0 ) return true;
+
+  return false;
 }
 
 
