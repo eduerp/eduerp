@@ -435,7 +435,7 @@ function hostel_allocation_display_available_blocks() {
         <th><b>Block Status</b></th>
       </tr>";$i = 1;
     
-    
+      $blockTypes = array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only');
       foreach ($blocks as $v){
         if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
           $html .= "
@@ -443,7 +443,7 @@ function hostel_allocation_display_available_blocks() {
              <td>". $i++ ."</td>
              <td>". $v['hostel_name'] ."</td>
              <td><a href='". url("hostel_allocation/create_modify_block/" . $v['block_nid'])  . "'>". $v['block_name'] ."</a></td>
-             <td>". $v['block_type'] ."</td>
+             <td>". $blockTypes[$v['block_type']] ."</td>
              <td>". $v['block_status'] ."</td>
            </tr>";
       }
