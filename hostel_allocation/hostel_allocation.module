@@ -322,7 +322,7 @@ function get_hostels($hostel_nid = 0, $forCombo = true) {
 
 
 function hostel_allocation_create_modify_block() {
-  global $user;
+  //global $user;
   ob_start();
   //perform single check for editing
   $forModify = (arg(2) && is_valid_block(arg(2))) ? true : false;
@@ -342,11 +342,12 @@ function hostel_allocation_create_modify_block() {
   }
   else {
 
-    if($forModify)
+    if($forModify){
       echo "<b>Modify Block</b> - Please make any required change(s) to the Block<br />";
-    else
+    }
+    else{
       echo "<b>Create Block</b> - Please fill the form below to create a new Block<br />";
-
+    }
 
     echo drupal_get_form('hostel_allocation_create_edit_block_form');
     
@@ -533,7 +534,7 @@ function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
 
     drupal_set_message($form_state['values']['block_name'] . ' Block was modified successfully!<br />');
     node_save($node);
-    drupal_goto("/hostel_allocation/create_modify_block/");
+    
     //unset($_SESSION['eduerp_hostel_nid']);
   }
   else {
@@ -555,7 +556,7 @@ function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
     drupal_set_message($form_state['values']['block_name'] . ' Block has been created!<br />');
     node_save($node);
   }
-
+  drupal_goto("/hostel_allocation/create_modify_block");
 }
 
 
@@ -638,10 +639,11 @@ function hostel_allocation_create_edit_room_form() {
       WHERE r.nid = %d", arg(2));
       $room_edit_record = db_fetch_object($result);
       //$room_edit_record = get_rooms(arg(2));
+      
     }
   }
   $form['#title'] = 'Create New Room';
-  
+   if (! $room_edit_record){
   $form['hostel_nid'] = array(
     '#title' => 'Hostel Name',
     '#type' => 'select',
@@ -649,12 +651,19 @@ function hostel_allocation_create_edit_room_form() {
     '#ahah' => array('path' => 'staff/ajax/getblocks', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'shwblocks')
     
   );
-  if ($room_edit_record){
-    //$form['block_name']['#value'] = $room_edit_record->hostel_nid;
-    $form['hostel_nid']['#disabled'] = TRUE; //$room_edit_record->hostel_nid;
+  }
+  else{
+    $form['hostel_nid'] = array(
+    '#title' => 'Hostel Name',
+    '#type' => 'select',
+    '#options' => get_hostels(0, true),
+    '#disabled' => TRUE, //$room_edit_record->hostel_nid;
+    );
    }
-  
-  $form['block_nid'] = array(
+   
+   
+  if (! $room_edit_record) {
+    $form['block_nid'] = array(
     '#title' => 'Block Name',
     '#type' => 'select',
     '#options' => get_blocks(0, true), 
@@ -664,11 +673,19 @@ function hostel_allocation_create_edit_room_form() {
       '#suffix' => "</div>",
       '#disabled' => TRUE,
     '#required' => TRUE
-  );
-  if ($room_edit_record) {
-    $form['block_nid']['#value'] = $room_edit_record->block_nid;
-    $form['block_nid']['#disabled'] = FALSE;
+    );
   }
+  else {
+    $form['block_nid'] = array(
+    '#title' => 'Block Name',
+    '#type' => 'select',
+    '#options' => get_blocks(0, true), 
+    '#required' => TRUE,
+    '#value' => $room_edit_record->block_nid
+    );
+   
+  }
+  
   
   $form['room_name'] = array(
     '#title' => 'Room Name',
@@ -829,15 +846,16 @@ function hostel_allocation_create_edit_room_form_submit($form, &$form_state) {
     
     $node = node_load(arg(2));
     //print_r($node);
+    //echo $form_state['values']['room_capacity'];
     $node->title                             = $form_state['values']['room_name'];
     $node->field_block_id[0][nid] 	         = $form_state['values']['block_nid'];
 	$node->field_room_name[0]['value'] 	     = $form_state['values']['room_name'];
 	$node->field_room_capacity[0]['value'] 	 = $form_state['values']['room_capacity'];
     $node->field_room_status[0]['value'] 	 = $form_state['values']['room_status'];
-
-    drupal_set_message($form_state['values']['room_name'] . ' Room was modified successfully!<br />');
     node_save($node);
-    //drupal_goto("/hostel_allocation/create_modify_room/");
+    drupal_set_message($form_state['values']['room_name'] . ' Room was modified successfully!<br />');
+
+    drupal_goto("/hostel_allocation/create_modify_room");
 
   }
   else {
