@@ -332,6 +332,28 @@ function _staff_ajax() {
         $output = _staff_ahah_render($form);
         print drupal_to_js(array('data' => $output, 'status' => true));
     	    break;
+    case 'getblocks':
+    	 $hostel_nid = $_POST['hostel_nid']; $id = "";
+    	 
+        $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
+        $rs = db_query($sql, $hostel_nid);
+        while($row = db_fetch_object($rs))
+          $blocks[$row->nid] = $row->field_block_name_value;
+
+  	$form['block_nid'] = array(
+      '#type' => 'select',
+      '#options' => $blocks,
+      '#title' => 'Block Name',
+      '#attributes' => array(
+      'style' => 'width:100px'),
+      '#prefix' => "<div id='shwblocks'>",
+      '#suffix' => "</div>",
+      '#required' => TRUE
+      
+        );
+        $output = _staff_ahah_render($form, true);
+        print drupal_to_js(array('data' => $output, 'status' => true));
+    	break;
   endswitch;
   exit();
 }
@@ -342,10 +364,10 @@ function _staff_ajax() {
   $fields is the specific form elements you want to attach via ahah,
   $name is the form fields array key... e.g. the name for $form['title'] is "title"
 */
-function _staff_ahah_render($fields) {
+function _staff_ahah_render($fields, $fromHostel=false) {
 
   drupal_alter('form', $fields, array(), 'staff_course_form');
-  $name = "staff-course-assign-form1";
+  $name = $fromHostel ? "hostel-allocation-create-edit-room-form" : "staff-course-assign-form1";
   $form_state = array('submitted' => FALSE,'#values'=>$_POST);
   $form_build_id = $_POST['form_build_id'];
   // Add the new element to the stored form. Without adding the element to the
@@ -4390,6 +4412,7 @@ function Error_Types($num = 0) {
   case '131': $msg = $prifix1 . 'Hostel Name already exists!<br />'; break;
   case '132': $msg = $prifix1 . 'Block Name already exists in the selected Hostel!<br />'; break;
   case '133': $msg = $prifix1 . 'Room Name already exists in the selected Block!<br />'; break;
+  case '134': $msg = $prifix1 . 'Room Capacity must be of Numeric type!<br />'; break;
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
