@@ -1469,10 +1469,9 @@ function hostel_allocation_create_edit_allocation_rules_setup_form_validate($for
     $total_allocated += $form_state['values'][$row->category_nid];
   }
   
-  if($total_allocated > $blockCapacityInfo->block_capacity){
+  if($total_allocated != $blockCapacityInfo->block_capacity){
       form_set_error('', Error_Types(135));
-      //return;
-    }
+  }
 
 }
 
