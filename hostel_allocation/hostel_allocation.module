@@ -35,12 +35,18 @@ function hostel_allocation_menu() {
   );
   
   $items['hostel_allocation/create_modify_category']=array(
-    'title'=>"Create or Modify Category",
+    'title'=>"Create or Modify Allocation Category",
     'page callback' => 'hostel_allocation_create_modify_category',
     'access arguments' => array('hostel_allocation user'),
     'type' => MENU_CALLBACK,
   );
   
+  $items['hostel_allocation/create_modify_allocation_rules']=array(
+    'title'=>"Create or Modify Allocation Rules",
+    'page callback' => 'hostel_allocation_create_modify_allocation_rules',
+    'access arguments' => array('hostel_allocation user'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
   
  }
@@ -71,7 +77,7 @@ function hostel_admin() {
   echo '<a href="' . url('hostel_allocation/create_modify_category') . '">Create or Modify Allocation Category</a>';
   echo '<br /><br /><hr /><br />';
   
-  echo 'Create or Modify Allocation Rules';
+  echo '<a href="' . url('hostel_allocation/create_modify_allocation_rules') . '">Create or Modify Allocation Rules</a>';
   echo '<br /><br /><hr /><br />';
   
   echo 'Modify Global Settings';
@@ -219,7 +225,7 @@ function hostel_allocation_create_edit_hostel_form_submit($form, &$form_state) {
 
     drupal_set_message($form_state['values']['hostel_name'] . ' Hostel was modified successfully!<br />');
     node_save($node);
-    drupal_goto("/hostel_allocation/create_modify_hostel/");
+    drupal_goto("hostel_allocation/create_modify_hostel/");
     //unset($_SESSION['eduerp_hostel_nid']);
   }
   else {
@@ -444,11 +450,13 @@ function hostel_allocation_create_edit_block_form() {
 }
 
 
-function hostel_allocation_display_available_blocks() {
+function hostel_allocation_display_available_blocks($forRules=false) {
   $blocks = get_blocks(0, false);
   $html = "
   <div id='assigned_courses'>
-  <b>Available Blocks</b> - Please click on a Block name to Modify it.<br /> ";
+  <b>Available Blocks</b> - ". ($forRules ? 'Please click on a Block Name to Create / Modify its rule' : 'Please click on a Block Name to Modify it') ."<br /> ";
+  
+  $url = $forRules ? 'hostel_allocation/create_modify_allocation_rules/' : 'hostel_allocation/create_modify_block/';
   if (isset($blocks) && is_array($blocks) && sizeof($blocks)) {
     $html .="
     <table border=1>
@@ -458,6 +466,7 @@ function hostel_allocation_display_available_blocks() {
         <th><b>Block Name</b></th>
         <th><b>Block Type</b></th>
         <th><b>Block Status</b></th>
+        <th><b>Any Rules</b></th>
       </tr>";$i = 1;
     
       $blockTypes = array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only');
@@ -467,13 +476,18 @@ function hostel_allocation_display_available_blocks() {
            <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
              <td>". $i++ ."</td>
              <td>". $v['hostel_name'] ."</td>
-             <td><a href='". url("hostel_allocation/create_modify_block/" . $v['block_nid'])  . "'>". $v['block_name'] ."</a></td>
+             <td><a href='". url($url . $v['block_nid'])  . "'>". $v['block_name'] ."</a></td>
              <td>". $blockTypes[$v['block_type']] ."</td>
              <td>". $v['block_status'] ."</td>
+             <td>". (is_block_existing_in_rules($v['block_nid']) ? 'Yes' : 'No') ."</td>
            </tr>";
       }
      $html .= "
     </table>";
+    if($forRules){
+      $html .= "<br /><div ><font color=#FF0000><b>Note: If no Allocation Rule exists for a Block then allocation will be done at random on first come first served basis until all the Room(s) in the Block is fully allotted!</b></font></div>";
+    
+    }
    }
    else {
      $html .= Error_Types(106);
@@ -489,9 +503,18 @@ function hostel_allocation_display_available_blocks() {
 
 
 function get_blocks($block_nid = 0, $forCombo = true) {
-  $r = db_query("SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
-      FROM {content_type_blocks} b INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
+  if($block_nid == 0)
+    $r = db_query("SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
+      FROM {content_type_blocks} b 
+      INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
       ORDER BY field_hostel_name_value");
+  else
+    $r = db_query("SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
+      FROM {content_type_blocks} b 
+      INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
+      WHERE b.nid = %d
+      ORDER BY field_hostel_name_value", $block_nid);
+      
   if (db_affected_rows($r) > 0 ){
     while ($f = db_fetch_object($r)){
       if($forCombo) {
@@ -569,7 +592,7 @@ function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
     drupal_set_message($form_state['values']['block_name'] . ' Block has been created!<br />');
     node_save($node);
   }
-  drupal_goto("/hostel_allocation/create_modify_block");
+  drupal_goto("hostel_allocation/create_modify_block");
 }
 
 
@@ -868,7 +891,7 @@ function hostel_allocation_create_edit_room_form_submit($form, &$form_state) {
     node_save($node);
     drupal_set_message($form_state['values']['room_name'] . ' Room was modified successfully!<br />');
 
-    drupal_goto("/hostel_allocation/create_modify_room");
+    drupal_goto("hostel_allocation/create_modify_room");
 
   }
   else {
@@ -926,7 +949,7 @@ function hostel_allocation_create_modify_category() {
 
   echo '<br /><hr /><br />';
   
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Category</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
   
@@ -1025,7 +1048,7 @@ function hostel_allocation_create_edit_category_form_submit($form, &$form_state)
 
     drupal_set_message($form_state['values']['category_name'] . ' Category was modified successfully!<br />');
     node_save($node);
-    drupal_goto("/hostel_allocation/create_modify_category");
+    drupal_goto("hostel_allocation/create_modify_category");
     //unset($_SESSION['eduerp_hostel_nid']);
   }
   else {
@@ -1103,9 +1126,19 @@ function hostel_allocation_display_available_category() {
 
 
 function get_categories($category_nid = 0, $forCombo = true) {
-  $r = db_query("SELECT nid, field_category_name_value AS category_name
+  if($category_nid != 0){
+    $r = db_query("SELECT nid, field_category_name_value AS category_name
+      FROM {content_type_allocation_rules_description} 
+      WHERE nid=%d
+      ORDER BY field_category_name_value", $category_nid);
+  
+  }
+  else{
+    $r = db_query("SELECT nid, field_category_name_value AS category_name
       FROM {content_type_allocation_rules_description} 
       ORDER BY field_category_name_value");
+  }
+  
   if (db_affected_rows($r) > 0 ){
     while ($f = db_fetch_object($r)){
       if($forCombo) {
@@ -1132,4 +1165,392 @@ function get_categories($category_nid = 0, $forCombo = true) {
 //allocation category matter ends here
 
 
+//allocations rules starts here
+function hostel_allocation_create_modify_allocation_rules() {
+  //global $user;
+  ob_start();
+  //perform single check for editing
+  $blockSelected = (arg(2) && is_valid_block(arg(2))) ? true : false;
+  
+  if($blockSelected && ! any_room_in_block(arg(2))){//make sure that at least one room exists in block
+    form_set_error('','No Room exists in the selected Block!');
+    $blockSelected = false;
+    drupal_goto("hostel_allocation/create_modify_allocation_rules");
+  
+  }
+  
+  $isAuthorized = true;
+  //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+
+  echo '<br /><hr /><br />';
+  if(! $blockSelected)
+    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
+  else
+    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
+  
+  if (! $isAuthorized) {
+    echo Error_Types(104);
+
+  }
+  else {
+    if($blockSelected){//a block has been selected
+      echo drupal_get_form('hostel_allocation_create_edit_allocation_rules_setup_form');
+      
+     
+    }
+    else {//the user needs to begin the process
+      echo "<b>Select Block</b> - Please select a Block to continue<br />";
+      echo drupal_get_form('hostel_allocation_create_edit_allocation_rules_select_block_form');
+      echo '<br /><hr /><br />';
+       //display existing blocks here
+      echo hostel_allocation_display_available_blocks(true);
+
+
+    }
+    
+  }
+  
+  echo '<br /><hr /><br />';
+  /*
+  if(! $forModify) {
+    //display existing blocks here
+    echo hostel_allocation_display_available_blocks();
+
+    echo '<br /><hr /><br />';
+  }
+  */
+  return ob_get_clean();
+}
+
+
+function hostel_allocation_create_edit_allocation_rules_select_block_form() {
+  /*
+  if (arg(2) && is_valid_block(arg(2))) {
+    if (empty($_POST['block_name'])) {
+      $result = db_query('SELECT field_block_name_value AS block_name, field_block_type_value AS block_type, field_block_status_value AS block_status, field_hostel_id_nid AS hostel_nid FROM {content_type_blocks} WHERE nid = %d', arg(2));
+      $block_edit_record = db_fetch_object($result);
+    }
+  }
+  */
+   $form['#title'] = 'Select Block';
+   if (! $room_edit_record){
+	  $form['hostel_nid'] = array(
+		'#title' => 'Hostel Name',
+		'#type' => 'select',
+		'#options' => get_hostels(0, true),
+		'#ahah' => array('path' => 'staff/ajax/getblocks', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'shwblocks'),
+		'#required' => TRUE
+	  );
+  }
+  else{
+    $form['hostel_nid'] = array(
+    '#title' => 'Hostel Name',
+    '#type' => 'select',
+    '#options' => get_hostels(0, true),
+    '#disabled' => TRUE,
+    );
+   }
+   
+   
+  if (! $room_edit_record) {
+    $form['block_nid'] = array(
+    '#title' => 'Block Name',
+    '#type' => 'select',
+    '#options' => get_blocks(0, true), 
+    '#attributes' => array(
+      'style' => 'width:100px'),
+      '#prefix' => "<div id='shwblocks'>",
+      '#suffix' => "</div>",
+      '#disabled' => TRUE,
+    '#required' => TRUE
+    );
+  }
+  else {
+    $form['block_nid'] = array(
+    '#title' => 'Block Name',
+    '#type' => 'select',
+    '#options' => get_blocks(0, true), 
+    '#required' => TRUE,
+    '#value' => $room_edit_record->block_nid
+    );
+   
+  }
+  /*
+  if (isset($_POST['block_nid'])) {
+    $form['block_nid'] = array(
+    '#title' => 'Block nid',
+    '#type' => 'hidden',
+    '#value' => $_POST['block_nid']
+    );
+
+  }
+  */
+  $form['submit'] = array(
+    '#value' => 'Continue',
+    '#type' => 'submit'
+  );
+  //if (isset($_POST['hostel_nid'])) $form['submit']['#value'] = 'Update Hostel';
+  //if(arg(2)) $form['submit']['#value'] = 'Update Block';
+
+  return $form;
+
+
+}
+
+
+function hostel_allocation_create_edit_allocation_rules_select_block_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  drupal_goto("hostel_allocation/create_modify_allocation_rules/". $values['block_nid']);
+
+}
+
+
+function hostel_allocation_create_edit_allocation_rules_setup_form() {
+  
+  if (arg(2) && is_valid_block(arg(2))) {
+    //get the block's basic info
+    $blockInfo = get_blocks(arg(2), false);
+    
+    //get block capacity info
+    $blockCapacityInfo = db_fetch_object(get_block_info(arg(2)));
+    
+    //if (empty($_POST['block_name'])) {
+      //first test if setup rules exists for the block
+        $rs = db_query('SELECT d.nid AS category_nid, field_category_name_value AS category_name, IFNULL( field_allocation_value_value, 0 ) allocation
+						FROM {content_type_allocation_rules_description} d
+						LEFT JOIN {content_type_allocation_rules} r ON d.nid = r.field_rules_description_id_nid
+						INNER JOIN {content_type_blocks} b ON b.nid = r.field_rules_block_id_nid
+						WHERE r.field_rules_block_id_nid = %d', arg(2));
+        //$rs = db_fetch_object($result);
+        if(db_affected_rows($rs) <= 0){
+          //get the default value for each rule
+          $rs = db_query('SELECT d.nid AS category_nid, field_category_name_value AS category_name, 0 allocation
+						  FROM content_type_allocation_rules_description d ');
+		  //$rs = db_fetch_object($result);
+        }
+    //}
+  }
+  //print_r($blockInfo);
+  $form['#title'] = 'Allocation Rules Setup';
+  
+  $form['allocation_header'] = array(
+      '#type' => 'hidden',
+      
+      '#prefix' => '<table border="1" align="center">
+      				  <tr>
+      				    <td>
+      				      <table colspan="2" cellspan="2" align="center"><caption>BLOCK INFO</caption>
+      				        <tr>
+      				          <td>&nbsp;',
+      '#suffix' => '          </td>
+      						</tr>',
+
+   );
+   $blockTypes = array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only');
+    $form['allocation_head']['hdr1'] = array(
+      '#type' => 'hidden',
+      
+      '#prefix' => "<tr>
+      				  <td>
+      				    <table style='width:400px;' border=1 align='left'>
+      				      <tr>
+      				        <td colspan=2 align='center'>Block Info</td>
+      				      </tr>
+      				      <tr>
+      				        <td>Hostel Name</td>
+      				        <td>". $blockCapacityInfo->hostel_name ."</td>
+      				      </tr>
+      				      <tr>
+      				        <td>Block Name</td>
+      				        <td>". $blockCapacityInfo->block_name ."</td>
+      				      </tr>
+      				      <tr>
+      				        <td>Block Type</td>
+      				        <td>". $blockTypes[$blockCapacityInfo->block_type] ."</td>
+      				      </tr>
+      				      <tr>
+      				        <td>Block Status</td>
+      				        <td>". $blockCapacityInfo->block_status ."</td>
+      				      </tr>
+      				      <tr>
+      				        <td>Total Rooms in Block</td>
+      				        <td>". number_format($blockCapacityInfo->total_rooms) ."</td>
+      				      </tr>
+      				      <tr>
+      				        <td>Total Capacity</td>
+      				        <td>". number_format($blockCapacityInfo->block_capacity) ."</td>
+      				      </tr>
+      				    </table>",
+      '#suffix' => '</td></tr></table></td></tr></table>',
+
+   );
+  
+  
+  $form['allocation_rules'] = array('#type' => 'fieldset', '#title' => 'Allocation Rules Setup - Hostel: <b>'. $blockInfo[arg(2)]['hostel_name'] .'</b> Block: <b>'. $blockInfo[arg(2)]['block_name'] .'</b>');
+   $form['allocation_rules']['hdr'] = array(
+      '#type' => 'hidden',
+      
+      '#prefix' => '<table border="1" align="center">
+      				  <tr>
+      				    <td>
+      				      <table colspan="2" cellspan="2" align="center"><caption>ALLOCATION RULES SETUP</caption>
+      				         <tr>
+      				           <td>&nbsp;',
+      '#suffix' => '			</td>
+      						</tr>',
+
+   );
+   
+   if(db_affected_rows($rs) > 0){
+     while ($row = db_fetch_object($rs)) {
+      //$return[$row->level] = $row->level;
+       $form['allocation_rules'][$row->category_nid] = array(
+        '#title' => $row->category_name,
+        '#type' => 'textfield',
+        '#size' => 40,
+        '#prefix' => '<tr><td>',
+        '#suffix' => '</td></tr>',
+        '#required' => TRUE,
+       );
+       
+       if(! isset($_POST[$row->category_nid])) $form['allocation_rules'][$row->category_nid]['#value'] = $row->allocation;
+      }
+    }
+   $form['allocation_rules']['ftr'] = array(
+     '#type' => 'hidden',
+     '#prefix' => '<tr><td>&nbsp;',
+     '#suffix' => '</td></tr></table></td></tr></table>',
+
+  );
+   $form['submit'] = array('#id' => 'submit', '#value' => 'Save Setup', '#type' => 'submit');
+
+  return $form;
+
+
+}
+
+
+function get_block_info($block_nid){
+  $r = db_query("SELECT IFNULL(COUNT(r.field_block_id_nid), 0) total_rooms, IFNULL(SUM(field_room_capacity_value), 0) block_capacity, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
+      FROM {content_type_blocks} b 
+      INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
+      INNER JOIN {content_type_rooms} r ON b.nid=r.field_block_id_nid
+      WHERE b.nid=%d
+      ORDER BY field_hostel_name_value", $block_nid);
+   return $r;
+  
+}
+//allocation rules ends here
+
+
+function hostel_allocation_create_edit_allocation_rules_setup_form_validate($form, &$form_state) {
+  //NOTE: the name of each of the text fields is the nid of the category name
+  
+  //initialize
+  $total_allocated = 0;
+  
+  //get block capacity
+  $blockCapacityInfo = db_fetch_object(get_block_info(arg(2)));
+  
+  //get available categories
+  $rs = db_query('SELECT d.nid AS category_nid, field_category_name_value AS category_name, IFNULL( field_allocation_value_value, 0 ) allocation
+						FROM {content_type_allocation_rules_description} d
+						LEFT JOIN {content_type_allocation_rules} r ON d.nid = r.field_rules_description_id_nid ');
+  
+  while($row = db_fetch_object($rs)){
+    //echo $row->category_nid . '<br />';
+    if(! is_numeric($form_state['values'][$row->category_nid])) {
+      form_set_error($row->category_nid, Error_Types(107));
+      //return;
+    }
+      
+    $total_allocated += $form_state['values'][$row->category_nid];
+  }
+  
+  if($total_allocated > $blockCapacityInfo->block_capacity){
+      form_set_error('', Error_Types(135));
+      //return;
+    }
+
+}
+
+
+function hostel_allocation_create_edit_allocation_rules_setup_form_submit($form, &$form_state) {
+  //this part is very ticky. Since we are using CCK, we'll first test to make sure that the category is not
+  //existing for the selected block. If it is not, then we add it else we load and update.
+  //Note that each category will have an nid in the allocation rules table
+  $values = $form_state['values'];
+  $block_nid = arg(2);
+  $blockInfo = get_blocks($block_nid, false);
+  
+  //get categories
+  $categories = get_categories(0, false);
+  foreach($categories as $k => $v){
+    if(array_key_exists($k, $values)){
+      //test to see if the category already exists for the block
+      $rs = get_allocation_rule_nid($k, $block_nid);
+      if(db_affected_rows($rs) > 0){//perform update here
+        $row = db_fetch_object($rs); 
+        $node = node_load($row->nid);
+        drupal_set_message('Allocation Rule was modified successfully!<br />');
+    
+      }
+      else{//perform insert here
+        $node = new stdClass();
+        $node->type                              = 'allocation_rules';
+    	$node->uid                               = 1;  // Admin
+    	$node->status                            = 1;  // Published
+    	$node->promote                           = 0;
+    	$node->sticky                            = 0;
+    	$node->comment                           = 0;
+    	
+    	drupal_set_message('Allocation Rule was created successfully!<br />');
+    
+      }
+       $node->title                                = $blockInfo[$block_nid]['block_name'] .' - '. $v; //block_name - category_name
+       $node->field_allocation_type[0]['value']    = 'num';//in the future we could implement %
+       $node->field_allocation_value[0]['value']   = $values[$k];
+       $node->field_rules_block_id[0]['nid']       = $block_nid;
+       $node->field_rules_description_id[0]['nid'] = $k;
+       
+       
+       
+       
+       node_save($node);
+      
+    }
+  
+  }
+  
+  
+}
+
+
+function get_allocation_rule_nid($category_nid, $block_nid){
+  $rs = db_query('SELECT nid FROM {content_type_allocation_rules} 
+  	WHERE field_rules_description_id_nid=%d AND field_rules_block_id_nid=%d', $category_nid, $block_nid);
+  return $rs;
+
+
+}
+
+
+function is_block_existing_in_rules($block_nid){
+  $rs = db_query('SELECT nid FROM {content_type_allocation_rules} 
+  	WHERE field_rules_block_id_nid=%d', $block_nid);
+  if(db_affected_rows($rs) > 0) return true;
+  return false;
+
+}
+
+
+function any_room_in_block($block_nid){
+  $rs = db_query('SELECT nid FROM {content_type_rooms} 
+  	WHERE field_block_id_nid=%d', $block_nid);
+  if(db_affected_rows($rs) > 0) return true;
+  return false;
+
+}
 ?>
