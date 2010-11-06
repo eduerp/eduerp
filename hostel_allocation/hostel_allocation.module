@@ -47,6 +47,13 @@ function hostel_allocation_menu() {
     'access arguments' => array('hostel_allocation user'),
     'type' => MENU_CALLBACK,
   );
+  
+  $items['hostel_allocation/modify_global_settings']=array(
+    'title'=>"Modify Global Settings",
+    'page callback' => 'hostel_allocation_modify_global_settings',
+    'access arguments' => array('hostel_allocation user'),
+    'type' => MENU_CALLBACK,
+  );
   return $items;
   
  }
@@ -80,7 +87,7 @@ function hostel_admin() {
   echo '<a href="' . url('hostel_allocation/create_modify_allocation_rules') . '">Create or Modify Allocation Rules</a>';
   echo '<br /><br /><hr /><br />';
   
-  echo 'Modify Global Settings';
+  echo '<a href="' . url('hostel_allocation/modify_global_settings') . '">Modify Global Settings</a>';
   echo '<br /><br /><hr /><br />';
   
   echo 'Direct Room Reservation';
@@ -1173,7 +1180,7 @@ function hostel_allocation_create_modify_allocation_rules() {
   $blockSelected = (arg(2) && is_valid_block(arg(2))) ? true : false;
   
   if($blockSelected && ! any_room_in_block(arg(2))){//make sure that at least one room exists in block
-    form_set_error('','No Room exists in the selected Block!');
+    form_set_error('',Error_Types(136));
     $blockSelected = false;
     drupal_goto("hostel_allocation/create_modify_allocation_rules");
   
@@ -1213,27 +1220,13 @@ function hostel_allocation_create_modify_allocation_rules() {
   }
   
   echo '<br /><hr /><br />';
-  /*
-  if(! $forModify) {
-    //display existing blocks here
-    echo hostel_allocation_display_available_blocks();
-
-    echo '<br /><hr /><br />';
-  }
-  */
+  
   return ob_get_clean();
 }
 
 
 function hostel_allocation_create_edit_allocation_rules_select_block_form() {
-  /*
-  if (arg(2) && is_valid_block(arg(2))) {
-    if (empty($_POST['block_name'])) {
-      $result = db_query('SELECT field_block_name_value AS block_name, field_block_type_value AS block_type, field_block_status_value AS block_status, field_hostel_id_nid AS hostel_nid FROM {content_type_blocks} WHERE nid = %d', arg(2));
-      $block_edit_record = db_fetch_object($result);
-    }
-  }
-  */
+  
    $form['#title'] = 'Select Block';
    if (! $room_edit_record){
 	  $form['hostel_nid'] = array(
@@ -1277,22 +1270,12 @@ function hostel_allocation_create_edit_allocation_rules_select_block_form() {
     );
    
   }
-  /*
-  if (isset($_POST['block_nid'])) {
-    $form['block_nid'] = array(
-    '#title' => 'Block nid',
-    '#type' => 'hidden',
-    '#value' => $_POST['block_nid']
-    );
-
-  }
-  */
+ 
   $form['submit'] = array(
     '#value' => 'Continue',
     '#type' => 'submit'
   );
-  //if (isset($_POST['hostel_nid'])) $form['submit']['#value'] = 'Update Hostel';
-  //if(arg(2)) $form['submit']['#value'] = 'Update Block';
+  
 
   return $form;
 
@@ -1445,7 +1428,6 @@ function get_block_info($block_nid){
    return $r;
   
 }
-//allocation rules ends here
 
 
 function hostel_allocation_create_edit_allocation_rules_setup_form_validate($form, &$form_state) {
@@ -1546,6 +1528,7 @@ function is_block_existing_in_rules($block_nid){
   return false;
 
 }
+//allocation rules ends here
 
 
 function any_room_in_block($block_nid){
@@ -1555,4 +1538,270 @@ function any_room_in_block($block_nid){
   return false;
 
 }
+
+
+//global settings starts here
+function hostel_allocation_modify_global_settings(){
+  global $user, $EDUERPglobalSettings;
+  ob_start();
+  //declare some global param
+   $EDUERPglobalSettings = array(
+    			array('name' => 'Start Date (yyyy-mm-dd)', 'value' => '2010-11-05'),
+    			array('name' => 'End Date (yyyy-mm-dd)', 'value' => '2010-11-10'),
+    			array('name' => 'Reservation Duration (in days)', 'value' => '2'),
+    			array('name' => 'Pause Reservation (0=Yes, 1=No)', 'value' => '0') //0=no; 1=yes
+    );
+  //Because of porting to live or production or other new environment, we have to test to see if global setttings exists
+  //if not we shall populate the table with default parameter and values
+  if(is_settings_table_empty()) pre_populate_global_settings();
+  $settingSelected = (is_valid_global_settings(arg(2))) ? true : false;
+  
+  
+  
+  
+
+  
+  $isAuthorized = true;
+  //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+
+  echo '<br /><hr /><br />';
+  if(! $settingSelected)
+    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
+  else
+    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
+  
+  if (! $isAuthorized) {
+    echo Error_Types(104);
+
+  }
+  else {
+    if($settingSelected){//a setting has been selected
+      echo "<b>Global Settings</b> - Please make any required changes.<br />";
+      echo '<br /><hr /><br />';
+      echo drupal_get_form('hostel_allocation_create_edit_global_settings_form');
+      
+     
+    }
+    else {//display existing settings
+      echo "<b>Global Settings</b><br />";
+      echo '<br /><hr /><br />';
+       //display existing settings here
+      echo hostel_allocation_display_global_settings();
+
+
+    }
+    
+  }
+  
+  echo '<br /><hr /><br />';
+  
+  return ob_get_clean();
+
+}
+
+
+function get_global_settings($settings_nid = 0, $forCombo = true){
+  if($settings_nid == 0)
+    $rs = db_query('SELECT nid, field_settings_name_value settings_name, field_settings_value_value settings_value FROM {content_type_allocation_settings} ');
+  else
+    $rs = db_query('SELECT nid, field_settings_name_value settings_name, field_settings_value_value settings_value FROM {content_type_allocation_settings} WHERE nid=%d', $settings_nid);
+
+  if (db_affected_rows($rs) > 0 ){
+    while ($f = db_fetch_object($rs)){
+      if($forCombo) {
+        $settings[$f->nid] = $f->settings_name;
+      }
+      else{
+        $settings[$f->nid]['settings_name'] = $f->settings_name;
+        $settings[$f->nid]['settings_value'] = $f->settings_value;
+        $settings[$f->nid]['settings_nid'] = $f->nid;
+      }
+
+    }
+  }
+  else {
+    if ($forCombo)
+      $settings[] = strip_tags(Error_Types(106));
+    else
+      $settings = array();
+    
+  }
+  return $settings;
+
+}
+
+
+function hostel_allocation_display_global_settings() {
+  $settings = get_global_settings(0, false);
+  $html = "
+  <div id='assigned_courses'>
+  <b>Available Global Settings</b> - Please click on a Settings Name to Modify it.<br /> ";
+  if (isset($settings) && is_array($settings) && sizeof($settings)) {
+    $html .="
+    <table border=1>
+      <tr>
+        <th><b>#</b></th>
+        <th><b>Settings Name</b></th>
+        <th><b>Value</b></th>
+        
+      </tr>";$i = 1;
+    
+    
+      foreach ($settings as $v){
+        if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+          $html .= "
+           <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+             <td>". $i++ ."</td>
+			 <td><a href='". url("hostel_allocation/modify_global_settings/" . $v['settings_nid'])  . "'>". $v['settings_name'] ."</a></td>
+             <td>". $v['settings_value'] ."</td>
+            
+           </tr>";
+      }
+     $html .= "
+    </table>";
+   }
+   else {
+     $html .= Error_Types(106);
+   }
+  $html .= "
+
+  </div>";
+  return $html;
+
+}
+
+
+function hostel_allocation_create_edit_global_settings_form() {
+  
+    
+  if (arg(2) && is_valid_global_settings(arg(2))) {
+    //if (empty($_POST['settings_name'])) {
+      $result = db_query('SELECT field_settings_name_value AS settings_name, field_settings_value_value settings_value FROM {content_type_allocation_settings} WHERE nid = %d', arg(2));
+      $settings_edit_record = db_fetch_object($result);
+    //}
+  
+    $form['#title'] = 'Modify Settings';
+    $form['settings_name'] = array(
+      '#title' => $settings_edit_record->settings_name,
+      '#type' => 'textfield',
+      '#size' => 40,
+      '#required' => TRUE
+    );
+    if ($settings_edit_record && empty($_POST['settings_name'])) $form['settings_name']['#value'] = $settings_edit_record->settings_value;
+
+      $form['submit'] = array(
+      '#value' => 'Update Settings',
+      '#type' => 'submit'
+    );
+
+    //if(arg(2)) $form['submit']['#value'] = 'Update Settings';
+
+    return $form;
+  }
+
+
+}
+
+
+function hostel_allocation_create_edit_global_settings_form_validate($form, &$form_state){
+  //global $EDUERPglobalSettings;
+  
+  $values = $form_state['values'];
+  
+  //get the settings info
+  $settingsInfo = get_global_settings(arg(2), true);
+  echo $settingsInfo[arg(2)];
+  switch(strtolower($settingsInfo[arg(2)])){
+    case 'start date (yyyy-mm-dd)': case 'end date (yyyy-mm-dd)':
+      if(! is_date($values['settings_name'])) form_set_error('settings_name', Error_Types(137)); break;
+    
+    case 'reservation duration (in days)':
+      if(! preg_match("/^[0-9]{1,2}$/", $values['settings_name'])) form_set_error('settings_name', Error_Types(107)); break;
+    
+    case 'pause reservation (0=Yes, 1=No)':
+      if( $values['settings_name'] != 0 || $values['settings_name'] != 1) form_set_error('settings_name', Error_Types(118)); break;
+    break;
+
+  
+  }  
+
+}
+
+
+function hostel_allocation_create_edit_global_settings_form_submit($form, &$form_state){
+
+  $values = $form_state['values'];
+  $node = node_load(arg(2));
+  
+  $node->field_settings_value[0]['value']   = $values['settings_name'];
+       
+  node_save($node);
+  drupal_set_message('Settings was saved successfully!');
+  drupal_goto('hostel_allocation/modify_global_settings');
+}
+
+
+function is_date($date){
+	
+	if(substr($date,4,1) != "-" || substr($date,7,1) != "-" || strlen(substr($date,8)) != 2)
+		return false;
+	else{
+		$year = substr($date,0,4);
+		$month = substr($date,5,2);
+		$day = substr($date,8,2);
+		//echo $year ."-". $month ."-". $day;
+		if(checkdate($month, $day, $year)) return $date; else return false;
+	}
+}
+
+
+function is_valid_global_settings($settings_nid) {
+  $rs = db_query("SELECT nid FROM {content_type_allocation_settings} WHERE nid =%d ", $settings_nid);
+  if (db_affected_rows($rs) > 0 ) return true;
+
+  return false;
+}
+
+
+function is_settings_table_empty(){
+  $rs = db_query("SELECT nid FROM {content_type_allocation_settings} LIMIT 1");
+  if (db_affected_rows($rs) > 0 ) return false;
+
+  return true;
+
+}
+
+
+function pre_populate_global_settings(){
+  global $EDUERPglobalSettings;
+ 
+
+  foreach($EDUERPglobalSettings as $v){
+
+        $node = new stdClass();
+        $node->type                              = 'allocation_settings';
+    	$node->uid                               = 1;  // Admin
+    	$node->status                            = 1;  // Published
+    	$node->promote                           = 0;
+    	$node->sticky                            = 0;
+    	$node->comment                           = 0;
+    	
+    	//drupal_set_message('Allocation Rule was created successfully!<br />');
+    
+      
+       $node->title                              = $v['name'];
+       $node->field_settings_name[0]['value']    = $v['name'];
+       $node->field_settings_value[0]['value']   = $v['value'];
+       
+       node_save($node);
+  
+  }
+
+
+}
+//global settings ends here
+
+
 ?>
