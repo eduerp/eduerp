@@ -492,8 +492,13 @@ function hostel_allocation_display_available_blocks($forRules=false) {
      $html .= "
     </table>";
     if($forRules){
-      $html .= "<br /><div ><font color=#FF0000><b>Note: If no Allocation Rule exists for a Block then allocation will be done at random on first come first served basis until all the Room(s) in the Block is fully allotted!</b></font></div>";
-    
+      $html .= "<br /><div ><font color=#FF0000><b>Note:<br />
+      <ol>
+        <li>If no Allocation Rule exists for a Block then allocation will be done at random on first come first served basis until all the Room(s) in the Block is fully allotted!</li>
+        <li>For any change(s) made to allocation rules, kindly click <a href='../hostel_allocation/modify_global_settings'>here</a> to <a href='../hostel_allocation/modify_global_settings'>Prepare for Hostel Allocation</a></li>
+      </ol>
+        </b></font></div>";
+   
     }
    }
    else {
@@ -656,6 +661,9 @@ function hostel_allocation_create_modify_room() {
     
   }
   
+  echo '<br /><hr /><br />';
+  
+  echo "<font color=#FF0000><b>Note: For any newly Created or Modified Room(s), kindly click <a href='../hostel_allocation/modify_global_settings'>here</a> to <a href='../hostel_allocation/modify_global_settings'>Prepare for Hostel Allocation</a></b></font>";
   echo '<br /><hr /><br />';
   
   if(! $forModify) {
@@ -965,13 +973,17 @@ function hostel_allocation_create_modify_category() {
 
   }
   else {
-
-    if($forModify)
+    
+    if($forModify && ! arg(3))
       echo "<b>Modify Category</b> - Please make any required change(s) to the Category<br />";
     else
       echo "<b>Create Category</b> - Please fill the form below to create a new Category<br />";
 
-
+    if(arg(3)){
+      hostel_allocation_update_category_priority();
+    
+    }
+    
     echo drupal_get_form('hostel_allocation_create_edit_category_form');
     
   }
@@ -986,6 +998,46 @@ function hostel_allocation_create_modify_category() {
   }
   
   return ob_get_clean();
+}
+
+
+function hostel_allocation_update_category_priority(){
+
+  //first count the number or records
+  $rs = db_query('SELECT COUNT(*) maximum FROM {content_type_allocation_rules_description} ');
+  $count = db_fetch_object($rs);
+  
+  //get the priority of the node
+  $rs = db_query('SELECT field_priority_value priority FROM {content_type_allocation_rules_description} WHERE nid=%d', arg(2));
+  $priority = db_fetch_object($rs);
+  
+  switch(arg(3)):
+    case 'u':
+      //make sure that the priority is not 1
+      if($priority->priority > 1) {
+        //update the item above it
+        $rs = db_query('UPDATE {content_type_allocation_rules_description} SET field_priority_value = field_priority_value + 1 WHERE field_priority_value=%s', $priority->priority - 1);
+      
+        //update the current item
+        $rs = db_query('UPDATE {content_type_allocation_rules_description} SET field_priority_value = field_priority_value - 1 WHERE nid=%s', arg(2));
+      }
+    break;
+
+    case 'd':
+      //make sure that the priority is less than the max
+      if($priority->priority < $count->maximum) {
+        //update the item below it
+        $rs = db_query('UPDATE {content_type_allocation_rules_description} SET field_priority_value = field_priority_value - 1 WHERE field_priority_value=%s', $priority->priority + 1);
+      
+        //update the current item
+        $rs = db_query('UPDATE {content_type_allocation_rules_description} SET field_priority_value = field_priority_value + 1 WHERE nid=%s', arg(2));
+      }
+    
+    break;
+  endswitch;
+  
+  drupal_goto('hostel_allocation/create_modify_category');
+  
 }
 
 
@@ -1047,7 +1099,7 @@ function hostel_allocation_create_edit_category_form_validate($form, &$form_stat
 
 function hostel_allocation_create_edit_category_form_submit($form, &$form_state) {
   //if (isset($form_state['values']['hostel_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['hostel_nid'])) {//the user is trying to edit a given hostel. OK!
-  if (arg(2)) {//the user is trying to edit a given hostel. OK!
+  if (arg(2)) {//the user is trying to edit a given category. OK!
     $node = node_load(arg(2));
     $node->title                              = $form_state['values']['category_name'];
     $node->field_category_name[0]['value']    = $form_state['values']['category_name'];
@@ -1056,9 +1108,14 @@ function hostel_allocation_create_edit_category_form_submit($form, &$form_state)
     drupal_set_message($form_state['values']['category_name'] . ' Category was modified successfully!<br />');
     node_save($node);
     drupal_goto("hostel_allocation/create_modify_category");
-    //unset($_SESSION['eduerp_hostel_nid']);
+
   }
   else {
+    //lets try to fix the priority at the end
+    //first count the number or records
+    $rs = db_query('SELECT IFNULL(COUNT(*), 0) maximum FROM {content_type_allocation_rules_description} ');
+    $count = db_fetch_object($rs);
+  
     $node = new stdClass();
     $node->type                              = 'allocation_rules_description';
     $node->uid                               = 1;  // Admin
@@ -1068,14 +1125,41 @@ function hostel_allocation_create_edit_category_form_submit($form, &$form_state)
     $node->comment                           = 0;
     $node->title                              = $form_state['values']['category_name'];
     $node->field_category_name[0]['value']    = $form_state['values']['category_name'];
+    $node->field_priority[0]['value']    = $count->maximum + 1;
     
     drupal_set_message($form_state['values']['category_name'] . ' Category has been created!<br />');
     node_save($node);
+    $category_nid = $node->nid;
+    
+    
+    //now we need to check for blocks existing in rules and then make an entry for this new category defaulting its allocation value to 0
+    
+    $blocks = get_blocks(0, false);
+    if(isset($blocks) && is_array($blocks) && sizeof($blocks)){
+        foreach($blocks as $d){
+          if(is_block_existing_in_rules($d['block_nid'])){
+            //add it in rules defaulting it to 0
+            
+            $node = new stdClass();
+        	$node->type                              = 'allocation_rules';
+    		$node->uid                               = 1;  // Admin
+    		$node->status                            = 1;  // Published
+    		$node->promote                           = 0;
+    		$node->sticky                            = 0;
+    		$node->comment                           = 0;
+    	
+       		$node->title                                = $d['block_name'] .' - '. $form_state['values']['category_name']; //block_name - category_name
+       		$node->field_allocation_type[0]['value']    = 'num';//in the future we could implement %
+      	 	$node->field_allocation_value[0]['value']   = 0;//this must be set to 0.
+       		$node->field_rules_block_id[0]['nid']       = $d['block_nid'];
+       		$node->field_rules_description_id[0]['nid'] = $category_nid;
+       		node_save($node);
+                                                                                    
+            
+          }
+        }
+    }
   }
-
-  
-
-
 }
 
 
@@ -1103,6 +1187,8 @@ function hostel_allocation_display_available_category() {
       <tr>
         <th><b>#</b></th>
         <th><b>Category Name</b></th>
+        <th><b>&nbsp;</b></th>
+        <th><b>Priority</b></th>
         
       </tr>";$i = 1;
     
@@ -1113,7 +1199,27 @@ function hostel_allocation_display_available_category() {
            <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
              <td>". $i++ ."</td>
              <td><a href='". url("hostel_allocation/create_modify_category/" . $v['category_nid'])  . "'>". $v['category_name'] ."</a></td>
-            
+             <td>";
+             
+             if($v['priority'] == 1 && sizeof($categories) > 1){
+               $html .="
+               <a href='". url("hostel_allocation/create_modify_category/" . $v['category_nid'])  . "/d'>Down</a>&nbsp;";
+             }
+             elseif($v['priority'] == sizeof($categories)){
+               $html .="
+               <a href='". url("hostel_allocation/create_modify_category/" . $v['category_nid'])  . "/u'>Up</a>&nbsp;";
+             
+             }
+             else {
+               $html .="
+               <a href='". url("hostel_allocation/create_modify_category/" . $v['category_nid'])  . "/d'>Down</a>&nbsp;|&nbsp;
+               <a href='". url("hostel_allocation/create_modify_category/" . $v['category_nid'])  . "/u'>Up</a>&nbsp;";
+             
+             }
+             
+             $html .="
+             </td>
+             <td>" . $v['priority'] ."</td>            
            </tr>";
       }
      $html .= "
@@ -1134,16 +1240,16 @@ function hostel_allocation_display_available_category() {
 
 function get_categories($category_nid = 0, $forCombo = true) {
   if($category_nid != 0){
-    $r = db_query("SELECT nid, field_category_name_value AS category_name
+    $r = db_query("SELECT nid, field_category_name_value AS category_name, field_priority_value AS priority
       FROM {content_type_allocation_rules_description} 
       WHERE nid=%d
-      ORDER BY field_category_name_value", $category_nid);
+      ORDER BY field_priority_value ", $category_nid);
   
   }
   else{
-    $r = db_query("SELECT nid, field_category_name_value AS category_name
+    $r = db_query("SELECT nid, field_category_name_value AS category_name, field_priority_value AS priority
       FROM {content_type_allocation_rules_description} 
-      ORDER BY field_category_name_value");
+      ORDER BY field_priority_value ");
   }
   
   if (db_affected_rows($r) > 0 ){
@@ -1154,7 +1260,7 @@ function get_categories($category_nid = 0, $forCombo = true) {
       }
       else{
         $categories[$f->nid]['category_name'] = $f->category_name;
-        
+        $categories[$f->nid]['priority'] = $f->priority;        
         $categories[$f->nid]['category_nid'] = $f->nid;
       }
 
@@ -1395,11 +1501,12 @@ function hostel_allocation_create_edit_allocation_rules_setup_form() {
        $form['allocation_rules'][$row->category_nid] = array(
         '#title' => $row->category_name,
         '#type' => 'textfield',
-        '#size' => 40,
+        '#size' => 20,
         '#prefix' => '<tr><td>',
         '#suffix' => '</td></tr>',
         '#required' => TRUE,
        );
+       
        
        if(! isset($_POST[$row->category_nid])) $form['allocation_rules'][$row->category_nid]['#value'] = $row->allocation;
       }
@@ -1589,8 +1696,20 @@ function hostel_allocation_modify_global_settings(){
       echo '<br /><hr /><br />';
        //display existing settings here
       echo hostel_allocation_display_global_settings();
-
-
+	  
+	  echo '<br /><hr /><br />';
+	  echo "<b>Prepare for Hostel Allocation</b><br />";
+      echo '<br /><hr /><br />';
+      echo drupal_get_form('hostel_allocation_create_prepare_allocation_form');
+      
+	  echo "<br /><font color=#FF0000><b>Please note that this operation should be performed whenever:
+	  <ol>
+	    <li>Hostel Allocation is about to begin for a particular Session.</li>
+	    <li>Any change(s) are made to 'Create or Modify Rooms'</li>
+	    <li>Any change(s) are made to 'Create or Modify Allocation Rules'.</li>
+	  </ol>
+	  
+	  </b></font>";
     }
     
   }
@@ -1801,7 +1920,188 @@ function pre_populate_global_settings(){
 
 
 }
+
+
+function hostel_allocation_create_prepare_allocation_form(){
+  
+    $form['#title'] = 'Prepare for Allocation';
+    
+      $form['submit'] = array(
+      '#value' => 'Prepare for Hostel Allocation',
+      '#type' => 'submit'
+    );
+
+    return $form;
+}
+
+
+function hostel_allocation_create_prepare_allocation_form_submit($form, &$form_state){
+
+  hostel_allocation_prepare_for_allocation();
+  drupal_set_message("Hostel preparation was successful!");
+}
 //global settings ends here
+
+
+//prepare for allocation starts here
+function hostel_allocation_prepare_for_allocation(){
+  //The operations here only happens for the current session
+  hostel_allocation_prepare_block_rules(); //prepare blocks. This sets up block_statistics
+  
+  hostel_allocation_prepare_rooms(); //prepare rooms. This sets up room_statistics
+
+
+}
+
+
+function hostel_allocation_prepare_block_rules(){
+  //initialize variables
+  $foundInsert = false;
+  $session_name = variable_get('eduerp_current_session', '');
+  
+  //get all the blocks
+  $blocks = get_blocks(0, false);
+  
+  //get all the categories
+  $categories = get_categories(0, false);
+  //$categories[$f->nid]['category_name'] = $f->category_name;
+  //cycle thru the blocks and check if rules exists
+  foreach($blocks as $v){
+    if(is_block_existing_in_rules($v['block_nid'])) {
+      $sqlINS = "INSERT INTO {allocation_block_statistics} (block_nid, allocation_rules_description_nid, allocation_number, session_name) VALUES ";
+      //get the set rules and insert or update them
+      //we need to set allocation_number to the proper value
+      $rs = db_query("SELECT field_allocation_value_value allocation_number, field_rules_description_id_nid category_nid FROM {content_type_allocation_rules} WHERE field_rules_block_id_nid=%d", $v['block_nid']);
+      if(db_affected_rows($rs) > 0) {
+        while($row = db_fetch_object($rs)){
+          //check if the block and category pair already exists for the current session
+          if(block_category_exists($v['block_nid'], $row->category_nid, $session_name)){
+            //update the item
+            db_query("UPDATE {allocation_block_statistics} SET allocation_number = '". $row->allocation_number ."' WHERE block_nid='". $v['block_nid'] ."' AND allocation_rules_description_nid='". $row->category_nid ."' AND session_name='". $session_name ."' ");
+          
+          }
+          else {
+            //insert the item
+            $sqlINS .= "('". $v['block_nid'] ."', '". $row->category_nid ."', '". $row->allocation_number ."', '". $session_name ."'),";
+            $foundInsert = true;
+          }
+           
+          $availableCategory[$row->category_nid] = $row->category_nid;
+          
+        }
+        
+        
+        if($foundInsert){
+          $sql = substr($sqlINS, 0, -1); //remove the trailing comma
+          db_query($sql);
+            
+          $foundInsert = false;
+        }
+        
+        
+      }
+    }
+    else {
+	  //the block does not exist in rules meaning that allocation will be done at random on first come first served basis without restrictions
+	  //We only need to set allocation_number to NULL
+      $sqlINS = "INSERT INTO {allocation_block_statistics} (block_nid, allocation_rules_description_nid, allocation_number, session_name) VALUES ";
+
+      foreach($categories as $r){
+        //check if the block and category pair already exists for the current session
+        if(block_category_exists($v['block_nid'], $r['category_nid'], $session_name)){
+          //update the item
+          db_query(" UPDATE {allocation_block_statistics} SET allocation_number = NULL WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ", $v['block_nid'], $r['category_nid'], $session_name);
+        
+        }
+        else {
+          //insert the item
+          $sqlINS .= "('". $v['block_nid'] ."', '". $r['category_nid'] ."', NULL, '". $session_name ."'),";
+          $foundInsert = true;
+        }
+      
+      }
+      
+      if($foundInsert){
+        $sql = substr($sqlINS, 0, -1); //remove the trailing comma
+        db_query($sql);
+        $foundInsert = false;
+      }
+    }
+  
+  }
+  
+  
+
+}
+
+
+function hostel_allocation_prepare_rooms(){
+
+  //we shall take the rooms 100 at a time
+  $continue = true; //used to control the outer while loop
+  $found=false; //used to flag if bulk insert should happen
+  $start = 0; //for limiting the number of records fetched
+  $limit = 100; //for limiting the number of records fetched
+  
+  $session_name = variable_get('eduerp_current_session', '');
+  
+  //for inserts, we'll have to do bulk insert
+  $sqlINS = "INSERT INTO {allocation_room_statistics} (room_nid, room_capacity, reservation_count, allocation_count, session_name) VALUES ";
+  
+  while($continue){
+    //note all rooms must be selected regardless of the room's status
+    $rs = db_query("SELECT nid room_nid, field_block_id_nid, field_room_name_value, field_room_capacity_value room_capacity, field_room_status_value FROM {content_type_rooms} LIMIT $start, $limit");
+    if(db_affected_rows($rs) > 0) {
+      while($row = db_fetch_object($rs)){
+        //check if the room already exists in room_statistics for the current session
+        if(is_room_existing_in_room_statistics($row->room_nid, $session_name)){
+          //update the room's capacity info
+          db_query("UPDATE {allocation_room_statistics} SET room_capacity = '". $row->room_capacity ."' WHERE room_nid = '". $row->room_nid ."' ");
+        }
+        else{
+          //insert the room info
+          $sqlINS .= "('". $row->room_nid ."', '". $row->room_capacity ."', 0, 0, '". $session_name ."'),";
+          $found = true;
+        }
+      }
+    
+    }
+    else {
+      $continue = false;
+      break;
+    }
+    
+    $start += $limit;
+    
+  }
+  
+  if($found){
+    $sql = substr($sqlINS, 0, -1); //remove trailing comma
+    db_query($sql);
+  
+  }
+
+}
+
+
+function block_category_exists($block_nid, $category_nid, $session_name){
+  $rs = db_query("SELECT block_statistics_id FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s'", $block_nid, $category_nid, $session_name);
+  if(db_affected_rows($rs) > 0) return true;
+  
+  return false;
+}
+
+
+function is_room_existing_in_room_statistics($room_nid, $session_name){
+
+  $rs = db_query("SELECT room_statistics_id FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s'", $room_nid, $session_name);
+  
+  if(db_affected_rows($rs) > 0) return true;
+  
+  return false;
+
+}
+//prepare for allocation ends here
 
 
 ?>
