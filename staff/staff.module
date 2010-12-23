@@ -332,10 +332,26 @@ function _staff_ajax() {
         $output = _staff_ahah_render($form, 'chief_staff_nid');
         print drupal_to_js(array('data' => $output, 'status' => true));
     	    break;
-    case 'getblocks':
+    case 'getblocks': //case 'getallocblocks':
     	 $hostel_nid = $_POST['hostel_nid']; $id = "";
-    	 
-        $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
+    	 /*
+    	if($task == 'getallocblocks'){
+    	  $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
+    	  
+    	  switch($_SESSION['eduerp_reserve_room']['gender']):
+		  case 'male':
+		    $sql .= " AND (field_block_type_value = 1 OR field_block_type_value = 0) "; //get blocks that are male only or mixed
+			break;
+		  case 'female':
+		    $sql .= " AND (field_block_type_value = 2 OR field_block_type_value = 0) "; //get blocks that are female only or mixed
+		    break;
+		  endswitch;
+    	  
+    	  
+    	}else
+    	*/
+          $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
+          
         $rs = db_query($sql, $hostel_nid);
         while($row = db_fetch_object($rs))
           $blocks[$row->nid] = $row->field_block_name_value;
@@ -353,6 +369,29 @@ function _staff_ajax() {
         );
         $output = _staff_ahah_render($form, 'block_nid');
         print drupal_to_js(array('data' => $output, 'status' => true));
+    	break;
+    case 'getroomsinblock':
+    	 $block_nid = $_POST['block_nid']; $id = "";
+    	 
+          $sql = "SELECT nid, field_room_name_value FROM {content_type_rooms} WHERE field_block_id_nid = %d ";
+          
+        $rs = db_query($sql, $block_nid);
+        while($row = db_fetch_object($rs))
+        $rooms[$row->nid] = $row->field_room_name_value;
+
+  	$form['room_nid'] = array(
+    '#title' => 'Room Name',
+    '#type' => 'select',
+    '#options' => $rooms, 
+    '#attributes' => array(
+      'style' => 'width:100px'),
+      '#prefix' => "<div id='shwrooms'>",
+      '#suffix' => "</div>",
+      //'#disabled' => TRUE,
+    '#required' => TRUE
+    );
+        $output = _staff_ahah_render($form, 'room_nid');
+         print drupal_to_js(array('data' => $output, 'status' => true));
     	break;
   endswitch;
   exit();
@@ -4398,17 +4437,15 @@ function Error_Types($num = 0) {
   case '124':
     $msg = $prifix1 . 'Either no Course Registration information exists or all have been dropped for the student for the selected Session and Semester!<br />'; break;
   case '125':
-    $msg = $prifix1 . 'Either the Matriculation Number does not exist or it is invalid!<br />'; break;
+    $msg = $prifix1 . 'Either the Matriculation/JAMB Number does not exist or it is invalid!<br />'; break;
   case '126':
     $msg = $prifix1 . 'No more record(s) exists!<br />'; break;
   case '127':
     $msg = $prifix1 . 'You do not have permission to access this module!<br /><br /><br />'; break;
   case '128':
     $msg = $prifix1 . 'Either Courses have not been setup or the student has fully registered all courses for the selected Session and Semester!<br />'; break;
-  case '129':
-    $msg = $prifix1 . 'The arithmetic sum of all CA + Exam marks must be 100!<br />'; break;
-  case '130':
-    $msg = $prifix1 . 'Numeric values not greater than 3 digits expected!<br />'; break;
+  case '129': $msg = $prifix1 . 'The arithmetic sum of all CA + Exam marks must be 100!<br />'; break;
+  case '130': $msg = $prifix1 . 'Numeric values not greater than 3 digits expected!<br />'; break;
   case '131': $msg = $prifix1 . 'Hostel Name already exists!<br />'; break;
   case '132': $msg = $prifix1 . 'Block Name already exists in the selected Hostel!<br />'; break;
   case '133': $msg = $prifix1 . 'Room Name already exists in the selected Block!<br />'; break;
@@ -4416,6 +4453,11 @@ function Error_Types($num = 0) {
   case '135': $msg = $prifix1 . 'The allocated and available space must be equal!<br />'; break;
   case '136': $msg = $prifix1 . 'No Room exists in the selected Block!'; break;
   case '137': $msg = $prifix1 . 'Invalid date specified!'; break;
+  case '138': $msg = $prifix1 . 'Reservation already exists for the student!'; break;
+  case '139': $msg = $prifix1 . 'Room allocation already exists for the student!'; break;
+  case '140': $msg = $prifix1 . 'Either the student does not belong to any active category or No free Bedspace was found!'; break;
+  case '141': $msg = $prifix1 . 'No Allocation Rules exists for the Block!'; break;
+  case '142': $msg = $prifix1 . 'The operation was not successful. No Allocation Rules exists for at least one of the Blocks!'; break;
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
@@ -6557,7 +6599,7 @@ function staff_student_progress_qualification() {
   $str = "
   <br /><hr /><br />
 
-  <font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Qualification</b></font><br /><br />
+  <font size = '1px'><a href = '../staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Qualification</b></font><br /><br />
   <br /><hr /><br />";
   //get faculty and department info of the programme
    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
