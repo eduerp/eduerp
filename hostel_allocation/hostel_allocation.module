@@ -2443,6 +2443,9 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
     $_SESSION['eduerp_reserve_room']['hostel_name'] = $hostelInfo[$values['hostel_nid']]['hostel_name'];
    
     
+    
+    if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == "")
+      form_set_error('mat_number', Error_Types(143));
     //$ps = node_load($student_profile->profile_first_choice);
     
     //$student_profile->profile_gender = 'male';
