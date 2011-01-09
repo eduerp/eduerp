@@ -5951,6 +5951,7 @@ function staff_specify_course_for_programme() {
       drupal_goto("/staff/specifycourse/". arg(2));
     else {
         $sql = "SELECT course_id, programme_id, level, semester, course_type, lecturer_id  FROM {program_course} WHERE program_course_id=%d";
+        $sql = "SELECT course_id, programme_id, level, semester, course_type, lecturer_id, credit_load FROM {program_course} WHERE program_course_id=%d";
         $rs = db_query($sql, arg(3));
         $progCourse = db_fetch_object($rs);
 
