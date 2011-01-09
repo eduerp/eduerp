@@ -6150,7 +6150,7 @@ function get_programme_running_courses ($programme_nid, $session, $semester) {
         field_prerequisite_codes_value prerequisites_codes,
         field_prerequisite_value prerequisites_description,
         pc.program_course_id,
-        ci.nid clean_nid
+        if(ci.nid IS NULL, NULL, 1) AS clean_nid
       FROM {program_course} pc
       INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
       LEFT JOIN {content_type_course_instance} ci
