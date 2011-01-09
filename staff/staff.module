@@ -337,7 +337,7 @@ function _staff_ajax() {
     	 /*
     	if($task == 'getallocblocks'){
     	  $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
-    	  
+
     	  switch($_SESSION['eduerp_reserve_room']['gender']):
 		  case 'male':
 		    $sql .= " AND (field_block_type_value = 1 OR field_block_type_value = 0) "; //get blocks that are male only or mixed
@@ -346,12 +346,12 @@ function _staff_ajax() {
 		    $sql .= " AND (field_block_type_value = 2 OR field_block_type_value = 0) "; //get blocks that are female only or mixed
 		    break;
 		  endswitch;
-    	  
-    	  
+
+
     	}else
     	*/
           $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
-          
+
         $rs = db_query($sql, $hostel_nid);
         while($row = db_fetch_object($rs))
           $blocks[$row->nid] = $row->field_block_name_value;
@@ -365,16 +365,16 @@ function _staff_ajax() {
       '#prefix' => "<div id='shwblocks'>",
       '#suffix' => "</div>",
       '#required' => TRUE
-      
+
         );
         $output = _staff_ahah_render($form, 'block_nid');
         print drupal_to_js(array('data' => $output, 'status' => true));
     	break;
     case 'getroomsinblock':
     	 $block_nid = $_POST['block_nid']; $id = "";
-    	 
+
           $sql = "SELECT nid, field_room_name_value FROM {content_type_rooms} WHERE field_block_id_nid = %d ";
-          
+
         $rs = db_query($sql, $block_nid);
         while($row = db_fetch_object($rs))
         $rooms[$row->nid] = $row->field_room_name_value;
@@ -382,7 +382,7 @@ function _staff_ajax() {
   	$form['room_nid'] = array(
     '#title' => 'Room Name',
     '#type' => 'select',
-    '#options' => $rooms, 
+    '#options' => $rooms,
     '#attributes' => array(
       'style' => 'width:100px'),
       '#prefix' => "<div id='shwrooms'>",
@@ -7884,6 +7884,13 @@ function update_credit_load_registered($uid, $session, $semester) {
     INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
     INNER JOIN {content_type_course_instance} ci ON sg.field_course_instance_nid = ci.nid
     INNER JOIN {content_type_course} c ON ci.field_course_id_nid = c.nid
+    WHERE
+      gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
+      sg.field_dropped_value = 0";
+  $sql = "
+    SELECT SUM(sg.field_credit_load_sg_value) AS total_registered
+    FROM {content_type_student_gpa} gpa
+    INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
     WHERE
       gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
       sg.field_dropped_value = 0";
