@@ -6310,7 +6310,7 @@ function staff_assign_course_to_programme_form() {
 
   $form['credit_load'] = array(
     '#type' => 'textfield',
-    '#title' => 'Credit Load (in this programme, if not specified will be taken from course)',
+    '#title' => 'Credit Load',
     '#size' => 3,
     '#form_panel_col' => 6,
     '#form_panel_row' => 2);
@@ -6325,7 +6325,11 @@ function staff_assign_course_to_programme_form() {
     '#form_panel_row' => 2);
   if(isset($prog_course)) $form['user_id']['#default_value'] = $prog_course->lecturer_id;
 
-
+  $form['explain'] = array(
+    '#type' => 'item',
+    '#value' => 'If Credit Load is not specified, it will be taken from the selected Course.',
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 4);
 
   if (sizeof($levels) > 1) {
     $form['jambsubn'] = array(
@@ -6333,14 +6337,14 @@ function staff_assign_course_to_programme_form() {
       '#value' => 'Add',
       '#type' => 'submit',
       '#form_panel_col' => 1,
-      '#form_panel_row' => 4);
+      '#form_panel_row' => 5);
     if(arg(3)) $form['jambsubn']['#value'] = "Update";;
   }
   $form['sep'] = array(
     '#type' => 'item',
     '#value' => '',
     '#form_panel_col' => 1,
-    '#form_panel_row' => 5);
+    '#form_panel_row' => 6);
 
   return $form;
 }
