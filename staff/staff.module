@@ -5325,6 +5325,33 @@ function get_department_running_courses($session, $department_nid, $semester = 0
       INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
       WHERE  $morewhere d.nid='". $department_nid ."'
       ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level ";
+  $sql = "SELECT DISTINCT
+        pc.level course_level,
+        c.field_code_value course_code,
+        p.field_programme_name_value programme_name,
+        d.field_department_name_value dept_name,
+        co.field_college_name_value,
+        ci.nid clean_nid,
+        ci.field_lecturer_uid lecturer_uid,
+        pc.credit_load AS credit_load,
+        field_prerequisite_codes_value AS prerequisite_codes,
+        field_prerequisite_value AS prerequisite_desc,
+        pc.semester course_semester,
+        field_course_description_value AS course_description,
+        field_coursetitle_value AS course_title,
+        c.nid nid
+      FROM {program_course} pc
+      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
+      LEFT JOIN {content_type_course_instance} ci
+      ON
+        c.nid=ci.field_course_id_nid AND
+        pc.semester=ci.field_semester_name_value AND
+        ci.field_sess_name_value='". $session ."'
+      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
+      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
+      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
+      WHERE  $morewhere d.nid='". $department_nid ."'
+      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level ";
     $r = db_query($sql);
   return $r;
 }
