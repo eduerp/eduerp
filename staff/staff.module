@@ -3614,6 +3614,7 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
     case '1':
       $courses = get_Assigned_Courses($session, $department_nid); break;//variable_get('eduerp_current_session', '')
     case '2':
+      // ALAN 20110109 Does not seem to be used, verify and remove
       $courses = get_UnAssigned_Courses($session, $department_nid); break;
     case '3':
       $courses = get_department_running_courses($session, $department_nid, $semester); break; //variable_get('eduerp_current_semester', '')
@@ -5358,6 +5359,7 @@ function get_department_running_courses($session, $department_nid, $semester = 0
 
 
 function get_unassigned_courses($session, $department_nid = 0) {
+  // ALAN 20110109 Does not seem to be used, verify and remove
   $where = ""; $args = "";
   if ($department_nid != 0) {
      $where = "
@@ -6094,6 +6096,7 @@ function verify_assigned_courses($programme_nid, $session, $semester) {
 
 
 function show_verified_assigned_courses(&$result) {
+  // ALAN 20110109 Does not seem to be used, verify and remove
 
   $html = "
   <table border ='1'>
