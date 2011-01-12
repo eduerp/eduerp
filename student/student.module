@@ -1003,6 +1003,9 @@ function student_course_form(&$obj) {
 
 
 function student_course_form_validate($form, &$form_state) {
+  global $user;
+  $user_profile = new UserProfile($user->uid);
+
   $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
   if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
   else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
@@ -1031,20 +1034,24 @@ function student_course_form_validate($form, &$form_state) {
     if ($count > 1) form_set_error($code, "You have selected $code more than once");
   }
 
-  // According to spec, only credit load for the current level courses should towards the limits, failed repeats are extra
+  // According to spec, only credit load for the current level courses should count towards the limits (and credit_load_registered), failed repeats are extra
   $currentlevelcis = implode(',', $form['#currentlevelcis']);
   if (empty($currentlevelcis)) $currentlevelcis = '0';
 
   $cis1 = implode(',', $course_instances1);
   if (empty($cis1)) $cis1 = '0';
 
-  $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS tload
-    FROM {content_type_course_instance} ci, {content_type_course} c
-    WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
   $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
     FROM {content_type_course_instance} ci, {program_course} pc
-    WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=pc.course_id";
-  $result = db_query($sql, $cis1, $currentlevelcis);
+    WHERE
+      ci.nid IN(%s) AND
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1'";
+  // The test for $currentlevelcis might be redundant? (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates)
+  $result = db_query($sql, $cis1, $currentlevelcis, $user_profile->profile_first_choice, $user_profile->profile_level_name);
   $row = db_fetch_object($result);
   if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
   if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
@@ -1054,13 +1061,16 @@ function student_course_form_validate($form, &$form_state) {
     $cis2 = implode(',', $course_instances2);
     if (empty($cis2)) $cis2 = '0';
 
-    $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS tload
-      FROM {content_type_course_instance} ci, {content_type_course} c
-      WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
     $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
       FROM {content_type_course_instance} ci, {program_course} pc
-      WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=pc.course_id";
-    $result = db_query($sql, $cis2, $currentlevelcis);
+      WHERE
+        ci.nid IN(%s) AND
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='2'";
+    $result = db_query($sql, $cis2, $currentlevelcis, $user_profile->profile_first_choice, $user_profile->profile_level_name);
     $row = db_fetch_object($result);
     if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
     if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');

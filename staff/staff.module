@@ -7948,6 +7948,9 @@ function update_credit_load_registered($uid, $session, $semester) {
   $result = db_query($sql, $uid, $session, $semester);
   $r = db_fetch_object($result);
 
+  // Note if any failed courses are being repeated for the semester, these will now all be included in the credit_load_registered.
+  // This is not the case for student self registration of courses (according to spec).
+  // This inconsistency will not affect system functionality (just display of credit_load_registered for a semester).
   $sql = "UPDATE {content_type_student_gpa} gpa1 SET field_credit_load_registered_value = %d
     WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
   db_query($sql, $r->total_registered, $uid, $session, $semester);
