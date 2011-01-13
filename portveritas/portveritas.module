@@ -14,7 +14,7 @@ function portveritas_menu() {
 
 
 function list_student_for_port_form() {
-  port_student(652);
+  port_student(800);
 }
 
 
@@ -22,48 +22,56 @@ function port_student($student_id) {
 
   $qry = "select * from {admitted_student} where student_id=%d";
   $res = db_query($qry, $student_id);
-  if ($res && ($result=db_fetch_object($res))) {
-    $_SESSION['staff']['stud_info']=$result->student_id;
-    $qry1 = "select * from {admitted_next_of_kin} where student_id='". $result->student_id ."'";
-    $res1 = db_query($qry1, $result->student_id);
-    if ($res1 && ($result1=db_fetch_object($res1))) {
-      $qry2 = "SELECT a . ext_exam_rec_id, a . exam_date, a . exam_center_name, a . exam_number, b . exam_body_name FROM `admitted_ext_exam_record` AS a LEFT OUTER JOIN ext_exam_body AS b ON a . exam_body=b . exam_body_id WHERE a . exam_student_id='". $result->student_id ."'";
-      $res2 = db_query($qry2);
-      $result2 = db_fetch_object($res2);
-      $query3 = " SELECT *
-        FROM admitted_ext_exam_record er
-        LEFT JOIN admitted_ext_exam_detail ed ON ed . ext_exam_record_id = er . ext_exam_rec_id
-        where er . exam_student_id = '". $result->student_id ."' order by er . ext_exam_rec_id " ;
-      $r=db_query($query3);
-      while ($f=db_fetch_object($r)) {
-        $prev_subjects = $data[$f->ext_exam_rec_id]['subjects'] ;
-        $data[$f->ext_exam_rec_id] = array(
-          'exam_body ' => $f->exam_body,
-          'exam_date' => $f->exam_date,
-          'exam_center_name' => $f->exam_center_name,
-          'exam_number' => $f->exam_number,
-          'exam_body' => $f->exam_body,
-        );
-        $data[$f->ext_exam_rec_id]['subjects'] = $prev_subjects ;
-        $data[$f->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
-        if (!in_array($f->ext_exam_rec_id, $data_key)) {
-          $data_key[] = $f->ext_exam_rec_id;
-        }
-      }
-      $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $result->first_choice ."'";
-      $res4 = db_query($qry4);
-      $result4 = db_fetch_object($res4);
-      $qry5 = "select a . session_id, b . sess_name from `admitted_student` as a join session as b on a . session_id=b . session_id where a . student_id='". $result->student_id ."'";
-      $res5 = db_query($qry5);
-      $result5 = db_fetch_object($res5);
-      $qry6 = "select * from `admitted_next_of_kin` where student_id='". $result->student_id ."'";
-      $res6 = db_query($qry6);
-      $result6 = db_fetch_object($res6);
-      $qry7 = "select * from `admitted_sponsor` where student_id='". $result->student_id ."'";
-      $res7 = db_query($qry7);
-      $result7 = db_fetch_object($res7);
+  $admitted_student = db_fetch_object($res);
+
+
+  $q = "SELECT LENGTH(exam_center_name) AS institution, LENGTH(exam_body_name) AS qualification, exam_student_id, LENGTH(grade_name), LENGTH(subject_name)
+    FROM admitted_ext_exam_record aeer
+    LEFT JOIN
+  ext_exam_detail eed, olevel_grades olg, ext_exam_subject ees, ext_exam_body eeb
+  WHERE
+    aeer.ext_exam_rec_id=eed.ext_exam_record_id AND
+    eed.grade_id=olg.grade_id AND
+    eed.subject_id=eed.subject_id AND
+    aeer.exam_body=eeb.exam_body_id";
+
+  $query3 = " SELECT *
+    FROM admitted_ext_exam_record er
+    LEFT JOIN admitted_ext_exam_detail ed ON ed.ext_exam_record_id = er.ext_exam_rec_id
+    where er.exam_student_id = '". $admitted_student->student_id ."' order by er . ext_exam_rec_id " ;
+  $r = db_query($query3);
+  while ($f = db_fetch_object($r)) {
+    $prev_subjects = $data[$f->ext_exam_rec_id]['subjects'] ;
+    $data[$f->ext_exam_rec_id] = array(
+      'exam_body ' => $f->exam_body,
+      'exam_date' => $f->exam_date,
+      'exam_center_name' => $f->exam_center_name,
+      'exam_number' => $f->exam_number,
+      'exam_body' => $f->exam_body,
+    );
+    $data[$f->ext_exam_rec_id]['subjects'] = $prev_subjects ;
+    $data[$f->ext_exam_rec_id]['subjects'][] = array('subject' => $f->subject_id, 'grade' => $f->grade_id);
+    if (!in_array($f->ext_exam_rec_id, $data_key)) {
+      $data_key[] = $f->ext_exam_rec_id;
     }
   }
+
+  $qry4 = "SELECT a.programme_id, a . department_id, a . programme_name, b . department_name, c . college_abbreviation, c . college_name FROM `programme` AS a LEFT OUTER JOIN department AS b ON a . department_id = b . department_id LEFT OUTER JOIN college AS c ON b . college_id = c . college_id WHERE a . programme_id='". $admitted_student->first_choice ."'";
+  $res4 = db_query($qry4);
+  $progdeptcol = db_fetch_object($res4);
+
+  $qry5 = "select a . session_id, b . sess_name from `admitted_student` as a join session as b on a . session_id=b . session_id where a . student_id='". $admitted_student->student_id ."'";
+  $res5 = db_query($qry5);
+  $sessionx = db_fetch_object($res5);
+
+  $qry6 = "select * from `admitted_next_of_kin` where student_id='". $admitted_student->student_id ."'";
+  $res6 = db_query($qry6);
+  $admitted_next_of_kin = db_fetch_object($res6);
+
+  $qry7 = "select * from `admitted_sponsor` where student_id='". $admitted_student->student_id ."'";
+  $res7 = db_query($qry7);
+  $admitted_sponsor = db_fetch_object($res7);
+
   $form['extra'] = array(
     '#type' => 'fieldset',
     '#title' => 'Admission Information',
@@ -76,7 +84,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['extra']['college1'] = array(
     '#type' => 'item',
-    '#value' => $result4->college_abbreviation,
+    '#value' => $progdeptcol->college_abbreviation,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -87,7 +95,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['extra']['dept1'] = array(
     '#type' => 'item',
-    '#value' => $result4->department_name,
+    '#value' => $progdeptcol->department_name,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -99,7 +107,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['extra']['programme1'] = array(
     '#type' => 'item',
-    '#value' => $result4->programme_name,
+    '#value' => $progdeptcol->programme_name,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
@@ -110,7 +118,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['extra']['study_mode1'] = array(
     '#type' => 'item',
-    '#value' => $result->mode_of_study,
+    '#value' => $admitted_student->mode_of_study,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -126,7 +134,7 @@ function port_student($student_id) {
   $form['extra']['entry_mode1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->mode_of_entry,
+    '#value' => $admitted_student->mode_of_entry,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['extra']['sess0'] = array(
@@ -136,7 +144,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['extra']['sess1'] = array(
     '#type' => 'item',
-    '#value' => $result5->sess_name,
+    '#value' => $sessionx->sess_name,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>',
     '#size' => 15);
@@ -176,7 +184,7 @@ function port_student($student_id) {
   $form['personal']['matno1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->matriculation_no,
+    '#value' => $admitted_student->matriculation_no,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['space0'] = array(
@@ -191,7 +199,7 @@ function port_student($student_id) {
   $form['personal']['jambno1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->jambno,
+    '#value' => $admitted_student->jambno,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['personal']['fname0'] = array(
@@ -202,7 +210,7 @@ function port_student($student_id) {
   $form['personal']['fname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->first_name,
+    '#value' => $admitted_student->first_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['space1'] = array(
@@ -217,7 +225,7 @@ function port_student($student_id) {
   $form['personal']['mname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->middle_name,
+    '#value' => $admitted_student->middle_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['space2'] = array(
@@ -232,7 +240,7 @@ function port_student($student_id) {
   $form['personal']['lname1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->last_name,
+    '#value' => $admitted_student->last_name,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['personal']['gender0'] = array(
@@ -243,7 +251,7 @@ function port_student($student_id) {
   $form['personal']['gender1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->gender,
+    '#value' => $admitted_student->gender,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['space3'] = array(
@@ -258,7 +266,7 @@ function port_student($student_id) {
   $form['personal']['origin1'] = array(
     '#type' => 'select',
     '#options' => veritas_statesXXX(),
-    '#default_value' => $result->state_origin,
+    '#default_value' => $admitted_student->state_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>',
     '#attributes' => array('disabled' => 'disabled'));
@@ -270,7 +278,7 @@ function port_student($student_id) {
   $form['personal']['lga1'] = array(
     '#type' => 'select',
     '#options' => veritas_lgaXXX(),
-    '#default_value' => $result->lkup_lga_origin,
+    '#default_value' => $admitted_student->lkup_lga_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
     '#attributes' => array('disabled' => 'disabled'));
@@ -285,7 +293,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['mstatus1'] = array(
     '#type' => 'item',
-    '#value' => $result->marital_status,
+    '#value' => $admitted_student->marital_status,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
@@ -297,7 +305,7 @@ function port_student($student_id) {
   $form['personal']['address1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->permanent_address1,
+    '#value' => $admitted_student->permanent_address1,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['personal']['space5'] = array(
@@ -311,7 +319,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['city1'] = array(
     '#type' => 'item',
-    '#value' => $result->permanent_address_city,
+    '#value' => $admitted_student->permanent_address_city,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
@@ -323,7 +331,7 @@ function port_student($student_id) {
   $form['personal']['state1'] = array(
     '#type' => 'select',
     '#options' => veritas_statesXXX(),
-    '#default_value' => $result->permanent_address_state,
+    '#default_value' => $admitted_student->permanent_address_state,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
     '#attributes' => array('disabled' => 'disabled'));
@@ -338,7 +346,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['mobile1'] = array(
     '#type' => 'item',
-    '#value' => $result->mobile_number,
+    '#value' => $admitted_student->mobile_number,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
@@ -349,7 +357,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['email1'] = array(
     '#type' => 'item',
-    '#value' => $result->email_address,
+    '#value' => $admitted_student->email_address,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -364,7 +372,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['health1'] = array(
     '#type' => 'item',
-    '#value' => $result->physical_health_status,
+    '#value' => $admitted_student->physical_health_status,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>');
@@ -380,7 +388,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['nextofkin']['nofkin1'] = array(
     '#type' => 'item',
-    '#value' => $result6->name,
+    '#value' => $admitted_next_of_kin->name,
     '#size' => 20,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
@@ -391,7 +399,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['nextofkin']['relation1'] = array(
     '#type' => 'item',
-    '#value' => $result6->relationship,
+    '#value' => $admitted_next_of_kin->relationship,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['nextofkin']['mobile0'] = array(
@@ -401,7 +409,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['nextofkin']['mobile1'] = array(
     '#type' => 'item',
-    '#value' => $result6->mobile,
+    '#value' => $admitted_next_of_kin->mobile,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['nextofkin']['sponsor0'] = array(
@@ -412,10 +420,10 @@ function port_student($student_id) {
   $form['nextofkin']['sponsor1'] = array(
     '#type' => 'item',
     '#size' => 20,
-    '#value' => $result->sponsor_name,
+    '#value' => $admitted_student->sponsor_name,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
-  if ($result7->mobile != $result6->mobile) {
+  if ($admitted_sponsor->mobile != $admitted_next_of_kin->mobile) {
     $form['nextofkin']['smobile0'] = array(
       '#type' => 'item',
       '#title' => 'Mobile',
@@ -424,7 +432,7 @@ function port_student($student_id) {
     $form['nextofkin']['smobile1'] = array(
       '#type' => 'item',
       '#size' => 20,
-      '#value' => $result7->mobile,
+      '#value' => $admitted_sponsor->mobile,
       '#prefix' => '<td>',
       '#suffix' => '</td></tr></table>');
   }
@@ -447,7 +455,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['fs']['qualification1'] = array(
     '#type' => 'item',
-    '#value' => $result->h_qualification1,
+    '#value' => $admitted_student->h_qualification1,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['fs']['space22'] = array(
@@ -461,7 +469,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['fs']['institution1'] = array(
     '#type' => 'item',
-    '#value' => $result->h_institution1,
+    '#value' => $admitted_student->h_institution1,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['fs']['ebd0'] = array(
@@ -572,7 +580,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['fs2']['qualification11'] = array(
     '#type' => 'item',
-    '#value' => $result->h_qualification2,
+    '#value' => $admitted_student->h_qualification2,
     '#prefix' => '<td>',
     '#suffix' => '</td>');
   $form['fs2']['space25'] = array(
@@ -586,7 +594,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['fs2']['institution11'] = array(
     '#type' => 'item',
-    '#value' => $result->h_institution2,
+    '#value' => $admitted_student->h_institution2,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>');
   $form['fs2']['ebd20'] = array(
