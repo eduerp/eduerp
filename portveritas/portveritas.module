@@ -1,6 +1,7 @@
 <?php
 
 function portveritas_menu() {
+/*
   $items['portveritas/portstudents'] = array(
     'title'=>'Port Students',
     'page callback' => 'drupal_get_form',
@@ -8,8 +9,27 @@ function portveritas_menu() {
     'access arguments' => array('administer site configuration'),
     'type' => MENU_NORMAL_ITEM,
   );
+*/
+
+$items['portveritas/portstudents'] = array(
+    'title'=>'Port Students',
+    'page callback' => 'portstudents',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_NORMAL_ITEM,
+  );
 
   return $items;
+}
+
+
+function portstudents() {
+  ob_start();
+
+  echo 'XXXXXXXXXXXXXXXXXXXXXX<br />';
+
+  echo drupal_get_form('list_student_for_port_form');
+
+  return ob_get_clean();
 }
 
 
