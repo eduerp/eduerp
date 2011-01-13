@@ -19,7 +19,7 @@ function list_student_for_port_form() {
 
 
 function port_student($student_id) {
-/*
+
   $qry = "select * from {admitted_student} where student_id=%d";
   $res = db_query($qry, $student_id);
   if ($res && ($result=db_fetch_object($res))) {
@@ -257,7 +257,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['origin1'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => veritas_statesXXX(),
     '#default_value' => $result->state_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>',
@@ -269,7 +269,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['lga1'] = array(
     '#type' => 'select',
-    '#options' => veritas_lga(),
+    '#options' => veritas_lgaXXX(),
     '#default_value' => $result->lkup_lga_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
@@ -322,7 +322,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['personal']['state1'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => veritas_statesXXX(),
     '#default_value' => $result->permanent_address_state,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
@@ -471,7 +471,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['fs']['ebd1'] = array(
     '#type' => 'select',
-    '#options' => _student_bod(),
+    '#options' => _student_bodXXX(),
     '#default_value' => $data[$data_key[0]]['exam_body'],
     '#prefix' => '<td>',
     '#suffix' => '</td>',
@@ -540,7 +540,7 @@ function port_student($student_id) {
       '#suffix' => '</td>');
     $form['fs']["s1$i"] = array(
       '#type' => 'select',
-      '#options' => _student_sub(),
+      '#options' => _student_subXXX(),
       '#prefix' => '<td>',
       '#suffix' => '</td>',
       '#default_value' => $data[$data_key[0]]['subjects'][$temp]['subject'],
@@ -549,7 +549,7 @@ function port_student($student_id) {
       $tend="</table>";
     $form['fs']["g1$i"] = array(
       '#type' => 'select',
-      '#options' => _student_gr(),
+      '#options' => _student_grXXX(),
       '#prefix' => '<td>',
       '#suffix' => '</td></tr>'. $tend,
       '#default_value' => $data[$data_key[0]]['subjects'][$temp]['grade'],
@@ -596,7 +596,7 @@ function port_student($student_id) {
     '#suffix' => '</td>');
   $form['fs2']['ebd21'] = array(
     '#type' => 'select',
-    '#options' => _student_bod(),
+    '#options' => _student_bodXXX(),
     '#default_value' => $data[$data_key[1]]['exam_body'],
     '#prefix' => '<td>',
     '#suffix' => '</td>',
@@ -664,7 +664,7 @@ function port_student($student_id) {
       '#suffix' => '</td>');
     $form['fs2']["s2$i"] = array(
       '#type' => 'select',
-      '#options' => _student_sub(),
+      '#options' => _student_subXXX(),
       '#prefix' => '<td>',
       '#suffix' => '</td>',
       '#default_value' => $data[$data_key[1]]['subjects'][$temp]['subject'],
@@ -673,19 +673,19 @@ function port_student($student_id) {
       $tend="</table>";
     $form['fs2']["g2$i"] = array(
       '#type' => 'select',
-      '#options' => _student_gr(),
+      '#options' => _student_grXXX(),
       '#prefix' => '<td>',
       '#suffix' => '</td></tr>'. $tend,
       '#default_value' => $data[$data_key[1]]['subjects'][$temp]['grade'],
       '#attributes' => array('disabled' => 'disabled'));
     $temp = 0;
   }
-*/
+
   return $form;
 }
 
-/*
-function veritas_lga() {
+
+function veritas_lgaXXX() {
   static $ritles;
   if (!$titles) {
     $titles[0] = '';
@@ -697,7 +697,7 @@ function veritas_lga() {
 }
 
 
-function veritas_states() {
+function veritas_statesXXX() {
   static $ritles;
   if (!$titles) {
     $titles[0] = '';
@@ -708,7 +708,7 @@ function veritas_states() {
   return $titles;
 }
 
-function _student_gr() {
+function _student_grXXX() {
   static $titles;
   if (!$titles) {
      $titles[] = 'Select';
@@ -720,7 +720,7 @@ function _student_gr() {
 }
 
 
-function _student_sub() {
+function _student_subXXX() {
    static $titles;
    if (!$titles) {
       $titles[] = 'Select';
@@ -732,7 +732,7 @@ function _student_sub() {
 }
 
 
-function _student_bod() {
+function _student_bodXXX() {
 
   static $titles;
   if (!$titles) {
@@ -743,69 +743,4 @@ function _student_bod() {
     }
    return  $titles;
 }
-
-
-function _student_rel() {
-  static $titles;
-  if (!$titles) {
-     $r = db_query("select * from {kin_relationship}  order by relation");
-     while ($f = db_fetch_object($r))
-        $titles[trim($f->relation)]=trim($f->relation);
-  }
-  return  $titles;
-}
-
-
-function _student_col(){
-
-  static $titles;
-  if(!$titles) {
-    $titles[0]="";
-    $r = db_query("select * from {college}  order by college_name");
-    while ($f = db_fetch_object($r))
-      $titles[$f->college_id]=$f->college_name;
-  }
-  return  $titles;
-}
-
-
-function _student_religion() {
- static $titles;
- if (!$titles) {
-    $titles = array();
-    $titles[] = '';
-    $r = db_query("select * from {religion} ");
-    while ($f = db_fetch_object($r)) {
-      $titles[$f->relegion_id] = $f->religion_name;
-    }
-    ///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
- }
- return  $titles;
-}
-
-
-function _student_dep(){
- static $titles;
- if(!$titles){
-  $titles[0]="";
-  $r=db_query("select * from department  order by department_name");
-  while($f=db_fetch_object($r))
-  $titles[$f->department_id]=$f->department_name;
- }
- return  $titles;
-
-}
-
-
-function _student_prg(){
-  static $titles;
- if(!$titles){
-  $titles[0]="";
-  $r=db_query("select * from programme order by programme_name");
-  while($f=db_fetch_object($r))
-  $titles[$f->programme_id]=$f->programme_name;
- }
- return  $titles;
-}
-*/
 ?>
