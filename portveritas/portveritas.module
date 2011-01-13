@@ -145,8 +145,7 @@ function port_student($student_id) {
     '#title' => 'Personal Information',
     '#collapsed' => TRUE,
     '#collapsible' => TRUE);
-  /*$form['personal'][img_lbl]=array('#type'=>'item', '#title'=>'Student Image');
-  $form['personal']['img_sig']=array('#title'=>'Student Image','#value'=>'<img src="'.load_image().'" />');*/
+
   $form['personal']['img_lbl0'] = array(
     '#type' => 'item',
     '#title' => 'Student Image',
@@ -682,5 +681,129 @@ function port_student($student_id) {
     $temp = 0;
   }
   return $form;
+}
+
+
+function veritas_lga() {
+  static $ritles;
+  if (!$titles) {
+    $titles[0] = '';
+    $r = db_query("select * from lga order by lga_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->lga_id] = $f->lga_name;
+  }
+  return $titles;
+}
+
+
+function veritas_states() {
+  static $ritles;
+  if (!$titles) {
+    $titles[0] = '';
+    $r = db_query("select * from state order by state_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->state_id] = $f->state_name;
+  }
+  return $titles;
+}
+
+function _student_gr() {
+  static $titles;
+  if (!$titles) {
+     $titles[] = 'Select';
+     $r = db_query("select * from  {olevel_grades} order by grade_name");
+     while ($f = db_fetch_object($r))
+       $titles[$f->grade_id] = $f->grade_name;
+  }
+  return  $titles;
+}
+
+
+function _student_sub() {
+   static $titles;
+   if (!$titles) {
+      $titles[] = 'Select';
+      $r = db_query("select * from  {ext_exam_subject} order by subject_name");
+      while ($f = db_fetch_object($r))
+       $titles[$f->subject_id]=$f->subject_name;
+   }
+   return  $titles;
+}
+
+
+function _student_bod() {
+
+  static $titles;
+  if (!$titles) {
+    $titles[] = 'Select';
+    $r = db_query("select * from {ext_exam_body}  order by exam_body_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->exam_body_id] = $f->exam_body_name;
+    }
+   return  $titles;
+}
+
+
+function _student_rel() {
+  static $titles;
+  if (!$titles) {
+     $r = db_query("select * from {kin_relationship}  order by relation");
+     while ($f = db_fetch_object($r))
+        $titles[trim($f->relation)]=trim($f->relation);
+  }
+  return  $titles;
+}
+
+
+function _student_col(){
+
+  static $titles;
+  if(!$titles) {
+    $titles[0]="";
+    $r = db_query("select * from {college}  order by college_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->college_id]=$f->college_name;
+  }
+  return  $titles;
+}
+
+
+function _student_religion() {
+ static $titles;
+ if (!$titles) {
+    $titles = array();
+    $titles[] = '';
+    $r = db_query("select * from {religion} ");
+    while ($f = db_fetch_object($r)) {
+      $titles[$f->relegion_id] = $f->religion_name;
+    }
+    ///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
+ }
+ return  $titles;
+}
+
+
+function _student_dep(){
+ static $titles;
+ if(!$titles){
+  $titles[0]="";
+  $r=db_query("select * from department  order by department_name");
+  while($f=db_fetch_object($r))
+  $titles[$f->department_id]=$f->department_name;
+ }
+ return  $titles;
+
+}
+
+
+function _student_prg(){
+  static $titles;
+ if(!$titles){
+  $titles[0]="";
+  $r=db_query("select * from programme order by programme_name");
+  while($f=db_fetch_object($r))
+  $titles[$f->programme_id]=$f->programme_name;
+ }
+ return  $titles;
 }
 ?>
