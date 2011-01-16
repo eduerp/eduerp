@@ -827,7 +827,7 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           $node->field_profile_reg_semester[0]['value'] = '';
         }
         else {
-          // Need to set these each time as they get overwritten and in any case no user should not be allowed set these!
+          // Need to set these each time as they get overwritten and in any case no user should be allowed set these!
           $sql = "SELECT field_profile_yearofentry_value, field_profile_reg_session_value, field_profile_reg_semester_value FROM {content_type_student_profile} WHERE nid=%d";
           $result = db_query($sql, $node->nid);
           $row = db_fetch_object($result);
@@ -972,6 +972,15 @@ function student_course_form(&$obj) {
     if ($gotonextlevel) $user_profile->profile_level_name = $level_name;
     $user_profile->profile_reg_session = $session;
     $user_profile->profile_reg_semester = $semester;
+
+    // Update session, semester on disk so student_nodeapi() 'presave' hook will find new values that it specifically handles
+    $sql = "UPDATE {content_type_student_profile} spro, {node} nspro SET spro.field_profile_reg_session_value='%s', spro.field_profile_reg_semester_value='%s'
+      WHERE
+        spro.vid=nspro.vid AND
+        nspro.uid=%d AND
+        nspro.type='student_profile'";
+    db_query($sql, $session, $semester, $user->uid);
+
     $user_profile->save();
 
     $courseselections = new courseselectionsclass();
