@@ -1248,6 +1248,7 @@ function create_student_grades($student_user, $course_instance, $student_gpa, $s
     else {
       // Get from course, could be a manual registration without a program_course
       // (even though, unless program_course is retrospectively created, Credit Load will not count towards program cGPA)
+      // Actually 20110116... Manual registration only allows selection from program_course, so should never get here
       $sql = "SELECT c.field_creditload_value
         FROM
           {content_type_course} c,
