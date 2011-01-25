@@ -100,7 +100,14 @@ function student_menu() {
     'access arguments' => array('student list students'),
     'type' => MENU_NORMAL_ITEM,
   );
-
+  
+  $items['student/hostelreservation'] = array(
+    'title' => 'Hostel Reservation',
+    'page callback' => 'student_hostel_reservation',
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+   
   return $items;
 }
 
@@ -4411,4 +4418,33 @@ function student_user($type, &$edit, &$user, $category = NULL) {
       break;
   }
 }
+
+//Israel's functions starts here
+function student_hostel_reservation(){
+  global $user;
+  ob_start();
+  $html = "";
+  $student_profile = new UserProfile($user->uid);
+  if($student_profile->profile_jambno == ""){
+    drupal_set_message('Your Student Profile may not have been properly setup!');
+ 
+  }
+  elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
+    drupal_set_message('Hostel Reservation already exists!');
+    $html = hostel_allocation_show_reserved_room($user->uid);
+    
+  }
+  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student 
+    //allocation info will be displayed here
+    
+  }
+  else {
+    //since this is coming from a logged in student, we'll try to simulate login in the hostel module by passing the studentUID
+    $html = hostel_allocation_direct_room_reservation($user->uid);
+  }
+  echo $html;
+  return ob_get_clean();
+}
+
+//Israel's functions ends here
 

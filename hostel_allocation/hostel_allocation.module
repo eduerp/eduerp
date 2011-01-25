@@ -2247,11 +2247,12 @@ function is_room_existing_in_room_statistics($room_nid, $session_name){
 
 
 //direct room reservation starts here
-function hostel_allocation_direct_room_reservation(){
-  //global $user, $EDUERPglobalSettings;
+function hostel_allocation_direct_room_reservation($studentInitiated=0){
+  global $EDUERPstudentInitiated;
   ob_start();
   
-  
+  $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
+  $EDUERPstudentInitiated = $studentInitiated;
   $isAuthorized = true;
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
@@ -2263,7 +2264,7 @@ function hostel_allocation_direct_room_reservation(){
   //$navi .= '<br /><hr /><br />';
   
   
-  if (! $isAuthorized) {
+  if (! $isAuthorized) {//Israel pls remember to take into account students that are coming
     echo $navi;
     echo Error_Types(104);
 
@@ -2296,8 +2297,10 @@ function hostel_allocation_direct_room_reservation(){
         break;
         */
       case '2':
+      	if( ! $studentInitiated)
         echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
-        echo hostel_allocation_show_student_info();
+       
+	echo hostel_allocation_show_student_info();
         echo '<br /><hr /><br />';
         echo hostel_allocation_show_reservation_summary_info();
         echo '<br /><hr /><br />';
@@ -2311,8 +2314,10 @@ function hostel_allocation_direct_room_reservation(){
       break;
       case '1':
         unset($_SESSION['eduerp_reserve_room']);
-        echo $navi ." <b>(Step 1 of 2)</b> <br /><br /><br /><hr /><br />";
-        echo "<b>Direct Room Reservation</b> - Please enter the Student's Matriculation Number.<br />";
+        if( ! $studentInitiated) {
+          echo $navi ." <b>(Step 1 of 2)</b> <br /><br /><br /><hr /><br />";
+          echo "<b>Direct Room Reservation</b> - Please enter the Student's Matriculation Number.<br />";
+        }
         echo drupal_get_form('hostel_allocation_enter_mat_number_form');
       break;
       
@@ -2325,6 +2330,7 @@ function hostel_allocation_direct_room_reservation(){
   echo '<br /><hr /><br />';
 
   unset($_SESSION['eduerp_reserve_room']['page']);
+  unset($_SESSION['eduerp_reserve_room']['studentInitiated']);
   return ob_get_clean();
 
 
@@ -2353,31 +2359,34 @@ function get_rooms_in_block($block_nid, $forCombo=true){
 
 
 function hostel_allocation_enter_mat_number_form(){
+  global $EDUERPstudentInitiated;
   $form['#title'] = 'Enter Matriculation Number';
-  
+  if(! $EDUERPstudentInitiated) {//if request is from student then do not show this
    $form['mat_number'] = array(
       '#title' => 'Matriculation / JAMB Number',
       '#type' => 'textfield',
       '#size' => 40,
       '#required' => TRUE
     );
+  }
     
     $form['hostel_nid'] = array(
-		'#title' => 'Hostel Name',
-		'#type' => 'select',
-		'#options' => get_hostels(0, true),
-		//'#ahah' => array('path' => 'staff/ajax/getallocblocks', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'shwblocks'),
-		'#required' => TRUE
-	  );
-	  
-   $form['reservation_type'] = array(
-    '#type' => 'radios',
-    '#title' => "Reservation Type",
-    '#options' => array('single' => 'Reserve a particular Room', 'random' => 'Reserve any random Room'),
-    '#required' => TRUE,
-    '#default_value' => 'random' //$_SESSION['student']['data']->gender
+	'#title' => 'Hostel Name',
+	'#type' => 'select',
+	'#options' => get_hostels(0, true),
+	//'#ahah' => array('path' => 'staff/ajax/getallocblocks', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'shwblocks'),
+	'#required' => TRUE
     );
     
+    if(! $EDUERPstudentInitiated) {//if request is from student then do not show this
+      $form['reservation_type'] = array(
+       '#type' => 'radios',
+       '#title' => "Reservation Type",
+       '#options' => array('single' => 'Reserve a particular Room', 'random' => 'Reserve any random Room'),
+       '#required' => TRUE,
+       '#default_value' => 'random' //$_SESSION['student']['data']->gender
+      );
+    }
     $form['submit'] = array('#id' => 'next', '#value' => 'Continue', '#type' => 'submit');
     
     return $form;
@@ -2398,9 +2407,14 @@ function get_student_info_by_jamb_number($jambno){
 
 
 function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
+  global $EDUERPstudentInitiated;
   $values = $form_state['values'];
-  
-  $studentInfo = user_load(array('name'=>$values['mat_number']));
+  if($EDUERPstudentInitiated)
+     $studentInfo = user_load($EDUERPstudentInitiated);
+  else
+    $studentInfo = user_load(array('name'=>$values['mat_number']));
+    
+  //print_r($studentInfo);
   $found = false;
   if( ! $studentInfo) {
     //check if it a valid jamb number
@@ -2422,23 +2436,28 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
   
   if($found) {
   
-    $student_profile = new UserProfile($studentInfo->uid);
-    //valid mat or JAMB number was found
-    $_SESSION['eduerp_reserve_room']['student_uid'] = $student_profile->uid;
-    $_SESSION['eduerp_reserve_room']['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
-    $_SESSION['eduerp_reserve_room']['first_choice_nid'] = $student_profile->profile_first_choice;
-    $_SESSION['eduerp_reserve_room']['level_name'] = $student_profile->profile_level_name;
-    $_SESSION['eduerp_reserve_room']['mat_num'] = $student_profile->profile_matno; //$values['mat_number'];
-    $_SESSION['eduerp_reserve_room']['jamb_num'] = $student_profile->profile_jambno;
-    $_SESSION['eduerp_reserve_room']['gender'] = strtolower($student_profile->profile_gender);
-    $_SESSION['eduerp_reserve_room']['health_status'] = strtolower($student_profile->profile_health_status);
+    //if(! $EDUERPstudentInitiated) {//if request is from student then do not show this
+      $student_profile = new UserProfile($studentInfo->uid);
+      //valid mat or JAMB number was found
+      $_SESSION['eduerp_reserve_room']['student_uid'] = $student_profile->uid;
+      $_SESSION['eduerp_reserve_room']['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
+      $_SESSION['eduerp_reserve_room']['first_choice_nid'] = $student_profile->profile_first_choice;
+      $_SESSION['eduerp_reserve_room']['level_name'] = $student_profile->profile_level_name;
+      $_SESSION['eduerp_reserve_room']['mat_num'] = $student_profile->profile_matno; //$values['mat_number'];
+      $_SESSION['eduerp_reserve_room']['jamb_num'] = $student_profile->profile_jambno;
+      $_SESSION['eduerp_reserve_room']['gender'] = strtolower($student_profile->profile_gender);
+      $_SESSION['eduerp_reserve_room']['health_status'] = strtolower($student_profile->profile_health_status);
     
-    $programmeName = get_programmes($student_profile->profile_first_choice, true);
-    $_SESSION['eduerp_reserve_room']['programme_name'] = $programmeName[$student_profile->profile_first_choice];
+      $programmeName = get_programmes($student_profile->profile_first_choice, true);
+      $_SESSION['eduerp_reserve_room']['programme_name'] = $programmeName[$student_profile->profile_first_choice];
     
-    $_SESSION['eduerp_reserve_room']['reservation_type'] = $values['reservation_type'];
+      if(! $EDUERPstudentInitiated) 
+        $_SESSION['eduerp_reserve_room']['reservation_type'] = $values['reservation_type'];
+      else
+        $_SESSION['eduerp_reserve_room']['reservation_type'] = 'random';
+    //}
+    
     $_SESSION['eduerp_reserve_room']['hostel_nid'] = $values['hostel_nid'];
-    
     $hostelInfo = get_hostels($values['hostel_nid'], false);
     $_SESSION['eduerp_reserve_room']['hostel_name'] = $hostelInfo[$values['hostel_nid']]['hostel_name'];
    
@@ -2692,8 +2711,6 @@ function reserve_bedspace(&$reservationInfo){
   $reservationInfo['allowed_bedspaces']
   */
   
-  //Now we need to LOCK the first 5 records found in content_type_room, allocation block and room statistics tables
-  //$sql = "LOCK TABLES allocation_room_statistics WRITE, allocation_block_statistics WRITE";
   
   $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs, {content_type_rooms} ctr 
   WHERE ars.room_nid=ctr.nid AND ctr.field_block_id_nid=abs.block_nid 
@@ -2709,60 +2726,76 @@ function reserve_bedspace(&$reservationInfo){
   $sql .= " AND ctr.nid = '". $_SESSION['eduerp_reserve_room']['room_nid'] ."' ";
   
   
-  $sql .="
-  LIMIT 5 
-  FOR UPDATE
-   ";
+  //$sql .="
+  //LIMIT 5 
+  //FOR UPDATE ";
   
   $rs = db_query($sql, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
   
-  if(db_affected_rows($rs) > 0 ) {
+  if(db_affected_rows($rs) <= 0 ) {
+    return false;
+  }
+  
     //ok gr8 we have available bed spaces
     //now we need to randomize the at most five records returned in order to pick one.
     while($row = db_fetch_object($rs)){
-      $rooms[] = $row->room_nid;
+      //$rooms[] = $row->room_nid;
+      
+    //}
+    //shuffle($rooms);
+      $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs 
+        WHERE ars.room_nid=%d 
+        AND abs.block_nid = %d 
+        AND abs.allocation_rules_description_nid = %d
+        AND abs.session_name = '%s'
+        
+        AND (ars.reservation_count + ars.allocation_count) < ars.room_capacity  
+	AND abs.alloted_number < abs.allocation_number
+	AND abs.allocation_number > 0 
+	FOR UPDATE ";
+      $rs1 = db_query($sql, $row->room_nid, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
+      if(db_affected_rows($rs1) > 0 ) { //proceed with allocation
+        //now pick the first room
+        $reserveRoomNID = $row->room_nid; //$rooms[0];
+    
+        //update room statistics
+        $sql = "UPDATE allocation_room_statistics SET reservation_count = reservation_count + 1 WHERE room_nid=%d AND session_name='%s' ";
+        $val = db_query($sql, $reserveRoomNID, variable_get('eduerp_current_session', ''));
+    
+        //update block statistics
+        $sql = "UPDATE allocation_block_statistics SET alloted_number = alloted_number + 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+        $val = db_query($sql, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
+    
+        //get max reservation duration
+        $resDuration = db_fetch_object(db_query("SELECT field_settings_value_value duration FROM content_type_allocation_settings WHERE field_settings_name_value LIKE '%Reservation Duration%' LIMIT 1 "));
+    
+        db_query('COMMIT');
+     
+        $resDate = date('Y-m-d h:m:s');
+        
+        //now reserve this room
+        $node = new stdClass();
+        $node->type                                  = 'room_reservations';
+        $node->uid                                   = 1;  // Admin
+        $node->status                                = 1;  // Published
+        $node->promote                               = 0;
+        $node->sticky                                = 0;
+        $node->comment                               = 0;
+        $node->title                                 = "Reservation - ". $reservationInfo['uid'];
+        $node->field_student_id[0]['uid']            = $reservationInfo['uid'];
+        $node->field_room_id[0]['nid']               = $reserveRoomNID;
+        $node->field_reservation_date[0]['value']    = $resDate;
+        $node->field_expiry_date[0]['value']         = strftime('%Y-%m-%d %H:%M:%S',DateAdd("d", $resDuration->duration, strtotime($resDate)));
+        $node->field_reservation_category_id[0]['nid'] = $reservationInfo['category_nid'];
+        
+        node_save($node);
+    
+        return true;
+      }
+    
     }
-    shuffle($rooms);
-    
-    //now pick the first room
-    $reserveRoomNID = $rooms[0];
-    
-    //update room statistics
-    $sql = "UPDATE allocation_room_statistics SET reservation_count = reservation_count + 1 WHERE room_nid=%d AND session_name='%s' ";
-    $val = db_query($sql, $reserveRoomNID, variable_get('eduerp_current_session', ''));
-    
-    //update block statistics
-    $sql = "UPDATE allocation_block_statistics SET alloted_number = alloted_number + 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
-    $val = db_query($sql, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
-    
-    //get max reservation duration
-    $resDuration = db_fetch_object(db_query("SELECT field_settings_value_value duration FROM content_type_allocation_settings WHERE field_settings_name_value LIKE '%Reservation Duration%' LIMIT 1 "));
-    
-    $resDate = date('Y-m-d h:m:s');
-    
-    //now reserve this room
-    $node = new stdClass();
-    $node->type                                  = 'room_reservations';
-    $node->uid                                   = 1;  // Admin
-    $node->status                                = 1;  // Published
-    $node->promote                               = 0;
-    $node->sticky                                = 0;
-    $node->comment                               = 0;
-    $node->title                                 = "Reservation - ". $reservationInfo['uid'];
-    $node->field_student_id[0]['uid']            = $reservationInfo['uid'];
-    $node->field_room_id[0]['nid']               = $reserveRoomNID;
-    $node->field_reservation_date[0]['value']    = $resDate;
-    $node->field_expiry_date[0]['value']         = strftime('%Y-%m-%d %H:%M:%S',DateAdd("d", $resDuration->duration, strtotime($resDate)));
-    node_save($node);
-    
-    
-    db_query('COMMIT');
-    
-    return true;
-    
-    
-  }
-  
+  //}
+  db_query('COMMIT'); //free all locks
   
   return false;
 }
@@ -2993,6 +3026,119 @@ function hostel_allocation_room_reservation_report(){
 }
 
 
+function hostel_allocation_show_reserved_room($studentUID){
+	
+  $reservedInfo = get_reservation_info($studentUID);
+  
+  if(db_affected_rows($reservedInfo) > 0){
+    $rs = db_fetch_object($reservedInfo);
+    $student_profile = new UserProfile($studentUID); //user_load($studentUID);
+   
+    $programmeName = get_programmes($student_profile->profile_first_choice, true);
+     
+    $html ="
+   <div><h4>Student Info</h4></div>
+   <div id='assigned_courses'>
+   <table border=1>";
+     if($student_profile->profile_matno != "")
+     	     $html .="
+      <tr>
+       <td>Matriculation Number:</td>
+       <td>". $student_profile->profile_matno ."</td>
+     </tr>";
+     else
+       $html .="
+      <tr>
+       <td>JAMB Number:</td>
+       <td>". $student_profile->profile_jambno ."</td>
+     </tr>";
+     
+     $html .="
+     <tr>
+       <td>Full Name:</td>
+       <td>". $student_profile->profile_last_name .', '. $student_profile->profile_first_name ."</td>
+     </tr>
+     <tr>
+       <td>Gender:</td>
+       <td>". $student_profile->profile_gender ."</td>
+     </tr>
+     <tr>
+       <td>Level Name:</td>
+       <td>". $student_profile->profile_level_name ."</td>
+     </tr>
+     <tr>
+       <td style='width:200px;'>Programme Name:</td>
+       <td >". $programmeName[$student_profile->profile_first_choice] ."</td>
+     </tr>
+     
+     
+   </table>
+   </div>";
+   $html .="
+   <div><h4>Hostel Reservation Info</h4></div>
+   <div id='assigned_courses'>
+   <table border=1>
+      <tr>
+       <td>Hostel Name:</td>
+       <td>". $rs->hostel_name ."</td>
+     </tr>";
+     
+     $html .="
+     <tr>
+       <td>Block Name:</td>
+       <td>". $rs->block_name ."</td>
+     </tr>
+     <tr>
+       <td style='width:200px;'>Room Number:</td>
+       <td>". $rs->room_name ."</td>
+     </tr>
+   </table>
+   </div>";
+  }	
+  
+  return $html;
+}
 //reservation reports ends here
+
+
+//revoke reservation starts here
+function hostel_allocation_revoke_expired_reservation(){
+
+  $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid FROM content_type_room_reservation WHERE field_expiry_date_value < NOW() ";	
+  $rs = db_query($sql);
+  
+  if(db_affected_rows($rs) <= 0) return;
+  
+  while($row = db_fetch_object($rs)){
+  	  
+    //reverse room statistics entry
+    $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
+    db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
+    
+    $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' ";
+    db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
+  	  
+    db_query('COMMIT');
+    
+    //get the room info
+    $roomInfo = get_rooms($row->field_room_id_nid, false);
+    
+    //reverse block statistics entry
+    $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+    db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
+    
+    $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+    db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
+  	  
+    db_query('COMMIT');
+  	  
+    node_delete($row->nid);
+  }
+	
+ 
+}
+//revoke reservation ends here
+
+
 
 ?>
