@@ -337,7 +337,7 @@ function _staff_ajax() {
     	 /*
     	if($task == 'getallocblocks'){
     	  $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
-    	  
+
     	  switch($_SESSION['eduerp_reserve_room']['gender']):
 		  case 'male':
 		    $sql .= " AND (field_block_type_value = 1 OR field_block_type_value = 0) "; //get blocks that are male only or mixed
@@ -346,12 +346,12 @@ function _staff_ajax() {
 		    $sql .= " AND (field_block_type_value = 2 OR field_block_type_value = 0) "; //get blocks that are female only or mixed
 		    break;
 		  endswitch;
-    	  
-    	  
+
+
     	}else
     	*/
           $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
-          
+
         $rs = db_query($sql, $hostel_nid);
         while($row = db_fetch_object($rs))
           $blocks[$row->nid] = $row->field_block_name_value;
@@ -365,16 +365,16 @@ function _staff_ajax() {
       '#prefix' => "<div id='shwblocks'>",
       '#suffix' => "</div>",
       '#required' => TRUE
-      
+
         );
         $output = _staff_ahah_render($form, 'block_nid');
         print drupal_to_js(array('data' => $output, 'status' => true));
     	break;
     case 'getroomsinblock':
     	 $block_nid = $_POST['block_nid']; $id = "";
-    	 
+
           $sql = "SELECT nid, field_room_name_value FROM {content_type_rooms} WHERE field_block_id_nid = %d ";
-          
+
         $rs = db_query($sql, $block_nid);
         while($row = db_fetch_object($rs))
         $rooms[$row->nid] = $row->field_room_name_value;
@@ -382,7 +382,7 @@ function _staff_ajax() {
   	$form['room_nid'] = array(
     '#title' => 'Room Name',
     '#type' => 'select',
-    '#options' => $rooms, 
+    '#options' => $rooms,
     '#attributes' => array(
       'style' => 'width:100px'),
       '#prefix' => "<div id='shwrooms'>",
@@ -1025,7 +1025,7 @@ They also can do all the same things as <b><i>'Bursary'</i></b>.<br />
 <b><i>'Student Affairs Officer'</i></b> can see student profile data.<br />
 <br />
 
-<b><i>'Non-Academic Staff'</i></b> does not actually provide anything. (Any registered Staff Drupal user does however have some basic access to the system).<br />
+<b><i>'Non-Academic Staff'</i></b> all staff should be given either <b><i>'Academic Staff'</i></b> or <b><i>'Non-Academic Staff'</i></b> but <b><i>'Non-Academic Staff'</i></b> does not actually provide anything. (Any registered Staff Drupal user does however have some basic access to the system).<br />
 <br />
 
 <b><i>'Academic Staff'</i></b> can view all fully approved grading.<br />
@@ -3614,6 +3614,7 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
     case '1':
       $courses = get_Assigned_Courses($session, $department_nid); break;//variable_get('eduerp_current_session', '')
     case '2':
+      // ALAN 20110109 Does not seem to be used, verify and remove
       $courses = get_UnAssigned_Courses($session, $department_nid); break;
     case '3':
       $courses = get_department_running_courses($session, $department_nid, $semester); break; //variable_get('eduerp_current_semester', '')
@@ -5325,12 +5326,40 @@ function get_department_running_courses($session, $department_nid, $semester = 0
       INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
       WHERE  $morewhere d.nid='". $department_nid ."'
       ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level ";
+  $sql = "SELECT DISTINCT
+        pc.level course_level,
+        c.field_code_value course_code,
+        p.field_programme_name_value programme_name,
+        d.field_department_name_value dept_name,
+        co.field_college_name_value,
+        ci.nid clean_nid,
+        ci.field_lecturer_uid lecturer_uid,
+        pc.credit_load AS credit_load,
+        field_prerequisite_codes_value AS prerequisite_codes,
+        field_prerequisite_value AS prerequisite_desc,
+        pc.semester course_semester,
+        field_course_description_value AS course_description,
+        field_coursetitle_value AS course_title,
+        c.nid nid
+      FROM {program_course} pc
+      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
+      LEFT JOIN {content_type_course_instance} ci
+      ON
+        c.nid=ci.field_course_id_nid AND
+        pc.semester=ci.field_semester_name_value AND
+        ci.field_sess_name_value='". $session ."'
+      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
+      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
+      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
+      WHERE  $morewhere d.nid='". $department_nid ."'
+      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level ";
     $r = db_query($sql);
   return $r;
 }
 
 
 function get_unassigned_courses($session, $department_nid = 0) {
+  // ALAN 20110109 Does not seem to be used, verify and remove
   $where = ""; $args = "";
   if ($department_nid != 0) {
      $where = "
@@ -5922,6 +5951,7 @@ function staff_specify_course_for_programme() {
       drupal_goto("/staff/specifycourse/". arg(2));
     else {
         $sql = "SELECT course_id, programme_id, level, semester, course_type, lecturer_id  FROM {program_course} WHERE program_course_id=%d";
+        $sql = "SELECT course_id, programme_id, level, semester, course_type, lecturer_id, credit_load FROM {program_course} WHERE program_course_id=%d";
         $rs = db_query($sql, arg(3));
         $progCourse = db_fetch_object($rs);
 
@@ -6067,6 +6097,7 @@ function verify_assigned_courses($programme_nid, $session, $semester) {
 
 
 function show_verified_assigned_courses(&$result) {
+  // ALAN 20110109 Does not seem to be used, verify and remove
 
   $html = "
   <table border ='1'>
@@ -6113,12 +6144,13 @@ function get_programme_running_courses ($programme_nid, $session, $semester) {
         pc.semester AS semester,
         pc.course_type,
         CONCAT( c.field_coursetitle_value, ' (', field_code_value  ,')') AS course_title,
-        field_creditload_value credit_load,
+        pc.credit_load AS credit_load,
+        field_creditload_value old_credit_load,
         field_course_description_value course_description,
         field_prerequisite_codes_value prerequisites_codes,
         field_prerequisite_value prerequisites_description,
         pc.program_course_id,
-        ci.nid clean_nid
+        if(ci.nid IS NULL, NULL, 1) AS clean_nid
       FROM {program_course} pc
       INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
       LEFT JOIN {content_type_course_instance} ci
@@ -6276,16 +6308,28 @@ function staff_assign_course_to_programme_form() {
     '#form_panel_row' => 2);
   if(isset($prog_course)) $form['course_type_id']['#default_value'] = $prog_course->course_type;
 
+  $form['credit_load'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Credit Load',
+    '#size' => 3,
+    '#form_panel_col' => 6,
+    '#form_panel_row' => 2);
+  if(isset($prog_course)) $form['credit_load']['#default_value'] = $prog_course->credit_load;
+
   $form['user_id'] = array(
     '#type' => 'select',
     '#options' => array('' => '' ) + get_Staff_in_Department(), //lecturer(),
     '#title' => 'Lecturer',
     '#required' => FALSE,
-    '#form_panel_col' => 6,
+    '#form_panel_col' => 7,
     '#form_panel_row' => 2);
   if(isset($prog_course)) $form['user_id']['#default_value'] = $prog_course->lecturer_id;
 
-
+  $form['explain'] = array(
+    '#type' => 'item',
+    '#value' => 'If Credit Load is not specified, it will be taken from the selected Course. Lecturer can be specified later or when courses are verified for a semester.',
+    '#form_panel_col' => 1,
+    '#form_panel_row' => 4);
 
   if (sizeof($levels) > 1) {
     $form['jambsubn'] = array(
@@ -6293,14 +6337,14 @@ function staff_assign_course_to_programme_form() {
       '#value' => 'Add',
       '#type' => 'submit',
       '#form_panel_col' => 1,
-      '#form_panel_row' => 4);
+      '#form_panel_row' => 5);
     if(arg(3)) $form['jambsubn']['#value'] = "Update";;
   }
   $form['sep'] = array(
     '#type' => 'item',
     '#value' => '',
     '#form_panel_col' => 1,
-    '#form_panel_row' => 5);
+    '#form_panel_row' => 6);
 
   return $form;
 }
@@ -6333,20 +6377,26 @@ function staff_assign_course_to_programme_form_validate($form, &$form_state) {
 function staff_assign_course_to_programme_form_submit($form, &$state) {
   $values = $state['values'];
 
+  if (empty($values['credit_load']) || !preg_match("/^[0-9]{1,3}$/", $values['credit_load'])) {
+    $sql = "SELECT field_creditload_value FROM {content_type_course} WHERE nid=%d";
+    $rows = db_query($sql, $values['course_id']);
+    $row = db_fetch_object($rows);
+    $values['credit_load'] = $row->field_creditload_value;
+  }
 
   $query = "SELECT program_course_id FROM {program_course} WHERE course_id=%d AND programme_id=%d AND level='%s' AND semester='%s'";
   $result = db_query($query, $values['course_id'], $values['programme_id'], $values['level'], $values['semester']);
 
   if ($row = db_fetch_object($result)) {
     $query = "UPDATE {program_course}
-      SET course_id=%d, programme_id=%d, level='%s', semester='%s', course_type=%d, lecturer_id=%d, historical=0
+      SET course_id=%d, programme_id=%d, level='%s', semester='%s', course_type=%d, credit_load=%d, lecturer_id=%d, historical=0
       WHERE program_course_id=%d";
-    db_query($query, $values['course_id'], $values['programme_id'], $values['level'], $values['semester'], $values['course_type_id'], $values['user_id'], $row->program_course_id);
+    db_query($query, $values['course_id'], $values['programme_id'], $values['level'], $values['semester'], $values['course_type_id'], $values['credit_load'], $values['user_id'], $row->program_course_id);
   }
   else {
     $query = "INSERT INTO {program_course}
-      SET course_id=%d, programme_id=%d, level='%s', semester='%s', course_type=%d, lecturer_id=%d, historical=0";
-    db_query($query, $values['course_id'], $values['programme_id'], $values['level'], $values['semester'], $values['course_type_id'], $values['user_id']);
+      SET course_id=%d, programme_id=%d, level='%s', semester='%s', course_type=%d, credit_load=%d, lecturer_id=%d, historical=0";
+    db_query($query, $values['course_id'], $values['programme_id'], $values['level'], $values['semester'], $values['course_type_id'], $values['credit_load'], $values['user_id']);
   }
 
   if (arg(3))
@@ -6530,7 +6580,8 @@ function historical_course_list($programme_nid) {
         pc.lecturer_id AS uid,
         p.field_programme_name_value AS programme_name,
         CONCAT( c.field_coursetitle_value, ' (', field_code_value  ,')') AS course_title,
-        field_creditload_value credit_load,
+        pc.credit_load AS credit_load,
+        field_creditload_value old_credit_load,
         field_course_description_value course_description,
         field_prerequisite_codes_value prerequisites_codes,
         field_prerequisite_value prerequisites_description
@@ -7887,9 +7938,19 @@ function update_credit_load_registered($uid, $session, $semester) {
     WHERE
       gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
       sg.field_dropped_value = 0";
+  $sql = "
+    SELECT SUM(sg.field_credit_load_sg_value) AS total_registered
+    FROM {content_type_student_gpa} gpa
+    INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
+    WHERE
+      gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
+      sg.field_dropped_value = 0";
   $result = db_query($sql, $uid, $session, $semester);
   $r = db_fetch_object($result);
 
+  // Note if any failed courses are being repeated for the semester, these will now all be included in the credit_load_registered.
+  // This is not the case for student self registration of courses (according to spec).
+  // This inconsistency will not affect system functionality (just display of credit_load_registered for a semester).
   $sql = "UPDATE {content_type_student_gpa} gpa1 SET field_credit_load_registered_value = %d
     WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
   db_query($sql, $r->total_registered, $uid, $session, $semester);

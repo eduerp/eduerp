@@ -175,12 +175,13 @@ class courseselectionsclass {
     $sql = "SELECT DISTINCT
         ci.nid AS course_instance,
         ci.field_timetable_value AS timetable,
-        c.field_creditload_value AS credit_load,
+        c.field_creditload_value AS old_credit_load,
         c.field_code_value AS course_code,
         c.field_coursetitle_value AS course_title,
         c.field_course_description_value AS course_description,
         c.field_prerequisite_codes_value AS prerequisite_codes,
         c.field_prerequisite_value,
+        pc.credit_load AS credit_load,
         pc.level AS level,
         pc.course_type AS course_type
       FROM
@@ -262,10 +263,11 @@ class courseselectionsclass {
     $sql = "SELECT DISTINCT
         ci1.nid AS course_instance,
         ci1.field_timetable_value AS timetable,
-        c1.field_creditload_value AS credit_load,
+        c1.field_creditload_value AS old_credit_load,
         c1.field_code_value AS course_code,
         c1.field_coursetitle_value AS course_title,
         c1.field_course_description_value AS course_description,
+        pc1.credit_load AS credit_load,
         pc1.level AS level,
         pc1.course_type AS course_type
       FROM
@@ -832,7 +834,7 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           $node->field_profile_reg_semester[0]['value'] = '';
         }
         else {
-          // Need to set these each time as they get overwritten and in any case no user should not be allowed set these!
+          // Need to set these each time as they get overwritten and in any case no user should be allowed set these!
           $sql = "SELECT field_profile_yearofentry_value, field_profile_reg_session_value, field_profile_reg_semester_value FROM {content_type_student_profile} WHERE nid=%d";
           $result = db_query($sql, $node->nid);
           $row = db_fetch_object($result);
@@ -977,6 +979,15 @@ function student_course_form(&$obj) {
     if ($gotonextlevel) $user_profile->profile_level_name = $level_name;
     $user_profile->profile_reg_session = $session;
     $user_profile->profile_reg_semester = $semester;
+
+    // Update session, semester on disk so student_nodeapi() 'presave' hook will find new values that it specifically handles
+    $sql = "UPDATE {content_type_student_profile} spro, {node} nspro SET spro.field_profile_reg_session_value='%s', spro.field_profile_reg_semester_value='%s'
+      WHERE
+        spro.vid=nspro.vid AND
+        nspro.uid=%d AND
+        nspro.type='student_profile'";
+    db_query($sql, $session, $semester, $user->uid);
+
     $user_profile->save();
 
     $courseselections = new courseselectionsclass();
@@ -1008,6 +1019,9 @@ function student_course_form(&$obj) {
 
 
 function student_course_form_validate($form, &$form_state) {
+  global $user;
+  $user_profile = new UserProfile($user->uid);
+
   $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
   if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
   else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
@@ -1036,17 +1050,24 @@ function student_course_form_validate($form, &$form_state) {
     if ($count > 1) form_set_error($code, "You have selected $code more than once");
   }
 
-  // According to spec, only credit load for the current level courses should towards the limits, failed repeats are extra
+  // According to spec, only credit load for the current level courses should count towards the limits (and credit_load_registered), failed repeats are extra
   $currentlevelcis = implode(',', $form['#currentlevelcis']);
   if (empty($currentlevelcis)) $currentlevelcis = '0';
 
   $cis1 = implode(',', $course_instances1);
   if (empty($cis1)) $cis1 = '0';
 
-  $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS tload
-    FROM {content_type_course_instance} ci, {content_type_course} c
-    WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
-  $result = db_query($sql, $cis1, $currentlevelcis);
+  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+    FROM {content_type_course_instance} ci, {program_course} pc
+    WHERE
+      ci.nid IN(%s) AND
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1'";
+  // The test for $currentlevelcis might be redundant? (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates)
+  $result = db_query($sql, $cis1, $currentlevelcis, $user_profile->profile_first_choice, $user_profile->profile_level_name);
   $row = db_fetch_object($result);
   if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
   if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
@@ -1056,10 +1077,16 @@ function student_course_form_validate($form, &$form_state) {
     $cis2 = implode(',', $course_instances2);
     if (empty($cis2)) $cis2 = '0';
 
-    $sql = "SELECT IFNULL(SUM(c.field_creditload_value), 0) AS tload
-      FROM {content_type_course_instance} ci, {content_type_course} c
-      WHERE ci.nid IN(%s) AND ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
-    $result = db_query($sql, $cis2, $currentlevelcis);
+    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+      FROM {content_type_course_instance} ci, {program_course} pc
+      WHERE
+        ci.nid IN(%s) AND
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='2'";
+    $result = db_query($sql, $cis2, $currentlevelcis, $user_profile->profile_first_choice, $user_profile->profile_level_name);
     $row = db_fetch_object($result);
     if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
     if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
@@ -1190,6 +1217,58 @@ function create_student_grades($student_user, $course_instance, $student_gpa, $s
   $node->field_gradepointforstudent[0]['value']  = '-';
   $node->field_dropped[0]['value']               = 0;
   $node->field_calc_type[0]['value']             = $program_type;
+
+  // Try to get Credit Load from program_course for this level/semester
+  $sql = "SELECT pc.credit_load
+    FROM
+      {program_course} pc,
+      {content_type_student_gpa} gpa,
+      {content_type_course_instance} ci
+    WHERE
+      pc.programme_id=gpa.field_program_ref_gpa_nid AND
+      pc.course_id=ci.field_course_id_nid AND
+      pc.level=gpa.field_level_name_gpa_value AND
+      pc.semester=gpa.field_semester_name_gpa_value AND
+      gpa.nid=%d AND
+      ci.nid=%d";
+  $rows = db_query($sql, $student_gpa, $course_instance);
+  if ($row = db_fetch_object($rows)) {
+    $credit_load = $row->credit_load;
+  }
+  else {
+    // Try to get Credit Load from most recent program_course (might be resit of failed course)
+    $sql = "SELECT pc.credit_load
+      FROM
+        {program_course} pc,
+        {content_type_student_gpa} gpa,
+        {content_type_course_instance} ci
+      WHERE
+        pc.programme_id=gpa.field_program_ref_gpa_nid AND
+        pc.course_id=ci.field_course_id_nid AND
+        gpa.nid=%d AND
+        ci.nid=%d
+      ORDER BY pc.program_course_id DESC";
+    $rows = db_query($sql, $student_gpa, $course_instance);
+    if ($row = db_fetch_object($rows)) {
+      $credit_load = $row->credit_load;
+    }
+    else {
+      // Get from course, could be a manual registration without a program_course
+      // (even though, unless program_course is retrospectively created, Credit Load will not count towards program cGPA)
+      // Actually 20110116... Manual registration only allows selection from program_course, so should never get here
+      $sql = "SELECT c.field_creditload_value
+        FROM
+          {content_type_course} c,
+          {content_type_course_instance} ci
+        WHERE
+          c.nid=ci.field_course_id_nid AND
+          ci.nid=%d";
+      $rows = db_query($sql, $course_instance);
+      $row = db_fetch_object($rows);
+      $credit_load = $row->field_creditload_value;
+    }
+  }
+  $node->field_credit_load_sg[0]['value'] = $credit_load;
   node_save($node);
 }
 

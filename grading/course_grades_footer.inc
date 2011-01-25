@@ -543,15 +543,16 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
         SELECT
           exams.field_mat_no_uid AS uid,
           MAX(exams.field_calc_type_value) AS calc_type,
-          SUM(exams.gradepoint*exams.field_creditload_value) AS gradepoints,
+          SUM(exams.gradepoint*exams.credit_load) AS gradepoints,
           MIN(exams.gradepoint) AS allpassed,
-          SUM(exams.field_creditload_value) AS totalload
+          SUM(exams.credit_load) AS totalload
         FROM (
           SELECT
             IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
             sg.field_mat_no_uid,
             sg.field_calc_type_value,
-            c.field_creditload_value
+            sg.field_credit_load_sg_value AS credit_load,
+            c.field_creditload_value AS old_credit_load
           FROM
             {content_type_student_grades} sg,
             {content_type_course_instance} ci,
@@ -601,9 +602,9 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
         SELECT
           exams.field_mat_no_uid AS uid,
           MAX(exams.field_calc_type_value) AS calc_type,
-          SUM(exams.gradepoint*exams.field_creditload_value) AS gradepoints,
+          SUM(exams.gradepoint*exams.credit_load) AS gradepoints,
           MIN(exams.gradepoint) AS allpassed,
-          SUM(exams.field_creditload_value) AS totalload
+          SUM(exams.credit_load) AS totalload
         FROM (
           SELECT DISTINCT
             IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
@@ -611,7 +612,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             sg.field_calc_type_value,
             CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
             c.field_code_value,
-            c.field_creditload_value
+            sg.field_credit_load_sg_value AS credit_load,
+            c.field_creditload_value AS old_credit_load
           FROM
             {content_type_student_grades} sg,
             {content_type_course_instance} ci,
