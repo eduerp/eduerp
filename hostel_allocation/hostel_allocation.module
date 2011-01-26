@@ -1529,11 +1529,11 @@ function hostel_allocation_create_edit_allocation_rules_select_block_form_submit
 
 function get_setup_rules_for_block($blockNID){
    $rs = db_query('SELECT d.nid AS category_nid, field_category_name_value AS category_name, IFNULL( field_allocation_value_value, 0 ) allocation, field_priority_value category_priority
-						FROM {content_type_allocation_rules_description} d
-						LEFT JOIN {content_type_allocation_rules} r ON d.nid = r.field_rules_description_id_nid
-						INNER JOIN {content_type_blocks} b ON b.nid = r.field_rules_block_id_nid
-						WHERE r.field_rules_block_id_nid = %d
-						ORDER BY field_priority_value ', $blockNID);
+		FROM {content_type_allocation_rules_description} d
+		LEFT JOIN {content_type_allocation_rules} r ON d.nid = r.field_rules_description_id_nid
+		INNER JOIN {content_type_blocks} b ON b.nid = r.field_rules_block_id_nid
+		WHERE r.field_rules_block_id_nid = %d
+		ORDER BY field_priority_value ', $blockNID);
   //if(db_affected_rows($rs) <= 0) return false; else return true;
   return $rs;
 }
@@ -2946,7 +2946,7 @@ function DateAdd($interval, $number, $date) {
 
 function get_reservation_info($studentUID){
   
-  $sql = "SELECT field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name 
+  $sql = "SELECT field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, Date_Format( field_reservation_date_value, '%%D %%b, %%Y' ) as reservation_date, Date_Format( field_expiry_date_value, '%%D %%b, %%Y' )  as expiry_date
   		  FROM {content_type_hostels} cth, {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr 
   		  WHERE ctr.nid=ctrr.field_room_id_nid AND ctr.field_block_id_nid=ctb.nid AND ctb.field_hostel_id_nid=cth.nid
   		  AND ctrr.field_student_id_uid=%d ";
@@ -3027,7 +3027,7 @@ function hostel_allocation_room_reservation_report(){
 
 
 function hostel_allocation_show_reserved_room($studentUID){
-	
+  
   $reservedInfo = get_reservation_info($studentUID);
   
   if(db_affected_rows($reservedInfo) > 0){
@@ -3092,6 +3092,14 @@ function hostel_allocation_show_reserved_room($studentUID){
        <td style='width:200px;'>Room Number:</td>
        <td>". $rs->room_name ."</td>
      </tr>
+      <tr>
+       <td style='width:200px;'>Reservation Date:</td>
+       <td>". $rs->reservation_date ."</td>
+     </tr>
+      <tr>
+       <td style='width:200px;'>Expiry Date:</td>
+       <td>". $rs->expiry_date ."</td>
+     </tr>
    </table>
    </div>";
   }	
@@ -3102,40 +3110,101 @@ function hostel_allocation_show_reserved_room($studentUID){
 
 
 //revoke reservation starts here
-function hostel_allocation_revoke_expired_reservation(){
+function hostel_allocation_revoke_expired_reservation($studentUID=0){
 
-  $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid FROM content_type_room_reservation WHERE field_expiry_date_value < NOW() ";	
-  $rs = db_query($sql);
+  if($studentUID > 0) {//the student wishes to revoke his/her allocation
+    $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid FROM content_type_room_reservations WHERE field_student_id_uid =%d ";	
+    $rs = db_query($sql, $studentUID);
   
-  if(db_affected_rows($rs) <= 0) return;
-  
-  while($row = db_fetch_object($rs)){
-  	  
-    //reverse room statistics entry
-    $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
-    db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
+    if(db_affected_rows($rs) <= 0) return;
     
-    $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' ";
-    db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
-  	  
-    db_query('COMMIT');
-    
-    //get the room info
-    $roomInfo = get_rooms($row->field_room_id_nid, false);
-    
-    //reverse block statistics entry
-    $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
-    db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
-    
-    $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
-    db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
-  	  
-    db_query('COMMIT');
-  	  
-    node_delete($row->nid);
   }
+  else { //test for all expired reservation
+		
+    $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid FROM content_type_room_reservations WHERE field_expiry_date_value < NOW() ";	
+    $rs = db_query($sql);
+  
+    if(db_affected_rows($rs) <= 0) return;
+  }
+  
+    while($row = db_fetch_object($rs)){
+      //get the room info
+      $roomInfo = get_rooms($row->field_room_id_nid, false);
+    
+      //reverse room statistics entry
+      $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
+      db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
+    
+      $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' ";
+      db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
+  	  
+      db_query('COMMIT');
+    
+      
+      //reverse block statistics entry
+      $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+      db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
+    
+      $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+      db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
+  	  
+      db_query('COMMIT');
+      
+      //reverse room room reservations
+      //$sql = "DELETE FROM content_type_room_reservations WHERE nid=%d";
+      //db_query($sql, $row->nid);
+      
+      //node_delete($row->nid);
+      // Copied from node_delete(), but want to bypass access control.
+    $node = node_load($row->nid);
+
+    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+
+    // Call the node-specific callback (if any):
+    node_invoke($node, 'delete');
+    node_invoke_nodeapi($node, 'delete');
+
+    // Clear the page and block caches.
+    cache_clear_all();
+
+    // Remove this node from the search index if needed.
+    if (function_exists('search_wipe')) {
+      search_wipe($node->nid, 'node');
+    }
+    }
+  
 	
  
+}
+
+
+function hostel_allocation_revoke_expired_reservation_form(){
+  global $EDUERPstudentInitiated;
+  
+  $form['#title'] = 'Revoke Room Reservation';
+  
+  $form['studUID'] = array(
+    '#title' => 'Student UID',
+    '#type' => 'hidden',
+    '#value' => $EDUERPstudentInitiated
+    );
+    
+    $form['submit'] = array('#id' => 'next', '#value' => 'Revoke My Reservation Now', '#type' => 'submit');
+    
+    return $form;
+
+}
+
+
+function hostel_allocation_revoke_expired_reservation_form_submit($form, &$form_state){
+  $values = $form_state['values'];
+  
+
+  hostel_allocation_revoke_expired_reservation($values['studUID']);
+  drupal_set_message('The Reservaion was revoked successfully!');
+  
+	
 }
 //revoke reservation ends here
 

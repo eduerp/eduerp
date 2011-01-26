@@ -4500,7 +4500,9 @@ function student_user($type, &$edit, &$user, $category = NULL) {
 
 //Israel's functions starts here
 function student_hostel_reservation(){
-  global $user;
+  global $user, $EDUERPstudentInitiated;
+  
+  $EDUERPstudentInitiated = $user->uid;
   ob_start();
   $html = "";
   $student_profile = new UserProfile($user->uid);
@@ -4511,6 +4513,9 @@ function student_hostel_reservation(){
   elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
     drupal_set_message('Hostel Reservation already exists!');
     $html = hostel_allocation_show_reserved_room($user->uid);
+    $html .= "<br /><hr /><br />";
+    $html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
+    $html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
     
   }
   elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student 
