@@ -7930,15 +7930,6 @@ function get_student_unregistered_courses($studentUID, $session, $semester) {
 
 function update_credit_load_registered($uid, $session, $semester) {
   $sql = "
-    SELECT SUM(c.field_creditload_value) AS total_registered
-    FROM {content_type_student_gpa} gpa
-    INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
-    INNER JOIN {content_type_course_instance} ci ON sg.field_course_instance_nid = ci.nid
-    INNER JOIN {content_type_course} c ON ci.field_course_id_nid = c.nid
-    WHERE
-      gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
-      sg.field_dropped_value = 0";
-  $sql = "
     SELECT SUM(sg.field_credit_load_sg_value) AS total_registered
     FROM {content_type_student_gpa} gpa
     INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
