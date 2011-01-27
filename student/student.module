@@ -1099,7 +1099,7 @@ function student_course_form_validate($form, &$form_state) {
           nsprox.type='student_profile' AND
           nsprox.vid=sprox.vid
         )";
-  // The NOT IN... suppresses courses failed in previous semesters which should not be counted towards registered credit
+  // The NOT IN... suppresses courses failed in previous semesters which should not be counted towards registered credit (see same SQL in update_credit_load_registered())
   // The test for $currentlevelcis removed (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates and new failed test added)
   $result = db_query($sql, $cis1, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '1');
   $row = db_fetch_object($result);
