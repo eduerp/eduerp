@@ -7974,9 +7974,16 @@ function update_credit_load_registered($uid, $session, $semester) {
           nsprox.vid=sprox.vid
         )";
     $result = db_query($sql, $uid, $session, $semester, $uid, $session, $semester);
+
+//###################################################
+drupal_set_message('SQL full');
+
   }
   else {
     $result = db_query($sql, $uid, $session, $semester);
+//###################################################
+drupal_set_message('SQL short');
+
   }
   $r = db_fetch_object($result);
 
@@ -7984,9 +7991,6 @@ function update_credit_load_registered($uid, $session, $semester) {
     WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
   db_query($sql, $r->total_registered, $uid, $session, $semester);
   cache_clear_all('content:', content_cache_tablename(), TRUE);
-
-//###################################################
-drupal_set_message('SQL' . $sql);
 }
 
 
