@@ -2765,11 +2765,13 @@ function reserve_bedspace(&$reservationInfo){
         //update block statistics
         $sql = "UPDATE allocation_block_statistics SET alloted_number = alloted_number + 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
         $val = db_query($sql, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
-    
+        
+        db_query('COMMIT');
+        
         //get max reservation duration
         $resDuration = db_fetch_object(db_query("SELECT field_settings_value_value duration FROM content_type_allocation_settings WHERE field_settings_name_value LIKE '%Reservation Duration%' LIMIT 1 "));
     
-        db_query('COMMIT');
+        
      
         $resDate = date('Y-m-d h:m:s');
         
@@ -2792,10 +2794,13 @@ function reserve_bedspace(&$reservationInfo){
     
         return true;
       }
+      else {
+         db_query('COMMIT'); //free all locks
+      }
     
     }
   //}
-  db_query('COMMIT'); //free all locks
+ 
   
   return false;
 }
@@ -3138,7 +3143,7 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0){
       $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' ";
       db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
   	  
-      db_query('COMMIT');
+      //db_query('COMMIT');
     
       
       //reverse block statistics entry
