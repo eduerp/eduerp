@@ -7967,23 +7967,16 @@ function update_credit_load_registered($uid, $session, $semester) {
           sgx.field_dropped_value=0 AND
           cix.field_course_id_nid=cx.nid AND
           cix.field_course_id_nid=pcx.course_id AND
-          CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+          CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)=<'%s%s' AND
           pcx.programme_id=sprox.field_profile_first_choice_nid AND
           nsprox.uid=sgx.field_mat_no_uid AND
           nsprox.type='student_profile' AND
           nsprox.vid=sprox.vid
         )";
     $result = db_query($sql, $uid, $session, $semester, $uid, $session, $semester);
-
-//###################################################
-drupal_set_message('SQL full');
-
   }
   else {
     $result = db_query($sql, $uid, $session, $semester);
-//###################################################
-drupal_set_message('SQL short');
-
   }
   $r = db_fetch_object($result);
 
