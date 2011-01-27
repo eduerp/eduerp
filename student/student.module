@@ -100,14 +100,14 @@ function student_menu() {
     'access arguments' => array('student list students'),
     'type' => MENU_NORMAL_ITEM,
   );
-  
+
   $items['student/hostelreservation'] = array(
     'title' => 'Hostel Reservation',
     'page callback' => 'student_hostel_reservation',
     'access arguments' => array('student course'),
     'type' => MENU_NORMAL_ITEM,
   );
-   
+
   return $items;
 }
 
@@ -1066,8 +1066,42 @@ function student_course_form_validate($form, &$form_state) {
       pc.programme_id=%d AND
       pc.level='%s' AND
       pc.semester='1'";
-  // The test for $currentlevelcis might be redundant? (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates)
-  $result = db_query($sql, $cis1, $currentlevelcis, $user_profile->profile_first_choice, $user_profile->profile_level_name);
+  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+    FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
+    WHERE
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1' AND
+      ci.field_course_id_nid=c.nid AND
+      c.field_code_value NOT IN(
+        SELECT DISTINCT
+          cx.field_code_value
+        FROM
+          {content_type_student_grades} sgx,
+          {content_type_course_instance} cix,
+          {content_type_course} cx,
+          {program_course} pcx,
+          {node} nsprox,
+          {content_type_student_profile} sprox
+        WHERE
+          IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+          sgx.field_mat_no_uid=%d AND
+          sgx.field_course_instance_nid=cix.nid AND
+          sgx.field_examscorelocked_value>0 AND
+          sgx.field_dropped_value=0 AND
+          cix.field_course_id_nid=cx.nid AND
+          cix.field_course_id_nid=pcx.course_id AND
+          CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+          pcx.programme_id=sprox.field_profile_first_choice_nid AND
+          nsprox.uid=sgx.field_mat_no_uid AND
+          nsprox.type='student_profile' AND
+          nsprox.vid=sprox.vid
+        )";
+  // The NOT IN... suppresses courses failed in previous semesters which should not be counted towards registered credit
+  // The test for $currentlevelcis removed (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates and new failed test added)
+  $result = db_query($sql, $cis1, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '1');
   $row = db_fetch_object($result);
   if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
   if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
@@ -1086,7 +1120,40 @@ function student_course_form_validate($form, &$form_state) {
         pc.programme_id=%d AND
         pc.level='%s' AND
         pc.semester='2'";
-    $result = db_query($sql, $cis2, $currentlevelcis, $user_profile->profile_first_choice, $user_profile->profile_level_name);
+    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+      FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
+      WHERE
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='1' AND
+        ci.field_course_id_nid=c.nid AND
+        c.field_code_value NOT IN(
+          SELECT DISTINCT
+            cx.field_code_value
+          FROM
+            {content_type_student_grades} sgx,
+            {content_type_course_instance} cix,
+            {content_type_course} cx,
+            {program_course} pcx,
+            {node} nsprox,
+            {content_type_student_profile} sprox
+          WHERE
+            IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+            sgx.field_mat_no_uid=%d AND
+            sgx.field_course_instance_nid=cix.nid AND
+            sgx.field_examscorelocked_value>0 AND
+            sgx.field_dropped_value=0 AND
+            cix.field_course_id_nid=cx.nid AND
+            cix.field_course_id_nid=pcx.course_id AND
+            CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+            pcx.programme_id=sprox.field_profile_first_choice_nid AND
+            nsprox.uid=sgx.field_mat_no_uid AND
+            nsprox.type='student_profile' AND
+            nsprox.vid=sprox.vid
+          )";
+    $result = db_query($sql, $cis2, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '2');
     $row = db_fetch_object($result);
     if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
     if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
@@ -4501,14 +4568,14 @@ function student_user($type, &$edit, &$user, $category = NULL) {
 //Israel's functions starts here
 function student_hostel_reservation(){
   global $user, $EDUERPstudentInitiated;
-  
+
   $EDUERPstudentInitiated = $user->uid;
   ob_start();
   $html = "";
   $student_profile = new UserProfile($user->uid);
   if($student_profile->profile_jambno == ""){
     drupal_set_message('Your Student Profile may not have been properly setup!');
- 
+
   }
   elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
     drupal_set_message('Hostel Reservation already exists!');
@@ -4516,11 +4583,11 @@ function student_hostel_reservation(){
     $html .= "<br /><hr /><br />";
     $html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
     $html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
-    
+
   }
-  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student 
+  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student
     //allocation info will be displayed here
-    
+
   }
   else {
     //since this is coming from a logged in student, we'll try to simulate login in the hostel module by passing the studentUID
