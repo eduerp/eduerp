@@ -7944,7 +7944,11 @@ function update_credit_load_registered($uid, $session, $semester) {
     INNER JOIN {content_type_course} c ON ci.field_course_id_nid = c.nid
     WHERE
       gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
-      sg.field_dropped_value = 0 AND
+      sg.field_dropped_value = 0";
+  if ($semester != '3') {
+      // Suppress courses failed in previous semesters which should not be counted towards registered credit (see same SQL in student_course_form_validate())
+      // (except that in semester 3 they should be included)
+      $sql .= " AND
       c.field_code_value NOT IN(
         SELECT DISTINCT
           cx.field_code_value
@@ -7969,14 +7973,20 @@ function update_credit_load_registered($uid, $session, $semester) {
           nsprox.type='student_profile' AND
           nsprox.vid=sprox.vid
         )";
-  // The NOT IN... suppresses courses failed in previous semesters which should not be counted towards registered credit (see same SQL in student_course_form_validate())
-  $result = db_query($sql, $uid, $session, $semester, $uid, $session, $semester);
+    $result = db_query($sql, $uid, $session, $semester, $uid, $session, $semester);
+  }
+  else {
+    $result = db_query($sql, $uid, $session, $semester);
+  }
   $r = db_fetch_object($result);
 
   $sql = "UPDATE {content_type_student_gpa} gpa1 SET field_credit_load_registered_value = %d
     WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
   db_query($sql, $r->total_registered, $uid, $session, $semester);
   cache_clear_all('content:', content_cache_tablename(), TRUE);
+
+//###################################################
+drupal_set_message('SQL' . $sql);
 }
 
 
