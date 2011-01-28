@@ -7930,11 +7930,9 @@ function get_student_unregistered_courses($studentUID, $session, $semester) {
 
 function update_credit_load_registered($uid, $session, $semester) {
   $sql = "
-    SELECT SUM(c.field_creditload_value) AS total_registered
+    SELECT SUM(sg.field_credit_load_sg_value) AS total_registered
     FROM {content_type_student_gpa} gpa
     INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
-    INNER JOIN {content_type_course_instance} ci ON sg.field_course_instance_nid = ci.nid
-    INNER JOIN {content_type_course} c ON ci.field_course_id_nid = c.nid
     WHERE
       gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
       sg.field_dropped_value = 0";
@@ -7942,15 +7940,46 @@ function update_credit_load_registered($uid, $session, $semester) {
     SELECT SUM(sg.field_credit_load_sg_value) AS total_registered
     FROM {content_type_student_gpa} gpa
     INNER JOIN {content_type_student_grades} sg ON gpa.nid = sg.field_student_gpa_nid
+    INNER JOIN {content_type_course_instance} ci ON sg.field_course_instance_nid = ci.nid
+    INNER JOIN {content_type_course} c ON ci.field_course_id_nid = c.nid
     WHERE
       gpa.field_student_ref_gpa_uid = %d AND gpa.field_sess_name_gpa_value = '%s' AND gpa.field_semester_name_gpa_value = '%s' AND
       sg.field_dropped_value = 0";
-  $result = db_query($sql, $uid, $session, $semester);
+  if ($semester != '3') {
+      // Suppress courses failed in previous semesters which should not be counted towards registered credit (see same SQL in student_course_form_validate())
+      // (except that in semester 3 they should be included)
+      $sql .= " AND
+      c.field_code_value NOT IN(
+        SELECT DISTINCT
+          cx.field_code_value
+        FROM
+          {content_type_student_grades} sgx,
+          {content_type_course_instance} cix,
+          {content_type_course} cx,
+          {program_course} pcx,
+          {node} nsprox,
+          {content_type_student_profile} sprox
+        WHERE
+          IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+          sgx.field_mat_no_uid=%d AND
+          sgx.field_course_instance_nid=cix.nid AND
+          sgx.field_examscorelocked_value>0 AND
+          sgx.field_dropped_value=0 AND
+          cix.field_course_id_nid=cx.nid AND
+          cix.field_course_id_nid=pcx.course_id AND
+          CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+          pcx.programme_id=sprox.field_profile_first_choice_nid AND
+          nsprox.uid=sgx.field_mat_no_uid AND
+          nsprox.type='student_profile' AND
+          nsprox.vid=sprox.vid
+        )";
+    $result = db_query($sql, $uid, $session, $semester, $uid, $session, $semester);
+  }
+  else {
+    $result = db_query($sql, $uid, $session, $semester);
+  }
   $r = db_fetch_object($result);
 
-  // Note if any failed courses are being repeated for the semester, these will now all be included in the credit_load_registered.
-  // This is not the case for student self registration of courses (according to spec).
-  // This inconsistency will not affect system functionality (just display of credit_load_registered for a semester).
   $sql = "UPDATE {content_type_student_gpa} gpa1 SET field_credit_load_registered_value = %d
     WHERE gpa1.field_student_ref_gpa_uid = %d AND gpa1.field_sess_name_gpa_value = '%s' AND gpa1.field_semester_name_gpa_value = '%s'";
   db_query($sql, $r->total_registered, $uid, $session, $semester);
