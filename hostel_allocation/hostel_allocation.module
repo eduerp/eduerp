@@ -1691,8 +1691,8 @@ function hostel_allocation_create_edit_allocation_rules_setup_form_validate($for
   
   //get available categories
   $rs = db_query('SELECT d.nid AS category_nid, field_category_name_value AS category_name, IFNULL( field_allocation_value_value, 0 ) allocation
-						FROM {content_type_allocation_rules_description} d
-						LEFT JOIN {content_type_allocation_rules} r ON d.nid = r.field_rules_description_id_nid ');
+		FROM {content_type_allocation_rules_description} d
+		LEFT JOIN {content_type_allocation_rules} r ON d.nid = r.field_rules_description_id_nid AND r.field_rules_block_id_nid=%d',arg(2) );
   
   while($row = db_fetch_object($rs)){
     //echo $row->category_nid . '<br />';
