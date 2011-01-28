@@ -2132,4 +2132,12 @@ function grading_cron() {
     db_query("DELETE FROM cron_notification WHERE approver_uid=%d AND student_uid=%d AND gradestext='%s' AND programme='%s'", $notification->approver_uid, $notification->student_uid, $notification->gradestext, $notification->programme);
   }
 }
+
+function grading_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'grading'),
+  );
+}
+
 ?>
