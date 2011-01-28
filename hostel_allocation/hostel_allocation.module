@@ -2387,6 +2387,14 @@ function hostel_allocation_enter_mat_number_form(){
        '#default_value' => 'random' //$_SESSION['student']['data']->gender
       );
     }
+    else {
+       $form['reservation_type'] = array(
+       '#type' => 'hidden',
+       '#required' => TRUE,
+       '#value' => 'random' 
+      );
+    	    
+    }
     $form['submit'] = array('#id' => 'next', '#value' => 'Continue', '#type' => 'submit');
     
     return $form;
@@ -2450,11 +2458,12 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
     
       $programmeName = get_programmes($student_profile->profile_first_choice, true);
       $_SESSION['eduerp_reserve_room']['programme_name'] = $programmeName[$student_profile->profile_first_choice];
-    
-      if(! $EDUERPstudentInitiated) 
+   
+     // if(! $EDUERPstudentInitiated) 
         $_SESSION['eduerp_reserve_room']['reservation_type'] = $values['reservation_type'];
-      else
-        $_SESSION['eduerp_reserve_room']['reservation_type'] = 'random';
+     // else
+     //   $_SESSION['eduerp_reserve_room']['reservation_type'] = 'random';
+     
     //}
     
     $_SESSION['eduerp_reserve_room']['hostel_nid'] = $values['hostel_nid'];
