@@ -8764,6 +8764,11 @@ function create_course_weighting_entries(&$values) {
     db_query($sql, $values['course_nid'], $values['caNum'], $values['caApproval'], $values['ca1'], $values['ca2'], $values['ca3'], $values['ca4'], $values['exam_mark']);
 
   }
-
 }
-?>
+
+function staff_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'staff'),
+  );
+}
