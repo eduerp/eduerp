@@ -465,7 +465,7 @@ $handler->override_option('cache', array(
   'type' => 'none',
 ));
 $handler->override_option('footer', '<?php
-require_once \'./\' . drupal_get_path(\'module\', \'veritas\') . \'/grading/course_grades_footer.inc\';
+require_once \'./\' . drupal_get_path(\'module\', \'eduerp\') . \'/grading/course_grades_footer.inc\';
 ?>');
 $handler->override_option('footer_format', '3');
 $handler->override_option('footer_empty', 0);
