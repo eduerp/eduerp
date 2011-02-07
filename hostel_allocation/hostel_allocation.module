@@ -415,7 +415,7 @@ function hostel_allocation_create_edit_block_form() {
   //if (isset($_POST['hostel_nid'])) {
   if (arg(2) && is_valid_block(arg(2))) {
     if (empty($_POST['block_name'])) {
-      $result = db_query('SELECT field_block_name_value AS block_name, field_block_type_value AS block_type, field_block_status_value AS block_status, field_hostel_id_nid AS hostel_nid FROM {content_type_blocks} WHERE nid = %d', arg(2));
+      $result = db_query('SELECT field_block_name_value AS block_name, field_block_type_value AS block_type, field_block_status_value AS block_status, field_hostel_id_nid AS hostel_nid, field_price_value AS price FROM {content_type_blocks} WHERE nid = %d', arg(2));
       $block_edit_record = db_fetch_object($result);
     }
   }
@@ -461,6 +461,15 @@ function hostel_allocation_create_edit_block_form() {
     );
 
   }
+  
+  $form['price'] = array(
+    '#title' => 'Price e.g 1000 (without comma and period!)',
+    '#type' => 'textfield',
+    '#size' => 6,
+    '#required' => TRUE
+  );
+  if ($block_edit_record) $form['price']['#value'] = $block_edit_record->price;
+  
   $form['submit'] = array(
     '#value' => 'Create Block',
     '#type' => 'submit'
@@ -489,6 +498,7 @@ function hostel_allocation_display_available_blocks($forRules=false) {
         <th><b>Hostel Name</b></th>
         <th><b>Block Name</b></th>
         <th><b>Block Type</b></th>
+        <th><b>Price</b></th>
         <th><b>Block Status</b></th>
         <th><b>Any Rules</b></th>
       </tr>";$i = 1;
@@ -502,6 +512,7 @@ function hostel_allocation_display_available_blocks($forRules=false) {
              <td>". $v['hostel_name'] ."</td>
              <td><a href='". url($url . $v['block_nid'])  . "'>". $v['block_name'] ."</a></td>
              <td>". $blockTypes[$v['block_type']] ."</td>
+             <td>". $v['price'] ."</td>
              <td>". $v['block_status'] ."</td>
              <td>". (is_block_existing_in_rules($v['block_nid']) ? 'Yes' : 'No') ."</td>
            </tr>";
@@ -533,7 +544,7 @@ function hostel_allocation_display_available_blocks($forRules=false) {
 
 function get_blocks($block_nid = 0, $forCombo = true, $onlyActive=false) {
   if($block_nid == 0){
-    $sql = "SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
+    $sql = "SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status, IFNULL(field_price_value, 'Not Set') AS price
       FROM {content_type_blocks} b 
       INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
       ";
@@ -543,7 +554,7 @@ function get_blocks($block_nid = 0, $forCombo = true, $onlyActive=false) {
     $r = db_query($sql);
   }
   else{
-    $sql = "SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status
+    $sql = "SELECT b.nid nid, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_block_type_value AS block_type, IF(field_block_status_value = 1, 'Active', 'Not Active') AS block_status, IFNULL(field_price_value, 'Not Set') AS price
       FROM {content_type_blocks} b 
       INNER JOIN {content_type_hostels} h ON b.field_hostel_id_nid=h.nid
       WHERE b.nid = %d ";
@@ -565,6 +576,7 @@ function get_blocks($block_nid = 0, $forCombo = true, $onlyActive=false) {
         $blocks[$f->nid]['block_type'] = $f->block_type;
         $blocks[$f->nid]['block_status'] = $f->block_status;
         $blocks[$f->nid]['block_nid'] = $f->nid;
+        $blocks[$f->nid]['price'] = $f->price;
       }
 
     }
@@ -617,9 +629,13 @@ function get_blocks_in_hostel($hostel_nid = 0, $forCombo = true, $gender='none')
 
 function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
  // if (isset($_POST['hostel_nid'])) {//validate MODIFY
-  if(arg(2) && is_valid_block(arg(2))) {
+ if(arg(2)) {
+   if(is_valid_block(arg(2))) {
     if (is_Block_Name_Existing($form_state['values']['block_name'], $form_state['values']['hostel_nid'], arg(2)))
       form_set_error('block_name', Error_Types(132));
+   }
+   else
+     form_set_error('block_name', Error_Types());
 
   }
   else {//validate CREATE
@@ -627,19 +643,72 @@ function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
       form_set_error('block_name', Error_Types(132));
   }
 
+  if (! preg_match("/^[0-9]{1,6}$/", $form_state['values']['price'])) {
+    form_set_error('price', Error_Types(144));
+    
+  }
 
 }
 
 
+function hostel_allocation_create_modify_product(&$productInfo){
+  switch($productInfo['op']):
+    case 'new':
+      $node = new stdClass();
+      $node->type = 'product';
+      $node->title =  $productInfo['title']; //'My product title'; // This is what you call the product. It could be anything
+      $node->uid = 1; // We'll like the product to be created by the admin user
+      $node->model = 'PRODUCT-SKU-001'; // This is compulsory and is just a representation of the stock keeping unit
+      $node->sell_price = $productInfo['price']; // This is the amount the user will pay for this product
+      $node->shippable = 0; // It's not likely that the product will be shippable
+      node_save($node);
+      break;
+    case 'update':
+      $node = node_load($productInfo['productNID']);
+      $node->title =  $productInfo['title'];
+      $node->sell_price = $productInfo['price'];
+      node_save($node);
+      break;
+  endswitch;
+  return $node->nid;
+	
+}
 function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
   //if (isset($form_state['values']['hostel_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['hostel_nid'])) {//the user is trying to edit a given hostel. OK!
+  
+  //get the hostel name
+  $hostelNID = $form_state['values']['hostel_nid'];
+  $hostelInfo = get_hostels($hostelNID, false);
+  $productInfo = array(
+    	    'title'=> $form_state['values']['block_name'] .', '.  $hostelInfo[$hostelNID]['hostel_name'] .' Hostel ('. $hostelInfo[$hostelNID]['hostel_description'] .')', 
+    	    'price'=> $form_state['values']['price'],
+    	    'op' => 'new'
+    	    );
+    
   if (arg(2)) {//the user is trying to edit a given hostel. OK!
+    //first check if product exist for this block else create it
+    $rs = db_query("SELECT IFNULL(field_uc_product_id_nid, '0') nid FROM {content_type_blocks} WHERE nid=%d", arg(2));
+    $ctbProductID = db_fetch_object($rs);
+    if($ctbProductID->nid == 0) {//create product info for this block
+      $ucProductNID = hostel_allocation_create_modify_product($productInfo);
+    }
+    else {//update price info for the product
+      $productInfo['op'] = 'update'; 
+      $productInfo['productNID'] = $ctbProductID->nid;
+      $ucProductNID = hostel_allocation_create_modify_product($productInfo);
+    	    
+    }
+  	  
     $node = node_load(arg(2));
     $node->title                           = $form_state['values']['block_name'];
     $node->field_block_name[0]['value']    = $form_state['values']['block_name'];
     $node->field_block_type[0]['value']    = $form_state['values']['block_type'];
     $node->field_block_status[0]['value']  = $form_state['values']['block_status'];
-    $node->field_hostel_id[0]['nid']  = $form_state['values']['hostel_nid'];
+    $node->field_hostel_id[0]['nid']       = $form_state['values']['hostel_nid'];
+    $node->field_price[0]['value'] 	   = $form_state['values']['price'];
+    
+    if($ctbProductID->nid == 0)//update ctb (content_type_product) only when product nid is null
+      $node->field_uc_product_id[0]['nid']     = $ucProductNID;
 
     drupal_set_message($form_state['values']['block_name'] . ' Block was modified successfully!<br />');
     node_save($node);
@@ -647,6 +716,13 @@ function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
     //unset($_SESSION['eduerp_hostel_nid']);
   }
   else {
+    
+    
+    //first create the block as a product in ubercart	
+    $ucProductNID = hostel_allocation_create_modify_product($productInfo);
+    
+  	  
+    //now create the block proper 
     $node = new stdClass();
     $node->type                              = 'blocks';
     $node->uid                               = 1;  // Admin
@@ -655,10 +731,12 @@ function hostel_allocation_create_edit_block_form_submit($form, &$form_state) {
     $node->sticky                            = 0;
     $node->comment                           = 0;
     $node->title                             = $form_state['values']['block_name'];
-    $node->field_block_name[0]['value'] 	 = $form_state['values']['block_name'];
-	$node->field_block_type[0]['value'] 	 = $form_state['values']['block_type'];
-	$node->field_block_status[0]['value'] 	 = $form_state['values']['block_status'];
-    $node->field_hostel_id[0]['nid'] 	 = $form_state['values']['hostel_nid'];
+    $node->field_block_name[0]['value']      = $form_state['values']['block_name'];
+    $node->field_block_type[0]['value']      = $form_state['values']['block_type'];
+    $node->field_block_status[0]['value']    = $form_state['values']['block_status'];
+    $node->field_hostel_id[0]['nid'] 	     = $form_state['values']['hostel_nid'];
+    $node->field_price[0]['value'] 	     = $form_state['values']['price'];
+    $node->field_uc_product_id[0]['nid']     = $ucProductNID; //$form_state['values']['hostel_nid'];
 
     //$department = $node->nid;
 
@@ -2721,8 +2799,9 @@ function reserve_bedspace(&$reservationInfo){
   */
   
   
-  $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs, {content_type_rooms} ctr 
+  $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count, field_price_value AS price, field_uc_product_id_nid AS productNID FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs, {content_type_rooms} ctr, {content_type_blocks} ctb 
   WHERE ars.room_nid=ctr.nid AND ctr.field_block_id_nid=abs.block_nid 
+  AND abs.block_nid = ctb.nid
   AND (ars.reservation_count + ars.allocation_count) < ars.room_capacity  
   AND abs.alloted_number < abs.allocation_number
   AND abs.allocation_number > 0
@@ -2800,7 +2879,10 @@ function reserve_bedspace(&$reservationInfo){
         $node->field_reservation_category_id[0]['nid'] = $reservationInfo['category_nid'];
         
         node_save($node);
-    
+        
+        
+        //insert cart info for the student
+        uc_cart_add_item($row->productNID, 1, $data=array(), $reservationInfo['uid']);
         return true;
       }
       else {
@@ -3127,7 +3209,11 @@ function hostel_allocation_show_reserved_room($studentUID){
 function hostel_allocation_revoke_expired_reservation($studentUID=0){
 
   if($studentUID > 0) {//the student wishes to revoke his/her allocation
-    $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid FROM content_type_room_reservations WHERE field_student_id_uid =%d ";	
+    $sql = "SELECT ctrr.nid nid, ctrr.field_room_id_nid, ctrr.field_reservation_category_id_nid, ctrr.field_student_id_uid AS studentUID, field_uc_product_id_nid productNID 
+    FROM {content_type_room_reservations} ctrr, {content_type_blocks} ctb, {content_type_rooms} ctr
+    WHERE ctrr.field_room_id_nid=ctr.nid
+      AND ctr.field_block_id_nid=ctb.nid
+      AND ctrr.field_student_id_uid =%d ";	
     $rs = db_query($sql, $studentUID);
   
     if(db_affected_rows($rs) <= 0) return;
@@ -3135,13 +3221,19 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0){
   }
   else { //test for all expired reservation
 		
-    $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid FROM content_type_room_reservations WHERE field_expiry_date_value < NOW() ";	
+    $sql = "SELECT nid, field_room_id_nid, field_reservation_category_id_nid, field_student_id_uid AS studentUID FROM content_type_room_reservations WHERE field_expiry_date_value < NOW() ";	
     $rs = db_query($sql);
   
     if(db_affected_rows($rs) <= 0) return;
   }
   
     while($row = db_fetch_object($rs)){
+      //get the student UID
+      $studentUID = $row->studentUID;
+      
+      //get the product NID
+      $productNID = $row->productNID;
+      
       //get the room info
       $roomInfo = get_rooms($row->field_room_id_nid, false);
     
@@ -3149,7 +3241,7 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0){
       $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
       db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
     
-      $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' ";
+      $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' AND reservation_count > 0 ";
       db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
   	  
       //db_query('COMMIT');
@@ -3159,10 +3251,11 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0){
       $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
       db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
     
-      $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+      $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' AND alloted_number > 0 ";
       db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
   	  
       db_query('COMMIT');
+      
       
       //reverse room room reservations
       //$sql = "DELETE FROM content_type_room_reservations WHERE nid=%d";
@@ -3170,22 +3263,29 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0){
       
       //node_delete($row->nid);
       // Copied from node_delete(), but want to bypass access control.
-    $node = node_load($row->nid);
+      $node = node_load($row->nid);
 
-    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
-    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+      db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+      db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
 
-    // Call the node-specific callback (if any):
-    node_invoke($node, 'delete');
-    node_invoke_nodeapi($node, 'delete');
+      // Call the node-specific callback (if any):
+      node_invoke($node, 'delete');
+      node_invoke_nodeapi($node, 'delete');
 
-    // Clear the page and block caches.
-    cache_clear_all();
+      // Clear the page and block caches.
+      cache_clear_all();
 
-    // Remove this node from the search index if needed.
-    if (function_exists('search_wipe')) {
-      search_wipe($node->nid, 'node');
-    }
+      // Remove this node from the search index if needed.
+      if (function_exists('search_wipe')) {
+        search_wipe($node->nid, 'node');
+      }
+      
+      //now remove the cart info from the student's profile
+      //get the product nid
+      //$sql = "SELECT field_uc_product_id_nid FROM {content_type_blocks} ctb, content_type_rooms ctr";
+      uc_cart_remove_item($productNID, $studentUID, $data = array('module' => 'uc_product'));
+     
+      
     }
   
 	
@@ -3221,6 +3321,17 @@ function hostel_allocation_revoke_expired_reservation_form_submit($form, &$form_
 	
 }
 //revoke reservation ends here
+
+
+//reservation payments starts here
+function hook_order($op, &$order, $arg2) {
+  switch ($op) {
+    case 'save':
+      // Do something to save payment info!
+      break;
+  }
+}
+//reservation payment ends here
 
 
 

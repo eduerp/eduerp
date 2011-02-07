@@ -4460,6 +4460,7 @@ function Error_Types($num = 0) {
   case '141': $msg = $prifix1 . 'No Allocation Rules exists for the Block!'; break;
   case '142': $msg = $prifix1 . 'The operation was not successful. No Allocation Rules exists for at least one of the Blocks!'; break;
   case '143': $msg = $prifix1 . 'The student may not have been properly setup!'; break;
+  case '144': $msg = $prifix1 . 'Invalid format specified for Price!'; break;
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
@@ -8764,11 +8765,6 @@ function create_course_weighting_entries(&$values) {
     db_query($sql, $values['course_nid'], $values['caNum'], $values['caApproval'], $values['ca1'], $values['ca2'], $values['ca3'], $values['ca4'], $values['exam_mark']);
 
   }
-}
 
-function staff_views_api() {
-  return array(
-    'api' => 2,
-    'path' => drupal_get_path('module', 'staff'),
-  );
 }
+?>
