@@ -15,14 +15,14 @@ function hostel_allocation_menu() {
   $items['hostel_allocation/create_modify_hostel']=array(
     'title'=>"Create or Modify Hostel",
     'page callback' => 'hostel_allocation_create_modify_hostel',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
   $items['hostel_allocation/create_modify_block']=array(
     'title'=>"Create or Modify Block",
     'page callback' => 'hostel_allocation_create_modify_block',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
@@ -30,42 +30,42 @@ function hostel_allocation_menu() {
   $items['hostel_allocation/create_modify_room']=array(
     'title'=>"Create or Modify Room",
     'page callback' => 'hostel_allocation_create_modify_room',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
   $items['hostel_allocation/create_modify_category']=array(
     'title'=>"Re-order Allocation Category",
     'page callback' => 'hostel_allocation_create_modify_category',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
   $items['hostel_allocation/create_modify_allocation_rules']=array(
     'title'=>"Create or Modify Allocation Rules",
     'page callback' => 'hostel_allocation_create_modify_allocation_rules',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
   $items['hostel_allocation/modify_global_settings']=array(
     'title'=>"Modify Global Settings",
     'page callback' => 'hostel_allocation_modify_global_settings',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
   $items['hostel_allocation/direct_reservation']=array(
     'title'=>"Direct Room Reservation",
     'page callback' => 'hostel_allocation_direct_room_reservation',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   
   $items['hostel_allocation/reservation_rpts']=array(
     'title'=>"Room Reservation Reports",
     'page callback' => 'hostel_allocation_room_reservation_report',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_CALLBACK,
   );
   return $items;
@@ -117,24 +117,31 @@ function hostel_admin() {
 function hostel_allocation_create_modify_hostel() {
   global $user;
   ob_start();
+  //$isAuthorized = false;
+  //if (staff_has_eduerp_role($user->uid, 0, 0, array('Student Affairs Officer')))
+    $isAuthorized = true;
+  
+  //drupal_set_message($user->uid);
   //perform single check for editing
   $forModify = (arg(2) && is_valid_hostel(arg(2))) ? true : false;
   
-  $isAuthorized = true;
+  
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
   echo '<br /><hr /><br />';
   
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
-  $navi .= '<br /><hr /><br />';
-  echo $navi;
+  echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
+  
   
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    if(arg(2))
+      drupal_set_message(Error_Types(105));
+    else
+      drupal_set_message(Error_Types(104));
 
   }
   else {
-
+    echo $navi = '<br /><hr /><br />';
     if($forModify)
       echo "<b>Modify Hostel</b> - Please make any required change(s) to the hostel<br />";
     else
@@ -2671,9 +2678,17 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   $studCate = array();
   
   //test for freshman
-  if(! isset($_SESSION['eduerp_reserve_room']['mat_num']) || $_SESSION['eduerp_reserve_room']['mat_num'] == "" || $_SESSION['eduerp_reserve_room']['level_name'] == '100')
-    $studCate[] = "freshmen"; //$studCate['freshman'] = true;
+  if(substr(student_next_level($_SESSION['eduerp_reserve_room']['student_uid'], variable_get('eduerp_current_session', '')), 0, 1) == 1)
+    $studCate[] = "freshmen"; 
+    
+    /*
+    ! isset($_SESSION['eduerp_reserve_room']['mat_num']) || 
+  	  $_SESSION['eduerp_reserve_room']['mat_num'] == "" || 
+    
+    */
+    //$studCate['freshman'] = true;
   
+    // $_SESSION['eduerp_reserve_room']['level_name'] == '100'
    
   //test for medical student
   if(abs($studProgramNode->field_program_type[0]['value']) == 3)
