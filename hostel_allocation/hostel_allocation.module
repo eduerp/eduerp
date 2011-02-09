@@ -2328,6 +2328,52 @@ function is_room_existing_in_room_statistics($room_nid, $session_name){
   return false;
 
 }
+
+
+function should_reservation_proceed(){
+  //check if start date has reached
+  $rs = db_query("SELECT field_settings_name_value AS name, field_settings_value_value AS value FROM {content_type_allocation_settings} ");
+  if(db_affected_rows($rs) <= 0) return Error_Types(146);
+  
+  $param = array(); //flag to make sure that all parameter test succeeded
+  
+  while($row = db_fetch_object($rs)){
+    //test for end date
+    if(substr(strtoupper(strtolower($row->name)), 0, 8) == "END DATE"){
+      $param[] = $row->value;
+      
+      if (date('Y-m-d') > $row->value){
+        return Error_Types(147);
+      }
+    	    
+    }
+    
+    //test for start date
+    if(substr(strtoupper(strtolower($row->name)), 0, 10) == "START DATE"){
+      $param[] = $row->value;
+       
+      if ($row->value > date('Y-m-d')){
+        return Error_Types(148);
+      }
+    	    
+    }
+  	  
+    //test for puased reservation
+    if(substr(strtoupper(strtolower($row->name)), 0, 17) == "PAUSE RESERVATION"){
+      $param[] = $row->value;
+       
+      if ($row->value == 0){
+        return Error_Types(149);
+      }
+    	    
+    }
+  }
+  
+  if(sizeof($param) < 3) return Error_Types(146);
+  
+  return '-1'; //proceed with reservation
+	
+}
 //prepare for allocation ends here
 
 
@@ -2335,6 +2381,7 @@ function is_room_existing_in_room_statistics($room_nid, $session_name){
 function hostel_allocation_direct_room_reservation($studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
+  
   
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
   $EDUERPstudentInitiated = $studentInitiated;
@@ -2347,6 +2394,17 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
   //else
   //  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   //$navi .= '<br /><hr /><br />';
+  
+  //check if reservation can proceed
+  $canProceed = should_reservation_proceed();
+  
+  if($canProceed != '-1') {
+    if( ! $studentInitiated)
+      echo $navi;
+    drupal_set_message($canProceed);
+    //echo 'ok';
+    return ob_get_clean();	  
+  }
   
   
   if (! $isAuthorized) {//Israel pls remember to take into account students that are coming
@@ -3349,7 +3407,7 @@ function hostel_allocation_order($op, &$order, $arg2) {
   switch ($op) {
     case 'load':
       if(! is_reservation_existing($order->uid)) {
-      	return array(array('pass' => FALSE, 'message' => t('Either your Reservation as expired or no Reservation information was found!')));
+      	return array(array('pass' => FALSE, 'message' => t('Either your Reservation has expired or no Reservation information was found!')));
       }  
     	    
     break;
