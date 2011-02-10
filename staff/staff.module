@@ -435,7 +435,7 @@ function _staff_ahah_render($fields, $name) {
 
 /*Function to get the staff permission.*/
 function staff_perm() {
-  return array('staff register','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments');
+  return array('staff register','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments', 'view grading');
 }
 
 
@@ -596,7 +596,7 @@ function eduerp_university_roles() {
 
 function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
   $result = db_query("SELECT er.role FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d", $uid, $department_id, $faculty_id);
-  
+
   while ($row = db_fetch_object($result)) {
     if (in_array($row->role, $roles)) return TRUE;
   }
@@ -4466,7 +4466,7 @@ function Error_Types($num = 0) {
   case '147': $msg = $prifix1 . 'Hostel Reservation period has expired!'; break;
   case '148': $msg = $prifix1 . 'Hostel Reservation period has not yet reached!'; break;
   case '149': $msg = $prifix1 . 'Hostel Reservation has been temporarily stopped. Please try again later!'; break;
-  	  
+
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
