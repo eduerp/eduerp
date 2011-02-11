@@ -434,13 +434,25 @@ function hostel_allocation_create_edit_block_form() {
     }
   }
   $form['#title'] = 'Create New Block';
-
-  $form['hostel_nid'] = array(
-    '#title' => 'Hostel Name',
-    '#type' => 'select',
-    '#options' => get_hostels(0, true), //array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only'),
-    '#required' => TRUE
-  );
+  if(! isset($block_edit_record)) {
+    $form['hostel_nid'] = array(
+      '#title' => 'Hostel Name',
+      '#type' => 'select',
+      '#options' => get_hostels(0, true), //array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only'),
+      '#required' => TRUE
+    );
+  }
+  else {
+    $form['hostel_nid'] = array(
+      '#title' => 'Hostel Name',
+      '#type' => 'select',
+      '#options' => get_hostels($block_edit_record->hostel_nid, true), //array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only'),
+      '#required' => TRUE
+    );  
+  	  
+  	  
+  	  
+  }
   if ($block_edit_record) $form['hostel_nid']['#value'] = $block_edit_record->hostel_nid;
 
   $form['block_name'] = array(
@@ -884,7 +896,7 @@ function hostel_allocation_create_edit_room_form() {
     $form['block_nid'] = array(
     '#title' => 'Block Name',
     '#type' => 'select',
-    '#options' => get_blocks(0, true),
+    '#options' => get_blocks($room_edit_record->block_nid, true),
     '#required' => TRUE,
     '#value' => $room_edit_record->block_nid
     );
