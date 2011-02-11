@@ -3744,7 +3744,7 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
   else { //test for all expired reservation
 
     $sql = "SELECT ctrr.nid nid, ctrr.field_room_id_nid, ctrr.field_reservation_category_id_nid, ctrr.field_student_id_uid AS studentUID, field_uc_product_id_nid productNID
-    FROM {content_type_room_reservations}, {content_type_rooms} ctr, {content_type_blocks} ctb
+    FROM {content_type_room_reservations} ctrr, {content_type_rooms} ctr, {content_type_blocks} ctb
     WHERE ctrr.field_room_id_nid=ctr.nid
       AND ctr.field_block_id_nid=ctb.nid
       AND ctrr.field_expiry_date_value < NOW() ";
