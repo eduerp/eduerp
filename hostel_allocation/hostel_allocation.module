@@ -3318,10 +3318,10 @@ function hostel_allocation_room_reservation_report($blockNID=0){
           $html .= "
            <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
              <td>". $i++ ."</td>
-			 <td>". $r->matno ."</td>
-             <td>". $r->hostel_name ."</td>
+	     <td>". $r->matno ."</td>
              <td>". $r->last_name ."</td>
              <td>". $r->first_name ."</td>
+             <td>". $r->hostel_name ."</td>
              <td>". $r->block_name ."</td>
              <td>". $r->room_name ."</td>
              <td>". $r->date_reserved ."</td>
@@ -3401,10 +3401,10 @@ function hostel_allocation_room_allocation_report($blockNID=0){
           $html .= "
            <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
              <td>". $i++ ."</td>
-			 <td>". $r->matno ."</td>
-             <td>". $r->hostel_name ."</td>
+	     <td>". $r->matno ."</td>
              <td>". $r->last_name ."</td>
              <td>". $r->first_name ."</td>
+             <td>". $r->hostel_name ."</td>
              <td>". $r->block_name ."</td>
              <td>". $r->room_name ."</td>
              <td>". $r->date_allocated ."</td>
@@ -3432,19 +3432,7 @@ function hostel_allocation_room_allocation_report($blockNID=0){
 function hostel_allocation_block_statistics_report($session, $blockNID=0){
  ob_start();
  $html = "";
- /*
-  $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count, field_price_value AS price, field_uc_product_id_nid AS productNID FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs, {content_type_rooms} ctr, {content_type_blocks} ctb
-  WHERE ars.room_nid=ctr.nid AND ctr.field_block_id_nid=abs.block_nid
-  AND abs.block_nid = ctb.nid
-  AND (ars.reservation_count + ars.allocation_count) < ars.room_capacity
-  AND abs.alloted_number < abs.allocation_number
-  AND abs.allocation_number > 0
-  AND abs.block_nid = %d
-  AND abs.session_name = '%s'
-  AND ctr.field_room_status_value = 1
-  LIMIT 50 ";
-
- */
+ 
  $sql = "SELECT cth.field_hostel_name_value hostel_name, ctb.field_block_name_value block_name, ctard.field_category_name_value category_name, abs.allocation_number, abs.alloted_number, abs.session_name session_name FROM {content_type_hostels} cth, {allocation_block_statistics} abs, {content_type_blocks} ctb, {content_type_allocation_rules_description} ctard
   WHERE
   abs.block_nid = ctb.nid
@@ -3458,12 +3446,7 @@ function hostel_allocation_block_statistics_report($session, $blockNID=0){
 
  $sql .= " ORDER BY hostel_name, block_name, category_name ";
 
-  //if($blockNID != 0)
-  //  $rs = db_query($sql, $session, $blockNID);
-  //else
-  //  $rs = db_query($sql, $session);
-
-
+  
  if($blockNID != 0){
    $blockInfo = get_blocks($blockNID, false);
    $html .="
