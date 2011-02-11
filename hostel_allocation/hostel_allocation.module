@@ -340,9 +340,16 @@ function hostel_allocation_display_available_hostels() {
 
 
 function get_hostels($hostel_nid = 0, $forCombo = true) {
-  $r = db_query("SELECT nid, field_hostel_name_value AS hostel_name, field_description_value AS hostel_description, IF(field_hostel_status_value = 1, 'Active', 'Not Active') AS hostel_status
+  if($hostel_nid != 0)
+    $r = db_query("SELECT nid, field_hostel_name_value AS hostel_name, field_description_value AS hostel_description, IF(field_hostel_status_value = 1, 'Active', 'Not Active') AS hostel_status
+      FROM {content_type_hostels}
+      WHERE nid=%d
+      ORDER BY field_hostel_name_value", $hostel_nid);
+  else
+    $r = db_query("SELECT nid, field_hostel_name_value AS hostel_name, field_description_value AS hostel_description, IF(field_hostel_status_value = 1, 'Active', 'Not Active') AS hostel_status
       FROM {content_type_hostels}
       ORDER BY field_hostel_name_value");
+    
   if (db_affected_rows($r) > 0 ){
     while ($f = db_fetch_object($r)){
       if($forCombo) {
@@ -839,8 +846,9 @@ function hostel_allocation_create_edit_room_form() {
 
     }
   }
+  
   $form['#title'] = 'Create New Room';
-   if (! $room_edit_record){
+   if (! isset($room_edit_record)){
 	  $form['hostel_nid'] = array(
 		'#title' => 'Hostel Name',
 		'#type' => 'select',
@@ -853,13 +861,13 @@ function hostel_allocation_create_edit_room_form() {
     $form['hostel_nid'] = array(
     '#title' => 'Hostel Name',
     '#type' => 'select',
-    '#options' => get_hostels(0, true),
-    '#disabled' => TRUE,
+    '#options' => get_hostels($room_edit_record->hostel_nid, true),
+    '#required' => TRUE
     );
    }
 
 
-  if (! $room_edit_record) {
+  if (! isset($room_edit_record)) {
     $form['block_nid'] = array(
     '#title' => 'Block Name',
     '#type' => 'select',
