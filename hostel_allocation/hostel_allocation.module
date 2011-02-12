@@ -3106,7 +3106,7 @@ function is_reservation_existing($studentUID){
 
 function is_allocation_existing($studentUID, $sessionName){
 
-  $sql = "SELECT nid FROM content_type_room_allocations WHERE field_allocation_student_id_uid=%d AND field_allocation_session_name_value=%s ";
+  $sql = "SELECT nid FROM content_type_room_allocations WHERE field_allocation_student_id_uid=%d AND field_allocation_session_name_value='%s' ";
   $rs = db_query($sql, $studentUID, $sessionName);
 
   if(db_affected_rows($rs) > 0) return true; else return false;
@@ -3846,7 +3846,10 @@ function hostel_allocation_revoke_expired_reservation_form_submit($form, &$form_
   hostel_allocation_revoke_expired_reservation($values['studUID']);
   drupal_set_message('The Reservaion was revoked successfully!');
 
-
+  //hostel_allocation_allocate_bedspace($values['studUID'], 1);
+  //drupal_set_message('The Allocation was succesful!');
+  
+  
 }
 //revoke reservation ends here
 
@@ -3854,7 +3857,7 @@ function hostel_allocation_revoke_expired_reservation_form_submit($form, &$form_
 //reservation payments starts here
 function hostel_allocation_order($op, &$order, $arg2) {
   switch ($op) {
-    case 'load':
+    case 'submit':
       if(! is_reservation_existing($order->uid)) {
       	return array(array('pass' => FALSE, 'message' => t('Either your Reservation has expired or no Reservation information was found!')));
       }
@@ -3862,7 +3865,12 @@ function hostel_allocation_order($op, &$order, $arg2) {
     break;
     case 'save':
       // Do something to save payment info!
-      hostel_allocation_allocate_bedspace($order->uid, $order->order_id);
+      $val = hostel_allocation_allocate_bedspace($order->uid, $order->order_id);
+      if($val)
+        drupal_goto("student/hostelreservation");
+      else
+        drupal_set_message(Error_Types(151), 'error');
+      
       break;
   }
 }
@@ -3945,7 +3953,7 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID){
     //}
   //}
 
-
+  
   return false;
 }
 //allocate bedspace ends here
@@ -3958,5 +3966,102 @@ function hostel_allocation_cron(){
 
 
 //end of cron job
+
+//show allocated room
+function get_allocation_info($studentUID, $session){
+
+  $sql = "SELECT field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, Date_Format( field_allocation_date_value, '%%D %%b, %%Y' ) as allocation_date, field_allocation_session_name_value session_name, ctra.field_allocation_room_id_nid AS room_nid, ctb.nid AS block_nid
+  		  FROM {content_type_hostels} cth, {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_allocations} ctra
+  		  WHERE ctr.nid=ctra.field_allocation_room_id_nid AND ctr.field_block_id_nid=ctb.nid AND ctb.field_hostel_id_nid=cth.nid
+  		  AND ctra.field_allocation_student_id_uid=%d AND ctra.field_allocation_session_name_value='%s'";
+  $rs = db_query($sql, $studentUID, $session);
+  return $rs;
+	
+}
+
+
+function hostel_allocation_show_allocated_room($studentUID, $session){
+
+  $allocationInfo = get_allocation_info($studentUID, $session);
+
+  if(db_affected_rows($allocationInfo) > 0){
+    $rs = db_fetch_object($allocationInfo);
+    $student_profile = new UserProfile($studentUID); //user_load($studentUID);
+
+    $programmeName = get_programmes($student_profile->profile_first_choice, true);
+
+    $html ="
+   <div><h4>Student Info</h4></div>
+   <div id='assigned_courses'>
+   <table border=1>";
+     if($student_profile->profile_matno != "")
+     	     $html .="
+      <tr>
+       <td>Matriculation Number:</td>
+       <td>". $student_profile->profile_matno ."</td>
+     </tr>";
+     else
+       $html .="
+      <tr>
+       <td>JAMB Number:</td>
+       <td>". $student_profile->profile_jambno ."</td>
+     </tr>";
+
+     $html .="
+     <tr>
+       <td>Full Name:</td>
+       <td>". $student_profile->profile_last_name .', '. $student_profile->profile_first_name ."</td>
+     </tr>
+     <tr>
+       <td>Gender:</td>
+       <td>". $student_profile->profile_gender ."</td>
+     </tr>
+     <tr>
+       <td>Level Name:</td>
+       <td>". $student_profile->profile_level_name ."</td>
+     </tr>
+     <tr>
+       <td style='width:200px;'>Programme Name:</td>
+       <td >". $programmeName[$student_profile->profile_first_choice] ."</td>
+     </tr>
+
+
+   </table>
+   </div>";
+   $html .="
+   <div><h4>Hostel Allocation Info</h4></div>
+   <div id='assigned_courses'>
+   <table border=1>
+      <tr>
+       <td>Session Name:</td>
+       <td>". $rs->session_name ."</td>
+     </tr>
+      <tr>
+       <td>Hostel Name:</td>
+       <td>". $rs->hostel_name ."</td>
+     </tr>";
+
+     $html .="
+     <tr>
+       <td>Block Name:</td>
+       <td>". $rs->block_name ."</td>
+     </tr>
+     <tr>
+       <td style='width:200px;'>Room Number:</td>
+       <td>". $rs->room_name ."</td>
+     </tr>
+      <tr>
+       <td style='width:200px;'>Allocation Date:</td>
+       <td>". $rs->allocation_date ."</td>
+     </tr>
+     
+   </table>
+   </div>";
+  }
+
+  return $html;
+
+	
+}
 
 ?>

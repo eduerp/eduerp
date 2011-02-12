@@ -104,9 +104,9 @@ function student_menu() {
   $items['student/hostelreservation'] = array(
     'title' => 'Hostel Reservation',
     'page callback' => 'student_hostel_reservation',
-    'access arguments' => array('hostel_allocation user'),
+    'access arguments' => array('student register'),
     'type' => MENU_NORMAL_ITEM,
-  );
+  );//hostel_allocation user
 
   return $items;
 }
@@ -4577,6 +4577,13 @@ function student_hostel_reservation(){
     drupal_set_message('Your Student Profile may not have been properly setup!');
 
   }
+  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student
+    //allocation info will be displayed here
+    drupal_set_message('Hostel Allocation already exists!');
+    $html = hostel_allocation_show_allocated_room($user->uid, variable_get('eduerp_current_session', ''));
+    $html .= "<br /><hr /><br />";
+    
+  }
   elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
     drupal_set_message('Hostel Reservation already exists!');
     $html = hostel_allocation_show_reserved_room($user->uid);
@@ -4585,10 +4592,6 @@ function student_hostel_reservation(){
     $html .= "<br /><hr /><br />";
     $html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
     $html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
-
-  }
-  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student
-    //allocation info will be displayed here
 
   }
   else {
