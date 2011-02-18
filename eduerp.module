@@ -1,50 +1,50 @@
 <?php
 
-function veritas_menu() {
-  $items['veritas/receipt'] = array (
-    'page callback' => 'veritas_view_receipt',
+function eduerp_menu() {
+  $items['eduerp/receipt'] = array (
+    'page callback' => 'eduerp_view_receipt',
     'access arguments' => array (
       'view receipt',
       'anonymous',
       'student register'
     ),
-    'access callback' => 'veritas_verify_access',
+    'access callback' => 'eduerp_verify_access',
     'type' => MENU_CALLBACK,
   );
 
-  $items['veritas/payments'] = array (
+  $items['eduerp/payments'] = array (
     'title' => 'Upload payment file',
     'page callback' => 'drupal_get_form',
     'page arguments' => array (
-      'veritas_st_form'
+      'eduerp_st_form'
     ),
     'access arguments' => array (
-      'veritas payments'
+      'eduerp payments'
     ),
     'type' => MENU_NORMAL_ITEM,
   );
 
-  $items['veritas/error'] = array (
-    'page callback' => 'veritas_error_page',
+  $items['eduerp/error'] = array (
+    'page callback' => 'eduerp_error_page',
     'access arguments' => array (
-      'veritas access'
+      'eduerp access'
     ),
     'type' => MENU_CALLBACK,
   );
 
   $items['ajax'] = array (
-    'page callback' => 'veritas_ajax',
+    'page callback' => 'eduerp_ajax',
     'access arguments' => array (
-      'veritas access'
+      'eduerp access'
     ),
     'type' => MENU_CALLBACK,
   );
 
-  $items['admin/settings/veritas'] = array (
-    'title' => 'Veritas Configuration',
+  $items['admin/settings/eduerp'] = array (
+    'title' => 'EduERP Configuration',
     'page callback' => 'drupal_get_form',
     'page arguments' => array (
-      'veritas_admin_settings'
+      'eduerp_admin_settings'
     ),
     'access arguments' => array (
       'administer site configuration'
@@ -55,15 +55,15 @@ function veritas_menu() {
   return $items;
 }
 
-function veritas_verify_access() {
+function eduerp_verify_access() {
   return true;
 }
 
-function veritas_perm() {
+function eduerp_perm() {
   return array (
     'view receipt',
-    'veritas access',
-    'veritas payments',
+    'eduerp access',
+    'eduerp payments',
     'anonymous',
     'student register'
   );
@@ -73,8 +73,8 @@ function veritas_perm() {
  * implements the simpletest testing framework hook
  * for more information see http://drupal.org/project/simpletest
  */
-function veritas_simpletest() {
-  $module_name = "veritas";
+function eduerp_simpletest() {
+  $module_name = "eduerp";
   $dir = drupal_get_path('module', $module_name) . "/tests";
   $tests = file_scan_directory($dir, '\.test$');
   return array_keys($tests);
@@ -85,7 +85,7 @@ function veritas_simpletest() {
  * uses the Autoload module
  * http://drupal.org/project/autoload
  */
-function veritas_autoload_info() {
+function eduerp_autoload_info() {
   $class_path = __DIR__.DIRECTORY_SEPARATOR."lib";
 
   return array(
@@ -95,7 +95,7 @@ function veritas_autoload_info() {
   );
 }
 
-function veritas_mail_receipt($f, $email, $name, $img) {
+function eduerp_mail_receipt($f, $email, $name, $img) {
   global $user;
   if (!$email)
     $email = $user->mail;
@@ -123,8 +123,8 @@ function veritas_mail_receipt($f, $email, $name, $img) {
     }
   }
   $f->name = $name;
-  $message = drupal_mail('veritas', 'receipt', $email, language_default(), array (), null, false);
-  $message[body] = veritas_print_receipt($f, $img);
+  $message = drupal_mail('eduerp', 'receipt', $email, language_default(), array (), null, false);
+  $message[body] = eduerp_print_receipt($f, $img);
   $message[subject] = 'Transaction Receipt';
   $message[headers] = array_merge($message[headers], array (
     'MIME-Version' => '1.0',
@@ -134,9 +134,9 @@ function veritas_mail_receipt($f, $email, $name, $img) {
 
   // We should send a copy of the emailed receipt to the bursar
   // I know it's bad practice to hardcode certain parameters but I don't want this failing
-  // if there's no configured parameter for veritas_bursars_email
-  $admin_message = drupal_mail('veritas', 'receipt', variable_get('veritas_bursars_email', 'bursar@veritas.edu.ng'), language_default(), array (), null, false);
-  $admin_message[body] = veritas_print_receipt($f, $img);
+  // if there's no configured parameter for eduerp_bursars_email
+  $admin_message = drupal_mail('eduerp', 'receipt', variable_get('eduerp_bursars_email', 'bursar@eduerp.edu.ng'), language_default(), array (), null, false);
+  $admin_message[body] = eduerp_print_receipt($f, $img);
   $admin_message[subject] = 'Transaction Receipt';
   $admin_message[headers] = array_merge($admin_message[headers], array (
     'MIME-Version' => '1.0',
@@ -146,10 +146,10 @@ function veritas_mail_receipt($f, $email, $name, $img) {
 
   ///echo htmlspecialchars($message[body]);
   if ($f->trans_type == 'cfee') {
-    $message = drupal_mail('veritas', 'preqbid', $email, language_default(), array (), null, false);
+    $message = drupal_mail('eduerp', 'preqbid', $email, language_default(), array (), null, false);
     //$tid=uniqid();
     //db_query("update transaction set username='%s',password_2='%s' where transaction_id='%s'",$user->name,$tid,$f->transaction_id);
-    ///$url=url('veritas/contractor/tender',array('absolute'=>true));
+    ///$url=url('eduerp/contractor/tender',array('absolute'=>true));
 
     $message[body] = "
         To
@@ -172,7 +172,7 @@ function veritas_mail_receipt($f, $email, $name, $img) {
   }
 }
 
-function veritas_view_receipt() {
+function eduerp_view_receipt() {
   global $user;
 
   if (arg(3) == "student") {
@@ -184,7 +184,7 @@ function veritas_view_receipt() {
       $t_id = (int) arg(2);
       if (!$t_id) {
         drupal_set_message(t("Transaction not found"));
-        drupal_goto("veritas/error");
+        drupal_goto("eduerp/error");
       }
     }
     //echo sprintf("select * from admitted_transaction where transaction_id=%d ",$t_id);
@@ -208,11 +208,11 @@ function veritas_view_receipt() {
     $f->student_data = $fc;
 
     if (arg(4) == 'print') {
-      echo veritas_student_receipt($f, true);
+      echo eduerp_student_receipt($f, true);
       exit;
     }
 
-    $email_content = veritas_student_receipt($f);
+    $email_content = eduerp_student_receipt($f);
 
     return $email_content;
 
@@ -221,11 +221,11 @@ function veritas_view_receipt() {
       $t_id = (int) arg(2);
       if (!$t_id) {
         drupal_set_message(t("Transaction id not found"));
-        drupal_goto("veritas/error");
+        drupal_goto("eduerp/error");
       }
       if (!$user->uid) {
         drupal_set_message(t("You need to log in to access this page"));
-        drupal_goto("veritas/error");
+        drupal_goto("eduerp/error");
       }
       /* the following line is responsible for the error on the receipt
       page. Since the correct one is written below it, I just commented
@@ -257,32 +257,32 @@ function veritas_view_receipt() {
       }
       if (!$f->transaction_id) {
         drupal_set_message(t("Transaction id not found"));
-        drupal_goto("veritas/error");
+        drupal_goto("eduerp/error");
       }
 
     }
     /*
-    if(variable_get('veritas_logo','')){
-    $img=url('',array('absolute'=>true)).variable_get('veritas_logo','');
+    if(variable_get('eduerp_logo','')){
+    $img=url('',array('absolute'=>true)).variable_get('eduerp_logo','');
     $img="<img src='$img'>";
     }
     else
     $img='';
 
-    veritas_mail_receipt($f,$img);
+    eduerp_mail_receipt($f,$img);
     */
     $f->name = $name;
     if (arg(3) == 'print') {
-      echo veritas_print_receipt($f, '', true);
+      echo eduerp_print_receipt($f, '', true);
       exit;
     }
-    return veritas_receipt($f);
+    return eduerp_receipt($f);
 
   }
 
 }
 
-function veritas_accomodation_types() {
+function eduerp_accomodation_types() {
 
   $r = db_query("select * from accomodation_types order by name ");
   $accomodation = array ();
@@ -294,7 +294,7 @@ function veritas_accomodation_types() {
   return $accomodation;
 }
 
-function veritas_lga() {
+function eduerp_lga() {
   static $ritles;
   if (!$titles) {
     $titles[0] = '';
@@ -304,10 +304,10 @@ function veritas_lga() {
   }
   return $titles;
 }
-function veritas_table_head($str, $head) {
+function eduerp_table_head($str, $head) {
  ;
 }
-function veritas_states($state_id = 0) {
+function eduerp_states($state_id = 0) {
   static $ritles;
   if (!$titles) {
     $titles[0] = '';
@@ -318,55 +318,55 @@ function veritas_states($state_id = 0) {
   return ($state_id) ? $titles[$state_id] : $titles;
 
 }
-function veritas_admin_settings() {
+function eduerp_admin_settings() {
 
-  $form['veritas_demo'] = array (
+  $form['eduerp_demo'] = array (
     '#title' => 'Demo Mode',
     '#description' => 'Payment in demo mode',
     '#type' => 'checkbox',
-    '#default_value' => variable_get('veritas_demo', 1)
+    '#default_value' => variable_get('eduerp_demo', 1)
   );
-  $form['veritas_terminal_id'] = array (
+  $form['eduerp_terminal_id'] = array (
     '#type' => 'textfield',
     '#title' => 'Terminal ID',
     '#description' => 'Payment Terminal ID,0000000001 for demo',
-    '#default_value' => variable_get('veritas_terminal_id', '0000000001')
+    '#default_value' => variable_get('eduerp_terminal_id', '0000000001')
   );
-  $form['veritas_lot_cost'] = array (
+  $form['eduerp_lot_cost'] = array (
     '#type' => 'textfield',
     '#title' => 'Cost of Lot',
     '#description' => 'Every lot selected cost $ xxx',
-    '#default_value' => variable_get('veritas_lot_cost', '10000')
+    '#default_value' => variable_get('eduerp_lot_cost', '10000')
   );
-  $form['veritas_student_regfees'] = array (
+  $form['eduerp_student_regfees'] = array (
     '#type' => 'textfield',
     '#title' => 'Student Registration Fees',
-    '#default_value' => variable_get('veritas_student_regfees', '100')
+    '#default_value' => variable_get('eduerp_student_regfees', '100')
   );
-  $form['veritas_logo'] = array (
+  $form['eduerp_logo'] = array (
     '#type' => 'textfield',
     '#title' => 'logo image',
     '#description' => 'logo Used for sending mails.logo to be ftpd  and stored . enter the relative url from which the image is accessed.eg. http://yourdrupalinstallation/images/logo.png then enter here images/logo.png  ',
-    '#default_value' => variable_get('veritas_logo', '')
+    '#default_value' => variable_get('eduerp_logo', '')
   );
-  $form['veritas_tender_node'] = array (
+  $form['eduerp_tender_node'] = array (
     '#type' => 'textfield',
     '#size' => 6,
     '#title' => 'Tender Node ID',
     '#description' => 'You must create this node where tender documents are stored. it is the tender link.input its id here.if you leave it blank contractors will get error when trying to access the tender link',
-    '#default_value' => variable_get('veritas_tender_node', '')
+    '#default_value' => variable_get('eduerp_tender_node', '')
   );
-  $form['veritas_lot_upload_cost'] = array (
+  $form['eduerp_lot_upload_cost'] = array (
     '#type' => 'textfield',
     '#size' => 6,
     '#title' => 'Tender Upload cost',
-    '#default_value' => variable_get('veritas_lot_upload_cost', 1000)
+    '#default_value' => variable_get('eduerp_lot_upload_cost', 1000)
   );
-  $form['veritas_tender_adminuser'] = array (
+  $form['eduerp_tender_adminuser'] = array (
     '#type' => 'textfield',
     '#size' => 25,
     '#title' => 'Tender Admin Username',
-    '#default_value' => variable_get('veritas_tender_adminuser', '')
+    '#default_value' => variable_get('eduerp_tender_adminuser', '')
   );
 
   $form['RegisterAllCoursesatStartofSession'] = array(
@@ -385,17 +385,17 @@ function veritas_admin_settings() {
     '#tree' => TRUE
   );
 
-  $form['veritas_bursars_email'] = array(
+  $form['eduerp_bursars_email'] = array(
     '#type' => 'textfield',
     '#size' => 25,
     '#title' => "Bursar's Email Address",
-    '#default_value' => variable_get('veritas_bursars_email', '')
+    '#default_value' => variable_get('eduerp_bursars_email', '')
   );
 
   return system_settings_form($form);
 }
 
-function veritas_validuser($name, $email) {
+function eduerp_validuser($name, $email) {
 
   if (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE LOWER(name) = LOWER('%s')", $name)) > 0) {
     form_set_error('mail', t('The e-mail address %email is already registered.', array (
@@ -426,13 +426,13 @@ function veritas_validuser($name, $email) {
   return true;
 
 }
-function veritas_insert_contractor($val, $uid) {
+function eduerp_insert_contractor($val, $uid) {
   $id = $uid;
 
 }
-function veritas_user_save($type, $mail, $transid) {
+function eduerp_user_save($type, $mail, $transid) {
   /*
-  $data=$_SESSION[veritas_data];
+  $data=$_SESSION[eduerp_data];
   if(!is_array($data)){
   watchdog('error','Session data lost for transactionID '.$transid,WATCHDOG_ERROR);
   drupal_goto(url('veritus/error'));
@@ -478,16 +478,16 @@ function veritas_user_save($type, $mail, $transid) {
   return $acc;
 }
 
-function _veritas_insert_student($val, $uid) {
+function _eduerp_insert_student($val, $uid) {
 	;
 }
 
-function veritas_error_page() {
+function eduerp_error_page() {
 
   return t('A error occurred in processing your request. Please contact the admin');
 }
 
-function veritas_mail($key, & $message, $params) {
+function eduerp_mail($key, & $message, $params) {
   /*
   $message[headers] +=
   array( 'MIME-Version'  => '1.0',
@@ -496,12 +496,12 @@ function veritas_mail($key, & $message, $params) {
   ;
 }
 
-function veritas_receipt($f) {
+function eduerp_receipt($f) {
   global $user;
   ob_start();
 ?>
 <center><h3>VERITAS UNIVERSITY</h3>
-<div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
+<div style="float:right;"><a href="<?=url('eduerp/receipt').'/'.$f->transaction_id.'/print' ?>" target="_new" >print</a></div>
 <br/><br/>
 <table cellspacing="2" cellpadding="2">
 <tr><th>Name:</th><td colspan="2" align="left"><b><?=$f->name?></b></td></tr>
@@ -519,7 +519,7 @@ function veritas_receipt($f) {
     $i = 1;
     while ($fx = db_fetch_object($r)) {
 ?>
-<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<tr><td><?=$i++?></td><td>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('eduerp_lot_cost','') ?></td></tr>
 <?php
 
 
@@ -558,7 +558,7 @@ function veritas_receipt($f) {
       return ob_get_clean();
     
     }
-function veritas_student_receipt(& $f, $isprint = false) {
+function eduerp_student_receipt(& $f, $isprint = false) {
   ob_start();
 
   $query = "select *, ah.name hostel_name, at.name hostel_type, c.nid AS college_id from admitted_student_accomodation asa inner join accomodation_hostels ah on asa.hostel_id =  ah.id inner join accomodation_types at on  ah.accomodation_type_id = at.id inner join {content_type_college} c on c.nid = asa.college_id where asa.student_id = '%s' ";
@@ -570,12 +570,12 @@ function veritas_student_receipt(& $f, $isprint = false) {
   <html>
    <body <?php if($isprint){?> onLoad="window.print()"<?php }?> >
    <?php if(!$isprint){ ?>
-   <div style="float:right;"><a href="<?=url('veritas/receipt').'/'.$f->transaction_id.'/student/print' ?>" target="_new" >print</a></div>
+   <div style="float:right;"><a href="<?=url('eduerp/receipt').'/'.$f->transaction_id.'/student/print' ?>" target="_new" >print</a></div>
    <br /><br />
    <?php } ?>
 	<table cellspacing="2" cellpadding="2">
    	    <tr>
-        	<th colspan="3" align="center"><img src="<?php echo url('',array('absolute'=>true)).variable_get('veritas_logo',''); ?>" border="0" ></th>
+        	<th colspan="3" align="center"><img src="<?php echo url('',array('absolute'=>true)).variable_get('eduerp_logo',''); ?>" border="0" ></th>
         </tr>
     	<tr>
         	<th><b>RECEIPT NUMBER: </b></th><td colspan="2" align="left"><?php echo $f->receipt_no; ?></td>
@@ -661,7 +661,7 @@ function veritas_student_receipt(& $f, $isprint = false) {
 
 }
 
-function veritas_admin_links($f) {
+function eduerp_admin_links($f) {
   global $user;
   ob_start();
 ?>
@@ -702,9 +702,9 @@ function veritas_admin_links($f) {
 
   $d = ob_get_clean();
   $ad = user_load(array (
-    'name' => variable_get('veritas_tender_adminuser', '')
+    'name' => variable_get('eduerp_tender_adminuser', '')
   ));
-  $message = drupal_mail('veritas', 'receipt', $ad->mail, language_default(), array (), null, false);
+  $message = drupal_mail('eduerp', 'receipt', $ad->mail, language_default(), array (), null, false);
   $message[body] = $d;
   $message[subject] = 'Tender Approval List for ' . $f->name;
   $message[headers] = array_merge($message[headers], array (
@@ -715,7 +715,7 @@ function veritas_admin_links($f) {
 
 }
 
-function veritas_print_receipt($f, $img = '', $isprint = false) {
+function eduerp_print_receipt($f, $img = '', $isprint = false) {
   global $user;
   ob_start();
 ?>
@@ -737,7 +737,7 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
   $lots = array ();
   while ($fx = db_fetch_object($r)) {
 ?>
-<tr><td <?php if(!$isprint) {?>width="20" <?php } ?>><?=$i++?></td><td <?php if(!$isprint) {?>width="200" style="width:200px;"<?php } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('veritas_lot_cost','') ?></td></tr>
+<tr><td <?php if(!$isprint) {?>width="20" <?php } ?>><?=$i++?></td><td <?php if(!$isprint) {?>width="200" style="width:200px;"<?php } ?>>Tender <?=$fx->lot_name ?>:<?=$fx->description ?></td><td>NGN&nbsp;<?=variable_get('eduerp_lot_cost','') ?></td></tr>
 <?php
 
 
@@ -776,12 +776,12 @@ function veritas_print_receipt($f, $img = '', $isprint = false) {
     $d = ob_get_clean();
 
     if ($f->trans_type == 'cfee' && !$isprint) {
-      veritas_admin_links($f);
+      eduerp_admin_links($f);
     }
     return $d;
   }
 
-function veritas_check_upload($source) {
+function eduerp_check_upload($source) {
   global $user;
   static $upload_cache;
 
@@ -833,7 +833,7 @@ function veritas_check_upload($source) {
           return implode(",", $errors);
         }
 
-        $errors = file_validate_size($file, variable_get('veritas_file_size', 1000000));
+        $errors = file_validate_size($file, variable_get('eduerp_file_size', 1000000));
         if (count($errors)) {
           drupal_set_message(t('The file %file could not be saved,Error %error', array (
             '%file' => $source,
@@ -873,7 +873,7 @@ function veritas_check_upload($source) {
   return 1;
 }
 
-function veritas_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $email, $type) {
+function eduerp_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $email, $type) {
   $r = db_query("select * from payment where (refno='%s' or refno='%s')  and paid=0", intval($rno), $rno);
   $f = db_fetch_object($r);
 
@@ -894,10 +894,10 @@ function veritas_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $em
       db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
             ,user_type_id='%s',trans_type='%s' ", $transid, $pc, '', $amt, $descr, $uid, $type);
       $trid = db_last_insert_id('transaction', 'transaction_id');
-      if (variable_get('veritas_logo', '')) {
+      if (variable_get('eduerp_logo', '')) {
         $logourl = url('', array (
           'absolute' => true
-        )) . variable_get('veritas_logo', '');
+        )) . variable_get('eduerp_logo', '');
         $img = "<img src='$logourl' alt='Veritas Logo'>";
       } else
         $img = '';
@@ -905,7 +905,7 @@ function veritas_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $em
       $f = db_fetch_object($r);
       if ($f->transaction_id && ($type == 'creg' || $type == 'sreg')) {
         $f->name = $name;
-        veritas_mail_receipt($f, $email, $name, $img);
+        eduerp_mail_receipt($f, $email, $name, $img);
       }
       return 0;
 
@@ -923,9 +923,9 @@ function veritas_verify_bankpay($rno, $name2, $amt, $descr, $transid, $name, $em
   return 1;
 }
 
-function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $type) {
+function eduerp_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $type) {
 
-  //return veritas_verify_bankpay($rno,$cno,$amt,$descr,$transid,$name,$email,$type);
+  //return eduerp_verify_bankpay($rno,$cno,$amt,$descr,$transid,$name,$email,$type);
 
   $uid = $user->uid;
 
@@ -938,7 +938,7 @@ function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $typ
       'RECEIPT_NO' => $rno,
       'CONFIRMATION_NO' => $cno,
       'AMOUNT' => sprintf('%.2f', $amt), // Expected amount
-    'TERMINAL_ID' => variable_get('veritas_terminal_id', '0000000001')
+    'TERMINAL_ID' => variable_get('eduerp_terminal_id', '0000000001')
     );
 
     $query = "";
@@ -948,7 +948,7 @@ function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $typ
     $query = substr($query, 0, -1);
 
     $curl = curl_init();
-    curl_setopt($curl, CURLOPT_URL, variable_get('veritas_demo', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 'https://www.etranzact.net/WebConnect/verifypin.jsp');
+    curl_setopt($curl, CURLOPT_URL, variable_get('eduerp_demo', 1) ? 'http://demo.etranzact.com/WebConnect/verifypin.jsp' : 'https://www.etranzact.net/WebConnect/verifypin.jsp');
     //curl_setopt($curl, CURLOPT_URL, 'http://demo.etranzact.com/WebConnect/verifypin.jsp');
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
@@ -970,10 +970,10 @@ function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $typ
           "trans_amount='%s', trans_descr='%s', trans_time=now(), user_type_id=%d, trans_type='%s'", $rno, $cno, '', $amt, $descr, $uid, $type);
           $trid = db_last_insert_id('transaction', 'transaction_id');
 
-          if (variable_get('veritas_logo', '')) {
+          if (variable_get('eduerp_logo', '')) {
             $logourl = url('', array (
               'absolute' => true
-            )) . variable_get('veritas_logo', '');
+            )) . variable_get('eduerp_logo', '');
             $img = "<img src='$logourl' alt='Veritas Logo'>";
           } else
             $img = '';
@@ -983,7 +983,7 @@ function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $typ
 
           if ($f->transaction_id && ($type == 'creg' || $type == 'sreg')) {
             $f->name = $name;
-            @ veritas_mail_receipt($f, $email, $name, $img);
+            @ eduerp_mail_receipt($f, $email, $name, $img);
           }
           return 0;
         } else {
@@ -1007,12 +1007,12 @@ function veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $email, $typ
   }
 }
 
-function veritas_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $email, $type = '') {
-  return veritas_pay_pin($pin, $ccno, $amt, $descr, $transid, $name, $email, $type);
+function eduerp_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $email, $type = '') {
+  return eduerp_pay_pin($pin, $ccno, $amt, $descr, $transid, $name, $email, $type);
   global $user;
   $uid = (int) $user->uid;
   if (1) { //demo
-    if (variable_get('veritas_demo', 1)) {
+    if (variable_get('eduerp_demo', 1)) {
       $url = "http://demo.etranzact.com/WebConnect/webconnectProcess.jsp";
     } else
       $url = "https://etranzact.net/WebConnect/webconnectProcess.jsp";
@@ -1027,7 +1027,7 @@ function veritas_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $e
     $request['AMOUNT'] = number_format($amt, 2);
     $request['DESCRIPTION'] = $descr;
     $request['NO_RETRY'] = '';
-    $request['TERMINAL_ID'] = variable_get('veritas_terminal_id', '0000000001');
+    $request['TERMINAL_ID'] = variable_get('eduerp_terminal_id', '0000000001');
     $data = '';
     while (list ($key, $value) = each($request)) {
       $data .= $key . '=' . urlencode(ereg_replace(',', '', $value)) . '&';
@@ -1080,10 +1080,10 @@ function veritas_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $e
     db_query("insert into transaction set receipt_no='%s',payment_code='%s',merchant_code='%s',trans_amount='%s',trans_descr='%s',trans_time=now()
         ,user_type_id='%s',trans_type='%s' ", $transid, $c4, $mc, $amt, $descr, $uid, $type);
     $trid = db_last_insert_id('transaction', 'transaction_id');
-    if (variable_get('veritas_logo', '')) {
+    if (variable_get('eduerp_logo', '')) {
       $logourl = url('', array (
         'absolute' => true
-      )) . variable_get('veritas_logo', '');
+      )) . variable_get('eduerp_logo', '');
       $img = "<img src='$logourl' alt='Veritas Logo'>";
     } else
       $img = '';
@@ -1092,7 +1092,7 @@ function veritas_pay_cc($ccno, $pin, $em, $ey, $amt, $descr, $transid, $name, $e
     if ($f->transaction_id) {
       $f->name = $name;
       if ($type == 'creg' || $type == 'sreg')
-        veritas_mail_receipt($f, $email, $name, $img);
+        eduerp_mail_receipt($f, $email, $name, $img);
     }
     return 0;
 
@@ -1128,7 +1128,7 @@ function _assign_keys(& $form, $state) {
       }
   }
 }
-function _veritas_titles() {
+function _eduerp_titles() {
   // We should be looking at replacing the functionality in this function
   // it's not necessary to store titles in a database.
   static $ritles;
@@ -1140,7 +1140,7 @@ function _veritas_titles() {
   return $titles;
 
 }
-function _veritas_country() {
+function _eduerp_country() {
   static $ritles;
   if (!$titles) {
     $r = db_query("select * from country order by country_name");
@@ -1150,7 +1150,7 @@ function _veritas_country() {
   return $titles;
 
 }
-function _veritas_religion() {
+function _eduerp_religion() {
   static $ritles;
   if (!$titles) {
     $titles = array ();
@@ -1164,7 +1164,7 @@ function _veritas_religion() {
 
 }
 
-function veritas_elements() {
+function eduerp_elements() {
   return array (
     'ccdt' => array (
       '#input' => true,
@@ -1210,7 +1210,7 @@ function theme_ccdt($element) {
   return theme('form_element', $element, '<div class="container-inline">' . $element['#children'] . '</div>');
 }
 
-function veritas_theme() {
+function eduerp_theme() {
 
   return array (
     'ccdt' => array (
@@ -1223,7 +1223,7 @@ function veritas_theme() {
   );
 }
 
-function veritas_st_form() {
+function eduerp_st_form() {
   $form['#title'] = 'CSV File upload form';
   $form[] = array (
     '#value' => "File name should be *.csv, the narrative field should not contain any ,"
@@ -1240,16 +1240,16 @@ function veritas_st_form() {
   );
   return $form;
 }
-function veritas_st_form_validate($form, & $form_state) {
+function eduerp_st_form_validate($form, & $form_state) {
 
-  $f = veritas_check_upload("payfile");
+  $f = eduerp_check_upload("payfile");
   if ($f) {
     form_set_error('payfile', 'Sorry file cannot be uploaded. Please try again ' . $f);
     return;
   }
 
 }
-function veritas_st_form_submit($form, & $form_state) {
+function eduerp_st_form_submit($form, & $form_state) {
 
   $d = $n = 0;
 

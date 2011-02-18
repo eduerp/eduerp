@@ -1,5 +1,5 @@
 <?php
-include(drupal_get_path('module', 'veritas') . '/veritas_global.inc');
+include(drupal_get_path('module', 'eduerp') . '/eduerp_global.inc');
 
 function staff_menu() {
   $items['staff/semester'] = array(
@@ -1623,7 +1623,7 @@ function view_student_form2($clearanceform) {
     '#suffix' => '</td>');
   $form['personal']['origin1'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => eduerp_states(),
     '#default_value' => $result->state_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td></tr>',
@@ -1635,7 +1635,7 @@ function view_student_form2($clearanceform) {
     '#suffix' => '</td>');
   $form['personal']['lga1'] = array(
     '#type' => 'select',
-    '#options' => veritas_lga(),
+    '#options' => eduerp_lga(),
     '#default_value' => $result->lkup_lga_origin,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
@@ -1688,7 +1688,7 @@ function view_student_form2($clearanceform) {
     '#suffix' => '</td>');
   $form['personal']['state1'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => eduerp_states(),
     '#default_value' => $result->permanent_address_state,
     '#prefix' => '<td>',
     '#suffix' => '</td>',
@@ -2072,7 +2072,7 @@ function view_student_form2($clearanceform) {
     '#prefix' => '<td>',
     '#suffix' => '</td></tr></table>');
 
-  if (!veritas_has_role($user, 'Registry')) {
+  if (!eduerp_has_role($user, 'Registry')) {
     $form['verify'] = array(
       '#type' => 'fieldset',
       '#title' => 'Verified Results',
@@ -2113,7 +2113,7 @@ function view_student_form2($clearanceform) {
         '#suffix' => '</div>');
     }
   }
-  if (veritas_has_role($user, 'Registry')) {
+  if (eduerp_has_role($user, 'Registry')) {
       $form['approve'] = array(
         '#type' => 'fieldset',
         '#title' => 'Approve Student',
@@ -3136,7 +3136,7 @@ function student_payment_data($student_id) {
     $return['jamb_no'] = $result->jambno;
     $return['birth_date'] = $result->dob;
     $return['gender'] = $result->gender;
-    $return['state_of_origin'] = veritas_states($result->state_origin);
+    $return['state_of_origin'] = eduerp_states($result->state_origin);
     $return['marital_status'] = $result->marital_status;
     $return['personal_mobile'] = $result->mobile_number;
     $return['personal_email'] = $result->email_address;

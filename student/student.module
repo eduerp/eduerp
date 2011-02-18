@@ -522,7 +522,7 @@ function _perform_clearance($student_id) {
 
   // Change role of the student from Applicant to Student
   $student = user_load($student_id);
-  veritas_set_role($student, 'Student');
+  eduerp_set_role($student, 'Student');
 }
 
 
@@ -1428,11 +1428,11 @@ function student_fee_payment_form_validate($form, &$state){
 
 function student_fee_payment_form_submit($form, &$state) {
 	$t_id = make_transaction($form);
-	drupal_goto('veritas/receipt/'. $t_id .'/student/');
+	drupal_goto('eduerp/receipt/'. $t_id .'/student/');
 }
 
 function _student_fee_payment_form1($obj) {
-   $amt = variable_get('veritas_student_regfees1', '200000');
+   $amt = variable_get('eduerp_student_regfees1', '200000');
    $amt = number_format($amt, 2);
    $form['fees'] = array('#type' => 'fieldset', '#title' => 'Registration Fees');
    $form['fees']['rno'] = array(
@@ -1523,7 +1523,7 @@ function _student_registration_form1(&$obj) {
   );
   $form['title'] = array(
     '#type' => 'select',
-    '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
+    '#options' => _eduerp_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
     '#required' => TRUE,
     '#title' => 'Title',
     '#default_value' => $_SESSION['student']['data']->title
@@ -1583,14 +1583,14 @@ function _student_registration_form1(&$obj) {
   $form['nat'] = array(
      '#type' => 'select',
      '#default_value' => $nationality,
-     '#options' => _veritas_country(),
+     '#options' => _eduerp_country(),
      '#title' => 'Nationality'
   );
 
   $rels = _student_religion();
   $form['state'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => eduerp_states(),
     '#title' => 'State Of Origin(Only for nigeria)',
     '#ahah' => array('event' => 'change', 'wrapper' => 'ilga', 'path' => 'student/ajaxlga/state', 'method' => 'html'),
     '#default_value' => $_SESSION['student']['data']->state_origin
@@ -1598,7 +1598,7 @@ function _student_registration_form1(&$obj) {
   $form['lga'] = array(
     '#type' => 'select',
     '#default_value' => 0,
-    '#options' => veritas_lga(),
+    '#options' => eduerp_lga(),
     '#title' => 'LGA',
     '#prefix' => '<div id="ilga">',
     '#suffix' => '</div>',
@@ -1627,7 +1627,7 @@ function _student_registration_form1(&$obj) {
   );
   $form['address']['astate'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => eduerp_states(),
     '#title' => 'State',
     '#ahah' => array('event' => 'change', 'wrapper' => 'ailga', 'path' => 'student/ajaxlga/astate', 'method' => 'html'),
     '#required'=>TRUE,
@@ -1655,7 +1655,7 @@ function _student_registration_form1(&$obj) {
   );
   $form['contact_address']['castate'] = array(
     '#type' => 'select',
-    '#options' => veritas_states(),
+    '#options' => eduerp_states(),
     '#title' => 'State',
     '#ahah' => array('event' => 'change', 'wrapper' => 'ailga', 'path' => 'student/ajaxlga/astate', 'method' => 'html'),
     '#required' => TRUE,
@@ -1784,7 +1784,7 @@ function student_registration_form_submit($form, &$state) {
     $f->name = $name = $fc['first_name'] .' '. $fc['middle_name'] .' '. $fc['last_name'];
     $f->student_data = $fc;
     $message = drupal_mail('student', 'receipt', $_SESSION['student']['data']->email_address, language_default(), array(), NULL, FALSE);
-    $message['body'] = veritas_student_receipt($f,TRUE) .'<tr>
+    $message['body'] = eduerp_student_receipt($f,TRUE) .'<tr>
     <th>Username:
     </th>
     <td>'. $mat_number .'
@@ -1798,7 +1798,7 @@ function student_registration_form_submit($form, &$state) {
     $message['subject'] = 'Transaction Receipt';
     $message['headers'] = array_merge($message['headers'], array( 'MIME-Version'  => '1.0', 'Content-Type'  => 'text/html; charset=UTF-8'));
     drupal_mail_send($message);
-    drupal_goto('veritas/receipt/'. $t_id .'/student/');
+    drupal_goto('eduerp/receipt/'. $t_id .'/student/');
   }
   if ($state['storage']['step'] == 6) {
     //$pic=file_save_upload_name('pic',array(),file_directory_path().'/student_pic',false,$_SESSION['student']['data']->jambno);
@@ -1871,11 +1871,11 @@ $val=$state[storage][values][1];;
 $transid=$state[storage][transid];
   if(!$transid){
  drupal_set_message('Registration cannot be done . please contract admin');
-  drupal_goto('veritas/error');
+  drupal_goto('eduerp/error');
 
   }
   $type='sreg';
-  $acc=veritas_user_save($type,$val[email],$transid);
+  $acc=eduerp_user_save($type,$val[email],$transid);
 $uid=$acc->uid;
 if($uid){
 
@@ -1888,10 +1888,10 @@ $f=$state[storage][file];
 student_add($uid,$state[storage][values],$f);
 $t=db_query("select transaction_id from transaction where receipt_no='%s'",$transid);
 $f=db_fetch_object($t);
- drupal_goto('veritas/receipt/'.$f->transaction_id);
+ drupal_goto('eduerp/receipt/'.$f->transaction_id);
 } else {
  drupal_set_message('Registration cannot be done . please contract admin');
- drupal_goto('veritas/error');
+ drupal_goto('eduerp/error');
 
 }
 
@@ -2188,7 +2188,7 @@ function _student_reg_form3($state) {
 }
 
 function _student_reg_form5($obj) {
-  $amt = variable_get('veritas_student_regfees', '1000');
+  $amt = variable_get('eduerp_student_regfees', '1000');
   $amt = number_format($amt, 2);
   $form['fees'] = array(
     '#type' => 'fieldset',
@@ -2232,7 +2232,7 @@ function _student_reg_form5($obj) {
 }
 
 function _student_reg_form5_etranzact($obj){
-    $amt=variable_get('veritas_student_regfees','1000');
+    $amt=variable_get('eduerp_student_regfees','1000');
     $amt=number_format($amt,2);
 
     $form[fees]=array('#type'=>'fieldset','#title'=>'Registration Fees');
@@ -2293,7 +2293,7 @@ function _student_reg_form1(&$obj) {
    );
    $form['title'] = array(
       '#type' => 'select',
-      '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
+      '#options' => _eduerp_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
       '#required' => TRUE,
       '#title' => 'Title',
       '#default_value' => $_POST['title']
@@ -2346,13 +2346,13 @@ function _student_reg_form1(&$obj) {
    $form['nat'] = array(
       '#type' => 'select',
       '#default_value' => $_POST['nat'] ? $_POST['nat'] : $nationality ,
-      '#options' => _veritas_country() ,
+      '#options' => _eduerp_country() ,
       '#title' => 'Nationality'
    );
    $rels = _student_religion();
    $form['state'] = array(
      '#type' => 'select',
-     '#options' => veritas_states(),
+     '#options' => eduerp_states(),
      '#title' => 'State Of Origin(Only for nigeria)',
      '#ahah' => array('event' => 'change', 'wrapper' => 'ilga', 'path' => 'student/ajaxlga/state', 'method' => 'html'),
      '#default_value' => $_POST['state'],
@@ -2360,7 +2360,7 @@ function _student_reg_form1(&$obj) {
    $form['lga'] = array(
       '#type' => 'select',
       '#default_value' => 0,
-      '#options' => veritas_lga(),
+      '#options' => eduerp_lga(),
       '#title' => 'LGA',
       '#prefix' => '<div id="ilga">',
       '#suffix' => '</div>',
@@ -2409,7 +2409,7 @@ function _student_reg_form1(&$obj) {
     );
     $form['address']['astate'] = array(
        '#type' => 'select',
-       '#options' => veritas_states(),
+       '#options' => eduerp_states(),
        '#title' => 'State',
        '#ahah' => array('event' => 'change', 'wrapper' => 'ailga', 'path' => 'student/ajaxlga/astate', 'method' => 'html'),
        '#required' => TRUE,
@@ -2417,7 +2417,7 @@ function _student_reg_form1(&$obj) {
      );
    $form['address']['alga'] = array(
      '#type' => 'select',
-     '#options' => veritas_lga(),
+     '#options' => eduerp_lga(),
      '#title' => 'LGA',
      '#prefix' => '<div id="ailga">',
      '#suffix' => '</div>',
@@ -2474,7 +2474,7 @@ function _student_reg_form1(&$obj) {
     );
     $form['kin']['kstate'] = array(
       '#type' => 'select',
-      '#options' => veritas_states(),
+      '#options' => eduerp_states(),
       '#required' => TRUE,
       '#title' => 'STATE',
       '#default_value' => $_POST['kstate'],
@@ -2640,7 +2640,7 @@ function _student_registration_form2($state) {
    );
    $form['kin']['title'] = array(
      '#type' => 'select',
-     '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
+     '#options' => _eduerp_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
      '#required' => TRUE,
      '#title' => 'Title',
      '#default_value' => $_POST['title'],
@@ -2692,7 +2692,7 @@ function _student_registration_form2($state) {
    );
    $form['sponsor']['title'] = array(
     '#type' => 'select',
-    '#options' => _veritas_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
+    '#options' => _eduerp_titles() /*array('Mr'=>'Mr','Ms'=>'Ms','Mrs'=>'Mrs')*/,
     '#title' => 'Title', '#default_value' => '',
     '#required' => TRUE,
     '#default_value' => $_POST['title'],
@@ -3010,7 +3010,7 @@ where er.exam_student_id = '". $_SESSION['student']['data']->student_id ."' orde
 
 function _student_registration_form7($obj) {
 
-   $amt = variable_get('veritas_student_regfees1', '200000');
+   $amt = variable_get('eduerp_student_regfees1', '200000');
    $amt = number_format($amt, 2);
    $form['fees'] = array('#type' => 'fieldset', '#title' => 'Registration Fees');
    //$form[fees][mark]=array('#type'=>'item','#title'=>'Amount Payable','#value'=>'NGN '.$amt);
@@ -3045,7 +3045,7 @@ function _student_registration_form7($obj) {
 }
 
 function _student_registration_form7_etranzact($obj){
-    $amt=variable_get('veritas_student_regfees1','200000');
+    $amt=variable_get('eduerp_student_regfees1','200000');
     $amt=number_format($amt,2);
 
     $form[fees]=array('#type'=>'fieldset','#title'=>'Registration Fees');
@@ -3079,7 +3079,7 @@ function _student_registration_form7_etranzact($obj){
 
 function _student_reg_form6($obj) {
 
-   $amt = variable_get('veritas_student_regfees', '1000');
+   $amt = variable_get('eduerp_student_regfees', '1000');
    $amt = number_format($amt, 2);
    $form['fees'] = array('#type' => 'fieldset', '#title' => 'Registration Fees');
    $form['fees']['mark'] = array('#type' => 'item', '#title' => 'Amount Payable', '#value' => 'NGN '. $amt);
@@ -3128,7 +3128,7 @@ function _student_registration_form5($obj) {
    drupal_add_js('misc/jquery.form.js');
    drupal_add_js('misc/ahah.js');
    drupal_add_js(array('ahah' => array($element['#id'] => $ahah_binding)), 'setting');
-   $amt = variable_get('veritas_student_regfees', '1000');
+   $amt = variable_get('eduerp_student_regfees', '1000');
    $amt = number_format($amt, 2);
    $r = db_query("SELECT d.nid AS department_id, d.field_college_id_nid AS college_id from {content_type_program} p, {content_type_department} d WHERE p.nid=%d AND p.field_department_id_nid=d.nid", $_SESSION['student']['data']->first_choice);
    $f = db_fetch_object($r);
@@ -3160,7 +3160,7 @@ function _student_registration_form5($obj) {
     );
     $form['accomodation_type'] = array(
       '#type' => 'select',
-      '#options' => veritas_accomodation_types(),
+      '#options' => eduerp_accomodation_types(),
       '#title' => 'Select Accommodation Type',
       '#ahah' => array('event' => 'change', 'wrapper' => 'hostel_id', 'path' => 'student/ajaxlga/accomodation', 'method' => 'html'),
       '#required' => TRUE,
@@ -3212,12 +3212,12 @@ function _student_registration_form6($obj) {
       '#type' => 'file',
       '#title' => 'Upload Passport Picture'
    );
-   $amt = variable_get('veritas_student_regfee', 10);
+   $amt = variable_get('eduerp_student_regfee', 10);
    $form['signature'] = array(
       '#type' => 'file',
       '#title' => 'Upload Signature Photo'
    );
-   $amt = variable_get('veritas_student_regfee', 10);
+   $amt = variable_get('eduerp_student_regfee', 10);
    $form['jambsubp'] = array('#id' => 'edit-previous', '#value' => 'Previous', '#type' => 'submit');
    $form['jambsubn'] = array('#id' => 'edit-next', '#value' => 'Next', '#type' => 'submit');
    $form['#multistep'] = TRUE;
@@ -3247,7 +3247,7 @@ function _student_reg_form4($obj) {
       '#attributes' => array('class' => 'form-select')
    );
    $form['pic'] = array('#type' => 'file', '#title' => 'UPLOAD PASSPORT PICTURE');
-   $amt = variable_get('veritas_student_regfee',10);
+   $amt = variable_get('eduerp_student_regfee',10);
    $form['dec'] = array(
      '#type' => 'checkbox',
      '#title' => 'Agree',
@@ -3553,7 +3553,7 @@ function student_reg_form_validate($form, &$state) {
       if (!$v[email]) {
          form_set_error('email', 'Email is required');
       }
-      if (!veritas_validuser($v['email'], $v['email']))
+      if (!eduerp_validuser($v['email'], $v['email']))
          return false;
       if ($v['nat'] ==  156 && !$v['state']) {//only applicable for nigeria
          form_set_error('state', 'Required State of origin');
@@ -3630,7 +3630,7 @@ function student_reg_form_validate($form, &$state) {
           form_set_error('dec', "You must accept the agreement");
           return;
       }
-      $f8 = veritas_check_upload('pic');
+      $f8 = eduerp_check_upload('pic');
       if ($f8) {
          form_set_error('pic','Picture cannot be uploaded '. $f8);
       }
@@ -3653,14 +3653,14 @@ function student_reg_form_validate($form, &$state) {
       $em = sprintf("%02d", $em);
       $mail = $state['storage']['values'][1]['email'];
       $name = $state['storage']['values'][1]['fname'] .' '. $state['storage']['values'][1]['mname']. $state['storage']['values'][1]['lname'];
-      $amt = variable_get('veritas_student_regfees', 1000);
+      $amt = variable_get('eduerp_student_regfees', 1000);
       $m = 1;
       if ($m ==2 ) {
         if (!$val1['cc'] || !$val1['cpin']) {
           form_set_error('', 'Invalid Credit Card Details');
           return;
         }
-        $s = veritas_pay_cc($val1['cc'], $val1['cpin'], $em, $ey, $amt, $descr, $transid, $name, $mail, 'sreg');
+        $s = eduerp_pay_cc($val1['cc'], $val1['cpin'], $em, $ey, $amt, $descr, $transid, $name, $mail, 'sreg');
         }
         else if ($m == 1) {
            $cno = $val1['cno'];
@@ -3671,12 +3671,12 @@ function student_reg_form_validate($form, &$state) {
            }
            /**
             * Etranzact
-           $s = veritas_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');*/
+           $s = eduerp_pay_pin($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');*/
 
            /**
             * Bank Payment
             */
-           $s = veritas_verify_bankpay($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');
+           $s = eduerp_verify_bankpay($rno, $cno, $amt, $descr, $transid, $name, $mail, 'sreg');
 
        }
        else {
@@ -3739,10 +3739,10 @@ function student_reg_form_submit($form,&$state){
      $transid = $state['storage']['transid'];
      if (!$transid) {
        drupal_set_message('Registration cannot be done . please contact admin');
-       drupal_goto('veritas/error');
+       drupal_goto('eduerp/error');
      }
      $type = 'sreg';
-     $acc = veritas_user_save($type, $val['email'], $transid);
+     $acc = eduerp_user_save($type, $val['email'], $transid);
      $uid = $acc->uid;
      if ($uid) {
        $f = $state['storage']['file'];
@@ -3754,11 +3754,11 @@ function student_reg_form_submit($form,&$state){
        student_add($uid, $state['storage']['values'], $f);
        $t = db_query("select {transaction_id} from transaction where receipt_no='%s'", $transid);
        $f = db_fetch_object($t);
-       drupal_goto('veritas/receipt/'. $f->transaction_id);
+       drupal_goto('eduerp/receipt/'. $f->transaction_id);
      }
      else {
        drupal_set_message('Registration cannot be done . please contract admin');
-       drupal_goto('veritas/error');
+       drupal_goto('eduerp/error');
     }
     // At this point, we should null the session info
     unset($_SESSION);
@@ -4273,7 +4273,7 @@ function _student_add_lga() {
  <script type="text/javascript">
 
 <!--//--><![CDATA[//><!--
-jQuery.extend(Drupal.settings, { "basePath": "/veritas/", "ahah": { "": { "url": "/veritas/student/accomodation/validate", "event": "change", "wrapper": "message_id", "selector": "#edit-hostel-1", "effect": "slide", "method": "replace", "progress": { "type": "throbber" } }, "edit-accomodation-type": { "url": "/veritas/student/ajaxlga/accomodation", "event": "change", "keypress": null, "wrapper": "hostel_id", "selector": "#edit-accomodation-type", "effect": "none", "method": "html", "progress": { "type": "throbber" }, "button": false }, "edit-hostel": { "url": "/veritas/student/accomodation/validate", "event": "change", "keypress": null, "wrapper": "message_id", "selector": "#edit-hostel", "effect": "none", "method": "html", "progress": { "type": "throbber" }, "button": false } } });
+jQuery.extend(Drupal.settings, { "basePath": "/eduerp/", "ahah": { "": { "url": "/eduerp/student/accomodation/validate", "event": "change", "wrapper": "message_id", "selector": "#edit-hostel-1", "effect": "slide", "method": "replace", "progress": { "type": "throbber" } }, "edit-accomodation-type": { "url": "/eduerp/student/ajaxlga/accomodation", "event": "change", "keypress": null, "wrapper": "hostel_id", "selector": "#edit-accomodation-type", "effect": "none", "method": "html", "progress": { "type": "throbber" }, "button": false }, "edit-hostel": { "url": "/eduerp/student/accomodation/validate", "event": "change", "keypress": null, "wrapper": "message_id", "selector": "#edit-hostel", "effect": "none", "method": "html", "progress": { "type": "throbber" }, "button": false } } });
 //--><!]]>
 
 </script>

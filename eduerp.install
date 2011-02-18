@@ -5,7 +5,7 @@ include_once('permissions_api.module');
 /**
  * initialize the permissions for roles in this module
  */
-function veritas_perms_initialize() {
+function eduerp_perms_initialize() {
   $permissions = array(
     'Administrator' => array(
       'create profile content', 
@@ -123,9 +123,9 @@ function veritas_perms_initialize() {
   return $permissions;
 }
 
-function veritas_install(){
+function eduerp_install(){
   // Install the schemas
-  drupal_install_schema('veritas');
+  drupal_install_schema('eduerp');
 
   // Load fixtures
   $fixtures_path = dirname(__FILE__) . "/fixtures/";
@@ -144,35 +144,35 @@ function veritas_install(){
   drupal_execute('content_copy_import_form', $form_state);
   content_clear_type_cache();
   
-  drupal_set_message('veritas module installed');
+  drupal_set_message('eduerp module installed');
 }
 
-function veritas_enable() {
+function eduerp_enable() {
   // set content type permissions
-  $perms = veritas_perms_initialize();
+  $perms = eduerp_perms_initialize();
 
   foreach ($perms as $role => $permissions) {
     permissions_grant_permissions($role, $permissions);
   }
 }
 
-function veritas_disable() {
+function eduerp_disable() {
   // remove content type permissions
-  $perms = veritas_perms_initialize();
+  $perms = eduerp_perms_initialize();
 
   foreach ($perms as $role => $permissions) {
     permissions_revoke_permissions($role, $permissions);
   }
 }
 
-function veritas_uninstall(){
+function eduerp_uninstall(){
   // uninstall the schemas
-  drupal_uninstall_schema('veritas');
+  drupal_uninstall_schema('eduerp');
   
-  drupal_set_message('veritas module uninstalled');
+  drupal_set_message('eduerp module uninstalled');
 }
 
-function veritas_schema() {
+function eduerp_schema() {
   $schema['eduerp_session'] = array(
     'description' => t('Table for storing school session data'),
     'fields' => array(
