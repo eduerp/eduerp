@@ -2,14 +2,6 @@
 
 function eduerp_menu() {
 
-  $items['eduerp/error'] = array (
-    'page callback' => 'eduerp_error_page',
-    'access arguments' => array (
-      'eduerp access'
-    ),
-    'type' => MENU_CALLBACK,
-  );
-
   $items['admin/settings/eduerp'] = array (
     'title' => 'EduERP Configuration',
     'page callback' => 'drupal_get_form',
@@ -25,12 +17,6 @@ function eduerp_menu() {
   return $items;
 }
 
-function eduerp_perm() {
-  return array (
-    'eduerp access',
-    'student register'
-  );
-}
 
 /**
  * implements the simpletest testing framework hook
@@ -56,18 +42,6 @@ function eduerp_autoload_info() {
       'file' => 'lib/Student.class.php',
     ),
   );
-}
-
-function eduerp_accomodation_types() {
-
-  $r = db_query("select * from accomodation_types order by name ");
-  $accomodation = array ();
-  $accomodation[] = 'Accomodation Type';
-  while ($f = db_fetch_object($r)) {
-    $accomodation[$f->id] = $f->name;
-  }
-
-  return $accomodation;
 }
 
 function eduerp_lga() {
@@ -171,93 +145,6 @@ function eduerp_admin_settings() {
   return system_settings_form($form);
 }
 
-function eduerp_validuser($name, $email) {
-
-  if (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE LOWER(name) = LOWER('%s')", $name)) > 0) {
-    form_set_error('mail', t('The e-mail address %email is already registered.', array (
-      '%email' => $email
-    )));
-
-    return false;
-  } elseif (drupal_is_denied('user', $name)) {
-      form_set_error('mail', t('The e-mail address %email has been denied access.', array (
-        '%email' => $email
-      )));
-      return false;
-    }
-  if ($error = user_validate_mail($email)) {
-    form_set_error('mail', $error);
-    return false;
-  } elseif (db_result(db_query("SELECT COUNT(*) FROM {users} WHERE  LOWER(mail) = LOWER('%s')", $email)) > 0) {
-      form_set_error('mail', t('The e-mail address %email is already registered.', array (
-        '%email' => $email
-      )));
-      return false;
-    } elseif (drupal_is_denied('mail', $email)) {
-        form_set_error('mail', t('The e-mail address %email has been denied access.', array (
-          '%email' => $email
-        )));
-        return false;
-      }
-  return true;
-
-}
-function eduerp_insert_contractor($val, $uid) {
-  $id = $uid;
-
-}
-function eduerp_user_save($type, $mail, $transid) {
-  /*
-  $data=$_SESSION[eduerp_data];
-  if(!is_array($data)){
-  watchdog('error','Session data lost for transactionID '.$transid,WATCHDOG_ERROR);
-  drupal_goto(url('veritus/error'));
-
-  }
-  */
-
-  if ($type == 'creg') {
-    $rolename = 'Contractor';
-  } elseif ($type == 'sreg') {
-      $rolename = 'Applicant';
-    } else
-      return;
-  $name = $mail;
-  $roles = array ();
-  $f = db_query("select * from {role} where name='%s'", $rolename);
-  $roles = array ();
-  $f = db_fetch_object($f);
-  if ($f->rid) {
-    $roles[$f->rid] = $f->rid;
-  }
-  $pass = user_password();
-  $data = array (
-    'status' => 1,
-    'name' => $name,
-    'mail' => $mail,
-    'pass' => $pass,
-    'init' => $mail,
-    'roles' => $roles
-  );
-  $acc = user_save('', $data);
-  if (!$acc) {
-    watchdog('error', 'New user creation failed for ' . $name . ' ,' . $mail . ' ,' . $rolename, WATCHDOG_ERROR);
-    drupal_goto('veritus/error');
-    return;
-  }
-  $acc->password = $pass;
-  $pass2 = uniqid();
-  db_query("update transaction set user_type_id=%d,username='%s' ,password_2='%s' where receipt_no='%s'", $acc->uid, $acc->name, $pass2, $transid);
-  // For now disable mail notifications
-	//_user_mail_notify('register_no_approval_required', $acc);
-  user_authenticate($data);
-  return $acc;
-}
-
-function _eduerp_insert_student($val, $uid) {
-	;
-}
-
 function eduerp_error_page() {
 
   return t('A error occurred in processing your request. Please contact the admin');
@@ -270,152 +157,6 @@ function eduerp_mail($key, & $message, $params) {
     'Content-Type'  => 'text/html; charset=UTF-8');
   */
   ;
-}
-
-function eduerp_check_upload($source) {
-  global $user;
-  static $upload_cache;
-
-  // Add in our check of the the file name length.
-  $validators['file_validate_name_length'] = array ();
-
-  // Return cached objects without processing since the file will have
-  // already been processed and the paths in _FILES will be invalid.
-  if (isset ($upload_cache[$source])) {
-    return $upload_cache[$source];
-  }
-
-  // If a file was uploaded, process it.
-  if (isset ($_FILES['files']) && $_FILES['files']['name'][$source] && is_uploaded_file($_FILES['files']['tmp_name'][$source])) {
-    // Check for file upload errors and return FALSE if a
-    // lower level system error occurred.
-    switch ($_FILES['files']['error'][$source]) {
-      // @see http://php.net/manual/en/features.file-upload.errors.php
-      case UPLOAD_ERR_OK :
-        $file = new stdClass();
-        $file->filename = file_munge_filename(trim(basename($_FILES['files']['name'][$source]), '.'), $extensions);
-        $file->filepath = $_FILES['files']['tmp_name'][$source];
-        $file->filemime = $_FILES['files']['type'][$source];
-
-        // Rename potentially executable files, to help prevent exploits.
-        if (preg_match('/\.(php|pl|py|cgi|asp|js)$/i', $file->filename) && (substr($file->filename, -4) != '.txt')) {
-          $file->filemime = 'text/plain';
-          $file->filepath .= '.txt';
-          $file->filename .= '.txt';
-        }
-        $file->source = $source;
-        $file->destination = file_destination(file_create_path($dest . '/' . $file->filename), $replace);
-        $file->filesize = $_FILES['files']['size'][$source];
-        $extensions = 'jpg jpeg gif png txt html doc xls pdf ppt pps odt ods odp ZIP zip csv';
-        $errors = file_validate_name_length($file);
-        if (count($errors)) {
-          return implode(",", $errors);
-          drupal_set_message(t('The file %file could not be saved,Error %error', array (
-            '%file' => $source,
-            '%error' => $errors
-          )));
-        }
-        $errors = file_validate_extensions($file, $extensions);
-        if (count($errors)) {
-          drupal_set_message(t('The file %file could not be saved,Error %error', array (
-            '%file' => $source,
-            '%error' => $errors
-          )));
-          return implode(",", $errors);
-        }
-
-        $errors = file_validate_size($file, variable_get('eduerp_file_size', 1000000));
-        if (count($errors)) {
-          drupal_set_message(t('The file %file could not be saved,Error %error', array (
-            '%file' => $source,
-            '%error' => $errors
-          )));
-          return implode(",", $errors);
-        }
-
-        return 0;
-
-      case UPLOAD_ERR_INI_SIZE :
-      case UPLOAD_ERR_FORM_SIZE :
-        drupal_set_message(t('The file %file could not be saved, because it exceeds %maxsize, the maximum allowed size for uploads.', array (
-          '%file' => $source,
-          '%maxsize' => format_size(file_upload_max_size())
-        )), 'error');
-        return 1;
-
-      case UPLOAD_ERR_PARTIAL :
-      case UPLOAD_ERR_NO_FILE :
-        drupal_set_message(t('The file %file could not be saved, because the upload did not complete.', array (
-          '%file' => $source
-        )), 'error');
-        return 1;
-
-        // Unknown error
-      default :
-        drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array (
-          '%file' => $source
-        )), 'error');
-        return 1;
-    }
-  }
-  drupal_set_message(t('The file %file could not be saved. An unknown error has occurred.', array (
-    '%file' => $source
-  )), 'error');
-  return 1;
-}
-
-function _assign_keys(& $form, $state) {
-  foreach ($form as $key => & $val) {
-    if (is_array($val) && !((array_key_exists('#type', $val) && !in_array($val['#type'], array (
-        'fieldset',
-        'markup',
-        'item'
-      ))) || array_key_exists('#value', $val))) {
-      //			echo "for key ".$key."<br/>";
-      _assign_keys($val, $state);
-    } elseif (is_array($val) && array_key_exists('#type', $val) && !in_array($val['#type'], array (
-          'fieldset',
-          'markup',
-          'item'
-        )) && $state[$key]) {
-        $val['#default_value'] = $state[$key];
-      }
-  }
-}
-function _eduerp_titles() {
-  // We should be looking at replacing the functionality in this function
-  // it's not necessary to store titles in a database.
-  static $ritles;
-  if (!$titles) {
-    $r = db_query("select * from title order by title_name");
-    while ($f = db_fetch_object($r))
-      $titles[$f->title_id] = $f->title_name;
-  }
-  return $titles;
-
-}
-function _eduerp_country() {
-  static $ritles;
-  if (!$titles) {
-    $r = db_query("select * from country order by country_name");
-    while ($f = db_fetch_object($r))
-      $titles[$f->country_id] = $f->country_name;
-  }
-  return $titles;
-
-}
-function _eduerp_religion() {
-  static $ritles;
-  if (!$titles) {
-    $titles = array ();
-    $r = db_query("select * from religion ");
-    while ($f = db_fetch_object($r)) {
-      $titles[$f->relegion_id] = $f->religion_name;
-    }
-    ///$titles= array('christianity'=>'Christianity','islam'=>'Islam','traditional'=>'Traditional','other'=>'Other');
-  }
-  return $titles;
-
 }
 
 function eduerp_elements() {
@@ -477,78 +218,6 @@ function eduerp_theme() {
   );
 }
 
-function eduerp_st_form() {
-  $form['#title'] = 'CSV File upload form';
-  $form[] = array (
-    '#value' => "File name should be *.csv, the narrative field should not contain any ,"
-  );
-  $form['#attributes'] = array (
-    'enctype' => "multipart/form-data"
-  );
-  $form['payfile'] = array (
-    '#type' => 'file'
-  );
-  $form['submit'] = array (
-    '#type' => 'submit',
-    '#value' => 'Submit'
-  );
-  return $form;
-}
-function eduerp_st_form_validate($form, & $form_state) {
-
-  $f = eduerp_check_upload("payfile");
-  if ($f) {
-    form_set_error('payfile', 'Sorry file cannot be uploaded. Please try again ' . $f);
-    return;
-  }
-
-}
-function eduerp_st_form_submit($form, & $form_state) {
-
-  $d = $n = 0;
-
-  $fx = fopen($_FILES['files']['tmp_name']['payfile'], 'r');
-  if (!$fx) {
-    echo 'file not open';
-  }
-  $i = 0;
-  while ($arr = fgetcsv($fx, null, ',')) {
-    if (count($arr) > 7) {
-      drupal_set_message("line number " . ($i) . " in the csv file contain " . count($arr) . " fields.");
-      return;
-    }
-
-    $arr[3] = str_replace(",", '', $arr[3]);
-    $arr[4] = str_replace(",", '', $arr[4]);
-    if (!is_numeric($arr[4])) {
-      continue;
-    }
-    $r = db_query("select * from payment where refno='%s'", $arr[1]);
-    $s = db_fetch_object($r);
-    if ($s->refno) {
-      $d++;
-      continue;
-    }
-    $n++;
-    $barr = array ();
-
-    $barr[0] = $arr[0];
-    $barr[1] = $arr[1];
-    $barr[2] = $arr[6];
-    $barr[3] = $arr[2];
-    $barr[4] = $arr[3];
-    $barr[5] = $arr[4];
-    $barr[6] = 0;
-    $sql = "insert into payment values ('" .
-    implode("','", $barr) . "')";
-    $f = db_query($sql);
-    if (db_error()) {
-      drupal_set_message('dberror in line ' . $i);
-      return;
-    }
-  }
-  drupal_set_message(" inserted  $n new record(s) ");
-}
 
 /**
  * loads a user's profile for reading and modification
