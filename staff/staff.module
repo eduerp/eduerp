@@ -6961,7 +6961,6 @@ function get_student_course_instance_form() {
 
 function get_student_course_instance_form_validate($form, &$state) {
   $values = $state['values'];
-  //$studentInfo = is_valid_mat_number($values['mat_no']);
   $studentInfo = user_load(array('name'=>$values['mat_no']));
 
 
@@ -6996,15 +6995,6 @@ function get_student_course_instance_form_validate($form, &$state) {
       $_SESSION['eduerp_drop_course_info'] = array('studentInfo' => $studInfo, 'session' => $values['session'], 'semester' => $values['semester']);
     }
   }
-}
-
-
-function is_valid_mat_number($matno) {
-  $sql = "SELECT student_id, first_name, last_name, matriculation_no FROM {admitted_student} WHERE matriculation_no = '%s'";
-
-  $result = db_query($sql, $matno);
-  return $result;
-
 }
 
 
@@ -7522,7 +7512,6 @@ function get_student_info_form() {
 
 function get_student_info_form_validate($form, &$state) {
   $values = $state['values'];
-  //$studentInfo = is_valid_mat_number($values['mat_no']);
   $studentInfo = user_load(array('name'=>$values['mat_no']));
 
 
