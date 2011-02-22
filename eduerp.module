@@ -1,17 +1,6 @@
 <?php
 
 function eduerp_menu() {
-  $items['eduerp/receipt'] = array (
-    'page callback' => 'eduerp_view_receipt',
-    'access arguments' => array (
-      'view receipt',
-      'anonymous',
-      'student register'
-    ),
-    'access callback' => 'eduerp_verify_access',
-    'type' => MENU_CALLBACK,
-  );
-
   $items['eduerp/payments'] = array (
     'title' => 'Upload payment file',
     'page callback' => 'drupal_get_form',
@@ -55,16 +44,10 @@ function eduerp_menu() {
   return $items;
 }
 
-function eduerp_verify_access() {
-  return true;
-}
-
 function eduerp_perm() {
   return array (
-    'view receipt',
     'eduerp access',
     'eduerp payments',
-    'anonymous',
     'student register'
   );
 }
@@ -93,193 +76,6 @@ function eduerp_autoload_info() {
       'file' => 'lib/Student.class.php',
     ),
   );
-}
-
-function eduerp_mail_receipt($f, $email, $name, $img) {
-  global $user;
-  if (!$email)
-    $email = $user->mail;
-  if (!$name) {
-
-    switch ($f->trans_type) {
-      case 'sreg' :
-        $rc = db_query("select first_name,middle_name,last_name from student where student_id=%d", $f->user_type_id);
-        $fc = db_fetch_array($rc);
-        $name = $fc[first_name] . ' ' . $fc[last_name];
-        break;
-      case 'creg' :
-      case 'cfee' :
-      case 'tfee' :
-        $rc = db_query("select * from contractor where contractor_id=%d", $f->user_type_id);
-        $fc = db_fetch_object($rc);
-        $f->name = $name = $fc->companyname;
-        break;
-      default :
-        if ($f->username)
-          $f->name = $name = $f->username;
-        else
-          $name = $email;
-
-    }
-  }
-  $f->name = $name;
-  $message = drupal_mail('eduerp', 'receipt', $email, language_default(), array (), null, false);
-  $message[body] = eduerp_print_receipt($f, $img);
-  $message[subject] = 'Transaction Receipt';
-  $message[headers] = array_merge($message[headers], array (
-    'MIME-Version' => '1.0',
-    'Content-Type' => 'text/html; charset=UTF-8'
-  ));
-  drupal_mail_send($message);
-
-  // We should send a copy of the emailed receipt to the bursar
-  // I know it's bad practice to hardcode certain parameters but I don't want this failing
-  // if there's no configured parameter for eduerp_bursars_email
-  $admin_message = drupal_mail('eduerp', 'receipt', variable_get('eduerp_bursars_email', 'bursar@eduerp.edu.ng'), language_default(), array (), null, false);
-  $admin_message[body] = eduerp_print_receipt($f, $img);
-  $admin_message[subject] = 'Transaction Receipt';
-  $admin_message[headers] = array_merge($admin_message[headers], array (
-    'MIME-Version' => '1.0',
-    'Content-Type' => 'text/html; charset=UTF-8'
-  ));
-  drupal_mail_send($admin_message);
-
-  ///echo htmlspecialchars($message[body]);
-  if ($f->trans_type == 'cfee') {
-    $message = drupal_mail('eduerp', 'preqbid', $email, language_default(), array (), null, false);
-    //$tid=uniqid();
-    //db_query("update transaction set username='%s',password_2='%s' where transaction_id='%s'",$user->name,$tid,$f->transaction_id);
-    ///$url=url('eduerp/contractor/tender',array('absolute'=>true));
-
-    $message[body] = "
-        To
-        $name
-        Dear Sirs/Madams
-        Your pre-qualification form submission is now under review by Veritas University.
-        If successful, Veritas University will contact you with further information about how you can bid for existing tenders.
-        Director of Works
-        Veritas University
-        ";
-    $message[subject] = 'Prequalification form submitted';
-    $message[headers] = array_merge($message[headers], array (
-      'MIME-Version' => '1.0',
-      'Content-Type' => 'text/plain; charset=UTF-8'
-    ));
-    drupal_mail_send($message);
-  }
-  if ($f->trans_type == 'tfee') {
-  	  ;
-  }
-}
-
-function eduerp_view_receipt() {
-  global $user;
-
-  if (arg(3) == "student") {
-    if (!isset ($_SESSION['student']['data']->student_id)) {
-      drupal_goto('student/login');
-    }
-
-    if (arg(2)) {
-      $t_id = (int) arg(2);
-      if (!$t_id) {
-        drupal_set_message(t("Transaction not found"));
-        drupal_goto("eduerp/error");
-      }
-    }
-    //echo sprintf("select * from admitted_transaction where transaction_id=%d ",$t_id);
-    $sql = "SELECT at.* , sum(at2.trans_amount) AS total_amount
-        FROM admitted_transaction at, admitted_transaction at2
-        WHERE at.student_id = at2.student_id
-        AND at.session_id = at2.session_id
-        AND at.transaction_id=%d
-        GROUP BY at.student_id";
-    $q = db_query($sql, $t_id);
-    $f = db_fetch_object($q);
-    $type = $f->trans_type;
-    $rc = db_query("
-      SELECT `as`.*, p.field_programme_name_value AS programme_name, d.field_department_name_value AS department_name, c.field_college_name_value AS college_name
-      FROM {admitted_student} `as`, {content_type_program} p, {content_type_department} d, {content_type_college} c
-      WHERE as.student_id=%d AND as.first_choice=p.nid AND p.field_department_id_nid=d.nid AND d.field_college_id_nid=c.nid",
-      $f->student_id);
-    $fc = db_fetch_array($rc);
-    $f->name = $name = $fc[first_name] . ' ' . $fc[middle_name] . ' ' . $fc[last_name];
-
-    $f->student_data = $fc;
-
-    if (arg(4) == 'print') {
-      echo eduerp_student_receipt($f, true);
-      exit;
-    }
-
-    $email_content = eduerp_student_receipt($f);
-
-    return $email_content;
-
-  } else {
-    if (arg(2)) {
-      $t_id = (int) arg(2);
-      if (!$t_id) {
-        drupal_set_message(t("Transaction id not found"));
-        drupal_goto("eduerp/error");
-      }
-      if (!$user->uid) {
-        drupal_set_message(t("You need to log in to access this page"));
-        drupal_goto("eduerp/error");
-      }
-      /* the following line is responsible for the error on the receipt
-      page. Since the correct one is written below it, I just commented
-      it out. - Tim (30/06/09 - 14:06GMT)
-      */
-      //$q=db_query("select * from transaction where transaction_id=%d and student_id=%d",$t_id,$user->uid);
-      $q = db_query("select * from transaction where transaction_id=%d ", $t_id);
-      $f = db_fetch_object($q);
-      $type = $f->trans_type;
-      switch ($f->trans_type) {
-        case 'sreg' :
-          $rc = db_query("select first_name,middle_name,last_name from student where student_id=%d", $f->user_type_id);
-          $fc = db_fetch_array($rc);
-          $f->name = $name = $fc[first_name] . ' ' . $fc[last_name];
-          break;
-        case 'creg' :
-        case 'cfee' :
-        case 'tfee' :
-          $rc = db_query("select * from contractor where contractor_id=%d", $f->user_type_id);
-          $fc = db_fetch_object($rc);
-          $f->name = $name = $fc->companyname;
-          break;
-        default :
-          if ($f->username)
-            $f->name = $name = $f->username;
-          else
-            $f->name = $name = $email;
-
-      }
-      if (!$f->transaction_id) {
-        drupal_set_message(t("Transaction id not found"));
-        drupal_goto("eduerp/error");
-      }
-
-    }
-    /*
-    if(variable_get('eduerp_logo','')){
-    $img=url('',array('absolute'=>true)).variable_get('eduerp_logo','');
-    $img="<img src='$img'>";
-    }
-    else
-    $img='';
-
-    eduerp_mail_receipt($f,$img);
-    */
-    $f->name = $name;
-    if (arg(3) == 'print') {
-      echo eduerp_print_receipt($f, '', true);
-      exit;
-    }
-    return eduerp_receipt($f);
-
-  }
-
 }
 
 function eduerp_accomodation_types() {
@@ -556,7 +352,7 @@ function eduerp_receipt($f) {
 
 
       return ob_get_clean();
-    
+
     }
 function eduerp_student_receipt(& $f, $isprint = false) {
   ob_start();
