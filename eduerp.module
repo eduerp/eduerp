@@ -29,20 +29,6 @@ function eduerp_simpletest() {
   return array_keys($tests);
 }
 
-/**
- * implements autoloading for class files
- * uses the Autoload module
- * http://drupal.org/project/autoload
- */
-function eduerp_autoload_info() {
-  $class_path = __DIR__.DIRECTORY_SEPARATOR."lib";
-
-  return array(
-    'Student' => array (
-      'file' => 'lib/Student.class.php',
-    ),
-  );
-}
 
 function eduerp_lga() {
   static $ritles;
@@ -53,9 +39,6 @@ function eduerp_lga() {
       $titles[$f->lga_id] = $f->lga_name;
   }
   return $titles;
-}
-function eduerp_table_head($str, $head) {
- ;
 }
 function eduerp_states($state_id = 0) {
   static $ritles;
@@ -68,57 +51,9 @@ function eduerp_states($state_id = 0) {
   return ($state_id) ? $titles[$state_id] : $titles;
 
 }
+
+
 function eduerp_admin_settings() {
-
-  $form['eduerp_demo'] = array (
-    '#title' => 'Demo Mode',
-    '#description' => 'Payment in demo mode',
-    '#type' => 'checkbox',
-    '#default_value' => variable_get('eduerp_demo', 1)
-  );
-  $form['eduerp_terminal_id'] = array (
-    '#type' => 'textfield',
-    '#title' => 'Terminal ID',
-    '#description' => 'Payment Terminal ID,0000000001 for demo',
-    '#default_value' => variable_get('eduerp_terminal_id', '0000000001')
-  );
-  $form['eduerp_lot_cost'] = array (
-    '#type' => 'textfield',
-    '#title' => 'Cost of Lot',
-    '#description' => 'Every lot selected cost $ xxx',
-    '#default_value' => variable_get('eduerp_lot_cost', '10000')
-  );
-  $form['eduerp_student_regfees'] = array (
-    '#type' => 'textfield',
-    '#title' => 'Student Registration Fees',
-    '#default_value' => variable_get('eduerp_student_regfees', '100')
-  );
-  $form['eduerp_logo'] = array (
-    '#type' => 'textfield',
-    '#title' => 'logo image',
-    '#description' => 'logo Used for sending mails.logo to be ftpd  and stored . enter the relative url from which the image is accessed.eg. http://yourdrupalinstallation/images/logo.png then enter here images/logo.png  ',
-    '#default_value' => variable_get('eduerp_logo', '')
-  );
-  $form['eduerp_tender_node'] = array (
-    '#type' => 'textfield',
-    '#size' => 6,
-    '#title' => 'Tender Node ID',
-    '#description' => 'You must create this node where tender documents are stored. it is the tender link.input its id here.if you leave it blank contractors will get error when trying to access the tender link',
-    '#default_value' => variable_get('eduerp_tender_node', '')
-  );
-  $form['eduerp_lot_upload_cost'] = array (
-    '#type' => 'textfield',
-    '#size' => 6,
-    '#title' => 'Tender Upload cost',
-    '#default_value' => variable_get('eduerp_lot_upload_cost', 1000)
-  );
-  $form['eduerp_tender_adminuser'] = array (
-    '#type' => 'textfield',
-    '#size' => 25,
-    '#title' => 'Tender Admin Username',
-    '#default_value' => variable_get('eduerp_tender_adminuser', '')
-  );
-
   $form['RegisterAllCoursesatStartofSession'] = array(
     '#type' => 'checkbox',
     '#title' => 'Register All Courses at Start of Session',
@@ -135,87 +70,7 @@ function eduerp_admin_settings() {
     '#tree' => TRUE
   );
 
-  $form['eduerp_bursars_email'] = array(
-    '#type' => 'textfield',
-    '#size' => 25,
-    '#title' => "Bursar's Email Address",
-    '#default_value' => variable_get('eduerp_bursars_email', '')
-  );
-
   return system_settings_form($form);
-}
-
-function eduerp_error_page() {
-
-  return t('A error occurred in processing your request. Please contact the admin');
-}
-
-function eduerp_mail($key, & $message, $params) {
-  /*
-  $message[headers] +=
-  array( 'MIME-Version'  => '1.0',
-    'Content-Type'  => 'text/html; charset=UTF-8');
-  */
-  ;
-}
-
-function eduerp_elements() {
-  return array (
-    'ccdt' => array (
-      '#input' => true,
-      '#process' => array (
-        'expand_ccdt'
-      )
-    )
-  );
-}
-
-function expand_ccdt($element) {
-  $options = drupal_map_assoc(range(1, 12), 'map_month');
-  if (empty ($element['#value'])) {
-  }
-  $element['#tree'] = TRUE;
-  $element[em] = array (
-    '#type' => 'select',
-    '#value' => $element['#value'][em],
-    '#attributes' => $element['#attributes'],
-    '#options' => $options,
-
-
-  );
-
-  $options = drupal_map_assoc(range(2008, 2012));
-  if ($element['#ccdt_attribute'])
-    $options = drupal_map_assoc(range($element['#ccdt_attribute'][0], $element['#ccdt_attribute'][1]));
-
-  $element[ey] = array (
-    '#type' => 'select',
-    '#value' => $element['#value'][ey],
-    '#attributes' => $element['#attributes'],
-    '#options' => $options,
-
-
-  );
-
-  return $element;
-}
-
-function theme_ccdt($element) {
-
-  return theme('form_element', $element, '<div class="container-inline">' . $element['#children'] . '</div>');
-}
-
-function eduerp_theme() {
-
-  return array (
-    'ccdt' => array (
-      'arguments' => array (
-        'element' => NULL
-      )
-    ),
-
-
-  );
 }
 
 
