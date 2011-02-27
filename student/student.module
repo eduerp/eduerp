@@ -2,13 +2,6 @@
 
 function student_menu() {
 
-  $items['student/test'] = array(
-    'title' => 'Testing Screen',
-    'page callback' => 'student_testing',
-    'access arguments' => array('access content'),
-    'type' => MENU_NORMAL_ITEM,
-  );
-
   $items['student/clearance/post'] = array(
     'title' => 'Student Clearance',
     'page callback' => 'student_clearance',
@@ -481,25 +474,6 @@ function set_matriculation_number($student_id) {
     $student_profile->profile_matno = $matno;
     $student_profile->save();
   }
-}
-
-
-/**
- * module function for testing purposes
- */
-function student_testing() {
-  /**
-   * $result->field_staff_verification[0]['uid'];
-   * $result->field_staff_clearance[0]['uid'];
-   * $result->field_student[0]['uid'];
-   * $result->field_clearance_date...
-   * $result->field_verification_date[0]['value'] = '2010-07-14 11:27:16';
-   * $result->field_verification_date[0]['timezone'] = 'Africa/Lagos';
-   * $result->field_verification_date[0]['date_type'] = 'datetime';
-  */
-  $results = module_invoke_all('matno', 440);
-  var_dump($results);
-
 }
 
 /**
