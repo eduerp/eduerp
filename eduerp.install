@@ -135,9 +135,13 @@ function eduerp_install(){
 
   // Install the content types
   $profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_profile.txt');
+
+  $profile_info = content_types('profile');
+
   $form_state = array(
     'values' => array(
-      'type_name' => 'profile', 
+      // Updates the content type if it's existent, if not, creates it.
+      'type_name' => (is_array($profile_info) && array_key_exists('type', $profile_info)) ? 'profile' : '<create>', 
       'macro' => $profile_content_type,
     ),
   );
