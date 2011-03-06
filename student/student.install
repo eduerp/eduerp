@@ -291,25 +291,19 @@ function student_disable() {
 
 function student_enable() {
   // Install the content types
-  $student_profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_student_profile.txt');
-  $student_clearance_content_type = file_get_contents(dirname(__FILE__). '/cck/cck_student_clearance.txt');
-
-  // determine if to replace content type or create it
-  $student_profile_info = content_types('student_profile');
-  $student_clearance_info = content_types('student_clearance');
-
-  $form_state = array(
-    'values' => array(
-      'type_name' => (is_array($student_profile_info) && array_key_exists('type', $student_profile_info)) ? 'student_profile' : '<create>',
-      'macro' => $student_profile_content_type,
-    ),
-  );
-  drupal_execute('content_copy_import_form', $form_state);
-
-  $form_state['values']['type_name'] = (is_array($student_clearance_info) && array_key_exists('type', $student_clearance_info)) ? 'student_clearance' : '<create>';
-  $form_state['values']['macro'] = $student_clearance_content_type;
-  drupal_execute('content_copy_import_form', $form_state);
-
+  install_content_type('cck_student_profile.txt', 'student_profile');
+  install_content_type('cck_student_clearance.txt', 'student_clearance');
+  install_content_type('CCKapproval.txt', 'approval');
+  install_content_type('CCKcollege.txt', 'college');
+  install_content_type('CCKcourse.txt', 'course');
+  install_content_type('CCKcourse_instance.txt', 'course_instance');
+  install_content_type('CCKdepartment.txt', 'department');
+  install_content_type('CCKprogram.txt', 'program');
+  install_content_type('CCKstudent_gpa.txt', 'student_gpa');
+  install_content_type('CCKstudent_grades.txt', 'student_grades');
+  install_content_type('CCKstudent_program.txt', 'student_program');
+  install_content_type('CCKstudent_record.txt', 'student_record');
+  
   content_clear_type_cache();
 
   // create student roles
@@ -324,5 +318,20 @@ function student_enable() {
   }
 
   content_notify('enable', 'exam_record');
+}
+
+function install_content_type($filename, $content_type_name) {
+  $content_type_data = file_get_contents(dirname(__FILE__) . '/cck/'.$filename);
+
+  // determine if to replace content type or create it
+  $content_type_info = content_types($content_type_name);
+
+  $form_state = array(
+    'values' => array(
+      'type_name' => (is_array($content_type_info) && array_key_exists('type', $content_type_info)) ? $content_type_name : '<create>',
+      'macro' => $content_type_data,
+    ),
+  );
+  drupal_execute('content_copy_import_form', $form_state);
 }
 ?>
