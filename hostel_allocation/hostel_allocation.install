@@ -8,4 +8,31 @@ function hostel_allocation_uninstall() {
   drupal_set_message('Hostel Allocation Module uninstalled');
 }
 
+function hostel_allocation_enable() {
+  install_content_type('allocation_rules_cck.txt', 'allocation_rules');
+  install_content_type('allocation_rules_description_cck.txt', 'allocation_rules_description');
+  install_content_type('allocation_settings_cck.txt', 'allocation_settings');
+  install_content_type('blocks_cck.txt', 'blocks');
+  install_content_type('hostels_cck.txt', 'hostels');
+  install_content_type('room_allocations_cck.txt', 'room_allocations');
+  install_content_type('room_reservations_cck.txt', 'room_reservations');
+  install_content_type('rooms_cck.txt', 'room');
+  
+  content_clear_type_cache();
+}
+
+function install_content_type($filename, $content_type_name) {
+  $content_type_data = file_get_contents(dirname(__FILE__) . '/cck/'.$filename);
+
+  // determine if to replace content type or create it
+  $content_type_info = content_types($content_type_name);
+
+  $form_state = array(
+    'values' => array(
+      'type_name' => (is_array($content_type_info) && array_key_exists('type', $content_type_info)) ? $content_type_name : '<create>',
+      'macro' => $content_type_data,
+    ),
+  );
+  drupal_execute('content_copy_import_form', $form_state);
+}
 ?>
