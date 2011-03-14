@@ -132,6 +132,9 @@ function eduerp_install(){
   load_fixtures('eduerp_states', $fixtures_path . "states.csv", true);
   load_fixtures('eduerp_lgas', $fixtures_path . "lgas.csv", true);
   load_fixtures('eduerp_countries', $fixtures_path . "countries.csv", true);
+  
+  // Run raw queries
+  db_query('INSERT INTO {course_grade_weightings} VALUES (0, 4, 0, 10, 10, 10, 10, 60, 0, 0, 0, 0, 0)');
 
   // Install the content types
   $profile_content_type = file_get_contents(dirname(__FILE__) . '/cck/cck_profile.txt');
@@ -250,7 +253,304 @@ function eduerp_schema() {
       ),
     ),
   );
-
+  
+  $schema['program_level_semester'] = array(
+    'description' => t('Program Level Semester'),
+    'fields' => array(
+      'programme_id' => array(
+        'description' => t('Programme ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'level' => array(
+        'description' => t('Level'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+      'semester' => array(
+        'description' => t('Semester'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+      'min_credit_load' => array(
+        'description' => t('Minimum Credit Load'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'max_credit_load' => array(
+        'description' => t('Maximum Credit Load'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'open_for_registrations' => array(
+        'description' => t('Open for registration'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'programme_id' => array('programme_id'),
+    ),
+  );
+  
+  $schema['program_course'] = array(
+    'description' => t('Program Course'),
+    'fields' => array(
+      'program_course_id' => array(
+        'description' => t('Program Course ID'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'course_id' => array(
+        'description' => t('Course ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'programme_id' => array(
+        'description' => t('Programme'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'level' => array(
+        'description' => t('Level'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+      'semester' => array(
+        'description' => t('Semester'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+      'course_type' => array(
+        'description' => t('Course Type - 1 is core and 2 is elective'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'lecturer_id' => array(
+        'description' => t('Lecturer'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+      ),
+      'historical' => array(
+        'description' => t('Historical - 0 is active and 1 is not to be used for new selections'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+      'credit_load' => array(
+        'description' => t('Credit Load for this Course in this Program'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('program_course_id'),
+    'indexes' => array(
+      'programme_id' => array('programme_id'),
+      'course_id' => array('course_id'),
+    ),
+  );
+  
+  $schema['program_course_instance'] = array(
+    'description' => t('Program Course Instance'),
+    'fields' => array(
+      'course_instance_id' => array(
+        'description' => t('Course Instance ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'programme_id' => array(
+        'description' => t('Programme ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'session' => array(
+        'description' => t('Session'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+      'semester' => array(
+        'description' => t('Semester'),
+        'type' => 'varchar',
+        'length' => '50',
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'programme_id' => array('programme_id')
+    )
+  );
+  
+  $schema['course_grade_weightings'] = array(
+    'description' => t('Course Grade Weightings'),
+    'fields' => array(
+      'course_id' => array(
+        'description' => t('Course ID'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'number_of_ca' => array(
+        'description' => t('Number of CAs'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'ca_approved_onebyone' => array(
+        'description' => t('CA approved One by One'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'max_mark_ca1' => array(
+        'description' => t('Maximum mark for CA1'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'max_mark_ca2' => array(
+        'description' => t('Maximum mark for CA2'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'max_mark_ca3' => array(
+        'description' => t('Maxmimum mark for CA3'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'max_mark_ca4' => array(
+        'description' => t('Maximum mark for CA4'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'max_mark_exam' => array(
+        'description' => t('Maximum mark for exam'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'weight_ca1' => array(
+        'description' => t('Weighting for CA1'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'weight_ca2' => array(
+        'description' => t('Weighting for CA2'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'weight_ca3' => array(
+        'description' => t('Weighting for CA3'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'weight_ca4' => array(
+        'description' => t('Weighting for CA4'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'weight_exam' => array(
+        'description' => t('Weighting for exam'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'course_id' => array('course_id')
+    )
+  );
+  
+  $schema['eduerp_roles'] = array(
+    'description' => t('EduERP roles'),
+    'fields' => array(
+      'eduerp_role_id' => array(
+        'description' => t('EduERP Role ID'),
+        'type' => 'serial',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => t('User ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'department_id' => array(
+        'description' => t('Department ID'),
+        'type' => 'int',
+        'default' => '0',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'college_id' => array(
+        'description' => t('College ID'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => '0',
+        'unsigned' => TRUE,
+      ),
+      'role' => array(
+        'description' => t('Role'),
+        'type' => 'varchar',
+        'length' => '100',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('eduerp_role_id'),
+    'indexes' => array(
+      'uid' => array('uid'),
+      'department_id' => array('department_id'),
+      'college_id' => array('college_id'),
+      'role' => array('role')
+    )
+  );
+  
+  $schema['cron_notification'] = array(
+    'description' => t('CRON notifications'),
+    'fields' => array(
+      'approver_uid' => array(
+        'description' => t('Approver ID'),
+        'type' => 'int',
+        'default' => '0',
+      ),
+      'student_uid' => array(
+        'description' => t('Student UID'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'gradestext' => array(
+        'description' => t('Grades text'),
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+      ),
+      'instruction' => array(
+        'description' => t('Instructions'),
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+  );
+  
   return $schema;
 }
 ?>
