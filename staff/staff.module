@@ -3353,7 +3353,7 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
 
   node_save($node);
   
-  module_invoke_all('updFacultyInfo', $node->nid, variable_get('eduerp_current_session', ''));
+  module_invoke_all('updFacultyInfo', $node->nid, variable_get('eduerp_current_session', ''), $form_state['values']['faculty_subdomain']);
   //unset($_SESSION['eduerp_fac_nid']);
   
 
