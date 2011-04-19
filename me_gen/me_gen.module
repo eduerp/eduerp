@@ -1,0 +1,45 @@
+<?php
+
+// The modules file will essentially contain hook implementations
+// for actions that need to be performed that are institution 
+// specific
+
+// stub function for generating matriculation numbers
+function me_gen_matno($student_id) {
+}
+
+//update mat_num_faculty_serial and email_faculty_subdomain_description tables via hook
+function me_gen_updFacultyInfo($facNID, $sessionName, $facSubDomain){
+  
+  //create entry for mat num gen	
+  //check if the nid exists
+  $sql = "SELECT faculty_nid FROM mat_num_faculty_serial WHERE faculty_nid=%d";
+  $rs = db_query($sql, $facNID);
+  if (db_affected_rows($rs) <= 0) {
+    //we need to create the new faculty
+    $sql = "INSERT INTO mat_num_faculty_serial (faculty_nid, session_name) VALUES (%d, '%s') ";
+    $rs = db_query($sql, $facNID, $sessionName);
+  	  
+  }
+  //end of entry for mat num gen
+  
+  
+  //create entry for email gen
+  //check if the nid exists
+  $sql = "SELECT faculty_nid FROM email_faculty_subdomain_description WHERE faculty_nid=%d";
+  $rs = db_query($sql, $facNID);
+  if (db_affected_rows($rs) <= 0) {
+    //we need to create the new faculty
+    $sql = "INSERT INTO email_faculty_subdomain_description (faculty_nid, email_subdomain) VALUES (%d, '%s') ";
+    $rs = db_query($sql, $facNID, $facSubDomain);
+  	  
+  }
+  else {
+    //update the email_subdomain
+    $sql = "UPDATE email_faculty_subdomain_description SET email_subdomain='%s' WHERE faculty_nid=%d ";
+    $rs = db_query($sql, $facNID, $facSubDomain);
+  }
+  
+  //end of entry for email gen
+}
+?>

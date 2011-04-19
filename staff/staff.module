@@ -2896,18 +2896,19 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
 
 
 function get_faculties() {
-  $r = db_query("SELECT nid, field_college_name_value AS name, field_college_abbreviation_value AS abbr FROM {content_type_college} ORDER BY field_college_name_value");
+  $r = db_query("SELECT nid, field_college_name_value AS name, field_college_abbreviation_value AS abbr, field_college_email_subdomain_value AS fac_email_subdomain FROM {content_type_college} ORDER BY field_college_name_value");
   while ($f = db_fetch_object($r)){
     $faculties[$f->nid]['faculty_name'] = $f->name;
     $faculties[$f->nid]['faculty_abbr'] = $f->abbr;
     $faculties[$f->nid]['faculty_nid'] = $f->nid;
+    $faculties[$f->nid]['faculty_email_subdomain'] = $f->fac_email_subdomain;
   }
   return $faculties;
 }
 
 
 function get_departments() {
-  $r = db_query("SELECT d.nid nid, field_department_name_value AS dept_name, field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr
+  $r = db_query("SELECT d.nid nid, field_department_name_value AS dept_name, field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr, field_department_code_value AS dept_code
       FROM {content_type_department} d INNER JOIN {content_type_college} c ON d.field_college_id_nid=c.nid
       ORDER BY field_college_name_value, dept_name");
 
@@ -2916,6 +2917,7 @@ function get_departments() {
     $faculties[$f->nid]['faculty_abbr'] = $f->fac_abbr;
     $faculties[$f->nid]['dept_nid'] = $f->nid;
     $faculties[$f->nid]['dept_name'] = $f->dept_name;
+    $faculties[$f->nid]['dept_code'] = $f->dept_code;
   }
   return $faculties;
 }
@@ -3127,23 +3129,32 @@ function staff_create_edit_faculty() {
   if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
   echo '<br /><hr /><br />';
-
+  
   if (! $isAuthorized) {
     echo Error_Types(104);
 
   }
   else {
-    if (isset($_POST['faculty_nid']))
+    //if (isset($_POST['faculty_nid']))
+    if (arg(2)){
+      echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditfaculty'>Create/Modify Faculty</a>&nbsp; &raquo; &nbsp;Modify Faculty</font><br /><br />";
+      echo '<hr /><br />';
       echo "<b>Modify Faculty</b> - Make any required changes to the faculty<br />";
-    else
+    }
+    else{
+      echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create Faculty</font><br /><br />";
+      echo '<hr /><br />';
       echo "<b>Create Faculty</b> - Fill the form below to create a new Faculty<br />";
+      
+    }
 
     echo drupal_get_form('staff_create_edit_faculty_form');
   }
 
   echo '<br /><hr /><br />';
 
-  if (! isset($_POST['faculty_nid'])) {
+  //if (! isset($_POST['faculty_nid'])) {
+  if (! arg(2)) {
     if (! $isAuthorized) {
       echo Error_Types(105);
     }
@@ -3174,15 +3185,21 @@ function staff_create_edit_dept() {
 
   }
   else {
-      if (isset($_POST['department_nid']))
+      if (arg(2)){
+      	echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditdept'>Create/Modify Department</a>&nbsp; &raquo; &nbsp;Modify Department</font><br /><br />";
+        echo '<hr /><br />';
         echo "<b>Modify Department</b> - Make any required changes to the Department<br />";
-      else
+      }
+      else{
+      	echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create Department</font><br /><br />";
+        echo '<hr /><br />';
         echo "<b>Create Department</b> - Fill the form below to create a new Department<br />";
+      }
 
       echo drupal_get_form('staff_create_edit_dept_form');
   }
   echo '<br /><hr /><br />';
-  if (! isset($_POST['department_nid'])) {
+  if (! arg(2)) {
     if (! $isAuthorized) {
       echo Error_Types(105);
     }
@@ -3204,11 +3221,11 @@ function staff_create_edit_dept() {
 
 function staff_create_edit_faculty_form() {
 
- if (isset($_SESSION['eduerp_fac_nid']))$_POST['faculty_nid'] = $_SESSION['eduerp_fac_nid'];
+ //if (isset($_SESSION['eduerp_fac_nid']))$_POST['faculty_nid'] = $_SESSION['eduerp_fac_nid'];
 
-  if (isset($_POST['faculty_nid'])) {
+  if (arg(2) && is_valid_faculty(arg(2))) {
     if (empty($_POST['faculty_name'])) {
-      $result = db_query('SELECT field_college_name_value AS name, field_college_abbreviation_value AS abbr FROM {content_type_college} WHERE nid = %d', $_POST['faculty_nid']);
+      $result = db_query('SELECT field_college_name_value AS name, field_college_abbreviation_value AS abbr, field_college_email_subdomain_value AS fac_subdomain FROM {content_type_college} WHERE nid = %d', arg(2));
       $fac_edit_record = db_fetch_object($result);
     }
   }
@@ -3228,7 +3245,16 @@ function staff_create_edit_faculty_form() {
     '#required' => TRUE
   );
   if ($fac_edit_record) $form['faculty_abbreviation']['#value'] = $fac_edit_record->abbr;
-
+  
+  $form['faculty_subdomain'] = array(
+    '#title' => 'Faculty E-mail Subdomain e.g. science.xyz.com',
+    '#type' => 'textfield',
+    '#size' => 50,
+    //'#required' => TRUE
+  );
+  if ($fac_edit_record) $form['faculty_subdomain']['#value'] = $fac_edit_record->fac_subdomain;
+  
+  /*
   if (isset($_POST['faculty_nid'])) {
     $form['faculty_nid'] = array(
     '#title' => 'Faculty nid',
@@ -3237,11 +3263,12 @@ function staff_create_edit_faculty_form() {
     );
 
   }
+  */
   $form['submit'] = array(
     '#value' => 'Create Faculty',
     '#type' => 'submit'
   );
-  if (isset($_POST['faculty_nid'])) $form['submit']['#value'] = 'Update Faculty';
+  if ($fac_edit_record) $form['submit']['#value'] = 'Update Faculty';
 
   return $form;
 }
@@ -3276,12 +3303,12 @@ function staff_update_dept_form() {
 
 
 function staff_create_edit_faculty_form_validate($form, &$form_state) {
-
-  if (isset($_POST['faculty_nid'])) {//validate EDIT
-    if (is_Faculty_Name_Existing($form_state['values']['faculty_name'], $form_state['values']['faculty_nid']))
+  //unset($_SESSION['eduerp_fac_nid']);
+  if (arg(2) && is_valid_faculty(arg(2))) {//validate EDIT
+    if (is_Faculty_Name_Existing($form_state['values']['faculty_name'], arg(2)))
       form_set_error('faculty_name', Error_Types(101));
 
-    if (is_Faculty_Abbreviation_Existing($form_state['values']['faculty_abbreviation'], $form_state['values']['faculty_nid']))
+    if (is_Faculty_Abbreviation_Existing($form_state['values']['faculty_abbreviation'], arg(2)))
       form_set_error('faculty_abbreviation', Error_Types(102));
   }
   else {//validate CREATE
@@ -3297,14 +3324,16 @@ function staff_create_edit_faculty_form_validate($form, &$form_state) {
 
 function staff_create_edit_faculty_form_submit($form, &$form_state) {
 
-  if (isset($form_state['values']['faculty_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['faculty_nid'])) {//the user is trying to edit a given faculty
-    $node = node_load($form_state['values']['faculty_nid']);
+  //if (isset($form_state['values']['faculty_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['faculty_nid'])) {//the user is trying to edit a given faculty
+  if(arg(2) && is_valid_faculty(arg(2))){
+    $node = node_load(arg(2));
     $node->title                                  = $form_state['values']['faculty_name'];
     $node->field_college_name[0]['value']         = $form_state['values']['faculty_name'];
     $node->field_college_abbreviation[0]['value'] = $form_state['values']['faculty_abbreviation'];
-
+    $node->field_college_email_subdomain[0]['value'] = $form_state['values']['faculty_subdomain'];
+    
     drupal_set_message($form_state['values']['faculty_name'] . ' Faculty was updated!<br />');
-    unset($_SESSION['eduerp_fac_nid']);
+    
   }
   else {
     $node = new stdClass();
@@ -3317,20 +3346,25 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
     $node->title                                  = $form_state['values']['faculty_name'];
     $node->field_college_name[0]['value']         = $form_state['values']['faculty_name'];
     $node->field_college_abbreviation[0]['value'] = $form_state['values']['faculty_abbreviation'];
+    $node->field_college_email_subdomain[0]['value'] = $form_state['values']['faculty_subdomain'];
 
     drupal_set_message($form_state['values']['faculty_name'] . ' Faculty has been created!<br />');
   }
 
   node_save($node);
-
+  
+  module_invoke_all('updFacultyInfo', $node->nid, variable_get('eduerp_current_session', ''));
+  //unset($_SESSION['eduerp_fac_nid']);
+  
 
 }
-
+ 
 
 function staff_create_edit_dept_form_validate($form, &$form_state) {
 
-  if (isset($_POST['department_nid'])) {//validate EDIT
-    if (is_Department_Name_Existing($form_state['values']['department_name'], $form_state['values']['department_nid']))
+  //if (isset($_POST['department_nid'])) {//validate EDIT
+  if (arg(2)) {//validate EDIT
+    if (is_Department_Name_Existing($form_state['values']['department_name'], arg(2)))
       form_set_error('department_name', Error_Types(103));
 
   }
@@ -3344,12 +3378,14 @@ function staff_create_edit_dept_form_validate($form, &$form_state) {
 
 function staff_create_edit_dept_form_submit($form, &$form_state) {
 
-  if (isset($form_state['values']['department_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['department_nid'])) {//the user is trying to edit a given department. OK!
-    $node = node_load($form_state['values']['department_nid']);
+  //if (isset($form_state['values']['department_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['department_nid'])) {//the user is trying to edit a given department. OK!
+  if (arg(2) && is_valid_department(arg(2))) {//the user is trying to edit a given department. OK!
+    $node = node_load(arg(2));
     $node->title                                = $form_state['values']['department_name'];
     $node->field_department_name[0]['value']    = $form_state['values']['department_name'];
-    $node->field_college_id[0]['nid']         = $form_state['values']['faculty_nid'];
-
+    $node->field_college_id[0]['nid']           = $form_state['values']['faculty_nid'];//
+    $node->field_department_code[0]['value']    = $form_state['values']['department_code'];
+    
     drupal_set_message($form_state['values']['department_name'] . ' Department was updated!<br />');
     unset($_SESSION['eduerp_dept_nid']);
   }
@@ -3364,6 +3400,7 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
     $node->title                             = $form_state['values']['department_name'];
     $node->field_department_name[0]['value'] = $form_state['values']['department_name'];
     $node->field_college_id[0]['nid']        = $form_state['values']['faculty_nid'];
+    $node->field_department_code[0]['value'] = $form_state['values']['department_code'];
 
     //$department = $node->nid;
 
@@ -3371,17 +3408,17 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
   }
 
   node_save($node);
-
+  drupal_goto("staff/createeditdept");
 
 }
 
 
 function staff_create_edit_dept_form() {
 
-  if (isset($_SESSION['eduerp_dept_nid']))$_POST['department_nid'] = $_SESSION['eduerp_dept_nid'];
-  if (isset($_POST['department_nid'])) {
+  //if (isset($_SESSION['eduerp_dept_nid']))$_POST['department_nid'] = $_SESSION['eduerp_dept_nid'];
+  if (arg(2) && is_valid_department(arg(2))) {
     if (empty($_POST['department_name'])) {
-      $result = db_query('SELECT field_college_id_nid AS college_nid, field_department_name_value AS dept_name FROM {content_type_department} WHERE nid = %d', $_POST['department_nid']);
+      $result = db_query('SELECT field_college_id_nid AS college_nid, field_department_name_value AS dept_name, field_department_code_value AS dept_code FROM {content_type_department} WHERE nid = %d', arg(2));
       $dept_edit_record = db_fetch_object($result);
     }
   }
@@ -3401,7 +3438,15 @@ function staff_create_edit_dept_form() {
     '#required' => TRUE
   );
   if ($dept_edit_record) $form['department_name']['#value'] = $dept_edit_record->dept_name;
-
+  
+  $form['department_code'] = array(
+    '#title' => 'Department Code',
+    '#type' => 'textfield',
+    '#size' => 20,
+    //'#required' => TRUE
+  );
+  if ($dept_edit_record) $form['department_code']['#value'] = $dept_edit_record->dept_code;
+  /*
   if (isset($_POST['department_nid'])) {
     $form['department_nid'] = array(
     '#title' => 'Department nid',
@@ -3409,7 +3454,7 @@ function staff_create_edit_dept_form() {
     '#value' => $_POST['department_nid']
     );
   }
-
+  */
   $form['submit'] = array(
     '#value' => 'Create Department',
     '#type' => 'submit'
@@ -3428,7 +3473,8 @@ function staff_update_faculty_form_validate($form, &$form_state) {
 
 function staff_update_faculty_form_submit($form, &$form_state) {
 
-  $_SESSION['eduerp_fac_nid'] = $form_state['values']['faculty_id'];
+  //$_SESSION['eduerp_fac_nid'] = $form_state['values']['faculty_id'];
+  drupal_goto("staff/createeditfaculty/" . $form_state['values']['faculty_id']);
 }
 
 
@@ -3440,8 +3486,8 @@ function staff_update_dept_form_validate($form, &$form_state) {
 
 function staff_update_dept_form_submit($form, &$form_state) {
 
-  $_SESSION['eduerp_dept_nid'] = $form_state['values']['department_nid'];
-
+  //$_SESSION['eduerp_dept_nid'] = $form_state['values']['department_nid'];
+   drupal_goto("staff/createeditdept/" . $form_state['values']['department_nid']);
 }
 
 
@@ -3603,6 +3649,7 @@ function staff_display_available_faculties() {
       <td><b>#</b></td>
       <td><b>Faculty Name</b></td>
       <td><b>Faculty Abbreviation</b></td>
+      <td><b>Faculty E-mail Subdomain</b></td>
     </tr>";$i = 1;$color = 0;
     $faculties = get_faculties();
     foreach ($faculties as $v) {
@@ -3612,6 +3659,7 @@ function staff_display_available_faculties() {
         <td>". $i++ ."</td>
         <td>". $v['faculty_name'] ."</td>
         <td>". $v['faculty_abbr'] ."</td>
+        <td>". $v['faculty_email_subdomain'] ."</td>
       </tr>";
       }
   $str .= "
@@ -3630,6 +3678,7 @@ function staff_display_available_departments() {
       <th><b>Faculty Name</b></th>
       <th><b>Faculty Abbreviation</b></th>
       <th><b>Department Name</b></th>
+      <th><b>Department Code</b></th>
     </tr>";$i = 1;
     $faculties = get_departments();
     foreach ($faculties as $v){
@@ -3640,6 +3689,7 @@ function staff_display_available_departments() {
            <td>". $v['faculty_name'] ."</td>
            <td>". $v['faculty_abbr'] ."</td>
            <td>". $v['dept_name'] ."</td>
+           <td>". $v['dept_code'] ."</td>
          </tr>";
       }
 
@@ -3817,6 +3867,13 @@ function Error_Types($num = 0) {
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
   return $msg;
+}
+
+function is_Valid_Faculty ($faculty_nid) {
+  $result = db_query("SELECT nid FROM {content_type_college} WHERE nid =%d ", $faculty_nid);
+  if (db_affected_rows($result) > 0 ) return true;
+
+  return false;
 }
 
 
