@@ -5,8 +5,139 @@
 // specific
 
 // stub function for generating matriculation numbers
-function me_gen_matno($student_id) {
+function me_gen_matno($studUID, $forProgrammeChange=false) {
+  
+  //get the institution's choice of mat num
+  $sql = "SELECT mat_num_format_id AS mat_num_format, mat_num_serial_gen_type_id AS mat_num_serial_type FROM mat_num_institution_choice ";
+  $rs = db_query($sql);
+  
+  if(db_affected_rows($rs) <= 0) return false;
+  
+  $instChoice = db_fetch_object($rs);
+  
+  switch($instChoice->mat_num_format){
+    case '1': //veritas style
+    	   
+    break;
+    
+    case '2': //udusok style
+      return gen_udusok_style_matnum($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $forProgrammeChange);
+    	       
+    break;
+    
+    default:
+      return false;
+  	  
+  }
+  
 }
+
+
+function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $forProgrammeChange=false){
+  /**
+  This style of matno does not have separators
+  example: 0611406096,  0621406096.
+  The first example is for 100 level and the second one for 200 (DE).
+  The first 2 digits rep. Year of entry i.e 06.
+  The third digit rep. mode of entry i.e 1 for 100 level & 2 for 200 level.
+  The fourth & fifth digits rep. faculty code i.e 14.
+  The sixth & seventh digits rep.departmental code for that faculty i.e 06.
+  The last 3 digits rep. serial number i.e 096.  
+  
+  This style will be divided into
+  
+  06-1-14-06-096
+  $entryYear - $entryMode - $facCode - $deptCode - $facSerial
+  */
+  
+  /**
+  The code below assumes that faculty_abbr and department_abbr will be of numeric values as above!!!
+  
+  */
+  
+  //get the candidate's program, department and faculty info
+  $user_profile = new UserProfile($studUID);
+  //echo $user_profile->profile_first_choice;
+  $sql = "SELECT ctc.nid AS faculty_nid, ctd.nid AS department_nid, ctp.nid AS programme_nid, field_department_code_value AS department_code, field_college_abbreviation_value AS faculty_code 
+  	FROM {content_type_program} ctp 
+  	INNER JOIN {content_type_department} ctd ON ctp.field_department_id_nid=ctd.nid
+  	INNER JOIN {content_type_college} ctc ON ctd.field_college_id_nid=ctc.nid   
+  	WHERE ctp.nid=%d";
+  	
+  $rs = db_query($sql,$user_profile->profile_first_choice);// $studUID, 
+  if (db_affected_rows($rs) <= 0) return false;
+  $rsStudent = db_fetch_object($rs);
+  
+  /*
+  {content_type_student_program} ctsp
+  	INNER JOIN 
+  */
+  //echo "ok";
+  //although we know that they are using faculty serial, who knows they may have choosen global serial. Lets just test
+  //check the serial type
+  if($serialTypeID == 1){
+    //seems they decided to change to global serial...ok
+    $sql = "SELECT next_num FROM mat_num_general_serial WHERE session_name='%s' FOR UPDATE ";
+    $rs = db_query($sql, variable_get('eduerp_current_session', ''));
+    if (db_affected_rows($rs) <= 0) {
+      db_query('ROLLBACK');
+      return false;
+    }
+    
+    $rsSerial = db_fetch_object($rs);
+    $SerialNum = $rsSerial->next_num;
+    
+    //increment the counter
+    $sql = "UPDATE mat_num_general_serial SET next_num=next_num + 1 WHERE session_name='%s'";
+    db_query($sql, variable_get('eduerp_current_session', ''));
+    db_query('COMMIT');
+    
+  }
+  else {//for Faculty Counter / Serial
+    //now lets get his faculty's serial counter
+    $sql = "SELECT next_num FROM mat_num_faculty_serial WHERE faculty_nid=%d AND session_name='%s' FOR UPDATE ";
+    $rs = db_query($sql, $rsStudent->faculty_nid, variable_get('eduerp_current_session', ''));
+    if (db_affected_rows($rs) <= 0) {
+      db_query('ROLLBACK');
+      return false;
+    }
+  
+    $rsSerial = db_fetch_object($rs);
+    $SerialNum = $rsSerial->next_num;
+  
+    //increment the counter
+    $sql = "UPDATE mat_num_faculty_serial SET next_num=next_num + 1 WHERE faculty_nid=%d AND session_name='%s'";
+    db_query($sql, $rsStudent->faculty_nid, variable_get('eduerp_current_session', ''));
+    db_query('COMMIT');
+  
+  }
+  
+  $entryYear = substr(variable_get('eduerp_current_session', ''), 2, 2); 
+  $entryMode = strtoupper(strtolower($user_profile->profile_entry_mode)) == 'DE' ? 2 : 1;
+  $facCode = $rsStudent->faculty_code;
+  $deptCode = $rsStudent->department_code;
+  
+  //because this is an open development, lets check if there exists format details...e.g prefix, separator etc.
+  
+  $sql = "SELECT mat_num_institution_prefix AS prefix, mat_num_separator AS seprator  FROM mat_num_format_details WHERE mat_num_format_id=%d";
+  $rs = db_query($sql, $formatID);
+  
+  if (db_affected_rows($rs) > 0) {
+    //seems they now want prefix and separators..ok
+    $rsDetails = db_fetch_object($rs);
+    
+    $matNumber = ($rsDetails->prefix . $rsDetails->separator . $entryYear . $rsDetails->separator . $entryMode . $rsDetails->separator . $facCode . $rsDetails->separator . $deptCode . $rsDetails->separator . $SerialNum);
+  	  
+  }
+  else{
+    //now bring them together
+    $matNumber = ($entryYear . $entryMode . $facCode . $deptCode . $SerialNum);
+  }
+  
+  
+  return $matNumber;
+}
+
 
 //update mat_num_faculty_serial and email_faculty_subdomain_description tables via hook
 function me_gen_updFacultyInfo($facNID, $sessionName, $facSubDomain){
