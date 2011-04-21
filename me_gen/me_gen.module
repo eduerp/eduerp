@@ -409,5 +409,52 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
   return $userEmail;
 }
 
-
+function me_gen_createsession($sessioname){
+	
+  //once the session changes, we should update our tables
+  
+  //get all facultites
+  $sql = "SELECT nid AS faculty_nid, field_college_email_subdomain_value AS faculty_subdomain
+  	FROM {content_type_college} ";
+  	
+  $rsFaculty = db_query($sql); 
+  if (db_affected_rows($rs) <= 0) return false;
+  
+  $sqlmat = "INSERT INTO mat_num_faculty_serial (faculty_nid, session_name ) VALUES ";
+  $sqlemail = "INSERT INTO email_faculty_subdomain_description (faculty_nid, email_subdomain ) VALUES ";
+  
+  $foundEmail = false; $foundMat = false;
+  while($row = db_fetch_object($rsFaculty)){
+  	  
+    //make sure it does not exist first
+    $sql = "SELECT faculty_nid FROM mat_num_faculty_serial WHERE faculty_nid=%d AND session_name='%s' ";
+    $rs = db_query($sql, $row->faculty_nid, $sessioname );
+    
+    if (db_affected_rows($rs) <= 0) {
+      $sqlmat .= "('". $row->faculty_nid ."', '". $sessioname ."'), ";
+      $foundMat = true;
+    }
+    
+    //make sure it does not exist first
+    $sql = "SELECT faculty_nid FROM email_faculty_subdomain_description WHERE faculty_nid=%d ";
+    $rs = db_query($sql, $row->faculty_nid );
+    
+    if (db_affected_rows($rs) <= 0) {
+      $sqlemail .= "('". $row->faculty_nid ."', '". $row->faculty_subdomain ."'), ";
+      $foundEmail = true;
+    }
+  	  
+  }
+  
+  if($foundMat){
+    $sqlmat = substr($sqlmat, 0, -2);
+    db_query($sqlmat);
+  }
+  
+  if($foundEmail){
+    $sqlemail = substr($sqlemail, 0, -2);
+    db_query($sqlemail);
+  }
+  
+}
 ?>

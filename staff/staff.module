@@ -2725,7 +2725,11 @@ function set_session_form_submit($form, &$form_state) {
   $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['eduerp_current_session']);
   if (!db_result($session_rs)) {
     db_query("INSERT INTO {session} (sess_name) VALUES ('%s')", $form_state['values']['eduerp_current_session']);
+    
+    module_invoke_all('createsession', $form_state['values']['eduerp_current_session']);
   }
+  
+  
 }
 
 
@@ -3155,8 +3159,9 @@ function staff_create_edit_faculty() {
   //$me = me_gen_matno(947, 3444);
   //drupal_set_message(print_r($me));
   //drupal_set_message(substr(variable_get('eduerp_current_session', ''), -3, 3)); 
-  //$user_profile = new UserProfile(947);
+  //$user_profile = new UserProfile(947); 
   //drupal_set_message(print_r($user_profile));//drupal_set_message($user_profile->field_profile_mode_of_entry); //
+  //me_gen_createsession('2011/2012');
   if (! arg(2)) {
     if (! $isAuthorized) {
       echo Error_Types(105);
