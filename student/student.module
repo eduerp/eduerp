@@ -456,9 +456,9 @@ function _perform_clearance($student_id) {
 }
 
 
-function set_matriculation_number($student_id) {
+function set_matriculation_number($student_id, $formerProgID=0) {
   // Generate the matriculation number for this student
-  $results = module_invoke_all('matno', $student_id);
+  $results = module_invoke_all('matno', $student_id, $formerProgID);
   if (is_array($results) && count($results) > 0) {
     // We don't expect more than one implementation of the hook
     // if so, we only take the first result.
@@ -1329,13 +1329,14 @@ function create_student_program($uid) {
 
 function change_student_program(&$user, $first_choice, $level) {
   $user_profile = new UserProfile($user->uid);
+  $formerProgID = $user_profile->profile_first_choice;
   $user_profile->profile_first_choice = $first_choice;
   $user_profile->profile_level_name = $level;
   $user_profile->save();
 
   create_student_program($user->uid);
 
-  set_matriculation_number($user->uid);
+  set_matriculation_number($user->uid, $formerProgID);
 }
 
 
