@@ -142,7 +142,14 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-
+  
+  $items['staff/missingcourses']=array(
+    'title'=>'Check for Missing Courses for a Semester',
+    'page callback' => 'staff_check_for_missing_courses',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+  
   return $items;
 }
 
@@ -2623,7 +2630,7 @@ function semester_admin() {
   echo drupal_get_form('set_session_form');
   echo '<br /><hr /><br />';
 
-  echo 'Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)[Feature #436]';
+  echo '<a href="' . url('staff/missingcourses') . '">Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/checkverifyprogmme') . '">Check have all existing Courses required for all Programmes been Verified (associated with the Programme)</a>';
@@ -8111,4 +8118,138 @@ function staff_views_api() {
   );
 
 }
+
+function staff_check_for_missing_courses(){
+  global $user;
+  ob_start();
+
+  if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+
+  echo '<br /><hr /><br />';
+
+  if (! $isAuthorized) {
+    echo Error_Types(104);
+
+  }
+  else {
+      
+      	echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Check for Missing Courses for a Semester</font><br /><br />";
+        echo '<hr /><br />';
+        echo "<b>Check for Missing Courses for a Semester</b> - Please fill the form as appropriate<br />";
+      
+      echo drupal_get_form('staff_show_check_missing_courses_form');
+  }
+  echo '<br /><hr /><br />';
+  
+  if(isset($_SESSION['eduerp_check_missing_courses'])) {
+    //echo '<br /><hr /><br />';
+    echo staff_display_missing_courses_for_a_semester($_SESSION['eduerp_check_missing_courses']['session'], $_SESSION['eduerp_check_missing_courses']['semester']);
+  
+  }
+  return ob_get_clean();	
+	
+}
+
+function staff_show_check_missing_courses_form() {
+
+  
+
+  $form['#title'] = 'Check For Missing Courses';
+  $form['session'] = array(
+    '#type' => 'select',
+    '#options' => get_all_sessions(),
+    '#required' => TRUE,
+    '#title' => 'Session');
+  
+  if ($_SESSION['eduerp_check_missing_courses']) $form['session']['#default_value'] = $_SESSION['eduerp_check_missing_courses']['session'];
+  
+   $form['semester'] = array(
+      '#type' => 'select',
+      '#options' => array(1 => '1', 2 => '2'),
+      '#title' => 'Semester',
+      '#required' => TRUE);
+   if ($_SESSION['eduerp_check_missing_courses']) $form['semester']['#default_value'] = $_SESSION['eduerp_check_missing_courses']['semester'];
+   
+  $form['submit'] = array(
+    '#value' => 'Show Now',
+    '#type' => 'submit'
+  );
+  
+  return $form;
+}
+
+function staff_show_check_missing_courses_form_submit($form, &$state) {
+  $values = $state['values'];
+  
+  $_SESSION['eduerp_check_missing_courses']['session']  = $values['session'];
+  $_SESSION['eduerp_check_missing_courses']['semester'] = $values['semester'];
+  
+}
+
+
+function staff_display_missing_courses_for_a_semester($session, $semester) {
+	
+  $sql = "SELECT DISTINCT
+        pc.level,
+        c.field_code_value,
+        p.field_programme_name_value,
+        d.field_department_name_value,
+        co.field_college_name_value
+      FROM {program_course} pc
+      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
+      LEFT JOIN {content_type_course_instance} ci
+      ON
+        c.nid=ci.field_course_id_nid AND
+        pc.semester=ci.field_semester_name_value AND
+        ci.field_sess_name_value='%s'
+      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
+      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
+      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
+      WHERE pc.semester='%s' AND ci.nid IS NULL
+      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
+    $result = db_query($sql, $session, $semester);
+    
+  if(db_affected_rows($result) <=0) return "<b>List of Missing Courses for ". $semester ." Semester in ". $session ." Session</b><br /><br /><div><font color=green><b>All courses have been setup and assigned a lecturer.</b></font></div>";
+	
+  $str = "
+  <div id='assigned_courses'>
+  <b>List of Missing Courses for ". $semester ." Semester in ". $session ." Session</b><br />
+  <table border=1>
+    <tr>
+      <th><b>#</b></th>
+      <th><b>Faculty Name</b></th>
+      <th><b>Department Name</b></th>
+      <th><b>Programme Name</b></th>
+      <th><b>Course Code</b></th>
+       <th><b>Level</b></th>
+    </tr>";$i = 1;
+    //$faculties = get_departments();
+    //foreach ($result as $v){
+    while($v = db_fetch_object($result)){
+      if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+        $str .= "
+         <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+           <td>". $i++ ."</td>
+           <td>". $v->field_college_name_value ."</td>
+           <td>". $v->field_department_name_value ."</td>
+           <td>". $v->field_programme_name_value ."</td>
+           <td>". $v->field_code_value ."</td>
+           <td>". $v->level ."</td>
+         </tr>";
+      }
+
+  //}
+  $str .= "
+  <tr>
+    <td colspan=6>&nbsp;</td>
+  </tr>
+  <tr>
+    <td colspan=6><font color=#FF0000><b>The HOD should go to <a href='" . url('staff/createeditcourse') . "'>Create or Modify Courses for a Department</a>, Select a Department and Start Assigning Lecturers to Courses</b></font></td>
+  </tr>
+  </table>
+  </div>";
+  return $str;
+
+}
+
 ?>
