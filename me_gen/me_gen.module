@@ -404,6 +404,14 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     $student_profile->save();
   }
   
+  //if personal e-mail is empty, update it with Drupal's email
+  if(! $student_profile->personal_email || empty($student_profile->personal_email) || $student_profile->personal_email == ""){
+    $student = user_load($studUID);
+    
+    $student_profile->personal_email = $student->mail;
+    $student_profile->save();
+    
+  }
   
   //return the generated email
   return $userEmail;
