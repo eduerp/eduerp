@@ -40,6 +40,8 @@ function student_perms_initialize() {
       'edit field_profile_olevel_exams_2',
       'edit field_profile_olevel_insti2',
       'edit field_profile_olevel_qual_2',
+      'edit field_profile_university_email',
+      'edit field_profile_personal_email',
 
       // TODO: add the following perms to
       // clearance staff
@@ -80,6 +82,9 @@ function student_perms_initialize() {
       'view field_profile_olevel_exams_2',
       'view field_profile_olevel_insti2',
       'view field_profile_olevel_qual_2',
+      'view field_profile_university_email',
+      'view field_profile_personal_email',
+
       'view field_clearance_date',
       'view field_staff_clearance',
       'view field_staff_verification',
@@ -312,9 +317,9 @@ function student_enable() {
   install_content_type('CCKstudent_grades.txt', 'student_grades');
   install_content_type('CCKstudent_program.txt', 'student_program');
   install_content_type('CCKstudent_record.txt', 'student_record');
-  
+
   content_clear_type_cache();
-  
+
   // set content type permissions
   $perms = student_perms_initialize();
 
