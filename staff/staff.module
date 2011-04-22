@@ -8123,29 +8123,32 @@ function staff_check_for_missing_courses(){
   global $user;
   ob_start();
 
-  if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+  //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
   echo '<br /><hr /><br />';
 
-  if (! $isAuthorized) {
-    echo Error_Types(104);
+  //if (! $isAuthorized) {
+  //  echo Error_Types(104);
 
-  }
-  else {
+  //}
+  //else {
       
       	echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Check for Missing Courses for a Semester</font><br /><br />";
         echo '<hr /><br />';
         echo "<b>Check for Missing Courses for a Semester</b> - Please fill the form as appropriate<br />";
       
       echo drupal_get_form('staff_show_check_missing_courses_form');
-  }
+  //}
   echo '<br /><hr /><br />';
   
-  if(isset($_SESSION['eduerp_check_missing_courses'])) {
+  if(! isset($_SESSION['eduerp_check_missing_courses'])) {
+    $_SESSION['eduerp_check_missing_courses']['session'] = variable_get('eduerp_current_session', '');
+    $_SESSION['eduerp_check_missing_courses']['semester'] = variable_get('eduerp_current_semester', 1);
+  }
     //echo '<br /><hr /><br />';
     echo staff_display_missing_courses_for_a_semester($_SESSION['eduerp_check_missing_courses']['session'], $_SESSION['eduerp_check_missing_courses']['semester']);
   
-  }
+  //}
   return ob_get_clean();	
 	
 }
