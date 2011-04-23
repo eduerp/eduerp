@@ -598,11 +598,15 @@ function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
 }
 
 
-function faculty() {
+function faculty($facultyNID=0) {
   static $options;
   if (!$options) {
     $options = array();
-    $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} ORDER BY field_college_name_value");
+    if($facultyNID==0)
+      $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} ORDER BY field_college_name_value");
+    else
+      $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} WHERE nid=%d ORDER BY field_college_name_value", $facultyNID);
+    
     while ($f = db_fetch_object($r))
       $options[$f->nid] = $f->value;
   }
@@ -3443,9 +3447,13 @@ function staff_create_edit_dept_form() {
   $form['#title'] = 'Create New Department';
   $form['faculty_nid'] = array(
     '#type' => 'select',
-    '#options' => faculty(),
     '#title' => 'Faculty Name');
-  if ($dept_edit_record) $form['faculty_nid']['#default_value'] = $dept_edit_record->college_nid;
+  if ($dept_edit_record){
+    $form['faculty_nid']['#default_value'] = $dept_edit_record->college_nid;
+    $form['faculty_nid']['#options'] = faculty($dept_edit_record->college_nid);
+  }
+  else
+    $form['faculty_nid']['#options'] = faculty();
 
   $form['department_name'] = array(
     '#title' => 'Department Name',
