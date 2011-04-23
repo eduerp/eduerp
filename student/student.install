@@ -274,15 +274,6 @@ function student_install() {
   // make Drupal aware of the exam record field type
   content_notify('install', 'exam_record');
 
-  // execute raw queries
-  db_query('CREATE INDEX field_department_name_value ON {content_type_department} (field_department_name_value)');
-  db_query('CREATE INDEX field_programme_name_value ON {content_type_program} (field_programme_name_value)');
-  db_query('CREATE INDEX field_code_value ON {content_type_course} (field_code_value)');
-
-  // create student roles
-  permissions_create_role('Student');
-  permissions_create_role('Applicant');
-
   drupal_set_message('student module installed');
 }
 
@@ -319,6 +310,15 @@ function student_enable() {
   install_content_type('CCKstudent_record.txt', 'student_record');
 
   content_clear_type_cache();
+
+  // execute raw queries
+  db_query('CREATE INDEX field_department_name_value ON {content_type_department} (field_department_name_value)');
+  db_query('CREATE INDEX field_programme_name_value ON {content_type_program} (field_programme_name_value)');
+  db_query('CREATE INDEX field_code_value ON {content_type_course} (field_code_value)');
+
+  // create student roles
+  permissions_create_role('Student');
+  permissions_create_role('Applicant');
 
   // set content type permissions
   $perms = student_perms_initialize();
