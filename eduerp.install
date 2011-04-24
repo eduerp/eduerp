@@ -8,10 +8,10 @@ include_once('permissions_api.module');
 function eduerp_perms_initialize() {
   $permissions = array(
     'Administrator' => array(
-      'create profile content', 
-      'delete any profile content', 
+      'create profile content',
+      'delete any profile content',
       'edit any profile content',
-      
+
       'edit field_profile_country_name',
       'edit field_profile_dob',
       'edit field_profile_first_name',
@@ -55,7 +55,7 @@ function eduerp_perms_initialize() {
     'authenticated user' => array(
       'create profile content',
       'edit own profile content',
-      
+
       'edit field_profile_country_name',
       'edit field_profile_dob',
       'edit field_profile_first_name',
@@ -98,7 +98,7 @@ function eduerp_perms_initialize() {
 
     'anonymous user' => array(
       'create profile content',
-      
+
       'edit field_profile_country_name',
       'edit field_profile_dob',
       'edit field_profile_first_name',
@@ -132,7 +132,7 @@ function eduerp_install(){
   load_fixtures('eduerp_states', $fixtures_path . "states.csv", true);
   load_fixtures('eduerp_lgas', $fixtures_path . "lgas.csv", true);
   load_fixtures('eduerp_countries', $fixtures_path . "countries.csv", true);
-  
+
   // Run raw queries
   db_query('INSERT INTO {course_grade_weightings} VALUES (0, 4, 0, 10, 10, 10, 10, 60, 0, 0, 0, 0, 0)');
 
@@ -144,13 +144,13 @@ function eduerp_install(){
   $form_state = array(
     'values' => array(
       // Updates the content type if it's existent, if not, creates it.
-      'type_name' => (is_array($profile_info) && array_key_exists('type', $profile_info)) ? 'profile' : '<create>', 
+      'type_name' => (is_array($profile_info) && array_key_exists('type', $profile_info)) ? 'profile' : '<create>',
       'macro' => $profile_content_type,
     ),
   );
   drupal_execute('content_copy_import_form', $form_state);
   content_clear_type_cache();
-  
+
   drupal_set_message('eduerp module installed');
 }
 
@@ -175,7 +175,7 @@ function eduerp_disable() {
 function eduerp_uninstall(){
   // uninstall the schemas
   drupal_uninstall_schema('eduerp');
-  
+
   drupal_set_message('eduerp module uninstalled');
 }
 
@@ -219,7 +219,7 @@ function eduerp_schema() {
       ),
     ),
   );
-  
+
   $schema['eduerp_countries'] = array(
     'description' => t('Stores a list of countries'),
     'fields' => array(
@@ -253,7 +253,7 @@ function eduerp_schema() {
       ),
     ),
   );
-  
+
   $schema['program_level_semester'] = array(
     'description' => t('Program Level Semester'),
     'fields' => array(
@@ -295,7 +295,7 @@ function eduerp_schema() {
       'programme_id' => array('programme_id'),
     ),
   );
-  
+
   $schema['program_course'] = array(
     'description' => t('Program Course'),
     'fields' => array(
@@ -348,7 +348,7 @@ function eduerp_schema() {
       'credit_load' => array(
         'description' => t('Credit Load for this Course in this Program'),
         'type' => 'int',
-        'size' => 'tiny',
+        'unsigned' => TRUE,
         'not null' => TRUE,
       ),
     ),
@@ -358,7 +358,7 @@ function eduerp_schema() {
       'course_id' => array('course_id'),
     ),
   );
-  
+
   $schema['program_course_instance'] = array(
     'description' => t('Program Course Instance'),
     'fields' => array(
@@ -391,7 +391,7 @@ function eduerp_schema() {
       'programme_id' => array('programme_id')
     )
   );
-  
+
   $schema['course_grade_weightings'] = array(
     'description' => t('Course Grade Weightings'),
     'fields' => array(
@@ -478,7 +478,7 @@ function eduerp_schema() {
       'course_id' => array('course_id')
     )
   );
-  
+
   $schema['eduerp_roles'] = array(
     'description' => t('EduERP roles'),
     'fields' => array(
@@ -523,12 +523,12 @@ function eduerp_schema() {
       'role' => array('role')
     )
   );
-  
+
   $schema['cron_notification'] = array(
     'description' => t('CRON notifications'),
     'fields' => array(
       'approver_uid' => array(
-        'description' => t('Approver ID'),
+        'description' => t('Approver UID'),
         'type' => 'int',
         'default' => 0,
       ),
@@ -543,14 +543,20 @@ function eduerp_schema() {
         'length' => '255',
         'default' => '',
       ),
+      'programme' => array(
+        'description' => t('Programme'),
+        'type' => 'varchar',
+        'length' => '255',
+        'default' => '',
+      ),
       'instruction' => array(
-        'description' => t('Instructions'),
+        'description' => t('Instruction'),
         'type' => 'int',
         'not null' => TRUE,
       ),
     ),
   );
-  
+
   return $schema;
 }
 ?>

@@ -66,8 +66,7 @@ function hostel_allocation_menu() {
     'type' => MENU_CALLBACK,
   );
   return $items;
-
- }
+}
 
 
 function hostel_allocation_perm() {
@@ -346,7 +345,7 @@ function get_hostels($hostel_nid = 0, $forCombo = true) {
     $r = db_query("SELECT nid, field_hostel_name_value AS hostel_name, field_description_value AS hostel_description, IF(field_hostel_status_value = 1, 'Active', 'Not Active') AS hostel_status
       FROM {content_type_hostels}
       ORDER BY field_hostel_name_value");
-    
+
   if (db_affected_rows($r) > 0 ){
     while ($f = db_fetch_object($r)){
       if($forCombo) {
@@ -445,10 +444,10 @@ function hostel_allocation_create_edit_block_form() {
       '#type' => 'select',
       '#options' => get_hostels($block_edit_record->hostel_nid, true), //array(0=>'Mixed', 1=>'Male Only', 2=>'Female Only'),
       '#required' => TRUE
-    );  
-  	  
-  	  
-  	  
+    );
+
+
+
   }
   if ($block_edit_record) $form['hostel_nid']['#value'] = $block_edit_record->hostel_nid;
 
@@ -855,7 +854,7 @@ function hostel_allocation_create_edit_room_form() {
 
     }
   }
-  
+
   $form['#title'] = 'Create New Room';
    if (! isset($room_edit_record)){
 	  $form['hostel_nid'] = array(
@@ -2177,7 +2176,7 @@ function hostel_allocation_create_prepare_allocation_form_submit($form, &$form_s
   $val = hostel_allocation_prepare_for_allocation();
   if($val == 1)
     drupal_set_message(Error_Types(142), 'error');
-  elseif($val == 2 || $val == 3) 
+  elseif($val == 2 || $val == 3)
     return;
   else
     drupal_set_message("Hostel preparation was successful!");
@@ -2194,8 +2193,8 @@ function hostel_allocation_prepare_for_allocation(){
 
   $val = hostel_allocation_prepare_rooms(); //prepare rooms. This sets up room_statistics
   if($val == 3) return $val; //former reservation count + allocation count cannot be less than new capcity
-  
-  
+
+
   return 4;
 }
 
@@ -2222,7 +2221,7 @@ function hostel_allocation_prepare_block_rules(){
         while($row = db_fetch_object($rs)){
           //check if the block and category pair already exists for the current session
           if(block_category_exists($v['block_nid'], $row->category_nid, $session_name)){
-          	  
+
             //test to make sure that allocation number will NOT be less than alloted number
             if(db_affected_rows(db_query("SELECT block_statistics_id FROM {allocation_block_statistics} WHERE alloted_number > %d AND block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ", $row->allocation_number, $v['block_nid'], $row->category_nid,$session_name )) > 0 ){
             	    drupal_set_message("The operation was not successful. Problem with  Category. Allocation Number cannot be less than Alloted Number: (". $v['block_name'] .",". $v['hostel_name'] ." )", 'error');
@@ -2305,26 +2304,26 @@ function hostel_allocation_prepare_rooms(){
 
   while($continue){
     //note all rooms must be selected regardless of the room's status
-    $rs = db_query("SELECT field_hostel_name_value hostel_name, field_block_name_value block_name, ctr.nid room_nid, ctr.field_block_id_nid, ctr.field_room_name_value, ctr.field_room_capacity_value room_capacity, ctr.field_room_status_value 
+    $rs = db_query("SELECT field_hostel_name_value hostel_name, field_block_name_value block_name, ctr.nid room_nid, ctr.field_block_id_nid, ctr.field_room_name_value, ctr.field_room_capacity_value room_capacity, ctr.field_room_status_value
     	    FROM {content_type_rooms} ctr, {content_type_blocks} ctb, {content_type_hostels} cth
     	    WHERE ctr.field_block_id_nid=ctb.nid
     	      AND ctb.field_hostel_id_nid=cth.nid
-    	    
+
     	    LIMIT $start, $limit");
     if(db_affected_rows($rs) > 0) {
       while($row = db_fetch_object($rs)){
         //check if the room already exists in room_statistics for the current session
         if(is_room_existing_in_room_statistics($row->room_nid, $session_name)){
-        	
+
           //test to make sure that reservation count + allocation coubt is not less than new capacity
-          
+
             if(db_affected_rows(db_query("SELECT room_statistics_id FROM {allocation_room_statistics} WHERE room_nid = %d AND (reservation_count + allocation_count) > %d ", $row->room_nid, $row->room_capacity )) > 0 ){
             	drupal_set_message("The operation was not successful. Problem with Room Capacity. Reservation Count + Allocation Count cannot be less than Capacity: (Room:". $v['field_room_name_value'] ." - ". $v['block_name'] .",". $v['hostel_name'] ." )", 'error');
                 return 3;
             }
-          
-          
-          
+
+
+
           //update the room's capacity info
           db_query("UPDATE {allocation_room_statistics} SET room_capacity = '". $row->room_capacity ."' WHERE room_nid = '". $row->room_nid ."' ");
         }
@@ -3475,7 +3474,7 @@ function hostel_allocation_room_allocation_report($blockNID=0){
 function hostel_allocation_block_statistics_report($session, $blockNID=0){
  ob_start();
  $html = "";
- 
+
  $sql = "SELECT cth.field_hostel_name_value hostel_name, ctb.field_block_name_value block_name, ctard.field_category_name_value category_name, abs.allocation_number, abs.alloted_number, abs.session_name session_name FROM {content_type_hostels} cth, {allocation_block_statistics} abs, {content_type_blocks} ctb, {content_type_allocation_rules_description} ctard
   WHERE
   abs.block_nid = ctb.nid
@@ -3489,7 +3488,7 @@ function hostel_allocation_block_statistics_report($session, $blockNID=0){
 
  $sql .= " ORDER BY hostel_name, block_name, category_name ";
 
-  
+
  if($blockNID != 0){
    $blockInfo = get_blocks($blockNID, false);
    $html .="
@@ -3845,8 +3844,8 @@ function hostel_allocation_revoke_expired_reservation_form_submit($form, &$form_
 
   //hostel_allocation_allocate_bedspace($values['studUID'], 1);
   //drupal_set_message('The Allocation was succesful!');
-  
-  
+
+
 }
 //revoke reservation ends here
 
@@ -3867,7 +3866,7 @@ function hostel_allocation_order($op, &$order, $arg2) {
         drupal_goto("student/hostelreservation");
       else
         drupal_set_message(Error_Types(151), 'error');
-      
+
       break;
   }
 }
@@ -3950,7 +3949,7 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID){
     //}
   //}
 
-  
+
   return false;
 }
 //allocate bedspace ends here
@@ -3973,7 +3972,7 @@ function get_allocation_info($studentUID, $session){
   		  AND ctra.field_allocation_student_id_uid=%d AND ctra.field_allocation_session_name_value='%s'";
   $rs = db_query($sql, $studentUID, $session);
   return $rs;
-	
+
 }
 
 
@@ -4051,14 +4050,12 @@ function hostel_allocation_show_allocated_room($studentUID, $session){
        <td style='width:200px;'>Allocation Date:</td>
        <td>". $rs->allocation_date ."</td>
      </tr>
-     
+
    </table>
    </div>";
   }
 
   return $html;
-
-	
 }
 
 ?>
