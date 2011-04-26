@@ -291,8 +291,8 @@ function me_gen_updFacultyInfo($facNID, $sessionName, $facSubDomain){
   
   //create entry for mat num gen	
   //check if the nid exists
-  $sql = "SELECT faculty_nid FROM mat_num_faculty_serial WHERE faculty_nid=%d";
-  $rs = db_query($sql, $facNID);
+  $sql = "SELECT faculty_nid FROM mat_num_faculty_serial WHERE faculty_nid=%d AND session_name='%s'";
+  $rs = db_query($sql, $facNID, $sessionName);
   if (db_affected_rows($rs) <= 0) {
     //we need to create the new faculty
     $sql = "INSERT INTO mat_num_faculty_serial (faculty_nid, session_name) VALUES (%d, '%s') ";
@@ -316,6 +316,15 @@ function me_gen_updFacultyInfo($facNID, $sessionName, $facSubDomain){
     //update the email_subdomain
     $sql = "UPDATE {email_faculty_subdomain_description} SET email_subdomain='%s' WHERE faculty_nid=%d ";
     $rs = db_query($sql, $facSubDomain, $facNID);
+  }
+  
+  //also just check general_serial
+  //make sure it does not exist first
+  $sql = "SELECT mat_num_general_serial_id FROM mat_num_general_serial WHERE session_name='%s' ";
+  $rs = db_query($sql, $sessionName );
+  if (db_affected_rows($rs) <= 0) {
+    $sql = "INSERT INTO mat_num_general_serial (session_name) VALUES ('%s') ";
+    db_query($sql, $sessionName);
   }
   
   //end of entry for email gen
@@ -487,7 +496,7 @@ function me_gen_createsession($sessioname){
   }
   
   //insert for global serial
-   //make sure it does not exist first
+  //make sure it does not exist first
   $sql = "SELECT mat_num_general_serial_id FROM mat_num_general_serial WHERE session_name='%s' ";
   $rs = db_query($sql, $sessioname );
   if (db_affected_rows($rs) <= 0) {
