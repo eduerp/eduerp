@@ -400,9 +400,9 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
 
   
   //replace invlid character
-  $illegalChars = array("(", ")", "[", "]", "\\", ";", ":", ",", "<", ">", " ", "!", "'", "*", "/", "`", "{",  "|", "}", "~" );
+  $illegalChars = array("(", ")", "[", "]", "\\", ";", ":", ",", "<", ">", " ", "!", "'", "*", "/", "`", "{",  "|", "}", "~", '"', "@", "." );
   foreach($illegalChars as $v){  
-    str_replace(stripslashes($v), "", $userPart);
+    str_replace($v, "", $userPart);
   }
   
   
