@@ -3167,12 +3167,19 @@ function staff_create_edit_faculty() {
   }
 
   echo '<br /><hr /><br />';
-  //$me = me_gen_matno(947);
+  $me = me_gen_matno(947, 3386);
+  //echo $me[0];
   //drupal_set_message(print_r($me));
   //drupal_set_message(substr(variable_get('eduerp_current_session', ''), -3, 3)); 
   //$user_profile = new UserProfile(947); 
   //drupal_set_message(print_r($user_profile));//drupal_set_message($user_profile->field_profile_mode_of_entry); //
   //me_gen_createsession('2011/2012');
+  //VUG-BSC-09-205
+  //$student = user_load(947);
+  //$student->name = $me[0];
+  //drupal_set_message(print_r($student));
+  //print_r(user_save($student, array('name'=>'VUG-BSC-09-205')));
+    
   if (! arg(2)) {
     if (! $isAuthorized) {
       echo Error_Types(105);
@@ -5080,6 +5087,7 @@ function staff_create_programme_form_validate($form, &$form_state) {
   global $user;
   unset($_SESSION['eduerp_bkinfo']);
   //make sure he can create/modify
+  
   if (staff_has_eduerp_role($user->uid, $form_state['values']['department_nid'], 0, array('Head of Department', 'Department Examination Officer'))) {
 
     //make sure no duplicates
@@ -5111,6 +5119,7 @@ function staff_create_programme_form_validate($form, &$form_state) {
   }
   else
     form_set_error('department_nid', Error_Types(117));
+    
 
 }
 
@@ -5349,6 +5358,7 @@ function staff_modify_programme_form_validate($form, &$form_state) {
   global $user;
   unset($_SESSION['eduerp_bkinfo']);
   //get the department attached to the programme
+  
   $program = get_programmes($form_state['values']['programme_nid']);
   if (db_affected_rows($program) > 0) {
     $programInfo = db_fetch_object($program);
@@ -5361,6 +5371,8 @@ function staff_modify_programme_form_validate($form, &$form_state) {
   }
   else
     form_set_error('programme_nid', Error_Types(114));
+    
+    
 }
 
 
