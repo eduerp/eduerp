@@ -378,7 +378,7 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     default: return false;
   	  
   }
-  $illegalChars = array("(", ")", "[", "]", "\\", ";", ":", ",", "<", ">", " " );
+  
   //lets get the user part of the email
   
   switch($instChoice->email_user_format){
@@ -400,6 +400,7 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
 
   
   //replace invlid character
+  $illegalChars = array("(", ")", "[", "]", "\\", ";", ":", ",", "<", ">", " ", "!", "'", "*", "/", "`", "{",  "|", "}", "~" );
   foreach($illegalChars as $v){  
     str_replace(stripslashes($v), "", $userPart);
   }
