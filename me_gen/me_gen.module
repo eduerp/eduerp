@@ -395,8 +395,7 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     default: return false;  
   }
   
-  //turn to small caps
-  $userPart = strtolower(strtoupper($userPart));
+  
   
   //replace invlid character
   foreach($illegalChars as $v){  
@@ -408,9 +407,11 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
   
   $userEmail = ($userPart . '@' . $domainPart);
   
+  //turn to small caps
+  $userEmail = strtolower(strtoupper($userEmail));
   
-  if(eregi("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$", $userEmail)) { 
-  
+  //if(eregi("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$", $userEmail)) { 
+  if(preg_match('/^([a-zA-Z0-9])+([a-zA-Z0-9\._-])*@([a-zA-Z0-9_-])+([a-zA-Z0-9\._-]+)+$/', $userEmail)){ 
     if($formerProgID == 0){
       //update the student's email
       $student_profile->university_email = $userEmail;
