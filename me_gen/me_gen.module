@@ -378,7 +378,7 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     default: return false;
   	  
   }
-  
+  $illegalChars = array("(", ")", "[", "]", "\\", ";", ":", ",", "<", ">", " " );
   //lets get the user part of the email
   
   switch($instChoice->email_user_format){
@@ -395,23 +395,40 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     default: return false;  
   }
   
+  //turn to small caps
+  $userPart = strtolower(strtoupper($userPart));
+  
+  //replace invlid character
+  foreach($illegalChars as $v){  
+    str_replace(stripslashes($v), "", $userPart);
+  }
+  
+  
   //bring the email address together
   
   $userEmail = ($userPart . '@' . $domainPart);
   
-  if($formerProgID == 0){
-    //update the student's email
-    $student_profile->university_email = $userEmail;
-    $student_profile->save();
-  }
   
-  //if personal e-mail is empty, update it with Drupal's email
-  if(! $student_profile->personal_email || empty($student_profile->personal_email) || $student_profile->personal_email == ""){
-    $student = user_load($studUID);
+  if(eregi("^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,3})$", $userEmail)) { 
+  
+    if($formerProgID == 0){
+      //update the student's email
+      $student_profile->university_email = $userEmail;
+      $student_profile->save();
+    }
+  
+    //if personal e-mail is empty, update it with Drupal's email
+    if(! $student_profile->personal_email || empty($student_profile->personal_email) || $student_profile->personal_email == ""){
+      $student = user_load($studUID);
     
-    $student_profile->personal_email = $student->mail;
-    $student_profile->save();
+      $student_profile->personal_email = $student->mail;
+      $student_profile->save();
     
+    }
+  }
+  else{
+    //for some reason(s) the email address is invalid. We should leave it out for the Administrator to manually create it perhaps during provisioning .	  
+    $userEmail = "";	  
   }
   
   //return the generated email
