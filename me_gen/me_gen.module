@@ -395,7 +395,9 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     default: return false;  
   }
   
-  
+  //convert to ASCII
+  $userPart = iconv('UTF-8', 'ASCII//TRANSLIT', $userPart);
+
   
   //replace invlid character
   foreach($illegalChars as $v){  
