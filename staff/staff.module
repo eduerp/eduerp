@@ -142,14 +142,14 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-  
+
   $items['staff/missingcourses']=array(
     'title'=>'Check for Missing Courses for a Semester',
     'page callback' => 'staff_check_for_missing_courses',
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-  
+
   return $items;
 }
 
@@ -606,7 +606,7 @@ function faculty($facultyNID=0) {
       $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} ORDER BY field_college_name_value");
     else
       $r = db_query("SELECT nid, field_college_name_value AS value FROM {content_type_college} WHERE nid=%d ORDER BY field_college_name_value", $facultyNID);
-    
+
     while ($f = db_fetch_object($r))
       $options[$f->nid] = $f->value;
   }
@@ -2736,11 +2736,9 @@ function set_session_form_submit($form, &$form_state) {
   $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['eduerp_current_session']);
   if (!db_result($session_rs)) {
     db_query("INSERT INTO {session} (sess_name) VALUES ('%s')", $form_state['values']['eduerp_current_session']);
-    
-    module_invoke_all('createsession', $form_state['values']['eduerp_current_session']);
   }
-  
-  
+
+  module_invoke_all('createsession', $form_state['values']['eduerp_current_session']);
 }
 
 
@@ -3144,7 +3142,7 @@ function staff_create_edit_faculty() {
   if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
   echo '<br /><hr /><br />';
-  
+
   if (! $isAuthorized) {
     echo Error_Types(104);
 
@@ -3160,7 +3158,7 @@ function staff_create_edit_faculty() {
       echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create Faculty</font><br /><br />";
       echo '<hr /><br />';
       echo "<b>Create Faculty</b> - Fill the form below to create a new Faculty<br />";
-      
+
     }
 
     echo drupal_get_form('staff_create_edit_faculty_form');
@@ -3170,8 +3168,8 @@ function staff_create_edit_faculty() {
   //$me = me_gen_matno(947);
   //echo $me[0];
   //drupal_set_message(print_r($me));
-  //drupal_set_message(substr(variable_get('eduerp_current_session', ''), -3, 3)); 
-  //$user_profile = new UserProfile(947); 
+  //drupal_set_message(substr(variable_get('eduerp_current_session', ''), -3, 3));
+  //$user_profile = new UserProfile(947);
   //$user_profile->university_email = '';
   //$user_profile->save();
   //drupal_set_message(print_r($user_profile));//drupal_set_message($user_profile->field_profile_mode_of_entry); //
@@ -3181,7 +3179,7 @@ function staff_create_edit_faculty() {
   //$student->name = $me[0];
   //drupal_set_message(print_r($student));
   //print_r(user_save($student, array('name'=>'VUG-BSC-09-205')));
-    
+
   if (! arg(2)) {
     if (! $isAuthorized) {
       echo Error_Types(105);
@@ -3273,7 +3271,7 @@ function staff_create_edit_faculty_form() {
     '#required' => TRUE
   );
   if ($fac_edit_record) $form['faculty_abbreviation']['#value'] = $fac_edit_record->abbr;
-  
+
   $form['faculty_subdomain'] = array(
     '#title' => 'Faculty E-mail Subdomain e.g. science.xyz.com',
     '#type' => 'textfield',
@@ -3281,7 +3279,7 @@ function staff_create_edit_faculty_form() {
     //'#required' => TRUE
   );
   if ($fac_edit_record) $form['faculty_subdomain']['#value'] = $fac_edit_record->fac_subdomain;
-  
+
   /*
   if (isset($_POST['faculty_nid'])) {
     $form['faculty_nid'] = array(
@@ -3359,9 +3357,9 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
     $node->field_college_name[0]['value']         = $form_state['values']['faculty_name'];
     $node->field_college_abbreviation[0]['value'] = $form_state['values']['faculty_abbreviation'];
     $node->field_college_email_subdomain[0]['value'] = $form_state['values']['faculty_subdomain'];
-    
+
     drupal_set_message($form_state['values']['faculty_name'] . ' Faculty was updated!<br />');
-    
+
   }
   else {
     $node = new stdClass();
@@ -3380,14 +3378,14 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
   }
 
   node_save($node);
-  
+
   module_invoke_all('updFacultyInfo', $node->nid, variable_get('eduerp_current_session', ''), $form_state['values']['faculty_subdomain']);
   //unset($_SESSION['eduerp_fac_nid']);
   drupal_goto("staff/createeditfaculty");
-  
+
 
 }
- 
+
 
 function staff_create_edit_dept_form_validate($form, &$form_state) {
 
@@ -3414,7 +3412,7 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
     $node->field_department_name[0]['value']    = $form_state['values']['department_name'];
     $node->field_college_id[0]['nid']           = $form_state['values']['faculty_nid'];//
     $node->field_department_code[0]['value']    = $form_state['values']['department_code'];
-    
+
     drupal_set_message($form_state['values']['department_name'] . ' Department was updated!<br />');
     unset($_SESSION['eduerp_dept_nid']);
   }
@@ -3471,7 +3469,7 @@ function staff_create_edit_dept_form() {
     '#required' => TRUE
   );
   if ($dept_edit_record) $form['department_name']['#value'] = $dept_edit_record->dept_name;
-  
+
   $form['department_code'] = array(
     '#title' => 'Department Code',
     '#type' => 'textfield',
@@ -5089,7 +5087,7 @@ function staff_create_programme_form_validate($form, &$form_state) {
   global $user;
   unset($_SESSION['eduerp_bkinfo']);
   //make sure he can create/modify
-  
+
   if (staff_has_eduerp_role($user->uid, $form_state['values']['department_nid'], 0, array('Head of Department', 'Department Examination Officer'))) {
 
     //make sure no duplicates
@@ -5121,7 +5119,7 @@ function staff_create_programme_form_validate($form, &$form_state) {
   }
   else
     form_set_error('department_nid', Error_Types(117));
-    
+
 
 }
 
@@ -5360,7 +5358,7 @@ function staff_modify_programme_form_validate($form, &$form_state) {
   global $user;
   unset($_SESSION['eduerp_bkinfo']);
   //get the department attached to the programme
-  
+
   $program = get_programmes($form_state['values']['programme_nid']);
   if (db_affected_rows($program) > 0) {
     $programInfo = db_fetch_object($program);
@@ -5373,8 +5371,8 @@ function staff_modify_programme_form_validate($form, &$form_state) {
   }
   else
     form_set_error('programme_nid', Error_Types(114));
-    
-    
+
+
 }
 
 
@@ -8154,30 +8152,30 @@ function staff_check_for_missing_courses(){
 
   //}
   //else {
-      
+
       	echo "<font size = '1px'><a href = '/staff/semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;Check for Missing Courses for a Semester</font><br /><br />";
         echo '<hr /><br />';
         echo "<b>Check for Missing Courses for a Semester</b> - Please fill the form as appropriate<br />";
-      
+
       echo drupal_get_form('staff_show_check_missing_courses_form');
   //}
   echo '<br /><hr /><br />';
-  
+
   if(! isset($_SESSION['eduerp_check_missing_courses'])) {
     $_SESSION['eduerp_check_missing_courses']['session'] = variable_get('eduerp_current_session', '');
     $_SESSION['eduerp_check_missing_courses']['semester'] = variable_get('eduerp_current_semester', 1);
   }
     //echo '<br /><hr /><br />';
     echo staff_display_missing_courses_for_a_semester($_SESSION['eduerp_check_missing_courses']['session'], $_SESSION['eduerp_check_missing_courses']['semester']);
-  
+
   //}
-  return ob_get_clean();	
-	
+  return ob_get_clean();
+
 }
 
 function staff_show_check_missing_courses_form() {
 
-  
+
 
   $form['#title'] = 'Check For Missing Courses';
   $form['session'] = array(
@@ -8185,35 +8183,35 @@ function staff_show_check_missing_courses_form() {
     '#options' => get_all_sessions(),
     '#required' => TRUE,
     '#title' => 'Session');
-  
+
   if ($_SESSION['eduerp_check_missing_courses']) $form['session']['#default_value'] = $_SESSION['eduerp_check_missing_courses']['session'];
-  
+
    $form['semester'] = array(
       '#type' => 'select',
       '#options' => array(1 => '1', 2 => '2'),
       '#title' => 'Semester',
       '#required' => TRUE);
    if ($_SESSION['eduerp_check_missing_courses']) $form['semester']['#default_value'] = $_SESSION['eduerp_check_missing_courses']['semester'];
-   
+
   $form['submit'] = array(
     '#value' => 'Show Now',
     '#type' => 'submit'
   );
-  
+
   return $form;
 }
 
 function staff_show_check_missing_courses_form_submit($form, &$state) {
   $values = $state['values'];
-  
+
   $_SESSION['eduerp_check_missing_courses']['session']  = $values['session'];
   $_SESSION['eduerp_check_missing_courses']['semester'] = $values['semester'];
-  
+
 }
 
 
 function staff_display_missing_courses_for_a_semester($session, $semester) {
-	
+
   $sql = "SELECT DISTINCT
         pc.level,
         c.field_code_value,
@@ -8233,9 +8231,9 @@ function staff_display_missing_courses_for_a_semester($session, $semester) {
       WHERE pc.semester='%s' AND ci.nid IS NULL
       ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
     $result = db_query($sql, $session, $semester);
-    
+
   if(db_affected_rows($result) <=0) return "<b>List of Missing Courses for ". $semester ." Semester in ". $session ." Session</b><br /><br /><div><font color=green><b>All courses have been setup and assigned a lecturer.</b></font></div>";
-	
+
   $str = "
   <div id='assigned_courses'>
   <b>List of Missing Courses for ". $semester ." Semester in ". $session ." Session</b><br />
