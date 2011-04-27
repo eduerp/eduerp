@@ -466,8 +466,8 @@ function set_matriculation_number($student_id, $formerProgID=0) {
 
     // Change the username to the matno and also change the student profile
     $student = user_load($student_id);
-    $student->name = $matno;
-    user_save($student);
+    //$student->name = $matno;
+    user_save($student, array('name'=>$matno));
 
     $student_profile = new UserProfile($student_id);
     $student_profile->profile_matno = $matno;
