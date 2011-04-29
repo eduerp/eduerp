@@ -458,7 +458,11 @@ function _perform_clearance($student_id) {
 
   $user_profile = new UserProfile($student_id);
 
-  $subject = "University Application Approved";
+  $sql = "SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
+  $subject = 'University Application Approved (' . variable_get('site_name', '') . ')';
 
   $body = '';
   if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
@@ -468,11 +472,13 @@ function _perform_clearance($student_id) {
   }
 
   $body .= "Your application to enrol as a Student has been approved.\n\n";
+  $body .= "Your Programme is: {$row->field_programme_name_value}\n\n";
   $body .= "You now have a Matriculation Number which is: {$user_profile->profile_matno}\n\n";
   $body .= "Please note this carefully as you will need it to access the university systems.\n";
   $body .= "In particular, you will need it as your new Username to login to the university computer system.\n";
   $body .= "You should continue to use the Password you entered when you Registered.\n\n";
-  $body .= "The Registry Department\n";
+  $body .= "At a later stage, but not yet, your university e-mail will be: {$user_profile->university_email}\n\n";
+  $body .= variable_get('site_name', '') . "\n";
 
   $message = drupal_mail('student', 'newmatnumber', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
   $message['subject'] = $subject;
