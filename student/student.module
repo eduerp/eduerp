@@ -445,6 +445,8 @@ function student_clearance() {
 
 // Bundle of actions to be performed on clearance
 function _perform_clearance($student_id) {
+  global $user;
+
   // create programme information for the student
   create_student_program($student_id);
 
@@ -453,6 +455,29 @@ function _perform_clearance($student_id) {
   // Change role of the student from Applicant to Student
   $student = user_load($student_id);
   eduerp_set_role($student, 'Student');
+
+  $user_profile = new UserProfile($student_id);
+
+  $subject = "University Application Approved";
+
+  $body = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
+  }
+
+  $body .= "Your application to enrol as a Student has been approved.\n\n";
+  $body .= "You now have a Matriculation Number which is: {$user_profile->profile_matno}\n\n";
+  $body .= "Please note this carefully as you will need it to access the university systems.\n";
+  $body .= "In particular, you will need it as your new Username to login to the university computer system.\n";
+  $body .= "You should continue to use the Password you entered when you Registered.\n\n";
+  $body .= "The Registry Department\n";
+
+  $message = drupal_mail('student', 'newmatnumber', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
+  $message['subject'] = $subject;
+  $message['body'] = $body;
+  drupal_mail_send($message);
 }
 
 
