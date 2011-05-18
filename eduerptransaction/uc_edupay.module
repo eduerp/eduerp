@@ -1,6 +1,7 @@
 <?php
 /**
  * @author Kayode Odeyemi
+ * @file
  * Allows payment via edupay
  */
 
@@ -11,7 +12,7 @@
  * @param <type> $form_id 
  */
 function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
-    dsm($form_id);
+    //dsm($form_id);
   switch ($form_id) {
     case 'uc_cart_checkout_form':
         //dsm('form_id is uc_cart_checkout_form');
@@ -68,7 +69,7 @@ function uc_payment_method_edupay($op, &$arg1) {
         case 'settings': // generate invoice here by emailing the user all information. send user order details to edupay here.
         //retrieve cart info
         //use the card info to generate the invoice
-            return "Edupay";
+            //return "Edupay";
         case 'cart-details': //display the form for receipt number and confirmation id here
             //return drupal_get_form('uc_payment_method_edupay_form', $arg1);
         case 'cart-process': // process the submitted data (receipt number & confirmation id) & validate
