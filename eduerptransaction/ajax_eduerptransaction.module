@@ -1,0 +1,35 @@
+<?php
+/**
+ * AJAX Webform Plugin
+ *
+ * @see http://drupal.org/project/ajax
+ * @see irc://freenode.net/#drupy
+ * @depends Drupal 6
+ * @author brendoncrawford
+ * @note This file uses a 79 character width limit.
+ *
+ */
+
+/**
+ * Get webform types
+ *
+ * @param $types Assoc
+ * @return Bool
+ */
+function ajax_eduerptransaction_ajax_types(&$types) {
+  /*$q =
+    'SELECT ' .
+    '  n.nid, ' .
+    '  n.title ' .
+    'FROM {node} n ' .
+    'WHERE n.type = "webform" ';
+  $res = db_query($q);
+  while ($row = db_fetch_array($res)) {
+    $id = 'hostel_allocation_reports_switch_form';
+    $types[$id] = t('Hostel: ' . $row['title']);
+  }*/
+    dsm($types);
+  $id = 'hostel_allocation_reports_switch_form';
+  $types[$id] = t('Hostel: Hostel Allocation Reports');
+  return TRUE;
+}

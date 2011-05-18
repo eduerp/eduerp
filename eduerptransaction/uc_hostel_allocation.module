@@ -1,0 +1,79 @@
+<?php
+/* 
+ * @file
+ * Defines a checkout pane that retrieves and displays student's hostel
+ * reservation data.
+ */
+
+
+/**
+ * Implementation of hook_checkout_pane().
+ */
+function uc_hostel_allocation_checkout_pane() {
+  $panes[] = array(
+    'id' => 'hostel_allocation',
+    'callback' => 'uc_checkout_pane_hostel_allocation',
+    'title' => t('Hostel Reservation Information'),
+    'desc' => t('Here are your order information.'),
+    'weight' => 8,
+  );
+
+  return $panes;
+}
+
+/**
+ * @see uc_hostel_allocation_checkout_pane
+ * Callback function
+ *
+ */
+function uc_checkout_pane_hostel_allocation($op, &$arg1, $arg2) {
+    //dsm('calling uc_checkout_pane_hostel_allocation');
+    //dsm($arg1->studentid);
+    global $user;
+    $html = hostel_allocation_show_reserved_room($user->uid);
+    switch ($op) {
+        case 'view':
+            $description = t('Your hostel allocation data');
+            
+		$contents['html'] = array(
+                '#value' => $html
+            );
+            return array('description' => $description, 'contents' => $contents);
+
+        case 'review':
+            //$review[] = array('title' => t('Your reservation data'), 'data' => unserialize($arg1->data));
+            $review[] = array('title' => t('Your reservation data'), 'data' => $html);
+            return $review;
+
+        case 'process':
+    }
+}
+
+
+/**
+ * Implementation of hook_order().
+ * This is called before uc_checkout_pane_hostel_allocation
+ */
+function uc_hostel_allocation_order($op, &$arg1, $arg2) {
+    global $user;
+    //dsm('calling uc_hostel_allocation_order');
+    //dsm($arg1);
+    switch ($op) {
+        case 'save':
+            //store hostel data object in uc_order
+            if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
+                db_query("UPDATE {uc_orders} SET data = '%s' "
+                ."WHERE order_id = %d AND uid = %d", $arg1->data,
+                 $arg1->order_id, $arg1->uid);
+            }
+            break;
+
+        // Load the hostel reservation data from the database.
+        case 'load':
+            $data = hostel_allocation_reserved_data();
+            $arg1->data = $data;
+            $arg1->studentid = $data->studentid;
+            //dsm($arg1->studentid);
+            break;
+    }
+}

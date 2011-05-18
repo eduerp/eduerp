@@ -1,0 +1,151 @@
+<?php
+/* 
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+/**
+ * hook_form_alter override
+ * @param <type> $form
+ * @param <type> $form_state
+ * @param <type> $form_id 
+ */
+function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
+    dsm($form_id);
+  switch ($form_id) {
+    case 'uc_cart_checkout_form':
+        //dsm('form_id is uc_cart_checkout_form');
+      /*if (isset($_POST['receipt_no'])) {
+        $order = new stdClass();
+        uc_payment_method_edupay('cart-process', $order, TRUE);
+      }*/
+      break;
+
+    case 'uc_cart_checkout_review_form':
+        //dsm('form is uc_cart_checkout_review_form');
+        $order_id = intval($_SESSION['cart_order']);
+        if($order_id > 0) {
+            $order = uc_order_load($order_id);
+
+            if ($order->payment_method == 'edupay') {
+                unset($form['submit']);
+                $form['#prefix'] = '<table id="edupay-review-table"><tr><td>';
+                $form['#suffix'] = '</td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
+            }
+
+        }
+  }
+}
+
+/**
+ * Implementation of hook_payment_method
+ */
+function uc_edupay_payment_method() {
+    $methods[] = array(
+    'id' => 'edupay',
+    'name' => t('edupay'),
+    'title' => t('Edupay'),
+    //'review' => variable_get('uc_2checkout_check', FALSE) ? t('Credit card/eCheck') : t('Credit card'),
+    'desc' => t('Payment via edupay web service'),
+    'callback' => 'uc_payment_method_edupay',
+    'weight' => 3,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+    return $methods;
+}
+
+/**
+ * Adds edupay to ubercart payment settings form
+ * @param <type> $op
+ * @param <type> $arg1
+ */
+function uc_payment_method_edupay($op, &$arg1) {
+
+    switch($op) {
+        // create some settings here that might be useful in cart-details op
+        case 'settings': // generate invoice here by emailing the user all information. send user order details to edupay here.
+        //retrieve cart info
+        //use the card info to generate the invoice
+            return "Edupay";
+        case 'cart-details': //display the form for receipt number and confirmation id here
+            //return drupal_get_form('uc_payment_method_edupay_form', $arg1);
+        case 'cart-process': // process the submitted data (receipt number & confirmation id) & validate
+        case 'cart-review': // display json output response here
+        case 'order-view': // display receipt to student here
+
+    }
+}
+
+/**
+ * Called after uc_edupay_service_add returns a successfull transaction
+ * @param <type> $form_state
+ * @param <type> $order
+ * @return <type>
+ */
+function uc_payment_method_edupay_form($form_state, $order) {
+  $form['receipt_no'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Receipt Number'),
+    '#size' => 20,
+  );
+  $form['confirmation_no'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Confirmation Number'),
+    '#size' => 32,
+  );
+  return $form;
+}
+
+/**
+ * Retrieves order items and passes it to uc_edupay_service_add
+ * @param <type> $form_state
+ * @param <type> $order
+ */
+function uc_edupay_form($form_state, $order) {
+
+    //$form['#action'] = '_uc_edupay_service_add';
+    // Generate invoice
+    // Allow invoice to be emailed to user
+    $form['invoice'] = array();
+
+    $form['invoice']['submit'] = array(
+        '#type' => 'submit',
+        //'#access' => !variable_get('node_preview', 0) || (!form_get_errors() && isset($form_state['node_preview'])),
+        '#value' => t('Save Invoice'),
+        //'#weight' => 5,
+        '#submit' => array('uc_edupay_invoice_submit'),
+    );
+
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit Order')
+    );
+
+    $form['#submit'][] = '_uc_edupay_service_add';
+    return $form;
+}
+
+/**
+ * Process invoice based on form_state order values
+ * @param <type> $form
+ * @param <type> $form_state
+ */
+function uc_edupay_invoice_submit($form, &$form_state) {
+    //dsm($form_state['values']);
+    switch ($form_state['values']['op']) {
+        case t('Save Invoice'):
+            break;
+    }
+}
+
+/**
+ * @see uc_edupay_form
+ * Makes 'add' service request to edupay.
+ * Called when user submits order
+ */
+function _uc_edupay_service_add() {
+    return 'http://edupay.co.cc/api/transaction/add';
+}
