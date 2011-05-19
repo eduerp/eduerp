@@ -38,21 +38,11 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
   );//hostel_allocation user
 
-  $items['student/hostelreservation/cart'] = array(
-        'title' => t('Confirm reservation'),
-        'description' => 'Display confirmation about allocation and perform checkout',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('student_hostelreservation_cart'),
-        'access callback' => 'user_access',
-        'access arguments' => array('access cart items'),
-        'type' => MENU_CALLBACK,
-    );
-
   return $items;
 }
 
 function student_perm() {
-  return array('student clearance', 'student course',  'view my grades', 'access cart items');
+  return array('student clearance', 'student course',  'view my grades');
 }
 
 class courseselectionsclass {
@@ -1450,7 +1440,6 @@ function student_hostel_reservation(){
   elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
     drupal_set_message('Hostel Reservation already exists!');
     $html = hostel_allocation_show_reserved_room($user->uid);
-    $html .= drupal_get_form('save_reservation');
     $html .= "<br /><hr /><br />";
     $html .= "<b>Pay for Accomodation</b><br /><br />Please click <a href='../cart'><b>Here</b></a> to <a href='../cart'><b>Pay for your Reserved Room</b></a>.<br />";
     $html .= "<br /><hr /><br />";
@@ -1474,65 +1463,4 @@ function student_user($op, &$edit, &$account, $category = NULL) {
     eduerp_add_role($account, 'Applicant');
     $edit['roles'] = NULL;
   }
-}
-
-/**
- * Retrieves hostel reservation as a uc product
- * @return <object>
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function _student_hostelreservation_product() {
-    $data = hostel_allocation_reserved_data();
-    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
-    $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
-    $uc_product = db_fetch_object($block_uc_product);
-    return $uc_product;
-}
-
-/**
- *
- * @global <type> $user
- * @param <type> $form_state
- * @return $form
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function student_hostelreservation_cart(&$form_state) {
-    global $user;
-    $data = hostel_allocation_reserved_data();
-    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
-    $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
-    
-    $uc_product = db_fetch_object($block_uc_product);
-    $nid = $uc_product->nid;
-    
-    $html = hostel_allocation_show_reserved_room($user->uid);
-    //$data_array = array();
-    $data_array[] = get_object_vars($data);
-    $form['data'] = array(
-        '#value' => $html
-    );
-     $form['add_to_cart'] = array(
-            '#type' => 'submit',
-            '#value' => 'Add to Cart',
-     );
-
-    //$form['#submit'][] = uc_cart_add_item($nid, $qty = 1, $data = NULL, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
-
-     $form['#submit'][] = 'student_hostelreservation_cart_submit';
-     return $form;
-}
-
-function student_hostelreservation_cart_submit($form, &$form_state) {
-    //dsm($form_state['values']);
-    $uc_product = _student_hostelreservation_product();
-    switch ($form_state['values']['op']) {
-        case t('Add to Cart'):
-            if (isset($form_state['values']['add_to_cart'])) {
-                $uc_product_nid = $uc_product->nid;
-                $data = get_object_vars($uc_product);
-                uc_cart_add_item($uc_product_nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
-                drupal_goto("cart");
-            }
-            break;
-    }
 }
