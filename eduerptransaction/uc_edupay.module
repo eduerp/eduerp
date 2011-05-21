@@ -13,6 +13,7 @@
  */
 function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
     //dsm($form_id);
+  //dsm($_SESSION);
   switch ($form_id) {
     case 'uc_cart_checkout_form':
         //dsm('form_id is uc_cart_checkout_form');
@@ -31,7 +32,7 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
             if ($order->payment_method == 'edupay') {
                 unset($form['submit']);
                 $form['#prefix'] = '<table id="edupay-review-table"><tr><td>';
-                $form['#suffix'] = '</td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
+                $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
             }
 
         }
@@ -70,9 +71,11 @@ function uc_payment_method_edupay($op, &$arg1) {
         //retrieve cart info
         //use the card info to generate the invoice
             //return "Edupay";
-        case 'cart-details': //display the form for receipt number and confirmation id here
+        case 'cart-details': //set transaction id and JAMB number here for later retrieval
             //return drupal_get_form('uc_payment_method_edupay_form', $arg1);
-        case 'cart-process': // process the submitted data (receipt number & confirmation id) & validate
+            //dsm($arg1);
+        case 'cart-process': //This happens when Review Order is clicked
+            // Store the transaction id in edupay as well as do any form of validation.
         case 'cart-review': // display json output response here
         case 'order-view': // display receipt to student here
 
@@ -100,26 +103,80 @@ function uc_payment_method_edupay_form($form_state, $order) {
 }
 
 /**
- * Retrieves order items and passes it to uc_edupay_service_add
+ * Generates invoice
  * @param <type> $form_state
- * @param <type> $order
+ * @param <type> $order 
  */
-function uc_edupay_form($form_state, $order) {
+function uc_edupay_invoice_form($form_state, $order) {
 
-    //$form['#action'] = '_uc_edupay_service_add';
+    $form['pdflink'] = array(
+        '#type' => 'hidden',
+        '#value' => 'invoice/pdf/' . $order->order_id,
+    );
+
+    // store returned js value in this hidden field
+    $form['do_pdfinvoice'] = array(
+        '#type' => 'hidden',
+    );
+
+    $form['hidden_order'] = array(
+        '#type' => 'hidden',
+        '#value' => $order,
+    );
     // Generate invoice
     // Allow invoice to be emailed to user
     $form['invoice'] = array();
 
-    $form['invoice']['submit'] = array(
-        '#type' => 'submit',
-        //'#access' => !variable_get('node_preview', 0) || (!form_get_errors() && isset($form_state['node_preview'])),
-        '#value' => t('Save Invoice'),
-        //'#weight' => 5,
-        '#submit' => array('uc_edupay_invoice_submit'),
+    drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
+
+    // in the form function store the link of the file in $form_state['storage']
+    // alternatively use hidden fields
+    //if(!isset($form_state['storage'])) {
+
+        $invoice_form_settings = array(
+            //'pdflink' => $form_state['values']['pdflink'],
+            'pdflink' => $form['pdflink']['#value'],
+        );
+
+        //add the variable that contains the link to drupal_add_js
+        //stores $invoice_form_settings into js setting
+        drupal_add_js(array('uc_edupay' => $invoice_form_settings), 'setting');
+
+        // to call the javascript code that will begin the download, do either of these;
+
+        // test if js is called
+        //drupal_add_js('Drupal.behaviors.uc_edupay = function() { alert("clicked"); }', 'inline');
+
+    //}
+
+    $form['invoice']['gen_invoice'] = array(
+        //'#value' => '<div>' . l(t('Save Invoice'), "#", array('attributes' => array('class' => 'invoice-submit'))) . '</div>'
+        '#value' => '<div>' . '<a href="javascript:void" class="invoice-submit">Save Invoice</a>' . '</div>'
     );
 
+    /*$form['invoice']['gen_invoice'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save Invoice'),
+        '#ajax' => array(
+            'enabled' => TRUE
+        ),
+        '#attributes' => array('class' => 'invoice-submit'),
+        //'#weight' => 5,
+        '#submit' => array('uc_edupay_invoice_submit'),
+    );*/
+    
+    return $form;
+}
+/**
+ * Retrieves order items and passes it to uc_edupay_service_add
+ * @param <type> $form_state
+ * @param <type> $order
+ * @return $form array
+ */
+function uc_edupay_form($form_state, $order) {
 
+    //$form['#action'] = '_uc_edupay_service_add';
+    
     $form['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Submit Order')
@@ -138,6 +195,14 @@ function uc_edupay_invoice_submit($form, &$form_state) {
     //dsm($form_state['values']);
     switch ($form_state['values']['op']) {
         case t('Save Invoice'):
+            if (isset($form_state['values']['gen_invoice'])) {
+                //return the value of what 'pdflink' is set to
+                $form_state['storage']['pdflink'] = $form_state['values']['pdflink'];
+                //$_REQUEST['destination'] = 'cart/checkout/review';
+                return TRUE;
+                //drupal_goto($form_state['storage']['pdflink']);
+                //drupal_goto("invoice/pdf/" . $form_state['values']['hidden_order']->order_id);
+            }
             break;
     }
 }
@@ -149,4 +214,18 @@ function uc_edupay_invoice_submit($form, &$form_state) {
  */
 function _uc_edupay_service_add() {
     return 'http://edupay.co.cc/api/transaction/add';
+}
+
+
+/**
+ * Ajaxify the button to generate the invoice
+ * Implementation of hook_ajax_types
+ * @see @link http://drupal.org/project/ajax
+ * @param $types Assoc
+ * @return Bool
+ */
+function uc_edupay_ajax_types(&$types) {
+  $id = 'uc_edupay_invoice_form';
+  $types[$id] = t('Edupay: Generate Invoice');
+  return TRUE;
 }
