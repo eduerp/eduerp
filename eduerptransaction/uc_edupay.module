@@ -29,9 +29,11 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
             $order = uc_order_load($order_id);
 
             if ($order->payment_method == 'edupay') {
-                unset($form['submit']);
+                //unset($form['submit']);
                 $form['#prefix'] = '<table id="edupay-review-table"><tr><td>';
-                $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
+                // We can unset the submit order here so we can send data to edupay
+                //$form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
+                $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td></tr></table>';
             }
 
         }
@@ -228,7 +230,7 @@ function uc_edupay_form($form_state, $order) {
         'pay_method' => isset($order->payment_method) ? $order->payment_method : 'edupay',
     );
 
-    $form['#action'] = '_uc_edupay_service_add';
+    //$form['#action'] = '_uc_edupay_service_add';
 
     $form['submit'] = array(
         '#type' => 'submit',
