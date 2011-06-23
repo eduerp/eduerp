@@ -4,16 +4,20 @@
  * @author Kayode Odeyemi
  */
 
+/**
+ * Implementation hook_menu
+ * @return <type>
+ */
 function eduerptransaction_perm() {
     return array('perform checkout', 'checkout hostel order');
 }
 
-/*
+/**
  * hook_menu implementation
  */
 function eduerptransaction_menu() {
     $items = array();
-    $items['student/checkout'] = array(
+    /*$items['student/checkout'] = array(
         'title' => t('Confirm reservation'),
         'description' => 'Display confirmation about allocation and perform checkout',
         'page callback' => 'drupal_get_form',
@@ -31,7 +35,7 @@ function eduerptransaction_menu() {
         'access callback' => 'user_access',
         'access arguments' => array('checkout hostel order'),
         'type' => MENU_CALLBACK,
-    );
+    );*/
     return $items;
 }
 
@@ -94,7 +98,6 @@ function eduerptransaction_checkout_form(&$form_state) {
         '#value' => 'GO',
     );
 
-    //return ob_get_clean();
     return $form;
 }
 /*

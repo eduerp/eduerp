@@ -9,14 +9,13 @@
  * hook_form_alter override
  * @param <type> $form
  * @param <type> $form_state
- * @param <type> $form_id 
+ * @param <type> $form_id
+ *
+ * @author Kayode odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
-    //dsm($form_id);
-  //dsm($_SESSION);
   switch ($form_id) {
     case 'uc_cart_checkout_form':
-        //dsm('form_id is uc_cart_checkout_form');
       /*if (isset($_POST['receipt_no'])) {
         $order = new stdClass();
         uc_payment_method_edupay('cart-process', $order, TRUE);
@@ -41,6 +40,8 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
 
 /**
  * Implementation of hook_payment_method
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_payment_method() {
     $methods[] = array(
@@ -62,6 +63,8 @@ function uc_edupay_payment_method() {
  * Adds edupay to ubercart payment settings form
  * @param <type> $op
  * @param <type> $arg1
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_payment_method_edupay($op, &$arg1) {
 
@@ -75,7 +78,11 @@ function uc_payment_method_edupay($op, &$arg1) {
             //return drupal_get_form('uc_payment_method_edupay_form', $arg1);
             //dsm($arg1);
         case 'cart-process': //This happens when Review Order is clicked
+            // do edupay processing
+            // validate data
             // Store the transaction id in edupay as well as do any form of validation.
+            dsm('processing cart');
+            return;
         case 'cart-review': // display json output response here
         case 'order-view': // display receipt to student here
 
@@ -87,6 +94,8 @@ function uc_payment_method_edupay($op, &$arg1) {
  * @param <type> $form_state
  * @param <type> $order
  * @return <type>
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_payment_method_edupay_form($form_state, $order) {
   $form['receipt_no'] = array(
@@ -105,7 +114,9 @@ function uc_payment_method_edupay_form($form_state, $order) {
 /**
  * Generates invoice
  * @param <type> $form_state
- * @param <type> $order 
+ * @param <type> $order
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_invoice_form($form_state, $order) {
 
@@ -168,31 +179,13 @@ function uc_edupay_invoice_form($form_state, $order) {
     return $form;
 }
 /**
- * Retrieves order items and passes it to uc_edupay_service_add
- * @param <type> $form_state
- * @param <type> $order
- * @return $form array
- */
-function uc_edupay_form($form_state, $order) {
-
-    //$form['#action'] = '_uc_edupay_service_add';
-    
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Submit Order')
-    );
-
-    $form['#submit'][] = '_uc_edupay_service_add';
-    return $form;
-}
-
-/**
  * Process invoice based on form_state order values
  * @param <type> $form
  * @param <type> $form_state
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_invoice_submit($form, &$form_state) {
-    //dsm($form_state['values']);
     switch ($form_state['values']['op']) {
         case t('Save Invoice'):
             if (isset($form_state['values']['gen_invoice'])) {
@@ -207,10 +200,51 @@ function uc_edupay_invoice_submit($form, &$form_state) {
     }
 }
 
+
+/**
+ * Retrieves order items and passes it to uc_edupay_service_add
+ * @param <type> $form_state
+ * @param <type> $order
+ * @return $form array
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_form($form_state, $order) {
+
+    if(!isset($edupay_data)) {
+        $edupay_data = $order->data->edupay_data;
+    }
+    
+    $unserialized = unserialize($edupay_data);
+    
+    if(!isset($order))
+
+    $data = array(
+        'transaction_id' => $edupay_data['transaction_id'],
+        'total' => uc_price($order->order_total, $context, $options),
+        'cart_order_id' => $order->order_id,
+        //'x_receipt_link_url' => url('cart/2checkout/complete/'. uc_cart_get_id(), array('absolute' => TRUE)),
+        //'merchant_order_id' => $order->order_id,
+        'pay_method' => isset($order->payment_method) ? $order->payment_method : 'edupay',
+    );
+
+    $form['#action'] = '_uc_edupay_service_add';
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit Order')
+    );
+
+    //$form['#submit'][] = '_uc_edupay_service_add';
+    return $form;
+}
+
 /**
  * @see uc_edupay_form
  * Makes 'add' service request to edupay.
  * Called when user submits order
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function _uc_edupay_service_add() {
     return 'http://edupay.co.cc/api/transaction/add';
@@ -223,6 +257,8 @@ function _uc_edupay_service_add() {
  * @see @link http://drupal.org/project/ajax
  * @param $types Assoc
  * @return Bool
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_ajax_types(&$types) {
   $id = 'uc_edupay_invoice_form';

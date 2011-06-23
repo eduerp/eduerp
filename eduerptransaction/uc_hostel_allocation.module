@@ -8,6 +8,8 @@
 
 /**
  * Implementation of hook_checkout_pane().
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_hostel_allocation_checkout_pane() {
   $panes[] = array(
@@ -25,11 +27,9 @@ function uc_hostel_allocation_checkout_pane() {
  * @see uc_hostel_allocation_checkout_pane
  * Callback function
  *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_checkout_pane_hostel_allocation($op, &$arg1, $arg2) {
-    //dsm('calling uc_checkout_pane_hostel_allocation');
-    //dsm($arg1->studentid);
-    //dsm($op);
     global $user;
     $html = hostel_allocation_show_reserved_room($user->uid);
     switch ($op) {
@@ -50,9 +50,13 @@ function uc_checkout_pane_hostel_allocation($op, &$arg1, $arg2) {
             return $review;
             break;
 
-        // Occurs when Submit Order is clicked
+        // Occurs when Review Order is clicked. You can do validation of the hostel allocation pane here
         case 'process':
             //dsm("uc_checkout_pane_pane ID, OP IS PROCESS");
+
+                if(!isset($arg1->transaction_id) && !isset($_SESSION['cart_order'])) {
+                    return array(array('pass' => FALSE, 'message' => t('We were unable to process your credit card.')));
+                }
     }
 }
 
@@ -60,11 +64,11 @@ function uc_checkout_pane_hostel_allocation($op, &$arg1, $arg2) {
 /**
  * Implementation of hook_order().
  * This is called before uc_checkout_pane_hostel_allocation
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_hostel_allocation_order($op, &$arg1, $arg2) {
     global $user;
-    //dsm('calling uc_hostel_allocation_order');
-    //dsm($arg1);
     switch ($op) {
         // Called when an order is created
         case 'new':
@@ -96,6 +100,7 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
             //dsm("OP IS SUBMIT");
             //dsm("in op submit, arg1->transaction_id is " . $arg1->transaction_id);
 
+            // on submit, it is possible to also update $arg1->transaction_id into uc_orders data field
             if ($arg1->payment_method == 'edupay') {
 
                 // process payment
@@ -105,6 +110,8 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
                 // to edupay to store the generated transaction_id and jamb number
                 
                 //uc_payment_process('edupay', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
+              
+
             }
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
@@ -112,14 +119,26 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
             //dsm("OP IS SAVE");
             //store hostel data object in uc_order. Also store the generated transaction id and JAMB
             // Number as part of the data during save op.
-            //$unique_data = array('transaction_id' => $arg1->transaction_id)
-            db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
+
+            // retrieve the stored transaction_id and pass it to $arg1->data
+
+            if(!isset($arg1->transaction_id)) {
+                $arg1->transaction_id = _uc_hostel_allocation_load_transaction($arg1);
+            }
+            if ($arg1->payment_method == 'edupay') {
+                $edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
+                $data = $arg1->data;
+                $data->edupay_data = serialize($edupay_data);
+                //dsm($data);
+                //dsm(unserialize($data->edupay_data));
+                db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+            }
+            //db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
             /*if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
                 db_query("UPDATE {uc_orders} SET data = '%s' "
                 ."WHERE order_id = %d AND uid = %d", $arg1->data,
                  $arg1->order_id, $arg1->uid);
             }*/
-            break;
 
         // Load the hostel reservation data from the database.
         case 'load':
@@ -127,7 +146,9 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
             $data = hostel_allocation_reserved_data();
             $arg1->data = $data;
             $arg1->studentid = $data->studentid;
-            unset($_SESSION['transaction_id']);
+            if(isset($_SESSION['transaction_id'])) {
+                unset($_SESSION['transaction_id']);
+            }
             //dsm(_uc_hostel_allocation_trans_id($arg1));
             //dsm($arg1->studentid);
             break;
@@ -137,6 +158,9 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 
 /**
  * Load Transaction
+ * A Transaction occurs when an order operation is new
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 
 function _uc_hostel_allocation_load_transaction($order) {
@@ -150,6 +174,7 @@ function _uc_hostel_allocation_load_transaction($order) {
     $sql = 'SELECT transaction_id
         FROM {eduerp_transaction}
         WHERE order_id = %d';
+    
     $result = db_result(db_query($sql, $order_id));
 
     $loaded_transaction = $result;
@@ -161,6 +186,8 @@ function _uc_hostel_allocation_load_transaction($order) {
  * A transaction is made up of the order_id, uid and the transaction id
  * @param <type> $order
  * @return string
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function _uc_hostel_allocation_trans_id($order) {
 
