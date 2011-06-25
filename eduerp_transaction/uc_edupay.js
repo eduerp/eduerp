@@ -9,12 +9,9 @@
 
 Drupal.behaviors.uc_edupay = function(context) {
     var pdfPath = Drupal.settings.uc_edupay.pdflink;
-    //window.alert(context);
-
     // parse the data coming from the server. This is how AJAX response is handled in Drupal
     //$.get(pdfPath);
-    
-    //window.alert(Drupal.settings.uc_edupay.pdflink);
+ 
     //window.location(Drupal.settings.basePath + pdfPath);
 
     $('a.invoice-submit', context).bind('click', function(){

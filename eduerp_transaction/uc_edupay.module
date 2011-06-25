@@ -16,10 +16,9 @@
 function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
   switch ($form_id) {
     case 'uc_cart_checkout_form':
-      /*if (isset($_POST['receipt_no'])) {
-        $order = new stdClass();
-        uc_payment_method_edupay('cart-process', $order, TRUE);
-      }*/
+        if(variable_get('uc_edupay_payment_method', 'edupay')) {
+            $form['panes']['payment']['payment_method']['#default_value'] = 'edupay';
+        }
       break;
 
     case 'uc_cart_checkout_review_form':
@@ -72,11 +71,15 @@ function uc_payment_method_edupay($op, &$arg1) {
 
     switch($op) {
         // create some settings here that might be useful in cart-details op
-        case 'settings': // generate invoice here by emailing the user all information. send user order details to edupay here.
-        //retrieve cart info
-        //use the card info to generate the invoice
-            //return "Edupay";
-        case 'cart-details': //set transaction id and JAMB number here for later retrieval
+        case 'settings':
+            // This is payment method specific settings at admin/store/settings/payment/edit/methods
+            $form['uc_edupay_payment_method'] = array(
+                '#type' => 'checkbox',
+                '#title' => t('Make edupay selected by default when checking out your order'),
+                '#default_value' => variable_get('uc_edupay_payment_method', 'edupay'),
+            );
+            return $form;
+        case 'cart-details':
             //return drupal_get_form('uc_payment_method_edupay_form', $arg1);
             //dsm($arg1);
         case 'cart-process': //This happens when Review Order is clicked
@@ -181,7 +184,8 @@ function uc_edupay_invoice_form($form_state, $order) {
     return $form;
 }
 /**
- * Process invoice based on form_state order values
+ * Process invoice based on form_state order values.
+ * This will be relevant if invoice processing is handled by FAPI
  * @param <type> $form
  * @param <type> $form_state
  *
@@ -266,4 +270,13 @@ function uc_edupay_ajax_types(&$types) {
   $id = 'uc_edupay_invoice_form';
   $types[$id] = t('Edupay: Generate Invoice');
   return TRUE;
+}
+
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
+function uc_edupay_ctools_plugin_api($module, $api) {
+  if ($module == 'strongarm' && $api == 'strongarm') {
+    return array('version' => 1);
+  }
 }
