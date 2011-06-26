@@ -1498,9 +1498,14 @@ function _student_hostelreservation_product() {
  */
 function student_hostelreservation_cart(&$form_state) {
     global $user;
-
     // retrieve the reserved hostel based on current student
     $data = hostel_allocation_reserved_data();
+
+    if(empty($data)) {
+        //drupal_set_message("You have already made an hostel reservation.");
+        return TRUE;
+    }
+
     //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
     $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
     
