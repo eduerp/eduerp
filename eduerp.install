@@ -1,6 +1,7 @@
 <?php
 include('fixtures.inc');
 include_once('permissions_api.module');
+include_once drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
 
 /**
  * initialize the permissions for roles in this module
@@ -559,4 +560,36 @@ function eduerp_schema() {
 
   return $schema;
 }
-?>
+
+function eduerp_schema_6000() {
+    $schema['webapp_institution'] = array(
+    'description' => t('A replica table in edupay for storing all institutions'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Institution ID'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => t('Institution Name e.g. University of Lagos'),
+        'type' => 'varchar',
+        'length' => '100',
+        'not null' => TRUE,
+      ),
+        'code' => array(
+        'description' => t('Institution code for identification'),
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+      ),
+        'secret' => array(
+        'description' => t('A 32bit hash generated automatically using RFC 1433 standard'),
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique key' => array('code' => array('code')),
+  );
+}
