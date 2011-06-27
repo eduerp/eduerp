@@ -144,7 +144,7 @@ class courseselectionsclass {
 
     $this->form['chosencourses' . $semester] = array(
         '#tree' => TRUE,
-        '#prefix' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>',
+        '#prefix' => '<table border="1"><tr><th colspan="7">Semester: ' . $semester . '</th></tr><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>',
         '#suffix' => '</table>'
       );
 
@@ -1508,10 +1508,10 @@ function student_hostelreservation_cart(&$form_state) {
 
     //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
     $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
-    
+
     $uc_product = db_fetch_object($block_uc_product);
     $nid = $uc_product->nid;
-    
+
     $html = hostel_allocation_show_reserved_room($user->uid);
     //$data_array = array();
     $data_array[] = get_object_vars($data);
