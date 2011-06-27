@@ -25,10 +25,10 @@ function eduerp_configure_institution(&$form_state) {
         '#required' => TRUE
     );
 
-    dsm($form);
-    dsm($_POST);
-    dsm($form_state['values']['eduerp_institution']);
-    dsm($_SESSION['eduerp_institution']);
+    //dsm($form);
+    //dsm($_POST);
+    //dsm($form_state['values']['eduerp_institution']);
+    //dsm($_SESSION['eduerp_institution']);
     // retrieve the institution code based on the above insitution. variable_get the institution code
     // automatically generate the in
 
