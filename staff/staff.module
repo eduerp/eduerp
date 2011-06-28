@@ -2700,10 +2700,10 @@ function set_session_form($form_state) {
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
     $current_year = intval(date('Y'));
     $sessions = array();
-    $sessions[sprintf("%s/%s", $current_year - 1, $current_year)] = sprintf("%s/%s", $current_year - 1, $current_year);
-    $sessions[sprintf("%s/%s", $current_year, $current_year + 1)] = sprintf("%s/%s", $current_year, $current_year + 1);
-
-    $eduerp_current_session = variable_get('eduerp_current_session', sprintf("%s/%s", $current_year - 1, $current_year));
+    $sessions[sprintf("%s/%s", $current_year - 0, $current_year + 1)] = sprintf("%s/%s", $current_year - 0, $current_year + 1);
+    $sessions[sprintf("%s/%s", $current_year - 1, $current_year - 0)] = sprintf("%s/%s", $current_year - 1, $current_year - 0);
+    $sessions[sprintf("%s/%s", $current_year - 2, $current_year - 1)] = sprintf("%s/%s", $current_year - 2, $current_year - 1);
+    $sessions[sprintf("%s/%s", $current_year - 3, $current_year - 2)] = sprintf("%s/%s", $current_year - 3, $current_year - 2);
 
     $form['eduerp_current_session'] = array(
       '#type' => 'select',
@@ -2790,7 +2790,6 @@ function open_close_student_course_registration_form($form_state) {
           '#type' => 'select',
           '#options' => $programmestoopen,
           '#title' => 'Programme(level) to Open OR Open ALL',
-          '#default_value' => 999999,
           '#description' => 'Please specify one Programme Level to Open for Course Registrations or Open ALL'
         );
     }
@@ -2801,7 +2800,6 @@ function open_close_student_course_registration_form($form_state) {
           '#type' => 'select',
           '#options' => $programmestoclose,
           '#title' => 'Programme(level) to Close OR Close ALL',
-          '#default_value' => 999999,
           '#description' => 'Please specify one Programme Level to Close for Course Registrations or Close ALL'
         );
     }
@@ -2836,6 +2834,7 @@ function selectlistofprogrammestoopen() {
   $semester = variable_get('eduerp_current_semester', 1);
 
   $names = array();
+  $names[''] = '';
   $names[999999] = 'ALL';
   $noprogrammes = TRUE;
   $sql = "SELECT
@@ -2857,6 +2856,7 @@ function selectlistofprogrammestoclose() {
   $semester = variable_get('eduerp_current_semester', 1);
 
   $names = array();
+  $names[''] = '';
   $names[999999] = 'ALL';
   $noprogrammes = TRUE;
   $sql = "SELECT

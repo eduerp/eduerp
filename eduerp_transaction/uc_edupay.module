@@ -1,0 +1,282 @@
+<?php
+/**
+ * @author Kayode Odeyemi
+ * @file
+ * Allows payment via edupay
+ */
+
+/**
+ * hook_form_alter override
+ * @param <type> $form
+ * @param <type> $form_state
+ * @param <type> $form_id
+ *
+ * @author Kayode odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'uc_cart_checkout_form':
+        if(variable_get('uc_edupay_payment_method', 'edupay')) {
+            $form['panes']['payment']['payment_method']['#default_value'] = 'edupay';
+        }
+      break;
+
+    case 'uc_cart_checkout_review_form':
+        //dsm('form is uc_cart_checkout_review_form');
+        $order_id = intval($_SESSION['cart_order']);
+        if($order_id > 0) {
+            $order = uc_order_load($order_id);
+
+            if ($order->payment_method == 'edupay') {
+                //unset($form['submit']);
+                $form['#prefix'] = '<table id="edupay-review-table"><tr><td>';
+                // We can unset the submit order here so we can send data to edupay
+                //$form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
+                $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td></tr></table>';
+            }
+
+        }
+  }
+}
+
+/**
+ * Implementation of hook_payment_method
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_payment_method() {
+    $methods[] = array(
+    'id' => 'edupay',
+    'name' => t('edupay'),
+    'title' => t('Edupay'),
+    //'review' => variable_get('uc_2checkout_check', FALSE) ? t('Credit card/eCheck') : t('Credit card'),
+    'desc' => t('Payment via edupay web service'),
+    'callback' => 'uc_payment_method_edupay',
+    'weight' => 3,
+    'checkout' => TRUE,
+    'no_gateway' => TRUE,
+  );
+
+    return $methods;
+}
+
+/**
+ * Adds edupay to ubercart payment settings form
+ * @param <type> $op
+ * @param <type> $arg1
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_payment_method_edupay($op, &$arg1) {
+
+    switch($op) {
+        // create some settings here that might be useful in cart-details op
+        case 'settings':
+            // This is payment method specific settings at admin/store/settings/payment/edit/methods
+            $form['uc_edupay_payment_method'] = array(
+                '#type' => 'checkbox',
+                '#title' => t('Make edupay selected by default when checking out your order'),
+                '#default_value' => variable_get('uc_edupay_payment_method', 'edupay'),
+            );
+            return $form;
+        case 'cart-details':
+            //return drupal_get_form('uc_payment_method_edupay_form', $arg1);
+            //dsm($arg1);
+        case 'cart-process': //This happens when Review Order is clicked
+            // do edupay processing
+            // validate data
+            // Store the transaction id in edupay as well as do any form of validation.
+            //dsm('processing cart');
+            return;
+        case 'cart-review': // display json output response here
+        case 'order-view': // display receipt to student here
+
+    }
+}
+
+/**
+ * Called after uc_edupay_service_add returns a successfull transaction
+ * @param <type> $form_state
+ * @param <type> $order
+ * @return <type>
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_payment_method_edupay_form($form_state, $order) {
+  $form['receipt_no'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Receipt Number'),
+    '#size' => 20,
+  );
+  $form['confirmation_no'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Confirmation Number'),
+    '#size' => 32,
+  );
+  return $form;
+}
+
+/**
+ * Generates invoice
+ * @param <type> $form_state
+ * @param <type> $order
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_invoice_form($form_state, $order) {
+
+    $form['pdflink'] = array(
+        '#type' => 'hidden',
+        '#value' => 'invoice/pdf/' . $order->order_id,
+    );
+
+    // store returned js value in this hidden field
+    $form['do_pdfinvoice'] = array(
+        '#type' => 'hidden',
+    );
+
+    $form['hidden_order'] = array(
+        '#type' => 'hidden',
+        '#value' => $order,
+    );
+    // Generate invoice
+    // Allow invoice to be emailed to user
+    $form['invoice'] = array();
+
+    drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
+
+    // in the form function store the link of the file in $form_state['storage']
+    // alternatively use hidden fields
+    //if(!isset($form_state['storage'])) {
+
+        $invoice_form_settings = array(
+            //'pdflink' => $form_state['values']['pdflink'],
+            'pdflink' => $form['pdflink']['#value'],
+        );
+
+        //add the variable that contains the link to drupal_add_js
+        //stores $invoice_form_settings into js setting
+        drupal_add_js(array('uc_edupay' => $invoice_form_settings), 'setting');
+
+        // to call the javascript code that will begin the download, do either of these;
+
+        // test if js is called
+        //drupal_add_js('Drupal.behaviors.uc_edupay = function() { alert("clicked"); }', 'inline');
+
+    //}
+
+    $form['invoice']['gen_invoice'] = array(
+        //'#value' => '<div>' . l(t('Save Invoice'), "#", array('attributes' => array('class' => 'invoice-submit'))) . '</div>'
+        '#value' => '<div>' . '<a href="javascript:void" class="invoice-submit">Save Invoice</a>' . '</div>'
+    );
+
+    /*$form['invoice']['gen_invoice'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save Invoice'),
+        '#ajax' => array(
+            'enabled' => TRUE
+        ),
+        '#attributes' => array('class' => 'invoice-submit'),
+        //'#weight' => 5,
+        '#submit' => array('uc_edupay_invoice_submit'),
+    );*/
+    
+    return $form;
+}
+/**
+ * Process invoice based on form_state order values.
+ * This will be relevant if invoice processing is handled by FAPI
+ * @param <type> $form
+ * @param <type> $form_state
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_invoice_submit($form, &$form_state) {
+    switch ($form_state['values']['op']) {
+        case t('Save Invoice'):
+            if (isset($form_state['values']['gen_invoice'])) {
+                //return the value of what 'pdflink' is set to
+                $form_state['storage']['pdflink'] = $form_state['values']['pdflink'];
+                //$_REQUEST['destination'] = 'cart/checkout/review';
+                return TRUE;
+                //drupal_goto($form_state['storage']['pdflink']);
+                //drupal_goto("invoice/pdf/" . $form_state['values']['hidden_order']->order_id);
+            }
+            break;
+    }
+}
+
+
+/**
+ * Retrieves order items and passes it to uc_edupay_service_add
+ * @param <type> $form_state
+ * @param <type> $order
+ * @return $form array
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_form($form_state, $order) {
+
+    if(!isset($edupay_data)) {
+        $edupay_data = $order->data->edupay_data;
+    }
+    
+    $unserialized = unserialize($edupay_data);
+    
+    if(!isset($order))
+
+    $data = array(
+        'transaction_id' => $edupay_data['transaction_id'],
+        'total' => uc_price($order->order_total, $context, $options),
+        'cart_order_id' => $order->order_id,
+        //'x_receipt_link_url' => url('cart/2checkout/complete/'. uc_cart_get_id(), array('absolute' => TRUE)),
+        //'merchant_order_id' => $order->order_id,
+        'pay_method' => isset($order->payment_method) ? $order->payment_method : 'edupay',
+    );
+
+    //$form['#action'] = '_uc_edupay_service_add';
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit Order')
+    );
+
+    //$form['#submit'][] = '_uc_edupay_service_add';
+    return $form;
+}
+
+/**
+ * @see uc_edupay_form
+ * Makes 'add' service request to edupay.
+ * Called when user submits order
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function _uc_edupay_service_add() {
+    return 'http://edupay.co.cc/api/transaction/add';
+}
+
+
+/**
+ * Ajaxify the button to generate the invoice
+ * Implementation of hook_ajax_types
+ * @see @link http://drupal.org/project/ajax
+ * @param $types Assoc
+ * @return Bool
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function uc_edupay_ajax_types(&$types) {
+  $id = 'uc_edupay_invoice_form';
+  $types[$id] = t('Edupay: Generate Invoice');
+  return TRUE;
+}
+
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
+function uc_edupay_ctools_plugin_api($module, $api) {
+  if ($module == 'strongarm' && $api == 'strongarm') {
+    return array('version' => 1);
+  }
+}

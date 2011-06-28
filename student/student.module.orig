@@ -1,0 +1,2975 @@
+<<<<<<< HEAD
+<?php
+function student_menu() {
+
+  $items['student/clearance/post'] = array(
+    'title' => 'Student Clearance',
+    'page callback' => 'student_clearance',
+    'access arguments' => array('student clearance'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['student/course'] = array(
+   'title' => 'Student Course Registration Form',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('student_course_form'),
+   'access arguments' => array('student course'),
+   'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/listcourses'] = array(
+    'title' => 'List My Courses',
+    'page callback' => 'student_courses',
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/liststudents'] = array(
+    'title' => 'List Students',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('liststudents'),
+    'access arguments' => array('student list students'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/hostelreservation'] = array(
+    'title' => 'Hostel Reservation',
+    'page callback' => 'student_hostel_reservation',
+    'access arguments' => array('hostel_allocation user'),
+    'type' => MENU_NORMAL_ITEM,
+  );//hostel_allocation user
+
+  $items['student/hostelreservation/cart'] = array(
+        'title' => t('Confirm reservation'),
+        'description' => 'Display confirmation about allocation and perform checkout',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('student_hostelreservation_cart'),
+        'access callback' => 'user_access',
+        'access arguments' => array('access cart items'),
+        'type' => MENU_CALLBACK,
+    );
+
+  return $items;
+}
+
+function student_perm() {
+  return array('student clearance', 'student course',  'view my grades', 'access cart items');
+}
+
+class courseselectionsclass {
+  public $form = array();
+
+  private $passedcodes;
+
+  private $currentlevelcis;
+
+  private $failedcodes;
+
+  private $selected_load;
+
+  private $count_courses_offered = array();
+
+  private $scriptforpage;
+
+  function __construct() {
+    global $user;
+
+    $this->scriptforpage = '$(function() {'; // end }) will come in $this->finishform()
+
+    // Find all passed courses for this student
+    $sql = "SELECT c.field_code_value
+      FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+      WHERE
+        sg.field_mat_no_uid=%d AND
+        sg.field_course_instance_nid=ci.nid AND
+        sg.field_examscorelocked_value>0 AND
+        sg.field_dropped_value=0 AND
+        ci.field_course_id_nid=c.nid AND
+        IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value)>0";
+    $result = db_query($sql, $user->uid);
+
+    $this->passedcodes = array();
+    while ($row = db_fetch_object($result)) {
+      $this->passedcodes[] = strtolower($row->field_code_value);
+    }
+
+    $this->currentlevelcis = array();
+    $this->failedcodes = array();
+  }
+
+  private function blockingprerequisites($prerequisite_codes) {
+    $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
+    foreach ($prerequisite_codes as $prerequisite_code) {
+      $alternatives = explode('/', $prerequisite_code);
+      $foundone = FALSE;
+      foreach ($alternatives as $alternative) {
+        if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+      }
+      if (!$foundone) return $prerequisite_code;
+    }
+    return FALSE;
+  }
+
+  public function addformelementsforsemester($semester) {
+    global $user_profile;
+
+    $sql = "SELECT DISTINCT
+        ci.nid AS course_instance,
+        ci.field_timetable_value AS timetable,
+        c.field_creditload_value AS old_credit_load,
+        c.field_code_value AS course_code,
+        c.field_coursetitle_value AS course_title,
+        c.field_course_description_value AS course_description,
+        c.field_prerequisite_codes_value AS prerequisite_codes,
+        c.field_prerequisite_value,
+        pc.credit_load AS credit_load,
+        pc.level AS level,
+        pc.course_type AS course_type
+      FROM
+        {program_course_instance} pci,
+        {content_type_course_instance} ci,
+        {content_type_course} c,
+        {program_course} pc
+      WHERE
+        pci.programme_id=%d AND
+        pci.session='%s' AND
+        pci.semester='%s' AND
+        pci.course_instance_id=ci.nid AND
+        ci.field_course_id_nid=c.nid AND
+        c.nid=pc.course_id AND
+        pci.semester=pc.semester AND
+        pci.programme_id=pc.programme_id AND
+        pc.level='%s'
+      ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
+    $result = db_query($sql, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester, $user_profile->profile_level_name);
+
+    $this->form['chosencourses' . $semester] = array(
+        '#tree' => TRUE,
+        '#prefix' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>',
+        '#suffix' => '</table>'
+      );
+
+    $this->count_courses_offered[$semester] = 0;
+    $this->selected_load = 0;
+    while ($row = db_fetch_object($result)) {
+      if (in_array($row->course_code, $this->passedcodes)) continue;
+
+      if ($block = $this->blockingprerequisites($row->prerequisite_codes)) {
+        $block = "<br />You cannot do this course because of prerequisite: $block";
+        $default_value = FALSE;
+        $disabled = TRUE;
+      }
+      else {
+        $block = '';
+        if ($row->course_type == 1) {
+          $default_value = TRUE;
+          $disabled = TRUE;
+          $this->selected_load += $row->credit_load;
+        }
+        else {
+          $disabled = FALSE;
+
+          if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+            $default_value = TRUE;
+            $this->selected_load += $row->credit_load;
+          }
+          else {
+            $default_value = FALSE;
+          }
+          $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+        }
+        $this->currentlevelcis[] = $row->course_instance;
+
+        $this->count_courses_offered[$semester]++;
+      }
+      $this->form['chosencourses' . $semester][$row->course_instance] = array(
+        '#type' => 'checkbox',
+        '#title' => $row->course_code,
+        '#default_value' => $default_value,
+        '#disabled' => $disabled,
+        '#prefix' => '<tr><td>',
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->field_prerequisite_value}{$block}</td></tr>"
+      );
+
+      // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
+    }
+  }
+
+  public function addformelementsforfailedcoursesforsemester($semester) {
+    global $user;
+    global $user_profile;
+
+    // Find any failed (and not since passed) courses and see are they being run
+    // failedcourses sub-query below borrows from similar query in computed.inc
+    $sql = "SELECT DISTINCT
+        ci1.nid AS course_instance,
+        ci1.field_timetable_value AS timetable,
+        c1.field_creditload_value AS old_credit_load,
+        c1.field_code_value AS course_code,
+        c1.field_coursetitle_value AS course_title,
+        c1.field_course_description_value AS course_description,
+        pc1.credit_load AS credit_load,
+        pc1.level AS level,
+        pc1.course_type AS course_type
+      FROM
+        {program_course_instance} pci1,
+        {content_type_course_instance} ci1,
+        {content_type_course} c1,
+        {program_course} pc1,
+        (
+          SELECT
+            exams.field_mat_no_uid AS uid,
+            exams.field_code_value
+          FROM (
+            SELECT DISTINCT
+              IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
+              sg.field_mat_no_uid,
+              sg.field_calc_type_value,
+              CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
+              c.field_code_value,
+              c.field_creditload_value
+            FROM
+              {content_type_student_grades} sg,
+              {content_type_course_instance} ci,
+              {content_type_course} c,
+              {program_course} pc,
+              {node} nspro,
+              {content_type_student_profile} spro
+            WHERE
+              sg.field_mat_no_uid=%d AND
+              sg.field_course_instance_nid=ci.nid AND
+              sg.field_examscorelocked_value>0 AND
+              sg.field_dropped_value=0 AND
+              ci.field_course_id_nid=c.nid AND
+              ci.field_course_id_nid=pc.course_id AND
+              pc.programme_id=spro.field_profile_first_choice_nid AND
+              nspro.uid=sg.field_mat_no_uid AND
+              nspro.type='student_profile' AND
+              nspro.vid=spro.vid
+            ) AS exams
+          JOIN (
+            SELECT
+              sg0.field_mat_no_uid,
+              MAX(CONCAT(ci0.field_sess_name_value, ci0.field_semester_name_value, sg0.nid)) AS sess_sem0,
+              c0.field_code_value
+            FROM
+              {content_type_student_grades} sg0,
+              {content_type_course_instance} ci0,
+              {content_type_course} c0,
+              {program_course} pc0,
+              {node} nspro0,
+              {content_type_student_profile} spro0
+            WHERE
+              sg0.field_mat_no_uid=%d AND
+              sg0.field_course_instance_nid=ci0.nid AND
+              sg0.field_examscorelocked_value>0 AND
+              sg0.field_dropped_value=0 AND
+              ci0.field_course_id_nid=c0.nid AND
+              ci0.field_course_id_nid=pc0.course_id AND
+              pc0.programme_id=spro0.field_profile_first_choice_nid AND
+              nspro0.uid=sg0.field_mat_no_uid AND
+              nspro0.type='student_profile' AND
+              nspro0.vid=spro0.vid
+            GROUP BY c0.field_code_value, sg0.field_mat_no_uid
+            ) AS most_recent_exam
+          ON
+            exams.field_code_value=most_recent_exam.field_code_value AND
+            exams.sess_sem=most_recent_exam.sess_sem0 AND
+            exams.field_mat_no_uid=most_recent_exam.field_mat_no_uid AND
+            exams.gradepoint=0
+        ) AS failedcourses
+      WHERE
+        c1.field_code_value=failedcourses.field_code_value AND
+        pci1.programme_id=%d AND
+        pci1.session='%s' AND
+        pci1.semester='%s' AND
+        pci1.course_instance_id=ci1.nid AND
+        ci1.field_course_id_nid=c1.nid AND
+        c1.nid=pc1.course_id AND
+        pci1.semester=pc1.semester AND
+        pci1.programme_id=pc1.programme_id
+      ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
+    $result = db_query($sql, $user->uid, $user->uid, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester);
+
+    $first = TRUE;
+    while ($row = db_fetch_object($result)) {
+      $this->failedcodes[] = $row->course_code;
+
+      if (!isset($this->form['chosencourses' . $semester][$row->course_instance])) { // Only overwrite if the failed course is not already in the list
+        if ($first) {
+          $extraprefix = '<tr><td colspan="7">Previously Failed Courses, you must choose all these...</td></tr>';
+          $first = FALSE;
+        }
+        else $extraprefix = '';
+
+        $this->form['chosencourses' . $semester][$row->course_instance] = array(
+          '#type' => 'checkbox',
+          '#title' => $row->course_code,
+          '#default_value' => FALSE,
+          '#disabled' => FALSE,
+          '#prefix' => $extraprefix . '<tr><td>',
+          '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td></td><td>{$row->timetable}</td><td>{$row->level}</td><td></td></tr>"
+        );
+
+        if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+          // Unless spec changes, removed: $this->selected_load += $row->credit_load; (and {$row->credit_load} not displayed above)
+          $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
+        }
+        // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+      }
+    }
+  }
+
+  public function addformelementsforloadcounter($semester) {
+    global $user_profile;
+
+    $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green");';
+
+    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
+    $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
+    $min_max_credits = db_fetch_object($result);
+
+    $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
+      <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
+      <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
+      <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
+      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load . '</span></td></tr>
+      </table>');
+
+    $this->form['#max_credit_load' . $semester] = $min_max_credits->max_credit_load;
+    $this->form['#min_credit_load' . $semester] = $min_max_credits->min_credit_load;
+  }
+
+  private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
+    $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
+      selected_load = parseInt($(\"#selected_load{$semester}\").text());
+      min_load = parseInt($(\"#min_load{$semester}\").text());
+      max_load = parseInt($(\"#max_load{$semester}\").text());
+
+      if (this.checked == true) {
+        selected_load += {$credit_load};
+        $(\"#selected_load{$semester}\").text(selected_load);
+        if (selected_load > max_load) {
+          $(\"#max_load{$semester}\").css(\"background-color\", \"red\")
+        }
+        if (selected_load >= min_load) {
+          $(\"#min_load{$semester}\").css(\"background-color\", \"green\")
+        }
+      }
+      else {
+        selected_load -= {$credit_load};
+        $(\"#selected_load{$semester}\").text(selected_load);
+        if (selected_load <= max_load) {
+          $(\"#max_load{$semester}\").css(\"background-color\", \"green\")
+        }
+        if (selected_load < min_load) {
+          $(\"#min_load{$semester}\").css(\"background-color\", \"red\")
+        }
+      }
+    });";
+  }
+
+  public function finishform() {
+    $this->form['#currentlevelcis'] = $this->currentlevelcis;
+    $this->form['#failedcodes'] = $this->failedcodes;
+
+    if (isset($this->count_courses_offered[1]) && $this->count_courses_offered[1] == 0) {
+      $this->form['warning1'] = array('#value' => 'Note that no courses for your current level are available for you to take for Semester 1<br />');
+    }
+    if (isset($this->count_courses_offered[2]) && $this->count_courses_offered[2] == 0) {
+      $this->form['warning2'] = array('#value' => 'Note that no courses for your current level are available for you to take for Semester 2<br />');
+    }
+
+    $this->form['submit'] = array('#type' => 'submit' , '#value' => 'Submit');
+
+    // matches ({ from when object constructed
+    $this->scriptforpage .= '});';
+
+    drupal_add_js($this->scriptforpage, 'inline', 'header', FALSE, FALSE);
+// (*) TAKE OUT 'header', FALSE, FALSE WHEN IT WORKS
+  }
+}
+/**
+ * perform student clearance
+ */
+function student_clearance() {
+  global $user;
+  $student_id = $_POST['student_uid'];
+
+  $row = false;
+  $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+  if ($rs):
+    $row = db_fetch_object($rs);
+  endif;
+
+  if ($row) {
+    // node exists
+    $node = array();
+    $node['type'] = 'student_clearance';
+    $node['nid'] = $row->nid;
+    $student_clearance = node_load($node);
+
+    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']):
+      $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
+      $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+      drupal_set_message('Student\'s results verified');
+    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
+      $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
+      $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+
+      _perform_clearance($student_id);
+      drupal_set_message('Student has been cleared');
+    elseif ($_POST['clearance']):
+      drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
+    endif;
+
+    node_save($student_clearance);
+  } else {
+    // node doesn't exist
+    if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
+      $node = new stdClass;
+      $node->is_new = 1;
+      $node->uid = $user->uid;
+      $node->type = 'student_clearance';
+      $node->field_student[0]['uid'] = $student_id;
+
+      if (isset($_POST['verify']) && $_POST['verify'] == '1'):
+        $node->field_staff_verification[0]['uid'] = $user->uid;
+        $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+        drupal_set_message('Student\'s results verified');
+      endif;
+      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
+        $node->field_staff_clearance[0]['uid'] = $user->uid;
+        $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+
+        _perform_clearance($student_id);
+        drupal_set_message('Student has been cleared');
+      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
+        drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
+      endif;
+      node_save($node);
+    }
+  }
+
+  return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+}
+
+// Bundle of actions to be performed on clearance
+function _perform_clearance($student_id) {
+  // create programme information for the student
+  create_student_program($student_id);
+
+  set_matriculation_number($student_id);
+
+  // Change role of the student from Applicant to Student
+  $student = user_load($student_id);
+  eduerp_set_role($student, 'Student');
+}
+
+
+function set_matriculation_number($student_id, $formerProgID=0) {
+  // Generate the matriculation number for this student
+  $results = module_invoke_all('matno', $student_id, $formerProgID);
+  if (is_array($results) && count($results) > 0) {
+    // We don't expect more than one implementation of the hook
+    // if so, we only take the first result.
+    $matno = $results[0];
+
+    // Change the username to the matno and also change the student profile
+    $student = user_load($student_id);
+    //$student->name = $matno;
+    user_save($student, array('name'=>$matno));
+
+    $student_profile = new UserProfile($student_id);
+    $student_profile->profile_matno = $matno;
+    $student_profile->save();
+  }
+}
+
+/**
+  these functions below define a custom field and field widget that enables
+  the student profile content type to store subject/grade pairs as one field
+  in the content type.
+*/
+function student_field_info() {
+  return array(
+    'exam_record' => array(
+      'label' => t('Exam Record'),
+      'description' => t("Stores a student's examination record which specifies subject and grade"),
+    )
+  );
+}
+
+function student_field($op, &$node, $field, &$items, $teaser, $page) {
+  switch ($op) {
+    case 'view':
+      foreach ($items as $delta => $item) {
+        if ($item['subject'] == '' && $item['grade'] == '') {
+          return;
+        } else {
+          $items[$delta]['view'] = content_format($field, $item, 'default', $node);
+        }
+      }
+      return theme('field', $node, $field, $items, $teaser, $page);
+  }
+}
+
+function student_field_settings($op, $field) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $form['subjects_allowed_values'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Allowed subject values list'),
+        '#default_value' => isset($field['subjects_allowed_values']) ? $field['subjects_allowed_values'] : '',
+        '#required' => TRUE,
+        '#rows' => 10,
+        '#description' => t('The possible values this field can contain.'),
+      );
+      $form['grades_allowed_values'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Allowed grade values list'),
+        '#default_value' => isset($field['grades_allowed_values']) ? $field['grades_allowed_values'] : '',
+        '#required' => TRUE,
+        '#rows' => 10,
+        '#description' => t('The possible values this field can contain.'),
+      );
+      return $form;
+
+    case 'save':
+      return array('subjects_allowed_values', 'grades_allowed_values');
+
+    case 'database columns':
+      $columns['subject'] = array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'sortable' => FALSE,
+        'default' => '',
+      );
+      $columns['grade'] = array(
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => FALSE,
+        'sortable' => FALSE,
+        'default' => '',
+      );
+      return $columns;
+  }
+}
+
+function student_field_formatter_info() {
+  return array(
+    'default' => array(
+      'label' => 'Default',
+      'field types' => array('exam_record'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+  );
+}
+
+function student_theme() {
+  $theme_path = drupal_get_path('module', 'student') . DIRECTORY_SEPARATOR . 'theme';
+
+  $custom = array(
+    'student_field' => array(
+      'arguments' => array('value' => NULL, 'formatter' => NULL),
+    ),
+    'student_formatter_default' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+
+  $custom = array_merge($custom, _module_views_templates($theme_path));
+  return $custom;
+}
+
+/**
+ * helper function to expose the templates in the module's theme folder for rendering
+ * views
+ */
+function _module_views_templates($templates_path) {
+  $templates = array();
+  $views_templates_types = views_theme();
+  $files = file_scan_directory($templates_path, '^views.*\.tpl\.php$');
+
+  foreach ($files as $file) {
+    $template_name = str_replace('.tpl.php', '', $file->basename);
+    $template_info = explode('--', $template_name);
+    $views_hook = str_replace('-', '_', $template_info[0]);
+    $file_path = str_replace('/'. $file->basename, '', $file->filename);
+    $templates[str_replace('-', '_', $template_name)] = array(
+      'arguments' => $views_templates_types[$views_hook]['arguments'],
+      'path' => $file_path,
+      'template' => $template_name,
+      'original hook' => $views_hook,
+      'preprocess functions' => array(
+        'template_preprocess',
+        'template_preprocess_'. $views_hook,
+      ),
+    );
+  }
+
+  return $templates;
+}
+
+function theme_student_formatter_default($element) {
+  return theme('student_field', $element);
+}
+
+function theme_student_field($element) {
+  return ($element['#item']['subject'] != "" && $element['#item']['grade'] != "") ? sprintf("%s - %s", $element['#item']['subject'], $element['#item']['grade']) : "";
+}
+
+function student_content_is_empty($item, $field) {
+  if (empty($item['subject']) || empty($item['grade'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function student_widget_info() {
+  return array(
+    'exam_record_exam_record' => array(
+      'label' => t('Subject, Grade'),
+      'field types' => array('exam_record'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array('default value' => CONTENT_CALLBACK_DEFAULT,),
+      'description' => t('A student examination record widget for storing examination grade results'),
+    ),
+  );
+}
+
+function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  $element = array();
+  $element['subject'] = array(
+    '#type' => 'select',
+    '#title' => t('Subject'),
+    '#default_value' => isset($items[$delta]['subject']) ? $items[$delta]['subject'] : NULL,
+    '#options' => _student_content_allowed_values($field, 'subjects_allowed_values'),
+    '#required' => FALSE,
+  );
+  $element['grade'] = array(
+    '#type' => 'select',
+    '#title' => t('Grade'),
+    '#default_value' => isset($items[$delta]['grade']) ? $items[$delta]['grade'] : NULL,
+    '#options' => _student_content_allowed_values($field, 'grades_allowed_values'),
+    '#required' => FALSE,
+  );
+  if (empty($form['#parents'])) {
+    $form['#parents'] = array();
+  }
+  $element['_error_element'] = array(
+    '#type' => 'value',
+    '#value' => implode('][', array_merge($form['#parents'], array('exam_subject'))),
+  );
+
+  return $element;
+}
+
+/**
+ * adapted from the cck content_allowed_values to support
+ * multiple section allowed_values
+ */
+function _student_content_allowed_values($field, $section, $flatten = TRUE) {
+  static $allowed_values;
+
+  $cid = $field['field_name'] .':'. $section .':'. ($flatten ? '1' : '0');
+  if (isset($allowed_values[$cid])) {
+    return $allowed_values[$cid];
+  }
+
+  $allowed_values[$cid] = array();
+
+  if (empty($allowed_values[$cid]) && isset($field[$section])) {
+    $list = explode("\n", $field[$section]);
+    $list = array_map('trim', $list);
+    $list = array_filter($list, 'strlen');
+    foreach ($list as $opt) {
+      // Sanitize the user input with a permissive filter.
+      $opt = content_filter_xss($opt);
+      if (strpos($opt, '|') !== FALSE) {
+        list($key, $value) = explode('|', $opt);
+        $allowed_values[$cid][$key] = (isset($value) && $value !=='') ? $value : $key;
+      }
+      else {
+        $allowed_values[$cid][$opt] = $opt;
+      }
+    }
+    // Allow external modules to translate allowed values list.
+    drupal_alter('content_allowed_values', $allowed_values[$cid], $field);
+  }
+  return $allowed_values[$cid];
+}
+
+function student_form_alter(&$form, $form_state, $form_id) {
+  // change the button title to display "Search" instead of "Apply" (improves user experience)
+  if ($form_state['view']->name == "student_clearance") {
+    $form['submit']['#value'] = t('Search');
+  }
+}
+
+/**
+ * Implementing the hook_views_post_render to mutate the student_clearance
+ * so as to enable appending the clearance form
+ */
+function student_views_post_render(&$view, &$output, &$cache) {
+  if ($view->name == "student_clearance") {
+    // view mutation
+    $student_id = $view->result[0]->users_uid;
+    $output = str_replace("STUDENTID", $student_id, $output);
+
+    $row = false;
+    $verified = false;
+    $cleared = false;
+    $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+    if ($rs):
+      $row = db_fetch_object($rs);
+    endif;
+
+    if ($row) {
+      $node = array();
+      $node['type'] = 'student_clearance';
+      $node['nid'] = $row->nid;
+      $student_clearance = node_load($node);
+
+      if ($student_clearance->field_staff_verification[0]['uid']) $verified = true;
+      if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
+    }
+
+    // snippet to determine whether or not to place the checkmark to the options
+    // viz a viz results verification and student clearance
+    $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
+  }
+}
+
+function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
+  if ($node->type == 'student_profile') {
+    switch ($op) {
+      case 'presave':
+        if (empty($node->nid)) {
+          // A new student profile is being created
+          $node->field_profile_yearofentry[0]['value'] = date('Y');
+          $node->field_profile_reg_session[0]['value'] = '';
+          $node->field_profile_reg_semester[0]['value'] = '';
+        }
+        else {
+          // Need to set these each time as they get overwritten and in any case no user should be allowed set these!
+          $sql = "SELECT field_profile_yearofentry_value, field_profile_reg_session_value, field_profile_reg_semester_value FROM {content_type_student_profile} WHERE nid=%d";
+          $result = db_query($sql, $node->nid);
+          $row = db_fetch_object($result);
+          $node->field_profile_yearofentry[0]['value'] = $row->field_profile_yearofentry_value;
+          $node->field_profile_reg_session[0]['value'] = $row->field_profile_reg_session_value;
+          $node->field_profile_reg_semester[0]['value'] = $row->field_profile_reg_semester_value;
+        }
+
+        if (empty($node->field_profile_reg_session[0]['value'])) {  // After courses have been registered for the first time, do not do this
+
+          $sql = "SELECT DISTINCT level FROM {program_level_semester} WHERE programme_id=%d ORDER BY level";
+          $result = db_query($sql, $node->field_profile_first_choice[0]['nid']);
+
+          $level1 = '100';
+          $level2 = '200';
+
+          $row = db_fetch_object($result);
+          if (!empty($row->level)) {
+            $level1 = $row->level;
+            $row = db_fetch_object($result);
+            if (!empty($row->level)) $level2 = $row->level;
+          }
+
+          // Set the level to 100 (probably) if the student's mode of entry is UME if not, then it's 200 (probably)
+          $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? $level1 : $level2;
+        }
+    }
+  }
+}
+
+
+function student_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'student'),
+  );
+}
+
+
+function student_next_level($uid, $session) {
+  // This takes the student uid and also the session they are going to pay for and returns...
+  //  FALSE, if they are not eligible to register for the program because they have graduated or left the university.
+  //  Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
+
+  // $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
+
+  $user_profile = new UserProfile($uid);
+
+  $gotonextlevel = TRUE;
+
+  $sql = "SELECT field_event_sr_value FROM {content_type_student_record}
+    WHERE
+      field_student_ref_sr_uid=%d AND
+      field_student_program_sr_nid=%d AND
+      (
+        field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+        OR
+        (
+          field_event_sr_value IN ('Repeat Session', 'Changed from Old Programme') AND
+          field_session_sr_value='%s'
+        )
+      )";
+  $rows = db_query($sql, $uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
+  if ($row = db_fetch_object($rows)) {
+    if ($row->field_event_sr_value === 'Repeat Session' || $row->field_event_sr_value === 'Changed from Old Programme') {
+      $gotonextlevel = FALSE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  if (empty($user_profile->profile_reg_session) || $user_profile->profile_reg_session === $session) $gotonextlevel = FALSE;
+
+  $level_name = $user_profile->profile_level_name;
+
+  if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
+    if ($level_name >= 100) $level_name += 100;
+    else                    $level_name += 1;
+  }
+
+  return (string)$level_name;
+}
+
+
+function student_meets_fee_requirements($uid) {
+  return TRUE;
+}
+
+
+function student_course_form(&$obj) {
+  global $user;
+  global $user_profile;
+  $user_profile = new UserProfile($user->uid);
+
+  $session =  variable_get('eduerp_current_session', '');
+  $semester = variable_get('eduerp_current_semester', 1);
+
+  $gotonextlevel = TRUE;
+
+  $sql = "SELECT field_event_sr_value FROM {content_type_student_record}
+    WHERE
+      field_student_ref_sr_uid=%d AND
+      field_student_program_sr_nid=%d AND
+      (
+        field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+        OR
+        (
+          field_event_sr_value IN ('Repeat Session', 'Changed from Old Programme') AND
+          field_session_sr_value='%s'
+        )
+      )";
+  $rows = db_query($sql, $user->uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
+  if ($row = db_fetch_object($rows)) {
+    if ($row->field_event_sr_value === 'Repeat Session' || $row->field_event_sr_value === 'Changed from Old Programme') {
+      $gotonextlevel = FALSE;
+    }
+    else {
+      drupal_set_message("Sorry, you have left this programme so cannot register courses.");
+      return FALSE;
+    }
+  }
+
+  if (empty($user_profile->profile_reg_session) || $user_profile->profile_reg_session === $session) $gotonextlevel = FALSE;
+
+  $level_name = $user_profile->profile_level_name;
+
+  if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
+    if ($level_name >= 100) $level_name += 100;
+    else                    $level_name += 1;
+  }
+
+  $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
+    $user_profile->profile_first_choice, $level_name, $semester);
+  if (!db_fetch_object($rows)) {
+    drupal_set_message("Sorry. You are not allowed to register courses at this time.");
+    return FALSE;
+  }
+
+  if (student_meets_fee_requirements($user->uid)) {
+
+    if ($gotonextlevel) $user_profile->profile_level_name = $level_name;
+    $user_profile->profile_reg_session = $session;
+    $user_profile->profile_reg_semester = $semester;
+
+    // Update session, semester on disk so student_nodeapi() 'presave' hook will find new values that it specifically handles
+    $sql = "UPDATE {content_type_student_profile} spro, {node} nspro SET spro.field_profile_reg_session_value='%s', spro.field_profile_reg_semester_value='%s'
+      WHERE
+        spro.vid=nspro.vid AND
+        nspro.uid=%d AND
+        nspro.type='student_profile'";
+    db_query($sql, $session, $semester, $user->uid);
+
+    $user_profile->save();
+
+    $courseselections = new courseselectionsclass();
+
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE)) {
+
+      $courseselections->addformelementsforsemester(1);
+      $courseselections->addformelementsforfailedcoursesforsemester(1);
+      $courseselections->addformelementsforloadcounter(1);
+
+      $courseselections->addformelementsforsemester(2);
+      $courseselections->addformelementsforfailedcoursesforsemester(2);
+      $courseselections->addformelementsforloadcounter(2);
+    }
+    else {
+      $courseselections->addformelementsforsemester($semester);
+      $courseselections->addformelementsforfailedcoursesforsemester($semester);
+      $courseselections->addformelementsforloadcounter($semester);
+    }
+
+    $courseselections->finishform();
+  }
+  else {
+    drupal_goto('student/payment');
+  }
+
+  return $courseselections->form;
+}
+
+
+function student_course_form_validate($form, &$form_state) {
+  global $user;
+  $user_profile = new UserProfile($user->uid);
+
+  $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
+  if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
+  else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
+
+  $_SESSION['eduerp_chosen_courses1'] = $course_instances1;
+  $_SESSION['eduerp_chosen_courses2'] = $course_instances2;
+  $cis = implode(',', array_merge($course_instances1, $course_instances2));
+  if (empty($cis)) $cis = '0';
+
+  $sql = "SELECT c.field_code_value
+    FROM {content_type_course_instance} ci, {content_type_course} c
+    WHERE ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
+  $result = db_query($sql, $cis);
+
+  $selectedcodes = array();
+  while ($row = db_fetch_object($result)) {
+    $selectedcodes[] = $row->field_code_value;
+  }
+
+  foreach ($form['#failedcodes'] as $failedcode) {
+    if (!in_array($failedcode, $selectedcodes)) form_set_error($failedcode, "You must select the previously failed course: $failedcode");
+  }
+
+  $counts = array_count_values($selectedcodes);
+  foreach ($counts as $code => $count) {
+    if ($count > 1) form_set_error($code, "You have selected $code more than once");
+  }
+
+  // According to spec, only credit load for the current level courses should count towards the limits (and credit_load_registered), failed repeats are extra
+  $currentlevelcis = implode(',', $form['#currentlevelcis']);
+  if (empty($currentlevelcis)) $currentlevelcis = '0';
+
+  $cis1 = implode(',', $course_instances1);
+  if (empty($cis1)) $cis1 = '0';
+
+  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+    FROM {content_type_course_instance} ci, {program_course} pc
+    WHERE
+      ci.nid IN(%s) AND
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1'";
+  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+    FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
+    WHERE
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1' AND
+      ci.field_course_id_nid=c.nid AND
+      c.field_code_value NOT IN(
+        SELECT DISTINCT
+          cx.field_code_value
+        FROM
+          {content_type_student_grades} sgx,
+          {content_type_course_instance} cix,
+          {content_type_course} cx,
+          {program_course} pcx,
+          {node} nsprox,
+          {content_type_student_profile} sprox
+        WHERE
+          IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+          sgx.field_mat_no_uid=%d AND
+          sgx.field_course_instance_nid=cix.nid AND
+          sgx.field_examscorelocked_value>0 AND
+          sgx.field_dropped_value=0 AND
+          cix.field_course_id_nid=cx.nid AND
+          cix.field_course_id_nid=pcx.course_id AND
+          CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+          pcx.programme_id=sprox.field_profile_first_choice_nid AND
+          nsprox.uid=sgx.field_mat_no_uid AND
+          nsprox.type='student_profile' AND
+          nsprox.vid=sprox.vid
+        )";
+  // The NOT IN... suppresses courses failed in previous semesters which should not be counted towards registered credit (see same SQL in update_credit_load_registered())
+  // The test for $currentlevelcis removed (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates and new failed test added)
+  $result = db_query($sql, $cis1, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '1');
+  $row = db_fetch_object($result);
+  if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
+  if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
+  $form_state['storage']['creditload'][1] = $row->tload;
+
+  if (!empty($form['#max_credit_load2'])) {
+    $cis2 = implode(',', $course_instances2);
+    if (empty($cis2)) $cis2 = '0';
+
+    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+      FROM {content_type_course_instance} ci, {program_course} pc
+      WHERE
+        ci.nid IN(%s) AND
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='2'";
+    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+      FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
+      WHERE
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='1' AND
+        ci.field_course_id_nid=c.nid AND
+        c.field_code_value NOT IN(
+          SELECT DISTINCT
+            cx.field_code_value
+          FROM
+            {content_type_student_grades} sgx,
+            {content_type_course_instance} cix,
+            {content_type_course} cx,
+            {program_course} pcx,
+            {node} nsprox,
+            {content_type_student_profile} sprox
+          WHERE
+            IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+            sgx.field_mat_no_uid=%d AND
+            sgx.field_course_instance_nid=cix.nid AND
+            sgx.field_examscorelocked_value>0 AND
+            sgx.field_dropped_value=0 AND
+            cix.field_course_id_nid=cx.nid AND
+            cix.field_course_id_nid=pcx.course_id AND
+            CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+            pcx.programme_id=sprox.field_profile_first_choice_nid AND
+            nsprox.uid=sgx.field_mat_no_uid AND
+            nsprox.type='student_profile' AND
+            nsprox.vid=sprox.vid
+          )";
+    $result = db_query($sql, $cis2, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '2');
+    $row = db_fetch_object($result);
+    if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
+    if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
+    $form_state['storage']['creditload'][2] = $row->tload;
+  }
+}
+
+
+function student_course_form_submit($form, &$form_state) {
+  global $user;
+  $user_profile = new UserProfile($user->uid);
+
+  $session = variable_get('eduerp_current_session', '');
+
+  $studentname = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $studentname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
+  }
+
+  // Find the program type
+  $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+  $program_type = abs($row->field_program_type_value);
+  if ($program_type == 3 && $user_profile->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
+
+  // Find the existing student_program
+  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+  $result = db_query($sql, $user->uid, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+  $student_program = $row->nid;
+
+  foreach (array(1, 2) as $semester) {
+    if (!empty($_SESSION['eduerp_chosen_courses' . $semester])) {
+      $student_gpa = create_student_gpa($user, $user_profile, $studentname, $student_program, $session, $semester, $form_state['storage']['creditload'][$semester]);
+
+      delete_student_grades($user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
+
+      foreach ($_SESSION['eduerp_chosen_courses' . $semester] as $course_instance) {
+        create_student_grades($user, $course_instance, $student_gpa, $studentname, $program_type);
+      }
+    }
+  }
+
+  drupal_goto('student/listcourses');
+}
+
+
+function student_courses() {
+  drupal_goto('listcourses');
+}
+
+
+function create_student_gpa($student_user, $user_profile, $studentname, $student_program, $session, $semester, $creditload) {
+  // Check if there is an existing student_gpa, must avoid a duplicate
+  $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
+    WHERE
+      gpa.field_student_ref_gpa_uid=%d AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value=%d
+    LIMIT 1";
+  $rows = db_query($sql, $student_user->uid, $session, $semester);
+  if ($row = db_fetch_object($rows)) {
+    $node = node_load($row->student_gpa);
+  }
+  else {
+    $node = new stdClass();
+    $node->type                                  = 'student_gpa';
+    $node->uid                                   = 1;  // Admin
+    $node->status                                = 1;  // Published
+    $node->promote                               = 0;
+    $node->sticky                                = 0;
+    $node->comment                               = 0;
+    $node->title                                 = "$studentname - $session - $semester";
+    $node->field_student_ref_gpa[0]['uid']       = $student_user->uid;
+    $node->field_sess_name_gpa[0]['value']       = $session;
+    $node->field_semester_name_gpa[0]['value']   = $semester;
+  }
+  $node->field_program_ref_gpa[0]['nid']         = $user_profile->profile_first_choice;
+  $node->field_student_program_ref_gpa[0]['nid'] = $student_program;
+  $node->field_gptotal[0]['value']               = '-';
+  $node->field_gpa[0]['value']                   = '-';
+  $node->field_gpaforstudent[0]['value']         = '-';
+  $node->field_credit_load_registered[0]['value']= $creditload;
+  $node->field_credit_load_completed[0]['value'] = 0;
+  $node->field_level_name_gpa[0]['value']        = $user_profile->profile_level_name;
+  node_save($node);
+  return $node->nid;
+}
+
+
+function create_student_grades($student_user, $course_instance, $student_gpa, $studentname, $program_type) {
+
+  // student_grades CCK
+  $node = new stdClass();
+  $node->type                                    = 'student_grades';
+  $node->uid                                     = 1;  // Admin
+  $node->status                                  = 1;  // Published
+  $node->promote                                 = 0;
+  $node->sticky                                  = 0;
+  $node->comment                                 = 0;
+  $node->title                                   = $studentname;
+  $node->field_mat_no[0]['uid']                  = $student_user->uid;
+  $node->field_course_instance[0]['nid']         = $course_instance;
+  $node->field_student_gpa[0]['nid']             = $student_gpa;
+  $node->field_ca1[0]['value']                   = 0;
+  $node->field_ca1forstudent[0]['value']         = 0;
+  $node->field_ca1locked[0]['value']             = 0;
+  $node->field_ca2[0]['value']                   = 0;
+  $node->field_ca2forstudent[0]['value']         = 0;
+  $node->field_ca2locked[0]['value']             = 0;
+  $node->field_ca3[0]['value']                   = 0;
+  $node->field_ca3forstudent[0]['value']         = 0;
+  $node->field_ca3locked[0]['value']             = 0;
+  $node->field_ca4[0]['value']                   = 0;
+  $node->field_ca4forstudent[0]['value']         = 0;
+  $node->field_ca4locked[0]['value']             = 0;
+  $node->field_exam_score[0]['value']            = 0;
+  $node->field_examscoreforstudent[0]['value']   = 0;
+  $node->field_examscorelocked[0]['value']       = 0;
+  $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_totalscoreforstudent[0]['value']  = '-';
+  $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_gradeforstudent[0]['value']       = '-';
+  $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_gradepointforstudent[0]['value']  = '-';
+  $node->field_dropped[0]['value']               = 0;
+  $node->field_calc_type[0]['value']             = $program_type;
+
+  // Try to get Credit Load from program_course for this level/semester
+  $sql = "SELECT pc.credit_load
+    FROM
+      {program_course} pc,
+      {content_type_student_gpa} gpa,
+      {content_type_course_instance} ci
+    WHERE
+      pc.programme_id=gpa.field_program_ref_gpa_nid AND
+      pc.course_id=ci.field_course_id_nid AND
+      pc.level=gpa.field_level_name_gpa_value AND
+      pc.semester=gpa.field_semester_name_gpa_value AND
+      gpa.nid=%d AND
+      ci.nid=%d";
+  $rows = db_query($sql, $student_gpa, $course_instance);
+  if ($row = db_fetch_object($rows)) {
+    $credit_load = $row->credit_load;
+  }
+  else {
+    // Try to get Credit Load from most recent program_course (might be resit of failed course)
+    $sql = "SELECT pc.credit_load
+      FROM
+        {program_course} pc,
+        {content_type_student_gpa} gpa,
+        {content_type_course_instance} ci
+      WHERE
+        pc.programme_id=gpa.field_program_ref_gpa_nid AND
+        pc.course_id=ci.field_course_id_nid AND
+        gpa.nid=%d AND
+        ci.nid=%d
+      ORDER BY pc.program_course_id DESC";
+    $rows = db_query($sql, $student_gpa, $course_instance);
+    if ($row = db_fetch_object($rows)) {
+      $credit_load = $row->credit_load;
+    }
+    else {
+      // Get from course, could be a manual registration without a program_course
+      // (even though, unless program_course is retrospectively created, Credit Load will not count towards program cGPA)
+      // Actually 20110116... Manual registration only allows selection from program_course, so should never get here
+      $sql = "SELECT c.field_creditload_value
+        FROM
+          {content_type_course} c,
+          {content_type_course_instance} ci
+        WHERE
+          c.nid=ci.field_course_id_nid AND
+          ci.nid=%d";
+      $rows = db_query($sql, $course_instance);
+      $row = db_fetch_object($rows);
+      $credit_load = $row->field_creditload_value;
+    }
+  }
+  $node->field_credit_load_sg[0]['value'] = $credit_load;
+  node_save($node);
+}
+
+
+function delete_student_grades($uid, $session, $semester) {
+  $sql = "SELECT sg.nid
+    FROM {content_type_student_grades} sg, {content_type_course_instance} ci
+    WHERE
+      sg.field_mat_no_uid=%d AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_sess_name_value='%s' AND
+      ci.field_semester_name_value=%d";
+  // Query is potentially slow, can add DB indices added on relevant columns
+
+  $result = db_query($sql, $uid, $session, $semester);
+
+  while ($row = db_fetch_object($result)) {
+    // Copied from node_delete(), but want to bypass access control.
+    $node = node_load($row->nid);
+
+    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+
+    // Call the node-specific callback (if any):
+    node_invoke($node, 'delete');
+    node_invoke_nodeapi($node, 'delete');
+
+    // Clear the page and block caches.
+    cache_clear_all();
+
+    // Remove this node from the search index if needed.
+    if (function_exists('search_wipe')) {
+      search_wipe($node->nid, 'node');
+    }
+  }
+}
+
+
+function create_student_program($uid) {
+  $user_profile = new UserProfile($uid);
+
+  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+  $result = db_query($sql, $uid, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
+  if (empty($row->nid)) {
+    // student_program CCK
+    $node = new stdClass();
+    $node->type    = 'student_program';
+    $node->uid     = 1;  // Admin
+    $node->status  = 1;  // Published
+    $node->promote = 0;
+    $node->sticky  = 0;
+    $node->comment = 0;
+  }
+  else {
+    $node = node_load($row->nid);
+  }
+
+  $name = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
+  }
+  $sql = "SELECT p.field_programme_name_value AS programme_name FROM {content_type_program} p WHERE p.nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_array($result);
+
+  $node->title                                      = "$name - {$row->programme_name}";
+  $node->field_student_ref_sp[0]['uid']             = $uid;
+  $node->field_program_ref_sp[0]['nid']             = $user_profile->profile_first_choice;
+  $node->field_cgpa_sp[0]['value']                  = '-';
+  $node->field_cgpaforstudent_sp[0]['value']        = '-';
+  $node->field_gptotal_sp[0]['value']               = '-';
+  $node->field_credit_load_completed_sp[0]['value'] = 0;
+  node_save($node);
+}
+
+
+function change_student_program(&$user, $first_choice, $level) {
+  $user_profile = new UserProfile($user->uid);
+  $formerProgID = $user_profile->profile_first_choice;
+  $user_profile->profile_first_choice = $first_choice;
+  $user_profile->profile_level_name = $level;
+  $user_profile->save();
+
+  create_student_program($user->uid);
+
+  set_matriculation_number($user->uid, $formerProgID);
+}
+
+
+function _student_gr() {
+  static $titles;
+  if (!$titles) {
+     $titles[] = 'Select';
+     $r = db_query("select * from  {olevel_grades} order by grade_name");
+     while ($f = db_fetch_object($r))
+       $titles[$f->grade_id] = $f->grade_name;
+  }
+  return  $titles;
+}
+
+function _student_sub() {
+
+   static $titles;
+   if (!$titles) {
+      $titles[] = 'Select';
+      $r = db_query("select * from  {ext_exam_subject} order by subject_name");
+      while ($f = db_fetch_object($r))
+       $titles[$f->subject_id]=$f->subject_name;
+   }
+   return  $titles;
+}
+
+function _student_bod() {
+
+  static $titles;
+  if (!$titles) {
+    $titles[] = 'Select';
+    $r = db_query("select * from {ext_exam_body}  order by exam_body_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->exam_body_id] = $f->exam_body_name;
+    }
+   return  $titles;
+}
+
+function _student_rel() {
+
+  static $titles;
+  if (!$titles) {
+     $r = db_query("select * from {kin_relationship}  order by relation");
+     while ($f = db_fetch_object($r))
+        $titles[trim($f->relation)]=trim($f->relation);
+  }
+  return  $titles;
+}
+
+
+//Israel's functions starts here
+function student_hostel_reservation(){
+  global $user, $EDUERPstudentInitiated;
+
+  $EDUERPstudentInitiated = $user->uid;
+  ob_start();
+  $html = "";
+  $student_profile = new UserProfile($user->uid);
+  if($student_profile->profile_jambno == ""){
+    drupal_set_message('Your Student Profile may not have been properly setup!');
+
+  }
+  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student
+    //allocation info will be displayed here
+    drupal_set_message('Hostel Allocation already exists!');
+    $html = hostel_allocation_show_allocated_room($user->uid, variable_get('eduerp_current_session', ''));
+    $html .= "<br /><hr /><br />";
+
+  }
+  elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
+    drupal_set_message('Hostel Reservation already exists!');
+    $html = hostel_allocation_show_reserved_room($user->uid);
+    $html .= drupal_get_form('save_reservation');
+    $html .= "<br /><hr /><br />";
+    $html .= "<b>Pay for Accomodation</b><br /><br />Please click <a href='../cart'><b>Here</b></a> to <a href='../cart'><b>Pay for your Reserved Room</b></a>.<br />";
+    $html .= "<br /><hr /><br />";
+    $html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
+    $html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
+
+  }
+  else {
+    //since this is coming from a logged in student, we'll try to simulate login in the hostel module by passing the studentUID
+    $html = hostel_allocation_direct_room_reservation($user->uid);
+  }
+  echo $html;
+  return ob_get_clean();
+}
+
+//Israel's functions ends here
+
+function student_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
+    eduerp_add_role($account, 'Applicant');
+    $edit['roles'] = NULL;
+  }
+}
+
+/**
+ * Retrieves hostel reservation as a uc product
+ * @return <object>
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function _student_hostelreservation_product() {
+    $data = hostel_allocation_reserved_data();
+    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
+    $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
+    $uc_product = db_fetch_object($block_uc_product);
+    return $uc_product;
+}
+
+/**
+ *
+ * @global <type> $user
+ * @param <type> $form_state
+ * @return $form
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function student_hostelreservation_cart(&$form_state) {
+    global $user;
+    $data = hostel_allocation_reserved_data();
+    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
+    $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
+    
+    $uc_product = db_fetch_object($block_uc_product);
+    $nid = $uc_product->nid;
+    
+    $html = hostel_allocation_show_reserved_room($user->uid);
+    //$data_array = array();
+    $data_array[] = get_object_vars($data);
+    $form['data'] = array(
+        '#value' => $html
+    );
+     $form['add_to_cart'] = array(
+            '#type' => 'submit',
+            '#value' => 'Add to Cart',
+     );
+
+    //$form['#submit'][] = uc_cart_add_item($nid, $qty = 1, $data = NULL, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+
+     $form['#submit'][] = 'student_hostelreservation_cart_submit';
+     return $form;
+}
+
+function student_hostelreservation_cart_submit($form, &$form_state) {
+    //dsm($form_state['values']);
+    $uc_product = _student_hostelreservation_product();
+    switch ($form_state['values']['op']) {
+        case t('Add to Cart'):
+            if (isset($form_state['values']['add_to_cart'])) {
+                $uc_product_nid = $uc_product->nid;
+                $data = get_object_vars($uc_product);
+                uc_cart_add_item($uc_product_nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+                drupal_goto("cart");
+            }
+            break;
+    }
+=======
+<?php
+function student_menu() {
+
+  $items['student/clearance/post'] = array(
+    'title' => 'Student Clearance',
+    'page callback' => 'student_clearance',
+    'access arguments' => array('student clearance'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['student/course'] = array(
+   'title' => 'Student Course Registration Form',
+   'page callback' => 'drupal_get_form',
+   'page arguments' => array('student_course_form'),
+   'access arguments' => array('student course'),
+   'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/listcourses'] = array(
+    'title' => 'List My Courses',
+    'page callback' => 'student_courses',
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/liststudents'] = array(
+    'title' => 'List Students',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('liststudents'),
+    'access arguments' => array('student list students'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['student/hostelreservation'] = array(
+    'title' => 'Hostel Reservation',
+    'page callback' => 'student_hostel_reservation',
+    'access arguments' => array('hostel_allocation user'),
+    'type' => MENU_NORMAL_ITEM,
+  );//hostel_allocation user
+
+  return $items;
+}
+
+function student_perm() {
+  return array('student clearance', 'student course',  'view my grades');
+}
+
+class courseselectionsclass {
+  public $form = array();
+
+  private $passedcodes;
+
+  private $currentlevelcis;
+
+  private $failedcodes;
+
+  private $selected_load;
+
+  private $count_courses_offered = array();
+
+  private $scriptforpage;
+
+  function __construct() {
+    global $user;
+
+    $this->scriptforpage = '$(function() {'; // end }) will come in $this->finishform()
+
+    // Find all passed courses for this student
+    $sql = "SELECT c.field_code_value
+      FROM {content_type_student_grades} sg, {content_type_course_instance} ci, {content_type_course} c
+      WHERE
+        sg.field_mat_no_uid=%d AND
+        sg.field_course_instance_nid=ci.nid AND
+        sg.field_examscorelocked_value>0 AND
+        sg.field_dropped_value=0 AND
+        ci.field_course_id_nid=c.nid AND
+        IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value)>0";
+    $result = db_query($sql, $user->uid);
+
+    $this->passedcodes = array();
+    while ($row = db_fetch_object($result)) {
+      $this->passedcodes[] = strtolower($row->field_code_value);
+    }
+
+    $this->currentlevelcis = array();
+    $this->failedcodes = array();
+  }
+
+  private function blockingprerequisites($prerequisite_codes) {
+    $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
+    foreach ($prerequisite_codes as $prerequisite_code) {
+      $alternatives = explode('/', $prerequisite_code);
+      $foundone = FALSE;
+      foreach ($alternatives as $alternative) {
+        if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+      }
+      if (!$foundone) return $prerequisite_code;
+    }
+    return FALSE;
+  }
+
+  public function addformelementsforsemester($semester) {
+    global $user_profile;
+
+    $sql = "SELECT DISTINCT
+        ci.nid AS course_instance,
+        ci.field_timetable_value AS timetable,
+        c.field_creditload_value AS old_credit_load,
+        c.field_code_value AS course_code,
+        c.field_coursetitle_value AS course_title,
+        c.field_course_description_value AS course_description,
+        c.field_prerequisite_codes_value AS prerequisite_codes,
+        c.field_prerequisite_value,
+        pc.credit_load AS credit_load,
+        pc.level AS level,
+        pc.course_type AS course_type
+      FROM
+        {program_course_instance} pci,
+        {content_type_course_instance} ci,
+        {content_type_course} c,
+        {program_course} pc
+      WHERE
+        pci.programme_id=%d AND
+        pci.session='%s' AND
+        pci.semester='%s' AND
+        pci.course_instance_id=ci.nid AND
+        ci.field_course_id_nid=c.nid AND
+        c.nid=pc.course_id AND
+        pci.semester=pc.semester AND
+        pci.programme_id=pc.programme_id AND
+        pc.level='%s'
+      ORDER BY pc.course_type, c.field_code_value, ci.field_timetable_value";
+    $result = db_query($sql, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester, $user_profile->profile_level_name);
+
+    $this->form['chosencourses' . $semester] = array(
+        '#tree' => TRUE,
+        '#prefix' => '<table border="1"><tr><th>Course Code</th><th>Course Title</th><th>Course Description</th><th>Credit Load</th><th>Timetable</th><th>Level</th><th>Prerequisites</th></tr>',
+        '#suffix' => '</table>'
+      );
+
+    $this->count_courses_offered[$semester] = 0;
+    $this->selected_load = 0;
+    while ($row = db_fetch_object($result)) {
+      if (in_array($row->course_code, $this->passedcodes)) continue;
+
+      if ($block = $this->blockingprerequisites($row->prerequisite_codes)) {
+        $block = "<br />You cannot do this course because of prerequisite: $block";
+        $default_value = FALSE;
+        $disabled = TRUE;
+      }
+      else {
+        $block = '';
+        if ($row->course_type == 1) {
+          $default_value = TRUE;
+          $disabled = TRUE;
+          $this->selected_load += $row->credit_load;
+        }
+        else {
+          $disabled = FALSE;
+
+          if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+            $default_value = TRUE;
+            $this->selected_load += $row->credit_load;
+          }
+          else {
+            $default_value = FALSE;
+          }
+          $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+        }
+        $this->currentlevelcis[] = $row->course_instance;
+
+        $this->count_courses_offered[$semester]++;
+      }
+      $this->form['chosencourses' . $semester][$row->course_instance] = array(
+        '#type' => 'checkbox',
+        '#title' => $row->course_code,
+        '#default_value' => $default_value,
+        '#disabled' => $disabled,
+        '#prefix' => '<tr><td>',
+        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->field_prerequisite_value}{$block}</td></tr>"
+      );
+
+      // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
+    }
+  }
+
+  public function addformelementsforfailedcoursesforsemester($semester) {
+    global $user;
+    global $user_profile;
+
+    // Find any failed (and not since passed) courses and see are they being run
+    // failedcourses sub-query below borrows from similar query in computed.inc
+    $sql = "SELECT DISTINCT
+        ci1.nid AS course_instance,
+        ci1.field_timetable_value AS timetable,
+        c1.field_creditload_value AS old_credit_load,
+        c1.field_code_value AS course_code,
+        c1.field_coursetitle_value AS course_title,
+        c1.field_course_description_value AS course_description,
+        pc1.credit_load AS credit_load,
+        pc1.level AS level,
+        pc1.course_type AS course_type
+      FROM
+        {program_course_instance} pci1,
+        {content_type_course_instance} ci1,
+        {content_type_course} c1,
+        {program_course} pc1,
+        (
+          SELECT
+            exams.field_mat_no_uid AS uid,
+            exams.field_code_value
+          FROM (
+            SELECT DISTINCT
+              IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
+              sg.field_mat_no_uid,
+              sg.field_calc_type_value,
+              CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
+              c.field_code_value,
+              c.field_creditload_value
+            FROM
+              {content_type_student_grades} sg,
+              {content_type_course_instance} ci,
+              {content_type_course} c,
+              {program_course} pc,
+              {node} nspro,
+              {content_type_student_profile} spro
+            WHERE
+              sg.field_mat_no_uid=%d AND
+              sg.field_course_instance_nid=ci.nid AND
+              sg.field_examscorelocked_value>0 AND
+              sg.field_dropped_value=0 AND
+              ci.field_course_id_nid=c.nid AND
+              ci.field_course_id_nid=pc.course_id AND
+              pc.programme_id=spro.field_profile_first_choice_nid AND
+              nspro.uid=sg.field_mat_no_uid AND
+              nspro.type='student_profile' AND
+              nspro.vid=spro.vid
+            ) AS exams
+          JOIN (
+            SELECT
+              sg0.field_mat_no_uid,
+              MAX(CONCAT(ci0.field_sess_name_value, ci0.field_semester_name_value, sg0.nid)) AS sess_sem0,
+              c0.field_code_value
+            FROM
+              {content_type_student_grades} sg0,
+              {content_type_course_instance} ci0,
+              {content_type_course} c0,
+              {program_course} pc0,
+              {node} nspro0,
+              {content_type_student_profile} spro0
+            WHERE
+              sg0.field_mat_no_uid=%d AND
+              sg0.field_course_instance_nid=ci0.nid AND
+              sg0.field_examscorelocked_value>0 AND
+              sg0.field_dropped_value=0 AND
+              ci0.field_course_id_nid=c0.nid AND
+              ci0.field_course_id_nid=pc0.course_id AND
+              pc0.programme_id=spro0.field_profile_first_choice_nid AND
+              nspro0.uid=sg0.field_mat_no_uid AND
+              nspro0.type='student_profile' AND
+              nspro0.vid=spro0.vid
+            GROUP BY c0.field_code_value, sg0.field_mat_no_uid
+            ) AS most_recent_exam
+          ON
+            exams.field_code_value=most_recent_exam.field_code_value AND
+            exams.sess_sem=most_recent_exam.sess_sem0 AND
+            exams.field_mat_no_uid=most_recent_exam.field_mat_no_uid AND
+            exams.gradepoint=0
+        ) AS failedcourses
+      WHERE
+        c1.field_code_value=failedcourses.field_code_value AND
+        pci1.programme_id=%d AND
+        pci1.session='%s' AND
+        pci1.semester='%s' AND
+        pci1.course_instance_id=ci1.nid AND
+        ci1.field_course_id_nid=c1.nid AND
+        c1.nid=pc1.course_id AND
+        pci1.semester=pc1.semester AND
+        pci1.programme_id=pc1.programme_id
+      ORDER BY pc1.level, c1.field_code_value, ci1.field_timetable_value";
+    $result = db_query($sql, $user->uid, $user->uid, $user_profile->profile_first_choice, variable_get('eduerp_current_session', ''), $semester);
+
+    $first = TRUE;
+    while ($row = db_fetch_object($result)) {
+      $this->failedcodes[] = $row->course_code;
+
+      if (!isset($this->form['chosencourses' . $semester][$row->course_instance])) { // Only overwrite if the failed course is not already in the list
+        if ($first) {
+          $extraprefix = '<tr><td colspan="7">Previously Failed Courses, you must choose all these...</td></tr>';
+          $first = FALSE;
+        }
+        else $extraprefix = '';
+
+        $this->form['chosencourses' . $semester][$row->course_instance] = array(
+          '#type' => 'checkbox',
+          '#title' => $row->course_code,
+          '#default_value' => FALSE,
+          '#disabled' => FALSE,
+          '#prefix' => $extraprefix . '<tr><td>',
+          '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td></td><td>{$row->timetable}</td><td>{$row->level}</td><td></td></tr>"
+        );
+
+        if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
+          // Unless spec changes, removed: $this->selected_load += $row->credit_load; (and {$row->credit_load} not displayed above)
+          $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
+        }
+        // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+      }
+    }
+  }
+
+  public function addformelementsforloadcounter($semester) {
+    global $user_profile;
+
+    $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green");';
+
+    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
+    $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
+    $min_max_credits = db_fetch_object($result);
+
+    $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
+      <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
+      <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
+      <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
+      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load . '</span></td></tr>
+      </table>');
+
+    $this->form['#max_credit_load' . $semester] = $min_max_credits->max_credit_load;
+    $this->form['#min_credit_load' . $semester] = $min_max_credits->min_credit_load;
+  }
+
+  private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
+    $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
+      selected_load = parseInt($(\"#selected_load{$semester}\").text());
+      min_load = parseInt($(\"#min_load{$semester}\").text());
+      max_load = parseInt($(\"#max_load{$semester}\").text());
+
+      if (this.checked == true) {
+        selected_load += {$credit_load};
+        $(\"#selected_load{$semester}\").text(selected_load);
+        if (selected_load > max_load) {
+          $(\"#max_load{$semester}\").css(\"background-color\", \"red\")
+        }
+        if (selected_load >= min_load) {
+          $(\"#min_load{$semester}\").css(\"background-color\", \"green\")
+        }
+      }
+      else {
+        selected_load -= {$credit_load};
+        $(\"#selected_load{$semester}\").text(selected_load);
+        if (selected_load <= max_load) {
+          $(\"#max_load{$semester}\").css(\"background-color\", \"green\")
+        }
+        if (selected_load < min_load) {
+          $(\"#min_load{$semester}\").css(\"background-color\", \"red\")
+        }
+      }
+    });";
+  }
+
+  public function finishform() {
+    $this->form['#currentlevelcis'] = $this->currentlevelcis;
+    $this->form['#failedcodes'] = $this->failedcodes;
+
+    if (isset($this->count_courses_offered[1]) && $this->count_courses_offered[1] == 0) {
+      $this->form['warning1'] = array('#value' => 'Note that no courses for your current level are available for you to take for Semester 1<br />');
+    }
+    if (isset($this->count_courses_offered[2]) && $this->count_courses_offered[2] == 0) {
+      $this->form['warning2'] = array('#value' => 'Note that no courses for your current level are available for you to take for Semester 2<br />');
+    }
+
+    $this->form['submit'] = array('#type' => 'submit' , '#value' => 'Submit');
+
+    // matches ({ from when object constructed
+    $this->scriptforpage .= '});';
+
+    drupal_add_js($this->scriptforpage, 'inline', 'header', FALSE, FALSE);
+// (*) TAKE OUT 'header', FALSE, FALSE WHEN IT WORKS
+  }
+}
+/**
+ * perform student clearance
+ */
+function student_clearance() {
+  global $user;
+  $student_id = $_POST['student_uid'];
+
+  $row = false;
+  $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+  if ($rs):
+    $row = db_fetch_object($rs);
+  endif;
+
+  if ($row) {
+    // node exists
+    $node = array();
+    $node['type'] = 'student_clearance';
+    $node['nid'] = $row->nid;
+    $student_clearance = node_load($node);
+
+    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']):
+      $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
+      $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+      drupal_set_message('Student\'s results verified');
+    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
+      $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
+      $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+
+      _perform_clearance($student_id);
+      drupal_set_message('Student has been cleared');
+    elseif ($_POST['clearance']):
+      drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
+    endif;
+
+    node_save($student_clearance);
+  } else {
+    // node doesn't exist
+    if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
+      $node = new stdClass;
+      $node->is_new = 1;
+      $node->uid = $user->uid;
+      $node->type = 'student_clearance';
+      $node->field_student[0]['uid'] = $student_id;
+
+      if (isset($_POST['verify']) && $_POST['verify'] == '1'):
+        $node->field_staff_verification[0]['uid'] = $user->uid;
+        $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+        drupal_set_message('Student\'s results verified');
+      endif;
+      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
+        $node->field_staff_clearance[0]['uid'] = $user->uid;
+        $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+
+        _perform_clearance($student_id);
+        drupal_set_message('Student has been cleared');
+      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
+        drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
+      endif;
+      node_save($node);
+    }
+  }
+
+  return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+}
+
+// Bundle of actions to be performed on clearance
+function _perform_clearance($student_id) {
+  global $user;
+
+  // create programme information for the student
+  create_student_program($student_id);
+
+  set_matriculation_number($student_id);
+
+  // Change role of the student from Applicant to Student
+  $student = user_load($student_id);
+  eduerp_set_role($student, 'Student');
+
+  $user_profile = new UserProfile($student_id);
+
+  $sql = "SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
+  $subject = 'University Application Approved (' . variable_get('site_name', '') . ')';
+
+  $body = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
+  }
+
+  $body .= "Your application to enrol as a Student has been approved.\n\n";
+  $body .= "Your Programme is: {$row->field_programme_name_value}\n\n";
+  $body .= "You now have a Matriculation Number which is: {$user_profile->profile_matno}\n\n";
+  $body .= "Please note this carefully as you will need it to access the university systems.\n";
+  $body .= "In particular, you will need it as your new Username to login to the university computer system.\n";
+  $body .= "You should continue to use the Password you entered when you Registered.\n\n";
+  $body .= "At a later stage, but not yet, your university e-mail will be: {$user_profile->university_email}\n\n";
+  $body .= variable_get('site_name', '') . "\n";
+
+  $message = drupal_mail('student', 'newmatnumber', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
+  $message['subject'] = $subject;
+  $message['body'] = $body;
+  drupal_mail_send($message);
+}
+
+
+function set_matriculation_number($student_id, $formerProgID=0) {
+  // Generate the matriculation number for this student
+  $results = module_invoke_all('matno', $student_id, $formerProgID);
+  if (is_array($results) && count($results) > 0) {
+    // We don't expect more than one implementation of the hook
+    // if so, we only take the first result.
+    $matno = $results[0];
+
+    // Change the username to the matno and also change the student profile
+    $student = user_load($student_id);
+    //$student->name = $matno;
+    user_save($student, array('name'=>$matno));
+
+    $student_profile = new UserProfile($student_id);
+    $student_profile->profile_matno = $matno;
+    $student_profile->save();
+  }
+}
+
+/**
+  these functions below define a custom field and field widget that enables
+  the student profile content type to store subject/grade pairs as one field
+  in the content type.
+*/
+function student_field_info() {
+  return array(
+    'exam_record' => array(
+      'label' => t('Exam Record'),
+      'description' => t("Stores a student's examination record which specifies subject and grade"),
+    )
+  );
+}
+
+function student_field($op, &$node, $field, &$items, $teaser, $page) {
+  switch ($op) {
+    case 'view':
+      foreach ($items as $delta => $item) {
+        if ($item['subject'] == '' && $item['grade'] == '') {
+          return;
+        } else {
+          $items[$delta]['view'] = content_format($field, $item, 'default', $node);
+        }
+      }
+      return theme('field', $node, $field, $items, $teaser, $page);
+  }
+}
+
+function student_field_settings($op, $field) {
+  switch ($op) {
+    case 'form':
+      $form = array();
+      $form['subjects_allowed_values'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Allowed subject values list'),
+        '#default_value' => isset($field['subjects_allowed_values']) ? $field['subjects_allowed_values'] : '',
+        '#required' => TRUE,
+        '#rows' => 10,
+        '#description' => t('The possible values this field can contain.'),
+      );
+      $form['grades_allowed_values'] = array(
+        '#type' => 'textarea',
+        '#title' => t('Allowed grade values list'),
+        '#default_value' => isset($field['grades_allowed_values']) ? $field['grades_allowed_values'] : '',
+        '#required' => TRUE,
+        '#rows' => 10,
+        '#description' => t('The possible values this field can contain.'),
+      );
+      return $form;
+
+    case 'save':
+      return array('subjects_allowed_values', 'grades_allowed_values');
+
+    case 'database columns':
+      $columns['subject'] = array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'sortable' => FALSE,
+        'default' => '',
+      );
+      $columns['grade'] = array(
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => FALSE,
+        'sortable' => FALSE,
+        'default' => '',
+      );
+      return $columns;
+  }
+}
+
+function student_field_formatter_info() {
+  return array(
+    'default' => array(
+      'label' => 'Default',
+      'field types' => array('exam_record'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+    ),
+  );
+}
+
+function student_theme() {
+  $theme_path = drupal_get_path('module', 'student') . DIRECTORY_SEPARATOR . 'theme';
+
+  $custom = array(
+    'student_field' => array(
+      'arguments' => array('value' => NULL, 'formatter' => NULL),
+    ),
+    'student_formatter_default' => array(
+      'arguments' => array('element' => NULL),
+    ),
+  );
+
+  $custom = array_merge($custom, _module_views_templates($theme_path));
+  return $custom;
+}
+
+/**
+ * helper function to expose the templates in the module's theme folder for rendering
+ * views
+ */
+function _module_views_templates($templates_path) {
+  $templates = array();
+  $views_templates_types = views_theme();
+  $files = file_scan_directory($templates_path, '^views.*\.tpl\.php$');
+
+  foreach ($files as $file) {
+    $template_name = str_replace('.tpl.php', '', $file->basename);
+    $template_info = explode('--', $template_name);
+    $views_hook = str_replace('-', '_', $template_info[0]);
+    $file_path = str_replace('/'. $file->basename, '', $file->filename);
+    $templates[str_replace('-', '_', $template_name)] = array(
+      'arguments' => $views_templates_types[$views_hook]['arguments'],
+      'path' => $file_path,
+      'template' => $template_name,
+      'original hook' => $views_hook,
+      'preprocess functions' => array(
+        'template_preprocess',
+        'template_preprocess_'. $views_hook,
+      ),
+    );
+  }
+
+  return $templates;
+}
+
+function theme_student_formatter_default($element) {
+  return theme('student_field', $element);
+}
+
+function theme_student_field($element) {
+  return ($element['#item']['subject'] != "" && $element['#item']['grade'] != "") ? sprintf("%s - %s", $element['#item']['subject'], $element['#item']['grade']) : "";
+}
+
+function student_content_is_empty($item, $field) {
+  if (empty($item['subject']) || empty($item['grade'])) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function student_widget_info() {
+  return array(
+    'exam_record_exam_record' => array(
+      'label' => t('Subject, Grade'),
+      'field types' => array('exam_record'),
+      'multiple values' => CONTENT_HANDLE_CORE,
+      'callbacks' => array('default value' => CONTENT_CALLBACK_DEFAULT,),
+      'description' => t('A student examination record widget for storing examination grade results'),
+    ),
+  );
+}
+
+function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
+  $element = array();
+  $element['subject'] = array(
+    '#type' => 'select',
+    '#title' => t('Subject'),
+    '#default_value' => isset($items[$delta]['subject']) ? $items[$delta]['subject'] : NULL,
+    '#options' => _student_content_allowed_values($field, 'subjects_allowed_values'),
+    '#required' => FALSE,
+  );
+  $element['grade'] = array(
+    '#type' => 'select',
+    '#title' => t('Grade'),
+    '#default_value' => isset($items[$delta]['grade']) ? $items[$delta]['grade'] : NULL,
+    '#options' => _student_content_allowed_values($field, 'grades_allowed_values'),
+    '#required' => FALSE,
+  );
+  if (empty($form['#parents'])) {
+    $form['#parents'] = array();
+  }
+  $element['_error_element'] = array(
+    '#type' => 'value',
+    '#value' => implode('][', array_merge($form['#parents'], array('exam_subject'))),
+  );
+
+  return $element;
+}
+
+/**
+ * adapted from the cck content_allowed_values to support
+ * multiple section allowed_values
+ */
+function _student_content_allowed_values($field, $section, $flatten = TRUE) {
+  static $allowed_values;
+
+  $cid = $field['field_name'] .':'. $section .':'. ($flatten ? '1' : '0');
+  if (isset($allowed_values[$cid])) {
+    return $allowed_values[$cid];
+  }
+
+  $allowed_values[$cid] = array();
+
+  if (empty($allowed_values[$cid]) && isset($field[$section])) {
+    $list = explode("\n", $field[$section]);
+    $list = array_map('trim', $list);
+    $list = array_filter($list, 'strlen');
+    foreach ($list as $opt) {
+      // Sanitize the user input with a permissive filter.
+      $opt = content_filter_xss($opt);
+      if (strpos($opt, '|') !== FALSE) {
+        list($key, $value) = explode('|', $opt);
+        $allowed_values[$cid][$key] = (isset($value) && $value !=='') ? $value : $key;
+      }
+      else {
+        $allowed_values[$cid][$opt] = $opt;
+      }
+    }
+    // Allow external modules to translate allowed values list.
+    drupal_alter('content_allowed_values', $allowed_values[$cid], $field);
+  }
+  return $allowed_values[$cid];
+}
+
+function student_form_alter(&$form, $form_state, $form_id) {
+  // change the button title to display "Search" instead of "Apply" (improves user experience)
+  if ($form_state['view']->name == "student_clearance") {
+    $form['submit']['#value'] = t('Search');
+  }
+}
+
+/**
+ * Implementing the hook_views_post_render to mutate the student_clearance
+ * so as to enable appending the clearance form
+ */
+function student_views_post_render(&$view, &$output, &$cache) {
+  if ($view->name == "student_clearance") {
+    // view mutation
+    $student_id = $view->result[0]->users_uid;
+    $output = str_replace("STUDENTID", $student_id, $output);
+
+    $row = false;
+    $verified = false;
+    $cleared = false;
+    $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+    if ($rs):
+      $row = db_fetch_object($rs);
+    endif;
+
+    if ($row) {
+      $node = array();
+      $node['type'] = 'student_clearance';
+      $node['nid'] = $row->nid;
+      $student_clearance = node_load($node);
+
+      if ($student_clearance->field_staff_verification[0]['uid']) $verified = true;
+      if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
+    }
+
+    // snippet to determine whether or not to place the checkmark to the options
+    // viz a viz results verification and student clearance
+    $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
+  }
+}
+
+function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
+  if ($node->type == 'student_profile') {
+    switch ($op) {
+      case 'presave':
+        if (empty($node->nid)) {
+          // A new student profile is being created
+          $node->field_profile_yearofentry[0]['value'] = date('Y');
+          $node->field_profile_reg_session[0]['value'] = '';
+          $node->field_profile_reg_semester[0]['value'] = '';
+        }
+        else {
+          // Need to set these each time as they get overwritten and in any case no user should be allowed set these!
+          $sql = "SELECT field_profile_yearofentry_value, field_profile_reg_session_value, field_profile_reg_semester_value FROM {content_type_student_profile} WHERE nid=%d";
+          $result = db_query($sql, $node->nid);
+          $row = db_fetch_object($result);
+          $node->field_profile_yearofentry[0]['value'] = $row->field_profile_yearofentry_value;
+          $node->field_profile_reg_session[0]['value'] = $row->field_profile_reg_session_value;
+          $node->field_profile_reg_semester[0]['value'] = $row->field_profile_reg_semester_value;
+        }
+
+        if (empty($node->field_profile_reg_session[0]['value'])) {  // After courses have been registered for the first time, do not do this
+
+          $sql = "SELECT DISTINCT level FROM {program_level_semester} WHERE programme_id=%d ORDER BY level";
+          $result = db_query($sql, $node->field_profile_first_choice[0]['nid']);
+
+          $level1 = '100';
+          $level2 = '200';
+
+          $row = db_fetch_object($result);
+          if (!empty($row->level)) {
+            $level1 = $row->level;
+            $row = db_fetch_object($result);
+            if (!empty($row->level)) $level2 = $row->level;
+          }
+
+          // Set the level to 100 (probably) if the student's mode of entry is UME if not, then it's 200 (probably)
+          $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? $level1 : $level2;
+        }
+    }
+  }
+}
+
+
+function student_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'student'),
+  );
+}
+
+
+function student_next_level($uid, $session) {
+  // This takes the student uid and also the session they are going to pay for and returns...
+  //  FALSE, if they are not eligible to register for the program because they have graduated or left the university.
+  //  Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
+
+  // $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
+
+  $user_profile = new UserProfile($uid);
+
+  $gotonextlevel = TRUE;
+
+  $sql = "SELECT field_event_sr_value FROM {content_type_student_record}
+    WHERE
+      field_student_ref_sr_uid=%d AND
+      field_student_program_sr_nid=%d AND
+      (
+        field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+        OR
+        (
+          field_event_sr_value IN ('Repeat Session', 'Changed from Old Programme') AND
+          field_session_sr_value='%s'
+        )
+      )";
+  $rows = db_query($sql, $uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
+  if ($row = db_fetch_object($rows)) {
+    if ($row->field_event_sr_value === 'Repeat Session' || $row->field_event_sr_value === 'Changed from Old Programme') {
+      $gotonextlevel = FALSE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  if (empty($user_profile->profile_reg_session) || $user_profile->profile_reg_session === $session) $gotonextlevel = FALSE;
+
+  $level_name = $user_profile->profile_level_name;
+
+  if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
+    if ($level_name >= 100) $level_name += 100;
+    else                    $level_name += 1;
+  }
+
+  return (string)$level_name;
+}
+
+
+function student_meets_fee_requirements($uid) {
+  return TRUE;
+}
+
+
+function student_course_form(&$obj) {
+  global $user;
+  global $user_profile;
+  $user_profile = new UserProfile($user->uid);
+
+  $session =  variable_get('eduerp_current_session', '');
+  $semester = variable_get('eduerp_current_semester', 1);
+
+  $gotonextlevel = TRUE;
+
+  $sql = "SELECT field_event_sr_value FROM {content_type_student_record}
+    WHERE
+      field_student_ref_sr_uid=%d AND
+      field_student_program_sr_nid=%d AND
+      (
+        field_event_sr_value IN ('Graduated', 'Left Voluntarily', 'Left Forced')
+        OR
+        (
+          field_event_sr_value IN ('Repeat Session', 'Changed from Old Programme') AND
+          field_session_sr_value='%s'
+        )
+      )";
+  $rows = db_query($sql, $user->uid, $user_profile->profile_first_choice, $user_profile->profile_reg_session);
+  if ($row = db_fetch_object($rows)) {
+    if ($row->field_event_sr_value === 'Repeat Session' || $row->field_event_sr_value === 'Changed from Old Programme') {
+      $gotonextlevel = FALSE;
+    }
+    else {
+      drupal_set_message("Sorry, you have left this programme so cannot register courses.");
+      return FALSE;
+    }
+  }
+
+  if (empty($user_profile->profile_reg_session) || $user_profile->profile_reg_session === $session) $gotonextlevel = FALSE;
+
+  $level_name = $user_profile->profile_level_name;
+
+  if ($gotonextlevel) { // This is student's first registration for this session and they have not been blocked from going to the next level
+    if ($level_name >= 100) $level_name += 100;
+    else                    $level_name += 1;
+  }
+
+  $rows = db_query("SELECT 1 FROM {program_level_semester} pls WHERE pls.open_for_registrations=1 AND pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'",
+    $user_profile->profile_first_choice, $level_name, $semester);
+  if (!db_fetch_object($rows)) {
+    drupal_set_message("Sorry. You are not allowed to register courses at this time.");
+    return FALSE;
+  }
+
+  if (student_meets_fee_requirements($user->uid)) {
+
+    if ($gotonextlevel) $user_profile->profile_level_name = $level_name;
+    $user_profile->profile_reg_session = $session;
+    $user_profile->profile_reg_semester = $semester;
+
+    // Update session, semester on disk so student_nodeapi() 'presave' hook will find new values that it specifically handles
+    $sql = "UPDATE {content_type_student_profile} spro, {node} nspro SET spro.field_profile_reg_session_value='%s', spro.field_profile_reg_semester_value='%s'
+      WHERE
+        spro.vid=nspro.vid AND
+        nspro.uid=%d AND
+        nspro.type='student_profile'";
+    db_query($sql, $session, $semester, $user->uid);
+
+    $user_profile->save();
+
+    $courseselections = new courseselectionsclass();
+
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE)) {
+
+      $courseselections->addformelementsforsemester(1);
+      $courseselections->addformelementsforfailedcoursesforsemester(1);
+      $courseselections->addformelementsforloadcounter(1);
+
+      $courseselections->addformelementsforsemester(2);
+      $courseselections->addformelementsforfailedcoursesforsemester(2);
+      $courseselections->addformelementsforloadcounter(2);
+    }
+    else {
+      $courseselections->addformelementsforsemester($semester);
+      $courseselections->addformelementsforfailedcoursesforsemester($semester);
+      $courseselections->addformelementsforloadcounter($semester);
+    }
+
+    $courseselections->finishform();
+  }
+  else {
+    drupal_goto('student/payment');
+  }
+
+  return $courseselections->form;
+}
+
+
+function student_course_form_validate($form, &$form_state) {
+  global $user;
+  $user_profile = new UserProfile($user->uid);
+
+  $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
+  if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
+  else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
+
+  $_SESSION['eduerp_chosen_courses1'] = $course_instances1;
+  $_SESSION['eduerp_chosen_courses2'] = $course_instances2;
+  $cis = implode(',', array_merge($course_instances1, $course_instances2));
+  if (empty($cis)) $cis = '0';
+
+  $sql = "SELECT c.field_code_value
+    FROM {content_type_course_instance} ci, {content_type_course} c
+    WHERE ci.nid IN(%s) AND ci.field_course_id_nid=c.nid";
+  $result = db_query($sql, $cis);
+
+  $selectedcodes = array();
+  while ($row = db_fetch_object($result)) {
+    $selectedcodes[] = $row->field_code_value;
+  }
+
+  foreach ($form['#failedcodes'] as $failedcode) {
+    if (!in_array($failedcode, $selectedcodes)) form_set_error($failedcode, "You must select the previously failed course: $failedcode");
+  }
+
+  $counts = array_count_values($selectedcodes);
+  foreach ($counts as $code => $count) {
+    if ($count > 1) form_set_error($code, "You have selected $code more than once");
+  }
+
+  // According to spec, only credit load for the current level courses should count towards the limits (and credit_load_registered), failed repeats are extra
+  $currentlevelcis = implode(',', $form['#currentlevelcis']);
+  if (empty($currentlevelcis)) $currentlevelcis = '0';
+
+  $cis1 = implode(',', $course_instances1);
+  if (empty($cis1)) $cis1 = '0';
+
+  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+    FROM {content_type_course_instance} ci, {program_course} pc
+    WHERE
+      ci.nid IN(%s) AND
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1'";
+  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+    FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
+    WHERE
+      ci.nid IN(%s) AND
+      ci.field_course_id_nid=pc.course_id AND
+      pc.programme_id=%d AND
+      pc.level='%s' AND
+      pc.semester='1' AND
+      ci.field_course_id_nid=c.nid AND
+      c.field_code_value NOT IN(
+        SELECT DISTINCT
+          cx.field_code_value
+        FROM
+          {content_type_student_grades} sgx,
+          {content_type_course_instance} cix,
+          {content_type_course} cx,
+          {program_course} pcx,
+          {node} nsprox,
+          {content_type_student_profile} sprox
+        WHERE
+          IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+          sgx.field_mat_no_uid=%d AND
+          sgx.field_course_instance_nid=cix.nid AND
+          sgx.field_examscorelocked_value>0 AND
+          sgx.field_dropped_value=0 AND
+          cix.field_course_id_nid=cx.nid AND
+          cix.field_course_id_nid=pcx.course_id AND
+          CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+          pcx.programme_id=sprox.field_profile_first_choice_nid AND
+          nsprox.uid=sgx.field_mat_no_uid AND
+          nsprox.type='student_profile' AND
+          nsprox.vid=sprox.vid
+        )";
+  // The NOT IN... suppresses courses failed in previous semesters which should not be counted towards registered credit (see same SQL in update_credit_load_registered())
+  // The test for $currentlevelcis removed (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates and new failed test added)
+  $result = db_query($sql, $cis1, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '1');
+  $row = db_fetch_object($result);
+  if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
+  if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
+  $form_state['storage']['creditload'][1] = $row->tload;
+
+  if (!empty($form['#max_credit_load2'])) {
+    $cis2 = implode(',', $course_instances2);
+    if (empty($cis2)) $cis2 = '0';
+
+    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+      FROM {content_type_course_instance} ci, {program_course} pc
+      WHERE
+        ci.nid IN(%s) AND
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='2'";
+    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
+      FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
+      WHERE
+        ci.nid IN(%s) AND
+        ci.field_course_id_nid=pc.course_id AND
+        pc.programme_id=%d AND
+        pc.level='%s' AND
+        pc.semester='1' AND
+        ci.field_course_id_nid=c.nid AND
+        c.field_code_value NOT IN(
+          SELECT DISTINCT
+            cx.field_code_value
+          FROM
+            {content_type_student_grades} sgx,
+            {content_type_course_instance} cix,
+            {content_type_course} cx,
+            {program_course} pcx,
+            {node} nsprox,
+            {content_type_student_profile} sprox
+          WHERE
+            IF(sgx.field_gradepoint_value='-', 0, sgx.field_gradepoint_value)=0 AND
+            sgx.field_mat_no_uid=%d AND
+            sgx.field_course_instance_nid=cix.nid AND
+            sgx.field_examscorelocked_value>0 AND
+            sgx.field_dropped_value=0 AND
+            cix.field_course_id_nid=cx.nid AND
+            cix.field_course_id_nid=pcx.course_id AND
+            CONCAT(cix.field_sess_name_value, cix.field_semester_name_value)<'%s%s' AND
+            pcx.programme_id=sprox.field_profile_first_choice_nid AND
+            nsprox.uid=sgx.field_mat_no_uid AND
+            nsprox.type='student_profile' AND
+            nsprox.vid=sprox.vid
+          )";
+    $result = db_query($sql, $cis2, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '2');
+    $row = db_fetch_object($result);
+    if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
+    if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
+    $form_state['storage']['creditload'][2] = $row->tload;
+  }
+}
+
+
+function student_course_form_submit($form, &$form_state) {
+  global $user;
+  $user_profile = new UserProfile($user->uid);
+
+  $session = variable_get('eduerp_current_session', '');
+
+  $studentname = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $studentname = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
+  }
+
+  // Find the program type
+  $sql = "SELECT field_program_type_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+  $program_type = abs($row->field_program_type_value);
+  if ($program_type == 3 && $user_profile->profile_level_name == '100') $program_type = 0; // First year medicine does not use medicine type scales
+
+  // Find the existing student_program
+  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+  $result = db_query($sql, $user->uid, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+  $student_program = $row->nid;
+
+  foreach (array(1, 2) as $semester) {
+    if (!empty($_SESSION['eduerp_chosen_courses' . $semester])) {
+      $student_gpa = create_student_gpa($user, $user_profile, $studentname, $student_program, $session, $semester, $form_state['storage']['creditload'][$semester]);
+
+      delete_student_grades($user->uid, $session, $semester); // It is important that this only happens early in the semester before grading data is entered
+
+      foreach ($_SESSION['eduerp_chosen_courses' . $semester] as $course_instance) {
+        create_student_grades($user, $course_instance, $student_gpa, $studentname, $program_type);
+      }
+    }
+  }
+
+  drupal_goto('student/listcourses');
+}
+
+
+function student_courses() {
+  drupal_goto('listcourses');
+}
+
+
+function create_student_gpa($student_user, $user_profile, $studentname, $student_program, $session, $semester, $creditload) {
+  // Check if there is an existing student_gpa, must avoid a duplicate
+  $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
+    WHERE
+      gpa.field_student_ref_gpa_uid=%d AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value=%d
+    LIMIT 1";
+  $rows = db_query($sql, $student_user->uid, $session, $semester);
+  if ($row = db_fetch_object($rows)) {
+    $node = node_load($row->student_gpa);
+  }
+  else {
+    $node = new stdClass();
+    $node->type                                  = 'student_gpa';
+    $node->uid                                   = 1;  // Admin
+    $node->status                                = 1;  // Published
+    $node->promote                               = 0;
+    $node->sticky                                = 0;
+    $node->comment                               = 0;
+    $node->title                                 = "$studentname - $session - $semester";
+    $node->field_student_ref_gpa[0]['uid']       = $student_user->uid;
+    $node->field_sess_name_gpa[0]['value']       = $session;
+    $node->field_semester_name_gpa[0]['value']   = $semester;
+  }
+  $node->field_program_ref_gpa[0]['nid']         = $user_profile->profile_first_choice;
+  $node->field_student_program_ref_gpa[0]['nid'] = $student_program;
+  $node->field_gptotal[0]['value']               = '-';
+  $node->field_gpa[0]['value']                   = '-';
+  $node->field_gpaforstudent[0]['value']         = '-';
+  $node->field_credit_load_registered[0]['value']= $creditload;
+  $node->field_credit_load_completed[0]['value'] = 0;
+  $node->field_level_name_gpa[0]['value']        = $user_profile->profile_level_name;
+  node_save($node);
+  return $node->nid;
+}
+
+
+function create_student_grades($student_user, $course_instance, $student_gpa, $studentname, $program_type) {
+
+  // student_grades CCK
+  $node = new stdClass();
+  $node->type                                    = 'student_grades';
+  $node->uid                                     = 1;  // Admin
+  $node->status                                  = 1;  // Published
+  $node->promote                                 = 0;
+  $node->sticky                                  = 0;
+  $node->comment                                 = 0;
+  $node->title                                   = $studentname;
+  $node->field_mat_no[0]['uid']                  = $student_user->uid;
+  $node->field_course_instance[0]['nid']         = $course_instance;
+  $node->field_student_gpa[0]['nid']             = $student_gpa;
+  $node->field_ca1[0]['value']                   = 0;
+  $node->field_ca1forstudent[0]['value']         = 0;
+  $node->field_ca1locked[0]['value']             = 0;
+  $node->field_ca2[0]['value']                   = 0;
+  $node->field_ca2forstudent[0]['value']         = 0;
+  $node->field_ca2locked[0]['value']             = 0;
+  $node->field_ca3[0]['value']                   = 0;
+  $node->field_ca3forstudent[0]['value']         = 0;
+  $node->field_ca3locked[0]['value']             = 0;
+  $node->field_ca4[0]['value']                   = 0;
+  $node->field_ca4forstudent[0]['value']         = 0;
+  $node->field_ca4locked[0]['value']             = 0;
+  $node->field_exam_score[0]['value']            = 0;
+  $node->field_examscoreforstudent[0]['value']   = 0;
+  $node->field_examscorelocked[0]['value']       = 0;
+  $node->field_total_score[0]['value']           = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_totalscoreforstudent[0]['value']  = '-';
+  $node->field_grade[0]['value']                 = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_gradeforstudent[0]['value']       = '-';
+  $node->field_gradepoint[0]['value']            = '-'; // Computed, probably should not be set here, will be computed on save
+  $node->field_gradepointforstudent[0]['value']  = '-';
+  $node->field_dropped[0]['value']               = 0;
+  $node->field_calc_type[0]['value']             = $program_type;
+
+  // Try to get Credit Load from program_course for this level/semester
+  $sql = "SELECT pc.credit_load
+    FROM
+      {program_course} pc,
+      {content_type_student_gpa} gpa,
+      {content_type_course_instance} ci
+    WHERE
+      pc.programme_id=gpa.field_program_ref_gpa_nid AND
+      pc.course_id=ci.field_course_id_nid AND
+      pc.level=gpa.field_level_name_gpa_value AND
+      pc.semester=gpa.field_semester_name_gpa_value AND
+      gpa.nid=%d AND
+      ci.nid=%d";
+  $rows = db_query($sql, $student_gpa, $course_instance);
+  if ($row = db_fetch_object($rows)) {
+    $credit_load = $row->credit_load;
+  }
+  else {
+    // Try to get Credit Load from most recent program_course (might be resit of failed course)
+    $sql = "SELECT pc.credit_load
+      FROM
+        {program_course} pc,
+        {content_type_student_gpa} gpa,
+        {content_type_course_instance} ci
+      WHERE
+        pc.programme_id=gpa.field_program_ref_gpa_nid AND
+        pc.course_id=ci.field_course_id_nid AND
+        gpa.nid=%d AND
+        ci.nid=%d
+      ORDER BY pc.program_course_id DESC";
+    $rows = db_query($sql, $student_gpa, $course_instance);
+    if ($row = db_fetch_object($rows)) {
+      $credit_load = $row->credit_load;
+    }
+    else {
+      // Get from course, could be a manual registration without a program_course
+      // (even though, unless program_course is retrospectively created, Credit Load will not count towards program cGPA)
+      // Actually 20110116... Manual registration only allows selection from program_course, so should never get here
+      $sql = "SELECT c.field_creditload_value
+        FROM
+          {content_type_course} c,
+          {content_type_course_instance} ci
+        WHERE
+          c.nid=ci.field_course_id_nid AND
+          ci.nid=%d";
+      $rows = db_query($sql, $course_instance);
+      $row = db_fetch_object($rows);
+      $credit_load = $row->field_creditload_value;
+    }
+  }
+  $node->field_credit_load_sg[0]['value'] = $credit_load;
+  node_save($node);
+}
+
+
+function delete_student_grades($uid, $session, $semester) {
+  $sql = "SELECT sg.nid
+    FROM {content_type_student_grades} sg, {content_type_course_instance} ci
+    WHERE
+      sg.field_mat_no_uid=%d AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_sess_name_value='%s' AND
+      ci.field_semester_name_value=%d";
+  // Query is potentially slow, can add DB indices added on relevant columns
+
+  $result = db_query($sql, $uid, $session, $semester);
+
+  while ($row = db_fetch_object($result)) {
+    // Copied from node_delete(), but want to bypass access control.
+    $node = node_load($row->nid);
+
+    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+
+    // Call the node-specific callback (if any):
+    node_invoke($node, 'delete');
+    node_invoke_nodeapi($node, 'delete');
+
+    // Clear the page and block caches.
+    cache_clear_all();
+
+    // Remove this node from the search index if needed.
+    if (function_exists('search_wipe')) {
+      search_wipe($node->nid, 'node');
+    }
+  }
+}
+
+
+function create_student_program($uid) {
+  $user_profile = new UserProfile($uid);
+
+  $sql = "SELECT nid FROM {content_type_student_program} WHERE field_student_ref_sp_uid=%d AND field_program_ref_sp_nid=%d";
+  $result = db_query($sql, $uid, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
+  if (empty($row->nid)) {
+    // student_program CCK
+    $node = new stdClass();
+    $node->type    = 'student_program';
+    $node->uid     = 1;  // Admin
+    $node->status  = 1;  // Published
+    $node->promote = 0;
+    $node->sticky  = 0;
+    $node->comment = 0;
+  }
+  else {
+    $node = node_load($row->nid);
+  }
+
+  $name = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+    $name = "$user_profile->profile_first_name {$middle}$user_profile->profile_last_name";
+  }
+  $sql = "SELECT p.field_programme_name_value AS programme_name FROM {content_type_program} p WHERE p.nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_array($result);
+
+  $node->title                                      = "$name - {$row->programme_name}";
+  $node->field_student_ref_sp[0]['uid']             = $uid;
+  $node->field_program_ref_sp[0]['nid']             = $user_profile->profile_first_choice;
+  $node->field_cgpa_sp[0]['value']                  = '-';
+  $node->field_cgpaforstudent_sp[0]['value']        = '-';
+  $node->field_gptotal_sp[0]['value']               = '-';
+  $node->field_credit_load_completed_sp[0]['value'] = 0;
+  node_save($node);
+}
+
+
+function change_student_program(&$user, $first_choice, $level) {
+  $user_profile = new UserProfile($user->uid);
+  $formerProgID = $user_profile->profile_first_choice;
+  $user_profile->profile_first_choice = $first_choice;
+  $user_profile->profile_level_name = $level;
+  $user_profile->save();
+
+  create_student_program($user->uid);
+
+  set_matriculation_number($user->uid, $formerProgID);
+}
+
+
+function _student_gr() {
+  static $titles;
+  if (!$titles) {
+     $titles[] = 'Select';
+     $r = db_query("select * from  {olevel_grades} order by grade_name");
+     while ($f = db_fetch_object($r))
+       $titles[$f->grade_id] = $f->grade_name;
+  }
+  return  $titles;
+}
+
+function _student_sub() {
+
+   static $titles;
+   if (!$titles) {
+      $titles[] = 'Select';
+      $r = db_query("select * from  {ext_exam_subject} order by subject_name");
+      while ($f = db_fetch_object($r))
+       $titles[$f->subject_id]=$f->subject_name;
+   }
+   return  $titles;
+}
+
+function _student_bod() {
+
+  static $titles;
+  if (!$titles) {
+    $titles[] = 'Select';
+    $r = db_query("select * from {ext_exam_body}  order by exam_body_name");
+    while ($f = db_fetch_object($r))
+      $titles[$f->exam_body_id] = $f->exam_body_name;
+    }
+   return  $titles;
+}
+
+function _student_rel() {
+
+  static $titles;
+  if (!$titles) {
+     $r = db_query("select * from {kin_relationship}  order by relation");
+     while ($f = db_fetch_object($r))
+        $titles[trim($f->relation)]=trim($f->relation);
+  }
+  return  $titles;
+}
+
+
+//Israel's functions starts here
+function student_hostel_reservation(){
+  global $user, $EDUERPstudentInitiated;
+
+  $EDUERPstudentInitiated = $user->uid;
+  ob_start();
+  $html = "";
+  $student_profile = new UserProfile($user->uid);
+  if($student_profile->profile_jambno == ""){
+    drupal_set_message('Your Student Profile may not have been properly setup!');
+
+  }
+  elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student
+    //allocation info will be displayed here
+    drupal_set_message('Hostel Allocation already exists!');
+    $html = hostel_allocation_show_allocated_room($user->uid, variable_get('eduerp_current_session', ''));
+    $html .= "<br /><hr /><br />";
+
+  }
+  elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
+    drupal_set_message('Hostel Reservation already exists!');
+    $html = hostel_allocation_show_reserved_room($user->uid);
+    $html .= "<br /><hr /><br />";
+    $html .= "<b>Pay for Accomodation</b><br /><br />Please click <a href='../cart'><b>Here</b></a> to <a href='../cart'><b>Pay for your Reserved Room</b></a>.<br />";
+    $html .= "<br /><hr /><br />";
+    $html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
+    $html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
+
+  }
+  else {
+    //since this is coming from a logged in student, we'll try to simulate login in the hostel module by passing the studentUID
+    $html = hostel_allocation_direct_room_reservation($user->uid);
+  }
+  echo $html;
+  return ob_get_clean();
+}
+
+//Israel's functions ends here
+
+function student_user($op, &$edit, &$account, $category = NULL) {
+  global $user;
+  if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
+    eduerp_add_role($account, 'Applicant');
+    $edit['roles'] = NULL;
+  }
+>>>>>>> 749bd36e461a7942b58d1b939c33919d20ea71fc
+}

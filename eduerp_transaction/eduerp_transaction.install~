@@ -1,0 +1,49 @@
+<?php
+/* 
+ * @author Kayode Odeyemi
+ * Installs eduerp_transaction module
+ */
+
+
+/**
+ * Implementation hook_install
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function eduerp_transaction_install() {
+    switch ($GLOBALS['db_type']) {
+    case 'mysql':
+    case 'mysqli':
+      db_query("CREATE TABLE {eduerp_transaction} (
+        id int(11) NOT NULL auto_increment,
+        uid int(20) NOT NULL,
+        transaction_id varchar(25) NOT NULL,
+        order_id int(10) unsigned NOT NULL,
+        PRIMARY KEY (id)
+        UNIQUE KEY uid (uid,transaction_id)
+      ) /*ENGINE=InnoDB  DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT AUTO_INCREMENT=7*/ ");
+      break;
+    case 'pgsql':
+      db_query("CREATE TABLE {eduerp_transaction} (
+        id int(11) NOT NULL auto_increment,
+        uid int(20) NOT NULL,
+        transaction_id varchar(25) NOT NULL,
+        order_id int(10) unsigned NOT NULL,
+        PRIMARY KEY (id)
+        UNIQUE KEY uid (uid,transaction_id)
+      )");
+      break;
+  }
+
+    drupal_set_message('Eduerp Transaction is installed');
+}
+
+/**
+ * Implementation hook_uninstall
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+function eduerp_transaction_uninstall() {
+    db_query("DROP TABLE IF EXISTS {eduerp_transaction}");
+    drupal_set_message('Eduerp transaction has been uninstalled successfully');
+}
