@@ -5228,12 +5228,12 @@ function staff_create_programme_form2_submit($form, &$form_state) {
 
     //insert program_level_semester
     if (isset($_SESSION['eduerp_bkinfo'])) {
-      $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load, open_for_registrations) VALUES  ";
+      $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load) VALUES  ";
       for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
         for ($p = 1; $p <= 2; $p++) {
           $prog_credit_load = explode(',', $form_state['values']['credit_desc'.$i.$p]);
-            $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
-            $sql .= "('". arg(2) ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."', 0), ";
+          $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
+          $sql .= "('". arg(2) ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."'), ";
         }
 
       }
@@ -5268,12 +5268,12 @@ function staff_create_programme_form2_submit($form, &$form_state) {
 
     //insert into program_level_semester
     if (isset($_SESSION['eduerp_bkinfo'])) {
-      $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load, open_for_registrations) VALUES  ";
+      $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load) VALUES  ";
       for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
         for ($p = 1; $p <= 2; $p++) {
           $prog_credit_load = explode(',', $form_state['values']['credit_desc'.$i.$p]);
-            $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
-            $sql .= "('". $programme_nid ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."', 0), ";
+          $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
+          $sql .= "('". $programme_nid ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."'), ";
         }
 
       }
