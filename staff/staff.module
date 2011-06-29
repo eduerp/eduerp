@@ -5241,9 +5241,9 @@ function staff_create_programme_form2_submit($form, &$form_state) {
       $sql = "INSERT INTO program_level_semester (programme_id, level, semester, min_credit_load, max_credit_load, open_for_registrations) VALUES  ";
       for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
         for ($p = 1; $p <= 2; $p++) {
+          $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
           $open_for_reg = isset($open_for_reg_value[$level][$p]) ? $open_for_reg_value[$level][$p] : 0;
           $prog_credit_load = explode(',', $form_state['values']['credit_desc'.$i.$p]);
-          $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
           $sql .= "('". arg(2) ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."', '". $open_for_reg ."' ), ";
         }
 
