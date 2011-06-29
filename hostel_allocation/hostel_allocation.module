@@ -2829,7 +2829,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
     //Note that this reseult set is ordered based on Priority
      while ($row = db_fetch_object($blockRules)){
        foreach($studCate as $v){
-         if(strtolower($row->category_name) == $v){
+         if(trim(strtolower(strtoupper($row->category_name))) == $v){
 
       // if(strtolower($row->category_name) == 'freshmen' && $studCate['freshman']){ //the student is part of this category
           //get the total allowed bedspace for the category
@@ -2852,7 +2852,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   }
   else{
     //no rules EXISTS so quit!
-    //form_set_error('block_nid', Error_Types(141) + print_r($blockRules));
+    form_set_error('block_nid', Error_Types(141));
     return;
   }
 
