@@ -2703,10 +2703,12 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
 
 
 function hostel_allocation_enter_mat_number_form_submit($form, &$form_state){
-
+  global $EDUERPstudentInitiated;
   //$_SESSION['eduerp_reserve_room']['page'] = 2;
-  if(arg(2))
-  drupal_goto("hostel_allocation/direct_reservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
+  if($EDUERPstudentInitiated)
+    drupal_goto("student/hostelreservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
+  else
+    drupal_goto("hostel_allocation/direct_reservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
 
 }
 
