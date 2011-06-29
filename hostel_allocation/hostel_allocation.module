@@ -2424,9 +2424,6 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
   //unset($_SESSION['eduerp_reserve_room']['page']);
-
-  $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
-  $EDUERPstudentInitiated = $studentInitiated;
   
   if(arg(2) && isset($_SESSION['eduerp_reserve_room']['student_uid']) && arg(2) ==  $_SESSION['eduerp_reserve_room']['student_uid']){
     $page = 2;
@@ -2435,7 +2432,8 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
     $page = 1;
     unset($_SESSION['eduerp_reserve_room']);
   }
-  //$_SESSION['eduerp_reserve_room']['student_uid']
+  $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
+  $EDUERPstudentInitiated = $studentInitiated;
   
   $isAuthorized = true;
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
