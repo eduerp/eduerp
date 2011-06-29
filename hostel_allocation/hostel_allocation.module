@@ -2581,6 +2581,9 @@ function hostel_allocation_enter_mat_number_form(){
       );
 
     }
+    
+    
+    
     $form['submit'] = array('#id' => 'next', '#value' => 'Continue', '#type' => 'submit');
 
     return $form;
@@ -2660,6 +2663,10 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
 
     if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == "")
       form_set_error('mat_number', Error_Types(143));
+    else{
+      //show page 2	    
+      $_POST['page_num'] = 2;
+    }
     //$ps = node_load($student_profile->profile_first_choice);
 
     //$student_profile->profile_gender = 'male';
