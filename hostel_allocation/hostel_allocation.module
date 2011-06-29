@@ -2998,7 +2998,7 @@ function reserve_bedspace(&$reservationInfo){
 
 
         //insert cart info for the student
-        uc_cart_add_item($row->productNID, 1, $data=array(), $reservationInfo['uid']);
+        uc_cart_add_item($row->productNID, 1, $data=array('cart_type' => 'hostel_bedspace'), $reservationInfo['uid']);
         return true;
       }
       else {
@@ -3921,7 +3921,7 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
         //now remove the cart info from the student's profile
         //get the product nid
         //$sql = "SELECT field_uc_product_id_nid FROM {content_type_blocks} ctb, content_type_rooms ctr";
-        uc_cart_remove_item($productNID, $studentUID, $data = array('module' => 'uc_product'));
+        uc_cart_remove_item($productNID, $studentUID, $data = array('cart_type' => 'hostel_bedspace'));
       }
 
 
@@ -3974,16 +3974,19 @@ function hostel_allocation_order($op, &$order, $arg2) {
       }
 
     break;
-    case 'save':
-      // Do something to save payment info!
-      $val = hostel_allocation_allocate_bedspace($order->uid, $order->order_id);
-      if($val)
-        drupal_goto("student/hostelreservation");
-      else
-        drupal_set_message(Error_Types(151), 'error');
+    case 'update':
+      if($arg2 === 'completed'){
+        // This order got marked completed
+        $val = hostel_allocation_allocate_bedspace($order->uid, $order->order_id);
+        if($val)
+          drupal_goto("student/hostelreservation");
+        else
+          drupal_set_message(Error_Types(151), 'error');
+      }
+      
 
       break;
-  }
+  } 
 }
 //reservation payment ends here
 
