@@ -2452,7 +2452,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
   if($canProceed != '-1') {
     if( ! $studentInitiated)
       echo $navi;
-    drupal_set_message($canProceed);
+      drupal_set_message($canProceed);
     //echo 'ok';
     return ob_get_clean();
   }
@@ -2669,7 +2669,8 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
     $_SESSION['eduerp_reserve_room']['hostel_name'] = $hostelInfo[$values['hostel_nid']]['hostel_name'];
 
 
-
+    drupal_set_message("JAMB num is ". $student_profile->profile_jambno);
+    
     if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == "")
       form_set_error('mat_number', Error_Types(143));
        
