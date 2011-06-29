@@ -2423,7 +2423,7 @@ function should_reservation_proceed(){
 function hostel_allocation_direct_room_reservation($studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
-  unset($_SESSION['eduerp_reserve_room']['page']);
+  
 
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
   $EDUERPstudentInitiated = $studentInitiated;
@@ -2496,6 +2496,7 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
           echo "<b>Direct Room Reservation</b> - Please select the Block<br /><br /><br />";
 
         echo drupal_get_form('hostel_allocation_select_block_form');
+        unset($_SESSION['eduerp_reserve_room']['page']);
       break;
       case '1':
         unset($_SESSION['eduerp_reserve_room']);
@@ -2514,7 +2515,7 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
 
   echo '<br /><hr /><br />';
 
-  unset($_SESSION['eduerp_reserve_room']['page']);
+  
   unset($_SESSION['eduerp_reserve_room']['studentInitiated']);
   return ob_get_clean();
 
