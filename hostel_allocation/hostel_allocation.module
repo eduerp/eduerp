@@ -2805,7 +2805,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
 
 
   //test for other students
-  if(sizeof($studCate) <= 0)
+  if(! sizeof($studCate) )
     $studCate[] = "other students";
 
 
@@ -2823,7 +2823,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
 
   $reserved = false;
 
-  if(db_affected_rows($blockRules > 0)) {
+  if(db_affected_rows($blockRules) > 0) {
     //ok! rules exists so lets work with it
     //because we already know all the categories to expect, lets loop thru.
     //Note that this reseult set is ordered based on Priority
