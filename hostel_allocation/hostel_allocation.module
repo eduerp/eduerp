@@ -2423,7 +2423,7 @@ function should_reservation_proceed(){
 function hostel_allocation_direct_room_reservation($studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
-
+  unset($_SESSION['eduerp_reserve_room']['page']);
 
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
   $EDUERPstudentInitiated = $studentInitiated;
@@ -2455,7 +2455,7 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
 
   }
   else {
-  	  drupal_set_message($_POST['page_num']);
+  	  //drupal_set_message($_POST['page_num']);
     if(isset($_POST['page_num'])) $_SESSION['eduerp_reserve_room']['page'] = $_POST['page_num'];
     $page = isset($_SESSION['eduerp_reserve_room']['page']) ? $_SESSION['eduerp_reserve_room']['page'] : 1;
 
