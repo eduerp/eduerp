@@ -2830,7 +2830,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
      while ($row = db_fetch_object($blockRules)){
        foreach($studCate as $v){
          if(trim(strtolower(strtoupper($row->category_name))) == $v){
-
+           drupal_set_message("Found category ". $v);
       // if(strtolower($row->category_name) == 'freshmen' && $studCate['freshman']){ //the student is part of this category
           //get the total allowed bedspace for the category
 
@@ -2873,7 +2873,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   else { //no reservation was made
 
     drupal_set_message(Error_Types(140));
-    drupal_set_message(implode(",", $studCate));
+    //drupal_set_message(implode(",", $studCate));
   }
 }
 
