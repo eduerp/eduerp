@@ -2423,10 +2423,20 @@ function should_reservation_proceed(){
 function hostel_allocation_direct_room_reservation($studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
-  unset($_SESSION['eduerp_reserve_room']['page']);
+  //unset($_SESSION['eduerp_reserve_room']['page']);
 
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
   $EDUERPstudentInitiated = $studentInitiated;
+  
+  if(arg(2) && isset($_SESSION['eduerp_reserve_room']['student_uid']) && arg(2) ==  $_SESSION['eduerp_reserve_room']['student_uid']){
+    $page = 2;
+  }
+  else{
+    $page = 1;
+    unset($_SESSION['eduerp_reserve_room']);
+  }
+  //$_SESSION['eduerp_reserve_room']['student_uid']
+  
   $isAuthorized = true;
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
@@ -2456,8 +2466,8 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
   }
   else {
   	  //drupal_set_message($_POST['page_num']);
-    if(isset($_POST['page_num'])) $_SESSION['eduerp_reserve_room']['page'] = $_POST['page_num'];
-    $page = isset($_SESSION['eduerp_reserve_room']['page']) ? $_SESSION['eduerp_reserve_room']['page'] : 1;
+    //if(isset($_POST['page_num'])) $_SESSION['eduerp_reserve_room']['page'] = $_POST['page_num'];
+    //$page = isset($_SESSION['eduerp_reserve_room']['page']) ? $_SESSION['eduerp_reserve_room']['page'] : 1;
     //$page = isset($_POST['page_num']) ? $_POST['page_num'] : 1;
     //if(isset($_POST['page_num'])) $page
     //$page = isset($_POST['eduerp_room_reserve']) ? $_POST['eduerp_room_reserve'] : 1;
@@ -2694,7 +2704,8 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
 
 function hostel_allocation_enter_mat_number_form_submit($form, &$form_state){
 
-  $_SESSION['eduerp_reserve_room']['page'] = 2;
+  //$_SESSION['eduerp_reserve_room']['page'] = 2;
+  drupal_goto("hostel_allocation/direct_reservation/" . arg(2));
 
 }
 
@@ -2870,6 +2881,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
     if(db_affected_rows($reservedInfo) > 0){
       $rs = db_fetch_object($reservedInfo);
       drupal_set_message("Reservation was successful: Hostel - ". $rs->hostel_name .", Block - ". $rs->block_name .", Room - ". $rs->room_name ." ");
+      drupal_goto("hostel_allocation/direct_reservation");
     }
     else
       drupal_set_message(Error_Types(), 'error');
