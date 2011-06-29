@@ -2423,7 +2423,7 @@ function should_reservation_proceed(){
 function hostel_allocation_direct_room_reservation($studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
-  
+  unset($_SESSION['eduerp_reserve_room']['page']);
 
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
   $EDUERPstudentInitiated = $studentInitiated;
@@ -2497,7 +2497,7 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
 
         echo drupal_get_form('hostel_allocation_select_block_form');
         
-      break;
+        break;
       case '1':
         unset($_SESSION['eduerp_reserve_room']);
         if( ! $studentInitiated) {
@@ -2505,7 +2505,7 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
           echo "<b>Direct Room Reservation</b> - Please enter the Student's Matriculation Number.<br />";
         }
         echo drupal_get_form('hostel_allocation_enter_mat_number_form');
-      break;
+        break;
 
       default:
         echo "Wrong Selection was made!";
@@ -2744,7 +2744,7 @@ function hostel_allocation_select_block_form(){
 function hostel_allocation_select_block_form_validate($form, &$form_state){
   global $EDUERPallocationCategory;
   $values = $form_state['values'];
-  $_SESSION['eduerp_reserve_room']['page'] = 1;
+  unset($_SESSION['eduerp_reserve_room']['page']);
   
   $_SESSION['eduerp_reserve_room']['block_nid'] = $values['block_nid'];
   if($_SESSION['eduerp_reserve_room']['reservation_type'] == 'single') $_SESSION['eduerp_reserve_room']['room_nid'] = $values['room_nid'];
@@ -2910,7 +2910,7 @@ function hostel_allocation_select_block_form_submit($form, &$form_state){
   //drupal_goto('hostel_allocation/direct_reservation');
 
   */
-  $_SESSION['eduerp_reserve_room']['page'] = 1;
+  unset($_SESSION['eduerp_reserve_room']['page']);
 }
 
 
