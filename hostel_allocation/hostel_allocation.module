@@ -2420,7 +2420,7 @@ function should_reservation_proceed(){
 
 
 //direct room reservation starts here
-function hostel_allocation_direct_room_reservation($studentInitiated=0){
+function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitiated=0){
   global $EDUERPstudentInitiated;
   ob_start();
   //unset($_SESSION['eduerp_reserve_room']['page']);
@@ -2435,6 +2435,7 @@ function hostel_allocation_direct_room_reservation($studentInitiated=0){
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
   $EDUERPstudentInitiated = $studentInitiated;
   
+  drupal_set_message($studentInitiated);
   $isAuthorized = true;
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
@@ -2703,7 +2704,7 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
 function hostel_allocation_enter_mat_number_form_submit($form, &$form_state){
 
   //$_SESSION['eduerp_reserve_room']['page'] = 2;
-  drupal_goto("hostel_allocation/direct_reservation/" . $_SESSION['eduerp_reserve_room']['student_uid']);
+  drupal_goto("hostel_allocation/direct_reservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
 
 }
 
