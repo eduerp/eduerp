@@ -5223,16 +5223,16 @@ function staff_create_programme_form2_submit($form, &$form_state) {
 
     node_save($node);
     drupal_set_message($_SESSION['eduerp_bkinfo']->programme_name .' Programme was updated!<br />');
-    
+
     //get the status of open_for_registrations for the program
-    $sql = "SELECT program_id, level, semester, open_for_registrations FROM program_level_semester WHERE programme_id = '". arg(2) ."'";
+    $sql = "SELECT programme_id, level, semester, open_for_registrations FROM program_level_semester WHERE programme_id = '". arg(2) ."'";
     $rs = db_query($sql);
     //arrange in 2 dim array
     while($r = db_fetch_object($rs)){
-      $open_for_reg_value[$r->level][$r->semester] = $r->open_for_registrations;  
-	  
+      $open_for_reg_value[$r->level][$r->semester] = $r->open_for_registrations;
+
     }
-    
+
     //delete all entries reping the programme.
     db_query("DELETE FROM program_level_semester WHERE programme_id = '". arg(2) ."'");
 
