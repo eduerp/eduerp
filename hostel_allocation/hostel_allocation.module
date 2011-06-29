@@ -2756,7 +2756,7 @@ function hostel_allocation_select_block_form(){
 
 
 function hostel_allocation_select_block_form_validate($form, &$form_state){
-  global $EDUERPallocationCategory;
+  global $EDUERPallocationCategory, $EDUERPstudentInitiated;
   $values = $form_state['values'];
   unset($_SESSION['eduerp_reserve_room']['page']);
   
@@ -2884,8 +2884,14 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
     if(db_affected_rows($reservedInfo) > 0){
       $rs = db_fetch_object($reservedInfo);
       drupal_set_message("Reservation was successful: Hostel - ". $rs->hostel_name .", Block - ". $rs->block_name .", Room - ". $rs->room_name ." ");
-      if(arg(2))
+      //if(arg(2))
+       // drupal_goto("hostel_allocation/direct_reservation");
+
+      if($EDUERPstudentInitiated)
+        drupal_goto("student/hostelreservation");
+      else
         drupal_goto("hostel_allocation/direct_reservation");
+    
     }
     else
       drupal_set_message(Error_Types(), 'error');
