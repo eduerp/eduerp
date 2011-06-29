@@ -2432,8 +2432,8 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
     $page = 1;
     unset($_SESSION['eduerp_reserve_room']);
   }
-  $_SESSION['eduerp_reserve_room']['studentInitiated'] = $studentInitiated;
-  $EDUERPstudentInitiated = $studentInitiated;
+  $_SESSION['eduerp_reserve_room']['studentInitiated'] = ($studentInitiated !=0) ? $studentUID : $studentInitiated; //$studentInitiated;
+  $EDUERPstudentInitiated = ($studentInitiated != 0) ? $studentUID : $studentInitiated;
   
   drupal_set_message($studentInitiated);
   $isAuthorized = true;
