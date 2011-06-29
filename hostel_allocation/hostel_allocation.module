@@ -2435,7 +2435,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = ($studentInitiated !=0) ? $studentUID : $studentInitiated; //$studentInitiated;
   $EDUERPstudentInitiated = ($studentInitiated != 0) ? $studentUID : $studentInitiated;
   
-  drupal_set_message($studentInitiated);
+  
   $isAuthorized = true;
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
@@ -2669,7 +2669,7 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
     $_SESSION['eduerp_reserve_room']['hostel_name'] = $hostelInfo[$values['hostel_nid']]['hostel_name'];
 
 
-    drupal_set_message("JAMB num is ". $student_profile->profile_jambno);
+    //drupal_set_message("JAMB num is ". $student_profile->profile_jambno);
     
     if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == "")
       form_set_error('mat_number', Error_Types(143));
