@@ -4939,20 +4939,8 @@ function staff_create_edit_programme() {
     if (! isset($_POST['showOn'])) {
       echo "<b>Create Programme...Step 1 of 2</b> - Please fill the form<br /><br />";
       echo drupal_get_form('staff_create_programme_form');
-    }
-    else {
-      echo drupal_get_form('staff_create_programme_back_form') . "<br />";
-      echo "<b>Create Programme continued...Step 2 of 2</b> - Please fill the form<br /><br />";
-      if (isset($_POST['showOn'])) {
-        echo "Programme Name: <b>" . $_SESSION['eduerp_bkinfo']->programme_name . "</b><br /><br />";
-        echo "Programme Duration: <b>" . $_SESSION['eduerp_bkinfo']->duration . "</b><br />";
-
-      }
-      echo drupal_get_form('staff_create_programme_form2') . "<br />";
-      echo drupal_get_form('staff_create_programme_back_form') . "<br />";
-      //echo drupal_get_form('staff_create_programme_cancel_form');
-    }
-
+      
+      
       echo '<br /><hr /><br />';
       echo "<b>Modify Programme</b> - Select a Programme to modify it<br /><br />";
       echo drupal_get_form('staff_modify_programme_form');
@@ -4969,6 +4957,21 @@ function staff_create_edit_programme() {
       //display existing programmes here
       echo '<br /><hr /><br />';
       echo staff_display_available_programmes($programmeInfo);
+    }
+    else {
+      echo drupal_get_form('staff_create_programme_back_form') . "<br />";
+      echo "<b>Create Programme continued...Step 2 of 2</b> - Please fill the form<br /><br />";
+      if (isset($_POST['showOn'])) {
+        echo "Programme Name: <b>" . $_SESSION['eduerp_bkinfo']->programme_name . "</b><br /><br />";
+        echo "Programme Duration: <b>" . $_SESSION['eduerp_bkinfo']->duration . "</b><br />";
+
+      }
+      echo drupal_get_form('staff_create_programme_form2') . "<br />";
+      echo drupal_get_form('staff_create_programme_back_form') . "<br />";
+      //echo drupal_get_form('staff_create_programme_cancel_form');
+    }
+
+      
   }
 
 
@@ -5163,7 +5166,9 @@ function staff_create_programme_form2() {
           '#required' => TRUE
         );
         if ($credit_desc) $form['credit_desc'.$i.$p]['#default_value'] = $credit_desc[$i * $_SESSION['eduerp_bkinfo']->start_level][$p];
-
+        //we need to override the above line of some data previously existed on this page
+        //if(isset($_SESSION['eduerp_page_2_bkinfo'][$i.$p]))
+        //  $form['credit_desc'.$i.$p]['#default_value'] = $_SESSION['eduerp_page_2_bkinfo'][$i.$p]; //$credit_desc[$i * $_SESSION['eduerp_bkinfo']->start_level][$p];
       }
 
     }
@@ -5178,6 +5183,7 @@ function staff_create_programme_form2() {
       '#type' => 'submit'
     );
     if ($authorizeEdit) $form['submit']['#value'] = 'Update Programme';
+    
     return $form;
   }
 }
@@ -5252,7 +5258,7 @@ function staff_create_programme_form2_submit($form, &$form_state) {
       db_query($sql);
       unset($_SESSION['eduerp_bkinfo']);
     }
-
+    $_POST['showOn'] = null;
     drupal_goto("staff/createmodifyprog");
   }
   else {
@@ -5293,7 +5299,7 @@ function staff_create_programme_form2_submit($form, &$form_state) {
       unset($_SESSION['eduerp_bkinfo']);
     }
   }
-
+  $_POST['showOn'] = null;
 }
 
 
@@ -5316,11 +5322,17 @@ function staff_create_programme_back_form() {
 
 function staff_create_programme_back_form_validate($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
+  
+  
+  
 }
 
 
 function staff_create_programme_back_form_submit($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
+  
+  $_POST['showOn'] = null;
+  
 }
 
 
