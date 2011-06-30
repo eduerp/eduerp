@@ -4935,7 +4935,7 @@ function staff_create_edit_programme() {
     //allow for some easy navigation
     echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Programme</font><br /><br />";
     echo '<br /><hr /><br /><br />';
-    drupal_set_message('this is '. $_POST['showOn']);
+    
     if (! isset($_POST['showOn'])) {
       echo "<b>Create Programme...Step 1 of 2</b> - Please fill the form<br /><br />";
       echo drupal_get_form('staff_create_programme_form');
@@ -5260,6 +5260,7 @@ function staff_create_programme_form2_submit($form, &$form_state) {
       unset($_SESSION['eduerp_bkinfo']);
     }
     $_POST['showOn'] = null;
+    $_SESSION['eduerp_showOn'] = null;
     drupal_goto("staff/createmodifyprog");
   }
   else {
@@ -5301,6 +5302,7 @@ function staff_create_programme_form2_submit($form, &$form_state) {
     }
   }
   $_POST['showOn'] = null;
+  $_SESSION['eduerp_showOn'] = null;
 }
 
 
