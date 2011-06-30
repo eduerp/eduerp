@@ -1442,14 +1442,16 @@ function student_hostel_reservation(){
   }
   elseif(is_allocation_existing($user->uid, variable_get('eduerp_current_session', ''))) {//make sure no allocation exists for the student
     //allocation info will be displayed here
-    drupal_set_message('Hostel Allocation already exists!');
-    $html = hostel_allocation_show_allocated_room($user->uid, variable_get('eduerp_current_session', ''));
+    //drupal_set_message('Hostel Allocation already exists!');
+    $html .= "<div><b>Below is the details of your Hostel Allocation:</b></div><br /><br />";
+    $html .= hostel_allocation_show_allocated_room($user->uid, variable_get('eduerp_current_session', ''));
     $html .= "<br /><hr /><br />";
 
   }
   elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
-    drupal_set_message('Hostel Reservation already exists!');
-    $html = hostel_allocation_show_reserved_room($user->uid);
+    //drupal_set_message('Hostel Reservation already exists!');
+    $html .= "<div><b>Please perform any of the following action on your Reserved Room:</b></div><br /><br />";
+    $html .= hostel_allocation_show_reserved_room($user->uid);
     $html .= drupal_get_form('save_reservation');
     $html .= "<br /><hr /><br />";
     $html .= "<b>Pay for Accomodation</b><br /><br />Please click <a href='../cart'><b>Here</b></a> to <a href='../cart'><b>Pay for your Reserved Room</b></a>.<br />";
