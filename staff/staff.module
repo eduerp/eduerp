@@ -4935,28 +4935,29 @@ function staff_create_edit_programme() {
     //allow for some easy navigation
     echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;Create/Modify a Programme</font><br /><br />";
     echo '<br /><hr /><br /><br />';
-
-    if (! isset($_POST['showOn']) || $_POST['showOn'] == 1) {
+    
+    if (! isset($_POST['showOn'])) {
       echo "<b>Create Programme...Step 1 of 2</b> - Please fill the form<br /><br />";
       echo drupal_get_form('staff_create_programme_form');
       
-      
+     
       echo '<br /><hr /><br />';
       echo "<b>Modify Programme</b> - Select a Programme to modify it<br /><br />";
       echo drupal_get_form('staff_modify_programme_form');
-
+      
       echo '<br /><hr /><br />';
       echo '<b>Specify Courses for a Programme</b> - Click to proceed with specifying course for a programme<br /><br />';
       echo drupal_get_form('staff_specify_course_proceed_form');
-
+      
 
       echo '<br /><hr /><br />';
-      echo '<b>Verify all Courses needed for a Programme are being run for a Semester - Click to proceed with verifying courses<br /><br />';
+      echo '<b>Verify all Courses needed for a Programme are being run for a Semester</b> - Click to proceed with verifying courses<br /><br />';
       echo drupal_get_form('staff_verify_course_proceed_form');
-
+      
       //display existing programmes here
       echo '<br /><hr /><br />';
       echo staff_display_available_programmes($programmeInfo);
+      
     }
     else {
       echo drupal_get_form('staff_create_programme_back_form') . "<br />";
@@ -5130,7 +5131,7 @@ function staff_create_programme_form_validate($form, &$form_state) {
 function staff_create_programme_form_submit($form, &$form_state) {
 
   //the form has been validated. put all in a session variable and show the next form
-  $_SESSION['eduerp_showOn'] = 1; $_POST['showOn'] = 1;
+  $_SESSION['eduerp_showOn'] = 2; $_POST['showOn'] = 2;
   foreach ($form_state['values'] as $k  => $v)
     $bkinfo->{$k} = $v;
 
@@ -5259,6 +5260,7 @@ function staff_create_programme_form2_submit($form, &$form_state) {
       unset($_SESSION['eduerp_bkinfo']);
     }
     $_POST['showOn'] = null;
+    $_SESSION['eduerp_showOn'] = null;
     drupal_goto("staff/createmodifyprog");
   }
   else {
@@ -5300,6 +5302,7 @@ function staff_create_programme_form2_submit($form, &$form_state) {
     }
   }
   $_POST['showOn'] = null;
+  $_SESSION['eduerp_showOn'] = null;
 }
 
 
@@ -5330,8 +5333,8 @@ function staff_create_programme_back_form_validate($form, &$form_state) {
 
 function staff_create_programme_back_form_submit($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
-  
-  $_POST['showOn'] = null;
+  $_SESSION['eduerp_showOn'] = null;
+  //$_POST['showOn'] = null;
   
 }
 
