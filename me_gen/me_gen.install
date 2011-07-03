@@ -7,4 +7,157 @@ function me_gen_install() {
 function me_gen_uninstall() {
   drupal_set_message('me_gen module uninstalled');
 }
+
+function me_gen_enable(){
+
+  
+  /**
+  For e-mail gen tables
+  */
+  //create email_domain_formats
+  db_query("
+	CREATE TABLE IF NOT EXISTS `email_domain_formats` (
+	  `email_domain_format_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `email_domain_format` varchar(255) NOT NULL,
+	  `email_domain_format_description` text NOT NULL,
+	  PRIMARY KEY (`email_domain_format_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3  "
+  );
+  //populate email_domain_formats
+  db_query("
+  	REPLACE INTO `email_domain_formats` (`email_domain_format_id`, `email_domain_format`, `email_domain_format_description`) VALUES
+	(1, 'single & group domain', 'Exampls:\r\n1. @school.edu.ng\r\n2. @student.school.edu.ng'),
+	(2, 'subdomains based on faculty/department', 'Example:\r\n\r\n@science.school.edu.ng, \r\n@arts.school.edu.ng ') "
+  );
+  
+  
+  //create email_faculty_subdomain_description
+  db_query("
+	CREATE TABLE IF NOT EXISTS `email_faculty_subdomain_description` (
+	  `email_faculty_subdomain_description_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `faculty_nid` int(11) NOT NULL,
+	  `email_subdomain` varchar(255) NOT NULL,
+	  PRIMARY KEY (`email_faculty_subdomain_description_id`),
+	  KEY `faculty_nid` (`faculty_nid`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 "
+  );
+  
+  //email_general_domain_description
+  db_query("
+	CREATE TABLE IF NOT EXISTS `email_general_domain_description` (
+	  `email_general_domain_description_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `email_domain` text NOT NULL,
+	  PRIMARY KEY (`email_general_domain_description_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 
+	"
+  );
+
+  //email_institution_choice
+  db_query("
+	CREATE TABLE IF NOT EXISTS `email_institution_choice` (
+	  `email_domain_format_id` int(11) NOT NULL,
+	  `email_user_format_id` int(11) NOT NULL,
+	  KEY `email_user_format_id` (`email_user_format_id`),
+	  KEY `email_domain_format_id` (`email_domain_format_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8
+ ");
+  
+  //email_user_formats
+  db_query("
+  	
+	CREATE TABLE IF NOT EXISTS `email_user_formats` (
+	  `email_user_format_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `email_user_format` varchar(255) NOT NULL,
+	  `email_user_format_description` text NOT NULL,
+	  PRIMARY KEY (`email_user_format_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3 
+  ");
+  //populate email_user_formats
+  db_query("
+	REPLACE INTO `email_user_formats` (`email_user_format_id`, `email_user_format`, `email_user_format_description`) VALUES
+	(1, '[last_name][last 2 digits of session_name][student_serial] ', 'e.g buhari10001@school.com\r\nWHERE\r\nbuhari = lastname\r\n10     = last 2 digits of session name\r\n001    = unique number assigned to student as part of their matriculation number'),
+	(2, 'matriculation number', 'This setting will use the student''s mat number as the userpart of the email address. e.g VUG-PHY-09-001@school.com') "
+
+  );
+  
+  /**
+  For mat num gen tables
+  */
+  //mat_num_faculty_serial
+  db_query("
+	CREATE TABLE IF NOT EXISTS `mat_num_faculty_serial` (
+	  `mat_num_faculty_serial_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `faculty_nid` int(11) NOT NULL,
+	  `session_name` varchar(20) NOT NULL,
+	  `next_num` int(3) unsigned zerofill NOT NULL DEFAULT '001',
+	  PRIMARY KEY (`mat_num_faculty_serial_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 "
+  );
+  
+  //mat_num_formats
+  db_query("CREATE TABLE IF NOT EXISTS `mat_num_formats` (
+	  `mat_num_format_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `mat_num_example` varchar(255) NOT NULL,
+	  `mat_num_description` text NOT NULL,
+	  PRIMARY KEY (`mat_num_format_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3 "
+  );
+  
+  //populate mat_num_formats
+  db_query("
+	REPLACE INTO `mat_num_formats` (`mat_num_format_id`, `mat_num_example`, `mat_num_description`) VALUES
+	(1, 'VUG-PHY-09-003', 'This is Veritas Style:\r\n[institution_prefix]-[faculty_abbr]-[2-digits_year_of_entry]-[student_serial]'),
+	(2, '0611406096', 'This is UDOSOK style:\r\nThe first 2 digits rep. Year of entry i.e 06.\r\nThe third digit rep. mode of entry i.e 1 for 100 level & 2 for 200 level.\r\nThe fourth & fifth digits rep. faculty code i.e 14.\r\nThe sixth & seventh digits rep.departmental code for that faculty i.e 06.\r\nThe last 3 digits rep. serial number i.e 096.') "
+  );
+  
+  //mat_num_format_details
+  db_query("
+  	  
+	CREATE TABLE IF NOT EXISTS `mat_num_format_details` (
+	  `mat_num_format_id` int(11) NOT NULL,
+	  `mat_num_institution_prefix` varchar(10) NOT NULL,
+	  `mat_num_separator` char(1) NOT NULL,
+	  KEY `mat_num_format_id` (`mat_num_format_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8 "
+  );
+  
+  //mat_num_general_serial
+  db_query("
+	CREATE TABLE IF NOT EXISTS `mat_num_general_serial` (
+	  `mat_num_general_serial_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `session_name` varchar(20) NOT NULL,
+	  `next_num` int(3) unsigned zerofill NOT NULL DEFAULT '001',
+	  PRIMARY KEY (`mat_num_general_serial_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=5 "
+  );
+  
+  //mat_num_institution_choice
+  db_query("
+	CREATE TABLE IF NOT EXISTS `mat_num_institution_choice` (
+	  `mat_num_format_id` int(11) NOT NULL,
+	  `mat_num_serial_gen_type_id` int(11) NOT NULL,
+	  KEY `mat_num_format_id` (`mat_num_format_id`,`mat_num_serial_gen_type_id`)
+	) ENGINE=InnoDB DEFAULT CHARSET=utf8 "
+  	 
+  );
+  
+  //mat_num_serial_gen_types
+  db_query("
+  	CREATE TABLE IF NOT EXISTS `mat_num_serial_gen_types` (
+	  `mat_num_serial_gen_type_id` int(11) NOT NULL AUTO_INCREMENT,
+	  `mat_num_serial_gen_type_description` varchar(255) NOT NULL,
+	  PRIMARY KEY (`mat_num_serial_gen_type_id`)
+	) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=3 "
+  );
+
+  	  
+  //populate mat_num_serial_gen_types
+  db_query("
+	REPLACE INTO `mat_num_serial_gen_types` (`mat_num_serial_gen_type_id`, `mat_num_serial_gen_type_description`) VALUES
+	(1, 'General Serial Numbering.'),
+	(2, 'Faculty Based Serial Numbering') "  
+  );
+  	  
+  //drupal_set_message('me_gen module installed');
+}
 ?>
