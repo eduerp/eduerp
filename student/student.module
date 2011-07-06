@@ -417,6 +417,7 @@ function student_clearance() {
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
       _perform_clearance($student_id);
+      student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
       drupal_set_message('Student has been cleared');
     elseif ($_POST['clearance']):
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
@@ -442,6 +443,7 @@ function student_clearance() {
         $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
         _perform_clearance($student_id);
+        student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
@@ -496,6 +498,26 @@ function _perform_clearance($student_id) {
   drupal_mail_send($message);
 }
 
+/**
+ * Logs clearance information
+ * @global  $user
+ * @param <type> $student_id
+ * @param <type> $clearance_date
+ * @param  $user 
+ */
+function student_log_clearance($student_id, $clearance_date, $user) {
+    global $user;
+    $user_email = isset($user->uid) ? $user->mail : $user->uid;
+    $clearance_date = isset($node->field_clearance_date[0]['value']) ? $node->field_clearance_date[0]['value'] : date('Y-m-d H:i:s');
+    $student_id = isset($student_id) ? $student_id : $_POST['student_uid'];
+
+    $user_profile = new UserProfile($student_id);
+
+    $student = $user_profile->profile_first_name . ' ' . $user_profile->profile_last_name;
+
+    watchdog('Clearance', t('New clearance was successfully created by email, on studentid.'), array('email' => $user->mail, 'studentid' => $student));
+   
+}
 
 function set_matriculation_number($student_id, $formerProgID=0) {
   // Generate the matriculation number for this student
