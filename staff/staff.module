@@ -149,9 +149,40 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
+  
+  //fee menus starts here
+  $items['staff/schoolfeesadmin'] = array(
+    'title' => 'School Fees Administration',
+    'page callback' => 'staff_school_fees_admin',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK
+  );
 
+  $items['staff/schoolfeesetup'] = array(
+    'title' => 'School Fees Setup',
+    'page callback' => 'staff_school_fees_setup',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK
+  );
+  
+  $items['staff/scholarshippayment'] = array(
+    'title' => 'Scholarship Payment',
+    'page callback' => 'staff_school_fees_scholarship_payment',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK
+  );
+  
+  $items['staff/authoriseinstalment'] = array(
+    'title' => 'Authorise Instalment',
+    'page callback' => 'staff_school_fees_authorise_instalment_payment',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK
+  );
+  
+  //fee menus ends here
   return $items;
 }
+
 
 
 function _staff_ajax() {
@@ -2634,13 +2665,14 @@ function semester_admin() {
   echo drupal_get_form('set_session_form');
   echo '<br /><hr /><br />';
 
-  echo '<a href="' . url('staff/missingcourses') . '">Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)';
+  echo '<a href="' . url('staff/missingcourses') . '">Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/checkverifyprogmme') . '">Check have all existing Courses required for all Programmes been Verified (associated with the Programme)</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo 'List the Fees for all Programmes by Level & Semester[Feature #444]';
+  //echo 'List the Fees for all Programmes by Level & Semester[Feature #444]';
+  echo '<a href="' . url('staff/schoolfeesadmin') . '">School Fees Administration</a>';
   echo '<br /><br /><hr /><br />';
 
   echo drupal_get_form('open_close_student_registration_form');
@@ -8300,5 +8332,96 @@ function staff_display_missing_courses_for_a_semester($session, $semester) {
   return $str;
 
 }
+
+//school fees module starts here
+
+function staff_school_fees_admin(){
+ global $user;
+  ob_start();
+
+  if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
+
+  $html = '<br /><hr /><br />';
+  $isAuthorized = true; //please remember to take this off Israel
+  if (! $isAuthorized) {
+    echo Error_Types(104);
+
+  }
+  else {
+    $html .= "<font size = '1px'><a href = 'semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;School Fees Administration</font><br /><br />";
+    $html .= '<hr /><br />';
+      
+    $html .= "Welcome to <b>School Fees Administration</b>. Please click any of the links below to proceed<br />";
+    $html .= '<br />';
+    
+    $html .= '<a href="' . url('staff/schoolfeesetup') . '">School Fees Setup</a> - Use this link to setup school fees for the available Programs';
+    $html .= '<br /><br />';
+    
+    
+    $html .= '<a href="' . url('staff/scholarshippayment') . '">Scholarship Payment</a> - Use this link to effect Scholarship payments';
+    $html .= '<br /><br />';
+    
+    
+    $html .= '<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a> - Use this link to authrise a student to pay he/her fees in instalments';
+    $html .= '<br /><br />';
+    
+  }
+
+  $html .= '<br /><hr /><br />';
+  
+  echo $html;
+  return ob_get_clean();
+	
+	
+}
+
+
+function staff_school_fees_setup(){
+  global $user;
+  ob_start();
+  $html = "";
+  $html = '<br /><hr /><br />';
+  $html .= "<font size = '1px'><a href = 'semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = 'schoolfeesadmin/'>School Fees Administration</a>&nbsp; &raquo; &nbsp;School Fees Setup</font><br /><br />";
+  $html .= '<hr /><br />';
+  $html .= "Welcome to <b>School Fees Setup</b>. Please click any of the links below to proceed<br />";
+  $html .= '<br />';
+  
+  
+  echo $html;
+  return ob_get_clean();
+}
+
+function staff_school_fees_scholarship_payment(){
+  global $user;
+  ob_start();
+  $html = "";
+  $html = '<br /><hr /><br />';
+  $html .= "<font size = '1px'><a href = 'semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = 'schoolfeesadmin/'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Scholarship Payment</font><br /><br />";
+  $html .= '<hr /><br />';
+  $html .= "Welcome to <b>Scholarship Payment</b>. Please click any of the links below to proceed<br />";
+  $html .= '<br />';
+  
+  
+  echo $html;
+  return ob_get_clean();
+}
+
+
+function staff_school_fees_authorise_instalment_payment(){
+  global $user;
+  ob_start();
+  $html = "";
+  $html = '<br /><hr /><br />';
+  $html .= "<font size = '1px'><a href = 'semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = 'schoolfeesadmin/'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Authorise Instalment Payment</font><br /><br />";
+  $html .= '<hr /><br />';
+  $html .= "Welcome to <b>Authorise Instalment Payment</b>. Please click any of the links below to proceed<br />";
+  $html .= '<br />';
+  
+  
+  echo $html;
+  return ob_get_clean();
+}
+
+//school fee module ends here
 
 ?>
