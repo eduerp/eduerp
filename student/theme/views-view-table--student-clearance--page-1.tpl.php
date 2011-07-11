@@ -55,7 +55,6 @@
         <th style="text-align:right">
           <input type="checkbox" name="clearance" value="1" CLEARANCE_OPTIONS />
         </th>
-        <td>Clear Student</td>
       </tr>
     <?php
       $row_class = ($row_class == "even") ? "odd" : "even";
