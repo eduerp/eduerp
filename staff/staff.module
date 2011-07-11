@@ -9155,12 +9155,14 @@ function staff_school_fees_create_modify_fee_setup2_form() {
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
   $assignDefault=false;
   foreach($feeItems as $k => $v) {
-    if(! isset($_POST[$k."txt"])){
+    //if(! isset($_POST[$k."txt"])){
+    if(isset($_SESSION['eduerp_fee_setup']['ini_edit_page2']) && ! $_SESSION['eduerp_fee_setup']['ini_edit_page2']){
       $assignDefault=true;
       $selFeeItems[$k.'txt'] = $_SESSION['eduerp_fee_setup']['items'][$k];  
+      
     }
   }
-  
+  $_SESSION['eduerp_fee_setup']['ini_edit_page2'] = true;
   if($assignDefault){
     if(isset($_SESSION['eduerp_fee_setup']['programme_nid'])){
       $selFeeItems['programme_nid'] = $_SESSION['eduerp_fee_setup']['programme_nid'];    
@@ -9911,8 +9913,9 @@ function staff_school_fees_test_fee_setup_form_submit($form, &$state) {
 
 function prepare_fee_setup_for_edit($setupNID){
   
-  unset($_SESSION['eduerp_fee_setup']);
-  
+  unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup']=null;
+  $_SESSION['eduerp_fee_setup']['ini_edit_page1'] = false;
+  $_SESSION['eduerp_fee_setup']['ini_edit_page2'] = false;
   
   $feeSetup = get_school_fee_setup($setupNID);
   //tbl=>formfield
