@@ -9150,20 +9150,25 @@ function staff_school_fees_create_modify_fee_setup2_form() {
   $editMode = (arg(2) && is_fee_setup_existing(arg(2))) ? true : false;
   //display the list of all available fee items
   //get fee items
+  //if(! isset($_POST[$k."txt"])){
+    if($editMode && ! $_SESSION['eduerp_fee_setup']['ini_edit_page2'] || $_SESSION['eduerp_fee_setup']['ini_edit_page2'] == false){
+      $assignDefault=true;
+      
+      $feeSetupDetails = get_fee_setup_item_details(arg(2));
+      while($r = db_fetch_object($feeSetupDetails)){
+        $_SESSION['eduerp_fee_setup']['items'][$r->item_nid] = substr($r->amount, 0, -3); 
+      }
+    }
   $feeItems = get_school_fee_items();
   
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
   $assignDefault=false;
-  foreach($feeItems as $k => $v) {
-    //if(! isset($_POST[$k."txt"])){
-    if(! $_SESSION['eduerp_fee_setup']['ini_edit_page2'] || $_SESSION['eduerp_fee_setup']['ini_edit_page2'] == false){
-      $assignDefault=true;
-      
+  foreach($feeItems as $k => $v) {  
       if(isset($_SESSION['eduerp_fee_setup']['items'][$k]))
         $selFeeItems[$k.'txt'] = $_SESSION['eduerp_fee_setup']['items'][$k];
 
       drupal_set_message('Assigned '. $_SESSION['eduerp_fee_setup']['items'][$k]);
-    }
+    
   }
   $_SESSION['eduerp_fee_setup']['ini_edit_page2'] = true;
   
