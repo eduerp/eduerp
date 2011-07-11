@@ -424,6 +424,7 @@ function student_clearance() {
     endif;
 
     node_save($student_clearance);
+		
   } else {
     // node doesn't exist
     if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
@@ -443,14 +444,15 @@ function student_clearance() {
         $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
         _perform_clearance($student_id);
-        //rules_invoke_event('student_clearance_cleared', $student_id, $node);
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
       endif;
       node_save($node);
-      rules_invoke_event('student_cleared',  $user, $student_id, $node);
+			if(module_exists('rules')) {
+				rules_invoke_event('student_cleared',  $user, $student_id, $node);
+			}
     }
   }
 

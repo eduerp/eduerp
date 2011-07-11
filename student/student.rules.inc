@@ -106,6 +106,7 @@ function student_rules_action_info() {
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function student_action_create_agreement($author, $title, $student_id, $settings) {
+	if (node_access('create', $settings['type'], $author)) {
     module_load_include('inc', 'node', 'node.pages');
     $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
     //$node = student_clearance_node_load($student_id);
@@ -125,6 +126,7 @@ function student_action_create_agreement($author, $title, $student_id, $settings
     $node->body = variable_get('eduerp_agreement', '');
 
     return array('node_added', node_save($node));
+	}
 }
 
 function student_action_create_agreement_form($settings, &$form) {
