@@ -78,6 +78,13 @@ function eduerp_admin_settings() {
     '#tree' => TRUE
   );
 
+  $form['eduerp_agreement'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Eduerp Agreement'),
+    '#default_value' => variable_get('eduerp_agreement', ''),
+    '#description' => t("Enter here the agreement (terms of use) that binds the student and the institution.")
+  );
+  
   return system_settings_form($form);
 }
 
