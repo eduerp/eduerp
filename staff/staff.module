@@ -9082,31 +9082,31 @@ function staff_school_fees_create_modify_fee_setup1_form() {
       '#type' => 'select',
       '#options' => array(''=>'--select one--') + get_fee_structue_types(), 
       '#title' => 'Fee Structure Type',
-      '#required'  => TRUE
+      //'#required'  => TRUE
 
       );
   if ($feeSetup) $form['fee_structure_type']['#value'] = $feeSetup['fee_structure_type'];
-  if ($editMode) $form['fee_structure_type']['#options'] = array(''=>'--select one--') + get_fee_structue_types($feeSetup['fee_structure_type'], true);
+  if ($editMode) $form['fee_structure_type']['#options'] = array(''=>'--select one--') + get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type'], true);
 
   $form['fee_student_level_type'] = array(
       '#type' => 'select',
       '#options' => array(''=>'--select one--') + get_fee_student_level_types(), 
       '#title' => 'Student Level Type',
-      '#required'  => TRUE
+      //'#required'  => TRUE
 
       );
   if ($feeSetup) $form['fee_student_level_type']['#value'] = $feeSetup['fee_student_level_type'];
-  if ($editMode) $form['fee_student_level_type']['#options'] = array(''=>'--select one--') + get_fee_student_level_types($feeSetup['fee_student_level_type'], true);
+  if ($editMode) $form['fee_student_level_type']['#options'] = array(''=>'--select one--') + get_fee_student_level_types($_SESSION['eduerp_fee_setup']['fee_student_level_type'], true);
   
   $form['fee_student_nationality_type'] = array(
       '#type' => 'select',
       '#options' => array(''=>'--select one--') + get_fee_student_nationality_types(), 
       '#title' => 'Student Nationality Type',
-      '#required'  => TRUE
+      //'#required'  => TRUE
 
       );
   if ($feeSetup) $form['fee_student_nationality_type']['#value'] = $feeSetup['fee_student_nationality_type'];
-  if ($editMode) $form['fee_student_nationality_type']['#options'] = array(''=>'--select one--') + get_fee_student_nationality_types($feeSetup['fee_student_nationality_type'], true);
+  if ($editMode) $form['fee_student_nationality_type']['#options'] = array(''=>'--select one--') + get_fee_student_nationality_types($_SESSION['eduerp_fee_setup']['fee_student_nationality_type'], true);
   
   //if ($feeSetup){
     $form['cmdCancel'] = array(
@@ -9130,14 +9130,26 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
   $values = $state['values'];
   
   switch(trim(strtolower(strtoupper($values['op'])))){
-    case'continue':
+    case 'continue':
+      if(empty($values['fee_structure_type'])){
+        form_set_error('fee_structure_type', Error_Types(114));
+      }
+      
+      if(empty($values['fee_student_level_type'])){
+        form_set_error('fee_student_level_type', Error_Types(114));
+      }
+      
+      if(empty($values['fee_student_nationality_type'])){
+        form_set_error('fee_student_nationality_type', Error_Types(114));
+      }
       $rs = db_query("SELECT nid, field_fee_item_value AS fee_item FROM {content_type_school_fee_items} LIMIT 1 ");
       if(db_affected_rows($rs) <= 0){
         form_set_error('', Error_Types(153));
         return;
       }
       break;
-   
+      
+    
     
   }
 }
@@ -9145,11 +9157,14 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
 
 function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
   $values = $state['values'];
+  $editMode = (arg(2) && is_fee_setup_existing(arg(2))) ? true : false;
   switch(trim(strtolower(strtoupper($values['op'])))){
     case'continue':
-      $_SESSION['eduerp_fee_setup']['fee_structure_type'] = $values['fee_structure_type'];
-      $_SESSION['eduerp_fee_setup']['fee_student_level_type'] = $values['fee_student_level_type'];
-      $_SESSION['eduerp_fee_setup']['fee_student_nationality_type'] = $values['fee_student_nationality_type'];
+      if(! $editMode){
+        $_SESSION['eduerp_fee_setup']['fee_structure_type'] = $values['fee_structure_type'];
+        $_SESSION['eduerp_fee_setup']['fee_student_level_type'] = $values['fee_student_level_type'];
+        $_SESSION['eduerp_fee_setup']['fee_student_nationality_type'] = $values['fee_student_nationality_type'];
+      }
   
   
       //store the data
@@ -9186,6 +9201,9 @@ function staff_school_fees_create_modify_fee_setup2_form() {
     //$r = db_fetch_object($feeSetup);
     $_SESSION['eduerp_fee_setup']['first_installment'] = is_numeric($feeSetup[arg(2)]['first_instalment']) ? substr($feeSetup[arg(2)]['first_instalment'],0,-3) : $feeSetup[arg(2)]['first_instalment'];
     $_SESSION['eduerp_fee_setup']['second_installment'] = is_numeric($feeSetup[arg(2)]['second_instalment']) ? substr($feeSetup[arg(2)]['second_instalment'],0,-3) : $feeSetup[arg(2)]['second_instalment'];
+    
+    $_SESSION['eduerp_fee_setup']['programme_nid'] = is_numeric($feeSetup[arg(2)]['program_nid']) ? $feeSetup[arg(2)]['program_nid'] : null;
+    
     
     $feeSetupDetails = get_fee_setup_item_details(arg(2));
     while($r = db_fetch_object($feeSetupDetails)){
@@ -9228,7 +9246,7 @@ function staff_school_fees_create_modify_fee_setup2_form() {
      
     );
     if($selFeeItems['programme_nid']) $form['programme_nid']['#value'] = $selFeeItems['programme_nid'];
-    if ($editMode) $form['programme_nid']['#options'] = array(''=>'--select one--') + get_programmes($selFeeItems['programme_nid'], true);
+    if ($editMode) $form['programme_nid']['#options'] = array(''=>'--select one--') + get_programmes($_SESSION['eduerp_fee_setup']['programme_nid'], true);
   }
   
   $form['extra'] = array(
@@ -9359,6 +9377,8 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 
 //! is_numeric($values[$k.'txt'])
 function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state) {
+  $editMode = (arg(2) && is_fee_setup_existing(arg(2))) ? true : false;
+  
   $values = $state['values'];
   $feeItems = get_school_fee_items();
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
@@ -9402,6 +9422,7 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
   }
   
   if(trim(strtolower(strtoupper(substr($feeStructure['name'],0,7)))) == 'program' && isset($values['programme_nid'])){
+    if(! $editMode)
     $_SESSION['eduerp_fee_setup']['programme_nid'] = $values['programme_nid'];  
   }
   else{
