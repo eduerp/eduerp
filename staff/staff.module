@@ -9162,8 +9162,8 @@ function staff_school_fees_create_modify_fee_setup2_form() {
     unset($_SESSION['eduerp_fee_setup']['items']); $_SESSION['eduerp_fee_setup']['items']=null;
     $feeSetup = get_school_fee_setup(arg(2));
     //$r = db_fetch_object($feeSetup);
-    $_SESSION['eduerp_fee_setup']['first_installment'] = is_numeric($feeSetup[$setupNID]['first_instalment']) ? substr($feeSetup[$setupNID]['first_instalment'],0,-3) : $feeSetup[$setupNID]['first_instalment'];
-    $_SESSION['eduerp_fee_setup']['second_installment'] = is_numeric($feeSetup[$setupNID]['second_instalment']) ? substr($feeSetup[$setupNID]['second_instalment'],0,-3) : $feeSetup[$setupNID]['second_instalment'];
+    $_SESSION['eduerp_fee_setup']['first_installment'] = is_numeric($feeSetup[arg(2)]['first_instalment']) ? substr($feeSetup[arg(2)]['first_instalment'],0,-3) : $feeSetup[arg(2)]['first_instalment'];
+    $_SESSION['eduerp_fee_setup']['second_installment'] = is_numeric($feeSetup[arg(2)]['second_instalment']) ? substr($feeSetup[arg(2)]['second_instalment'],0,-3) : $feeSetup[arg(2)]['second_instalment'];
     
     $feeSetupDetails = get_fee_setup_item_details(arg(2));
     while($r = db_fetch_object($feeSetupDetails)){
