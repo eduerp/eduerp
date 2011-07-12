@@ -9036,13 +9036,14 @@ function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
 function staff_school_fees_create_modify_fee_setup1_form() {
   
   $editMode = (arg(2) && is_fee_setup_existing(arg(2))) ? true : false;
-  if ($editMode) {
-    if (empty($_POST['fee_structure_type'])) {
+  if ($editMode && ! $_SESSION['eduerp_fee_setup']['page_one_assigned']) {
+    //if (empty($_POST['fee_structure_type'])) {
       //prepare the edit data
       prepare_fee_setup_for_edit(arg(2));
       $feeSetup = $_SESSION['eduerp_fee_setup'];
+      $_SESSION['eduerp_fee_setup']['page_one_assigned'] = true;
       
-    }
+    //}
   }
   
   
@@ -9085,10 +9086,12 @@ function staff_school_fees_create_modify_fee_setup1_form() {
   if ($feeSetup) $form['fee_student_nationality_type']['#value'] = $feeSetup['fee_student_nationality_type'];
   if ($editMode) $form['fee_student_nationality_type']['#options'] = array(''=>'--select one--') + get_fee_student_nationality_types($feeSetup['fee_student_nationality_type'], true);
   
-  $form['cmdCancel'] = array(
-    '#value' => 'Cancel',
-    '#type' => 'submit'
-  );
+  //if ($feeSetup){
+    $form['cmdCancel'] = array(
+      '#value' => 'Cancel',
+      '#type' => 'submit'
+    );
+  //}
   
   $form['submit'] = array(
     '#value' => 'Continue',
@@ -9154,6 +9157,22 @@ function staff_school_fees_create_modify_fee_setup2_form() {
   
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
   $assignDefault=false;
+  
+  if($editMode && ! $_SESSION['eduerp_fee_setup']['page_two_assigned']){//isset($_POST[$k."txt"]
+    unset($_SESSION['eduerp_fee_setup']['items']); $_SESSION['eduerp_fee_setup']['items']=null;
+    $feeSetup = get_school_fee_setup(arg(2));
+    //$r = db_fetch_object($feeSetup);
+    $_SESSION['eduerp_fee_setup']['first_installment'] = is_numeric($feeSetup[$setupNID]['first_instalment']) ? substr($feeSetup[$setupNID]['first_instalment'],0,-3) : $feeSetup[$setupNID]['first_instalment'];
+    $_SESSION['eduerp_fee_setup']['second_installment'] = is_numeric($feeSetup[$setupNID]['second_instalment']) ? substr($feeSetup[$setupNID]['second_instalment'],0,-3) : $feeSetup[$setupNID]['second_instalment'];
+    
+    $feeSetupDetails = get_fee_setup_item_details(arg(2));
+    while($r = db_fetch_object($feeSetupDetails)){
+      $_SESSION['eduerp_fee_setup']['items'][$r->item_nid] = substr($r->amount, 0, -3); 
+    }	  
+  	  
+    $_SESSION['eduerp_fee_setup']['page_two_assigned'] = true;
+  }
+  
   foreach($feeItems as $k => $v) {
     if(! isset($_POST[$k."txt"])){
       $assignDefault=true;
@@ -9926,10 +9945,7 @@ function prepare_fee_setup_for_edit($setupNID){
   	  
   }
   
-  $feeSetupDetails = get_fee_setup_item_details($setupNID);
-  while($r = db_fetch_object($feeSetupDetails)){
-    $_SESSION['eduerp_fee_setup']['items'][$r->item_nid] = substr($r->amount, 0, -3); 
-  }
+  
 }
 //school fee module ends here
 
