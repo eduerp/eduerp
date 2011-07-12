@@ -8939,11 +8939,21 @@ function staff_display_school_fee_settings() {
       if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
         $html .= "
          <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
-           <td width='30px'>". $i++ ."</td>";
+           <td width='30px'>". $i++ ."</td>
+           <td><a  href='" . url("staff/updatesettings/$k") ."'>". $v['settings_name'] ."</a></td>";
+           if(trim(strtolower(strtoupper($v['settings_name']))) == 'local country name'){
+             //get the country name
+             $countryInfo = get_country_info(trim($v['settings_value']));
+             $html .="
+              <td>". $countryInfo[trim($v['settings_value'])] ."</td>";
+           }
+           else {
+           $html .="
+           
+           <td>". $v['settings_value'] ."</td>";
+           }
            
            $html .="
-           <td><a  href='" . url("staff/updatesettings/$k") ."'>". $v['settings_name'] ."</a></td>
-           <td>". $v['settings_value'] ."</td>
            
          </tr>";
       }
@@ -8977,15 +8987,27 @@ function staff_school_fees_modify_fee_settings_form() {
     }
   
     $form['#title'] = 'Create / Modify Fee Item';
-
-    $form[$feeSettings->nid] = array(
-    '#title' => $feeSettings->settings_name,
-    '#type' => 'textfield',
-    '#size' => 25,
-    '#required' => true,
-    '#default_value' => $feeSettings->settings_value,
-    );
-    if ($feeItem) $form['fee_item']['#value'] = $feeItem->name;
+    if(trim(strtolower(strtoupper($feeSettings->settings_name))) == 'local country name'){
+      $form[$feeSettings->nid] = array(
+      '#type' => 'select',
+      '#options' => array(''=>'--select one--') + get_country_info(), 
+      '#title' => $feeSettings->settings_name,
+      '#required'  => TRUE,
+      '#default_value' => $feeSettings->settings_value,
+      );    
+      if ($feeItem) $form['fee_item']['#value'] = $feeItem->name;  
+    }
+    else{
+      $form[$feeSettings->nid] = array(
+      '#title' => $feeSettings->settings_name,
+      '#type' => 'textfield',
+      '#size' => 25,
+      '#required' => true,
+      '#default_value' => $feeSettings->settings_value,
+      );
+      if ($feeItem) $form['fee_item']['#value'] = $feeItem->name;
+    
+    }
   
     $form['submit'] = array(
       '#value' => 'Update Fee Settings Item',
@@ -9008,7 +9030,7 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
     $item = get_school_fee_settings(arg(2));
     if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'school fees collection start date' || trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'late registration start date'){
       if(! is_Date($values[arg(2)]))
-        form_set_error(arg(2), Error_Types(136));
+        form_set_error(arg(2), Error_Types(114));
     }
     elseif(! is_numeric($values[arg(2)])) {
     	form_set_error(arg(2), Error_Types(107));   
@@ -9969,4 +9991,23 @@ function delete_node($nodeID){
    }	
 	
 }
+
+
+function get_country_info($countryID=0){
+	
+  $sql = "SELECT country_id, country_name FROM {country} ";	
+  if($countryID != 0) $sql .= " WHERE country_id=%d ";
+  
+  $rs = db_query($sql, $countryID);
+  
+  if(db_affected_rows($rs) > 0) {
+     while ($row = db_fetch_object($rs))
+       $countries[$row->country_id] = $row->country_name;
+  }
+  else
+    $countries[] = strip_tags(Error_Types(106));
+    
+    return $countries;
+}
+
 ?>
