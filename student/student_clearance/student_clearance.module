@@ -1,3 +1,262 @@
-<?php
+﻿<?php
+// $Id$
 
 include_once('student_clearance.features.inc');
+
+/**
+* Implementation of hook_menu()
+*
+*/
+function student_clearance_menu() {
+    $items = array();
+
+    $items['agreement/pdf/ahah'] = array(
+      'page callback' => 'student_clearance_pdf_agreement_ahah_callback',
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
+
+    return $items;
+}
+
+/**
+* AHAH menu callback.
+*
+* @see student_clearance_menu()
+*/
+function student_clearance_pdf_agreement_ahah_callback() {
+  module_load_include('inc', 'node', 'node.pages');
+  // We're starting in step #3, preparing for #4.
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  // Step #4.
+  $form = form_get_cache($form_build_id, $form_state);
+
+  // Preparing for #5.
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+
+  // Step #5.
+  drupal_process_form($form_id, $form, $form_state);
+	
+  // Step #6 and #7 and #8. Rebuilding the form is not needed because we need the form values to be set. Leaving
+	// it will clear the $_POST data
+  //$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
+
+	$node = $form['#parameters'][2];
+	$node->field_agreement_agree[0]['value'] = $_POST['field_agreement_agree']['value'];
+	$terms_agree = $node->field_agreement_agree[0]['value'];
+	node_invoke_nodeapi($node, 'prepare', $terms_agree);
+	node_save($node);
+	
+	$form['field_agreement_agree']['#disabled'] = TRUE;
+	
+  $form['agreement_pdf_ahah']['#value'] = (isset($_POST['agreement_url'])) ? $_POST['agreement_url'] : array(); // we use post because $form_state is proving difficult
+	
+  //unset($agreement_form['#prefix'], $agreement_form['#suffix']); // Prevent duplicate wrappers.
+	
+	if(!isset($terms_agree)) {
+		//$output = $form['agreement_pdf_ahah']['#value'];
+		$output = t('You need to accept the terms');
+	}else {
+		$output .= l(t('Download agreement'), $form['agreement_pdf_ahah']['#value'], array('absolute' => TRUE, 'attributes' => array('target' => '_blank')));
+	}
+  drupal_json(array('status' => TRUE, 'data' => $output)); //print drupal_json brings up an alert window
+}
+/**
+ * Implementation of hook_form_FORM_ID_alter
+ *
+ * @param <type> $form
+ * @param <type> $form_state
+ * @return string
+ *
+ * @todo Add more intelligence to the pdf processing
+ */
+function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
+
+    if (isset($form_state['node'])) {
+        $node = $form_state['node'] + (array)$node;
+    }
+    $form['#attributes'] = array('class' => 'editablefields-form-agreement-agree');
+
+    $student_id = $form['#parameters'][2]->field_student[0][uid];
+
+    $arg = (isset($student_id) && is_numeric(arg(1)) && arg(2) == 'clearance');
+
+    // if arg and the result of the view at student/agreement/pdf/student_id is not empty
+    // and the string "TCPDF ERROR: Some data has already been output, can't send PDF file"
+    // doesn't occur.
+    if($arg) {
+				
+				// cache the form structure so we can have access to it at ahah callback
+        $form['#cache'] = TRUE;
+        $form['agreement_url'] = array(
+          '#type' => 'hidden',
+          '#value' => 'student/agreement/pdf/' . $student_id,
+        );
+        // form element to house the pdf file
+        $form['agreement_pdf_div'] = array(
+          '#type' => 'markup',
+          '#value' => '<div class="agreement-ajax-result"></div>',
+        );
+        $form['agreement_pdf_div2'] = array(
+          '#prefix' => '<div class="agreement-ajax-result2">',
+          '#suffix' => '</div>'
+        );
+        /*$form['field_agreement_agree']['#ahah'] = array(
+          'path' => 'agreement/pdf/ahah',
+          //'wrapper' => 'agreement-ahah-result',
+          'event' => 'click',
+          //'method' => 'replace',
+          //'effect' => 'fade',
+        );*/
+        $form['agreement_pdf_ahah'] = array(
+          '#type' => 'markup',
+          '#value' => '<div id="agreement-ahah-result"></div>'
+        );
+				if($_POST['field_agreement_agree']['value']) {
+					$form['agreement_file'] = array(
+						'#type' => 'markup',
+						'#value' => $form['agreement_url']['#value']
+					);
+				}
+        /*$ahah_binding = array(
+          "button" => false,
+          "keypress" => null,
+          'url'   => url('agreement/pdf/ahah'),
+          'event' => 'click',
+          'wrapper' => 'agreement-ahah-result',
+          'selector' => '.editablefields-form-agreement-agree input',
+          'effect'   => 'slide',
+          'method'   => 'replace',
+          'progress' => array('type' => 'throbber'),
+        );
+
+        drupal_add_js('misc/jquery.form.js');
+        drupal_add_js('misc/ahah.js');
+        drupal_add_js(array('ahah' => array('.editablefields-form-agreement-agree input' => $ahah_binding)), 'setting');*/
+
+        $form['student_clearance_agree_submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Submit'),
+          '#description' => t("By clicking this button, you agree to our institution's terms of use."),
+          '#submit' => array('student_clearance_agree_submit'),
+          '#ahah' => array(
+            'path' => 'agreement/pdf/ahah',
+            'wrapper' => 'agreement-ahah-result',
+            'method' => 'replace',
+            'effect' => 'fade',
+          ),
+        );
+
+        //drupal_add_js - to add the js
+        drupal_add_js(drupal_get_path('module', 'student_clearance') .'/student_clearance.js');
+
+        // store retrieved data to be passed to js
+        $clearance_settings = array(
+          'agreement_url' => $form['agreement_url']['#value'],
+          'href_value' => t('Download generated PDF Agreement')
+          );
+
+        drupal_add_js(array('student_clearance' => $clearance_settings), 'setting');
+    }
+    return $form;
+
+}
+
+/**
+* Submit extra data together with the clearance agreement
+*
+* @see student_clearance_form_editablefields_form_alter
+*/
+function student_clearance_agree_submit($form, &$form_state) {
+
+	if($form_state['values']['field_agreement_agree']) {
+		//$form['field_agreement_agree']['#attributes'] = array('disabled' => 'disabled');
+	}
+}
+
+/**
+* utility function to check to see if agreement is set
+*
+* @param node
+* @return boolean
+**/
+function student_clearance_agreement_isset($node) {
+	$sql = 'SELECT field_agreement_agree_value
+		FROM {content_type_clearance_agreement}
+		WHERE nid = %d';
+	$result = db_result(db_query($sql, $node->nid));
+	if(db_affected_rows($result) > 0) {
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/**
+* Implementation of hook_nodeapi
+*
+*/
+function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
+	switch($op) {
+		case 'prepare':
+			if(student_clearance_agreement_isset($node)) {
+				//$node->field_agreement_agree[0]['value'] = 1;
+			}
+			break;
+	}
+}
+
+/**
+ * Implementation of hook_menu_alter
+ *
+ * @param <type> $callbacks
+ */
+/*function student_clearance_menu_alter(&$callbacks) {
+		$url = 'student/agreement/pdf/958);
+		if(in_array($url, $callbacks)) {
+			$callbacks[$url] = $url;
+		
+		}
+}*/
+
+/**
+* Implementation of hook_init()
+* 
+* Marking as WON'T FIX
+*
+* @todo trigger a pdf download instead of browser display
+*/
+function todo_student_clearance_init() {
+	global $user;	
+	$arg = (arg(0) == 'student' && arg(1) == 'agreement' && arg(2) == 'pdf' && is_numeric(arg(3)));
+	if($arg) {
+		$student_id = isset($student_id) ? $student_id : student_views_get_current_student();
+		// use regex here
+		$path = 'http://eduerp/student/agreement/pdf/958';
+		if($fd = fopen($path, "r")) {
+			$fsize = filesize($path);
+			$path_parts = pathinfo($path);
+			$ext = strtolower($path_parts["extension"]);
+			switch($ext) {
+				case "pdf":
+					drupal_set_header("Cache-Control:public, must-revalidate, max-age=0");
+					drupal_set_header("Content-Disposition: attachment; filename=\"".$path_parts["filename"]."\"");
+					drupal_set_header("Content-Disposition: attachment; filename='clearance_agreement';");
+					drupal_set_header("Content-type: application/pdf");
+					break;
+			}
+			drupal_set_header("Content-length: $fsize");
+			drupal_set_header("Cache-control: private"); //use this to open files directly
+			while(!feof($fd)) {
+					$buffer = fread($fd, 2048);
+					echo $buffer;
+			}
+		}
+		fclose ($fd);
+		exit;
+	}
+}
+

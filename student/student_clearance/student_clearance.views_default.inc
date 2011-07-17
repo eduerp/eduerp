@@ -219,6 +219,162 @@ function student_clearance_views_default_views() {
     'page_1' => 'page_1',
     'default' => 0,
   ));
+  $handler = $view->new_display('pdf', 'Agreement pdf', 'pdf_1');
+  $handler->override_option('fields', array(
+    'body' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 0,
+      'id' => 'body',
+      'table' => 'node_revisions',
+      'field' => 'body',
+      'override' => array(
+        'button' => 'Use default',
+      ),
+      'relationship' => 'none',
+    ),
+  ));
+  $handler->override_option('arguments', array(
+    'uid' => array(
+      'default_action' => 'empty',
+      'style_plugin' => 'default_summary',
+      'style_options' => array(),
+      'wildcard' => 'all',
+      'wildcard_substitution' => 'All',
+      'title' => 'Student agreement',
+      'breadcrumb' => '',
+      'default_argument_type' => 'fixed',
+      'default_argument' => '',
+      'validate_type' => 'user',
+      'validate_fail' => 'empty',
+      'break_phrase' => 0,
+      'not' => 0,
+      'id' => 'uid',
+      'table' => 'users',
+      'field' => 'uid',
+      'validate_user_argument_type' => 'either',
+      'validate_user_roles' => array(
+        '29' => 29,
+        '2' => 0,
+        '8' => 0,
+        '30' => 0,
+        '27' => 0,
+        '26' => 0,
+        '28' => 0,
+        '25' => 0,
+      ),
+      'override' => array(
+        'button' => 'Use default',
+      ),
+      'relationship' => 'none',
+      'default_options_div_prefix' => '',
+      'default_argument_fixed' => '',
+      'default_argument_user' => 0,
+      'default_argument_php' => '',
+      'validate_argument_node_type' => array(
+        'clearance_agreement' => 0,
+        'product' => 0,
+        'uc_school_product' => 0,
+        'hostels' => 0,
+        'product_kit' => 0,
+        'allocation_rules' => 0,
+        'allocation_rules_description' => 0,
+        'allocation_settings' => 0,
+        'approval' => 0,
+        'blocks' => 0,
+        'book' => 0,
+        'college' => 0,
+        'course' => 0,
+        'course_instance' => 0,
+        'department' => 0,
+        'page' => 0,
+        'profile' => 0,
+        'program' => 0,
+        'rooms' => 0,
+        'room_allocations' => 0,
+        'room_reservations' => 0,
+        'staff_profile' => 0,
+        'story' => 0,
+        'student_clearance' => 0,
+        'student_gpa' => 0,
+        'student_grades' => 0,
+        'student_profile' => 0,
+        'student_program' => 0,
+        'student_record' => 0,
+      ),
+      'validate_argument_node_access' => 0,
+      'validate_argument_nid_type' => 'nid',
+      'validate_argument_vocabulary' => array(
+        '2' => 0,
+        '1' => 0,
+      ),
+      'validate_argument_type' => 'tid',
+      'validate_argument_transform' => 0,
+      'validate_user_restrict_roles' => 1,
+      'validate_argument_php' => '',
+    ),
+  ));
+  $handler->override_option('items_per_page', 1);
+  $handler->override_option('style_plugin', 'pdf_unformatted');
+  $handler->override_option('style_options', array(
+    'mission_description' => FALSE,
+    'description' => '',
+  ));
+  $handler->override_option('row_plugin', 'pdf_fields');
+  $handler->override_option('row_options', array());
+  $handler->override_option('path', 'student/agreement/pdf/%');
+  $handler->override_option('menu', array(
+    'type' => 'none',
+    'title' => '',
+    'description' => '',
+    'weight' => 0,
+    'name' => 'navigation',
+  ));
+  $handler->override_option('tab_options', array(
+    'type' => 'none',
+    'title' => '',
+    'description' => '',
+    'weight' => 0,
+    'name' => 'navigation',
+  ));
+  $handler->override_option('displays', array());
+  $handler->override_option('sitename_title', FALSE);
+  $handler->override_option('default_page_format', 'A4');
+  $handler->override_option('default_page_format_custom', '');
+  $handler->override_option('default_page_orientation', 'P');
+  $handler->override_option('unit', 'mm');
+  $handler->override_option('margin_left', '15');
+  $handler->override_option('margin_right', '15');
+  $handler->override_option('margin_top', '15');
+  $handler->override_option('margin_bottom', '15');
+  $handler->override_option('leading_template', '');
+  $handler->override_option('template', '');
+  $handler->override_option('succeed_template', '');
+  $handler->override_option('default_font_family', 'helvetica');
+  $handler->override_option('default_font_style', array());
+  $handler->override_option('default_font_size', '11');
+  $handler->override_option('default_text_align', 'L');
+  $handler->override_option('default_font_color', '000000');
 
   $views[$view->name] = $view;
 

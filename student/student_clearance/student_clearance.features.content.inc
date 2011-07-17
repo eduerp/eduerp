@@ -11,16 +11,17 @@ function student_clearance_content_default_fields() {
     'field_name' => 'field_agreement_agree',
     'type_name' => 'clearance_agreement',
     'display_settings' => array(
+      'weight' => '-2',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'hidden',
       ),
       'teaser' => array(
-        'format' => 'default',
+        'format' => 'hidden',
         'exclude' => 0,
       ),
       'full' => array(
-        'format' => 'default',
+        'format' => 'hidden',
         'exclude' => 0,
       ),
       '4' => array(
@@ -71,20 +72,20 @@ function student_clearance_content_default_fields() {
     'field_name' => 'field_student',
     'type_name' => 'clearance_agreement',
     'display_settings' => array(
-      'weight' => '31',
+      'weight' => '8',
       'parent' => '',
-      'cck_blocks' => array(
-        'format' => 'default',
-        'exclude' => 0,
-      ),
       'label' => array(
-        'format' => 'above',
+        'format' => 'hidden',
       ),
       'teaser' => array(
-        'format' => 'default',
+        'format' => 'hidden',
         'exclude' => 0,
       ),
       'full' => array(
+        'format' => 'hidden',
+        'exclude' => 0,
+      ),
+      'cck_blocks' => array(
         'format' => 'default',
         'exclude' => 0,
       ),

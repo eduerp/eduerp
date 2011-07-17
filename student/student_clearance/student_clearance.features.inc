@@ -36,6 +36,21 @@ function student_clearance_node_info() {
 function student_clearance_rules_defaults() {
   return array(
     'rules' => array(
+      'rules_student_clearance_agreement' => array(
+        '#type' => 'rule',
+        '#set' => 'event_init',
+        '#label' => 'Student clearance agreement',
+        '#active' => 1,
+        '#weight' => '0',
+        '#categories' => array(
+          '0' => 'student',
+          'student_clearance' => 'student_clearance',
+        ),
+        '#status' => 'default',
+        '#actions' => NULL,
+        '#conditions' => NULL,
+        '#version' => 6003,
+      ),
       'rules_student_cleared' => array(
         '#type' => 'rule',
         '#set' => 'event_student_cleared',
@@ -75,7 +90,7 @@ function student_clearance_rules_defaults() {
               'type' => 'clearance_agreement',
               '#argument map' => array(
                 'author' => 'author',
-                'clearance_node' => 'node',
+                'node' => 'clearance_node',
               ),
             ),
             '#type' => 'action',

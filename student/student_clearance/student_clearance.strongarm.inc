@@ -88,6 +88,20 @@ function student_clearance_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'content_profile_use_clearance_agreement';
+  $strongarm->value = 0;
+
+  $export['content_profile_use_clearance_agreement'] = $strongarm;
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'form_build_id_clearance_agreement';
+  $strongarm->value = 'form-e5f9748421785c9f70d7b24b11f9d74a';
+
+  $export['form_build_id_clearance_agreement'] = $strongarm;
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'node_options_clearance_agreement';
   $strongarm->value = array(
     0 => 'status',
