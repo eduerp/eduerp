@@ -180,14 +180,14 @@ function staff_menu() {
   );
   
   $items['staff/scholarshippayment'] = array(
-    'title' => 'Scholarship Payment',
+    'title' => 'Authorise Scholarship',
     'page callback' => 'staff_school_fees_scholarship_payment',
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
   );
   
   $items['staff/authoriseinstalment'] = array(
-    'title' => 'Authorise Instalment',
+    'title' => 'Authorise Instalment Payment',
     'page callback' => 'staff_school_fees_authorise_instalment_payment',
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
@@ -3927,6 +3927,9 @@ function Error_Types($num = 0) {
   case '158': $msg = $prifix3 . 'Fee Setup is not complete!<br />'; break;
   case '159': $msg = $prifix1 . 'No School Fee Setup matching the Student was found!<br />'; break;
   case '160': $msg = $prifix1 . 'School Fee Payment already exists for the Student for the current Session!<br />'; break;
+  case '161': $msg = $prifix1 . 'Input Data required!<br />'; break;
+  case '162': $msg = $prifix1 . 'Scholarship Authorisation already exists for the Student!<br />'; break;
+  case '163': $msg = $prifix1 . 'Instalment Authorisation already exists for the Student!<br />'; break;
   	  
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
@@ -8259,7 +8262,8 @@ function staff_school_fees_admin(){
   ob_start();
 
   unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup'] = null;
-  unset($_SESSION['eduerp_scholarship_payment']); $_SESSION['eduerp_scholarship_payment'] = null;
+  unset($_SESSION['eduerp_authorise_scholarship']); $_SESSION['eduerp_authorise_scholarship'] = null;
+  unset($_SESSION['eduerp_authorise_instalment']); $_SESSION['eduerp_authorise_instalment'] = null;
   
   
   //initialize tables with default settings
@@ -8289,13 +8293,13 @@ function staff_school_fees_admin(){
     $html .= '<br />';
     
     
-    $html .= '<b>Scholarship Payment</b> - Post Scholarship payments<br />';
-    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/scholarshippayment') . '">Post Scholarship Payment</a><br />';
+    $html .= '<b>Authorise Scholarship</b> - Enable a Studnet as being sponsored via Scholarship for the Current Session only.<br />';
+    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/scholarshippayment') . '">Authorise Scholarship</a><br />';
     $html .= '<br />';
     
     
-    $html .= '<b>Authorise Installment Payment</b> - Enable a student to pay his/her Fees in installments.<br />';
-    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Installment Payment</a>';
+    $html .= '<b>Authorise Instalment Payment</b> - Enable a Student to pay his/her Fees in instalments  for the Current Session only.<br />';
+    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a>';
     $html .= '<br /><br />';
     
   }
@@ -8407,57 +8411,74 @@ function staff_school_fees_create_modify_school_fee_setup(){
 function staff_school_fees_scholarship_payment(){
   global $user;
   ob_start();
+  
+  $isAuthorized = staff_has_eduerp_role($user->uid, 0, 0, array('Bursar')) ? true : false;
+  
   $html = "";
   $html = '<br /><hr /><br />';
-  $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Scholarship Payment</font><br /><br />";
+  $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Authorise Scholarship</font><br /><br />";
   $html .= '<hr /><br />';
-  if(! isset($_SESSION['eduerp_scholarship_payment']['sudentUID'])){
-  	  
+  if(! isset($_SESSION['eduerp_authorise_scholarship']['studentUID'])){
+    
+    /*
     //get the payment summary type
     $rs = db_query("SELECT nid FROM {content_type_school_fee_payment_types} WHERE field_fee_payment_type_value='%s'", 'Full Payment');
     $r = db_fetch_object($rs);
-    $_SESSION['eduerp_scholarship_payment']['summaryPaymentType'] = $r->nid; //payment type is full payment
+    $_SESSION['eduerp_authorise_scholarship']['summaryPaymentType'] = $r->nid; //payment type is full payment
+    */
     
-    
-    $html .= "<b>Scholarship Payment</b> - Please provide either the JAMB or Matrculation Number of the Student.<br />";
+    $html .= "<b>Authorise Scholarship</b> - Please provide either the JAMB or Matrculation Number of the Student.<br />";
     $html .= '<br />';
-    $html .= drupal_get_form('get_scholarship_payment_student_finder_form');
+    if($isAuthorized){
+      $html .= drupal_get_form('get_scholarship_payment_student_finder_form');
+    }
+    else {
+      $html .= Error_Types(104);
+    }
+    
+    //show those on scholarship for the current session
+    $html .= '<br /><hr /><br />';
+    $html .= staff_display_scholarship_authorisations(variable_get('eduerp_current_session', ''));
+    
   }
   else{
     //show summary
-    $html .= show_student_info($_SESSION['eduerp_scholarship_payment']);
+    $html .= show_student_info($_SESSION['eduerp_authorise_scholarship']);
     
+    /*
     //we need to set some defaults for scholarship payments
     
     //get the sponsor NID for scholarship
     $rs = db_query("SELECT nid FROM {content_type_schoo_fee_payment_sponsors} WHERE field_payment_sponsor_value='%s'", 'Scholarships');
     $r = db_fetch_object($rs);
-    $_SESSION['eduerp_scholarship_payment']['payment_sponsor'] = $r->nid; //sponsor is scholarship
+    $_SESSION['eduerp_authorise_scholarship']['payment_sponsor'] = $r->nid; //sponsor is scholarship
     
     //get the payment status NID for full payment
     $rs = db_query("SELECT nid FROM {content_type_school_fee_payment_status} WHERE field_fee_payment_status_value='%s'", 'Full Payment');
     $r = db_fetch_object($rs);
-    $_SESSION['eduerp_scholarship_payment']['payment_brief_status'] = $r->nid; //status is fully paid
+    $_SESSION['eduerp_authorise_scholarship']['payment_brief_status'] = $r->nid; //status is fully paid
     
     
     //get the payment summary status NID for 
-    $_SESSION['eduerp_scholarship_payment']['summaryPaymentStatus'] = $_SESSION['eduerp_scholarship_payment']['payment_brief_status']; //summary status is fully paid
+    $_SESSION['eduerp_authorise_scholarship']['summaryPaymentStatus'] = $_SESSION['eduerp_authorise_scholarship']['payment_brief_status']; //summary status is fully paid
     
     
     
     //defaults for order_nid is zero
-    $_SESSION['eduerp_scholarship_payment']['orderNID'] = 0;
+    $_SESSION['eduerp_authorise_scholarship']['orderNID'] = 0;
     
-    $studentUID = $_SESSION['eduerp_scholarship_payment']['sudentUID'];
-    $programNID = $_SESSION['eduerp_scholarship_payment']['program_nid'];
-    $levelType = $_SESSION['eduerp_scholarship_payment']['levelType'];
-    $nationalityType = $_SESSION['eduerp_scholarship_payment']['nationalityType'];
-    $html .= show_school_fees_payment_option('eduerp_scholarship_payment', $studentUID, $programNID, $levelType, $nationalityType);
+    $studentUID = $_SESSION['eduerp_authorise_scholarship']['studentUID'];
+    $programNID = $_SESSION['eduerp_authorise_scholarship']['program_nid'];
+    $levelType = $_SESSION['eduerp_authorise_scholarship']['levelType'];
+    $nationalityType = $_SESSION['eduerp_authorise_scholarship']['nationalityType'];
+    $html .= show_school_fees_payment_option('eduerp_authorise_scholarship', $studentUID, $programNID, $levelType, $nationalityType);
     
     //ini the summary payment here
-    $_SESSION['eduerp_scholarship_payment']['summaryPaymentAmount'] = $_SESSION['eduerp_scholarship_payment']['setup_total_amount'];
+    $_SESSION['eduerp_authorise_scholarship']['summaryPaymentAmount'] = $_SESSION['eduerp_authorise_scholarship']['setup_total_amount'];
     
-    $html .= "<br /><font color=#ff0000><b>By clicking 'Submit' you acknowledge that the student whose details appear above is under FULL Scholarship and that such Scholarship covers the School Fee Amount.</b></font><br /><br />";
+    */
+    $html .="<br />";
+    //$html .= "<br /><font color=#ff0000><b>By clicking 'Submit' you acknowledge that the student whose details appear above is under FULL Scholarship and that such Scholarship covers the School Fee Amount.</b></font><br /><br />";
     $html .= drupal_get_form('staff_show_pay_school_fees_scholarship_form');
   	  
   }
@@ -8469,16 +8490,39 @@ function staff_school_fees_scholarship_payment(){
 function staff_school_fees_authorise_instalment_payment(){
   global $user;
   ob_start();
+  
+  $isAuthorized = staff_has_eduerp_role($user->uid, 0, 0, array('Bursar')) ? true : false;
+  
   $html = "";
   $html = '<br /><hr /><br />';
   $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Authorise Instalment Payment</font><br /><br />";
   $html .= '<hr /><br />';
-  $html .= "Welcome to <b>Authorise Instalment Payment</b>. Please click any of the links below to proceed<br />";
-  $html .= '<br />';
-  
-  
+  if(! isset($_SESSION['eduerp_authorise_instalment']['studentUID'])){
+    
+    $html .= "<b>Authorise Instalment Payment</b> - Please provide either the JAMB or Matrculation Number of the Student.<br />";
+    $html .= '<br />';
+    if($isAuthorized){
+      $html .= drupal_get_form('get_authorise_instalment_student_finder_form');
+    }
+    else {
+      $html .= Error_Types(104);
+    }
+    
+    //show those on scholarship for the current session
+    $html .= '<br /><hr /><br />';
+    $html .= staff_display_instalment_authorisations(variable_get('eduerp_current_session', ''));
+    
+  }
+  else{
+    //show summary
+    $html .= show_student_info($_SESSION['eduerp_authorise_instalment']);
+    
+    $html .="<br />";
+    $html .= drupal_get_form('staff_show_authorise_instalment_form');
+  	  
+  }
   echo $html;
-  return ob_get_clean();
+  return ob_get_clean(); 
 }
 
 
@@ -8835,7 +8879,7 @@ function initialize_school_fee_module_tables(){
       node_save($node);
     }
   }
-  
+  /*
   //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_payment_status}');
   if(db_affected_rows($rs) <= 0){
@@ -8854,7 +8898,8 @@ function initialize_school_fee_module_tables(){
       node_save($node);
     }
   }
-  
+  */
+  /*
   //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_payment_types}');
   if(db_affected_rows($rs) <= 0){
@@ -8873,6 +8918,7 @@ function initialize_school_fee_module_tables(){
       node_save($node);
     }
   }
+  */
     //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_settings}');
   if(db_affected_rows($rs) <= 0){
@@ -8912,7 +8958,7 @@ function initialize_school_fee_module_tables(){
       node_save($node);
     }
   }
-  
+  /*
   //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_schoo_fee_payment_sponsors}');
   if(db_affected_rows($rs) <= 0){
@@ -8931,7 +8977,7 @@ function initialize_school_fee_module_tables(){
       node_save($node);
     }
   }
-  
+  */
 }
 
 
@@ -10108,7 +10154,7 @@ function get_scholarship_payment_student_finder_form_submit($form, &$state){
   $values = $state['values'];
   
   $returnURL = 'staff/scholarshippayment';
-  ini_student_fee_profile($values['mat_number'], 'eduerp_scholarship_payment', $returnURL);
+  ini_student_fee_profile($values['mat_number'], 'eduerp_authorise_scholarship', $returnURL);
   
 }
 
@@ -10151,6 +10197,11 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       //make sure no payment info exists for the student for the current session
       //if(is_school_fee_info_existing($studentInfo->uid)){
       //drupal_set_message($_SESSION[$varName]['summaryPaymentType']);
+      /**
+      The check below is no longer applcable
+      
+      */
+      /*
       if(is_school_fee_payment_type_info_existing($studentInfo->uid, $_SESSION[$varName]['summaryPaymentType'])){
       	form_set_error('mat_number', Error_Types(160));
       	
@@ -10158,15 +10209,27 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
         drupal_goto($returnURL);      
       }
       
+      */
+      
+      if($varName == "eduerp_authorise_scholarship"){
+        //specific checks for scholarships
+        if(is_scholarship_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
+	  drupal_set_message('Scholarship Authorisation for the Student already exists');   
+	  return;	      
+	}
+      	      
+      }
+      
+      
       //valid mat or JAMB number was found
-      $_SESSION[$varName]['sudentUID'] = $student_profile->uid;
+      $_SESSION[$varName]['studentUID'] = $student_profile->uid;
       $_SESSION[$varName]['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
       $_SESSION[$varName]['first_choice_nid'] = $student_profile->profile_first_choice;
       $_SESSION[$varName]['level_name'] = $student_profile->profile_level_name;
       $_SESSION[$varName]['mat_num'] = ! empty($student_profile->profile_matno) ? $student_profile->profile_matno : 'N/A';
       $_SESSION[$varName]['jamb_num'] = $student_profile->profile_jambno;
       $_SESSION[$varName]['gender'] = strtolower($student_profile->profile_gender);
-      //$_SESSION['eduerp_scholarship_payment']['health_status'] = strtolower($student_profile->profile_health_status);
+      //$_SESSION['eduerp_authorise_scholarship']['health_status'] = strtolower($student_profile->profile_health_status);
       $_SESSION[$varName]['program_nid'] = $student_profile->profile_first_choice;
       
       $_SESSION[$varName]['country_name'] = ! empty($student_profile->profile_country_name) ? $student_profile->profile_country_name : 'N/A';
@@ -10334,13 +10397,7 @@ function show_student_info($info){
 
 function staff_show_pay_school_fees_scholarship_form(){
 	
-  /*
-  $form['eduerp_page'] = array(
-    '#title' => 'Page',
-    '#type' => 'hidden',
-    '#value' => 3,
-   );
-  */
+ 
   $form['#title'] = 'School Fees Scholarship Payment';
   /*
   $form['previous'] = array(
@@ -10348,12 +10405,23 @@ function staff_show_pay_school_fees_scholarship_form(){
     '#type' => 'submit'
   );
   */
+   $form['remarks'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Remarks - Brief details about the Scholarship',
+    '#size' => 255,
+    //'#required' => true
+  );
+   $form['lbl01'] = array(
+    '#type' => 'item',
+    '#value' => "<font color=#FF0000><b>By clicking 'Authorise Scholarship!' you acknowledge that the student whose details appear above is under FULL Scholarship and that such Scholarship covers the School Fee Amount.</b></font>",
+    
+  );
   $form['cmdCancel'] = array(
     '#value' => 'Cancel',
     '#type' => 'submit'
-  );
+  ); 
   $form['submit'] = array(
-    '#value' => 'Submit',
+    '#value' => 'Authorise Scholarship!',
     '#type' => 'submit'
   );
  
@@ -10363,34 +10431,85 @@ function staff_show_pay_school_fees_scholarship_form(){
 
 
 function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
-	
-	
+  $values = $state['values'];
+  
+  switch(trim(strtolower(strtoupper($values['op'])))){
+    case 'authorise scholarship!':
+     
+      if(empty($values['remarks'])){
+    	form_set_error('remarks', Error_Types(161));    	    
+      }
+    	   
+      if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_scholarship']['studentUID'], variable_get('eduerp_current_session', ''))){
+      	form_set_error('', Error_Types(162));   
+        return;	      
+      }
+      if(is_instalment_authorisation_existing($_SESSION['eduerp_authorise_scholarship']['studentUID'], variable_get('eduerp_current_session', ''))){
+      	form_set_error('', Error_Types(163));   
+        return;	      
+      }
+    break; 	    
+  }
+  
 }
 
 
 
 function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
-	
+  global $user;
   $values = $state['values'];
   
   switch(trim(strtolower(strtoupper($values['op'])))){
-    case 'submit':
-      //this is where we'll post the scholarship payment
-      $val = post_fee_payment('eduerp_scholarship_payment');
+    case 'authorise scholarship!':
       
-      if($val == 1){
-      	drupal_set_message('The Payment was successful');   
-      	unset($_SESSION['eduerp_scholarship_payment']); $_SESSION['eduerp_scholarship_payment'] = null;	
-      }
+      
+      $node = new stdClass();
+      $node->type                             	= 'school_fee_approved_scholarships';
+      $node->uid                              	= 1;  // Admin
+      $node->status                           	= 1;  // Published
+      $node->promote                          	= 0;
+      $node->sticky                           	= 0;
+      $node->comment                          	= 0;
+      $node->title                            	= 'Authorise Scholarship - '. $_SESSION['eduerp_authorise_scholarship']['studentUID'] .' - '. variable_get('eduerp_current_session', '');
+      $node->field_sas_student[0]['uid']       	= $_SESSION['eduerp_authorise_scholarship']['studentUID'];
+      $node->field_sas_session_name[0]['value'] = variable_get('eduerp_current_session', '');
+      $node->field_sas_remarks[0]['value']      = $values['remarks'];
+      $node->field_sas_staff[0]['uid']       	= $user->uid;
+      $node->field_sas_date[0]['value']     	= date("Y-m-d H:i:s"); 
+  
+      node_save($node);
+      drupal_set_message('Scholarship Authorisation was successful!');   
+      unset($_SESSION['eduerp_authorise_scholarship']); $_SESSION['eduerp_authorise_scholarship'] = null;	
+      //}
       
     break;
     
     case 'cancel':
-      unset($_SESSION['eduerp_scholarship_payment']); $_SESSION['eduerp_scholarship_payment'] = null;	    
+      unset($_SESSION['eduerp_authorise_scholarship']); $_SESSION['eduerp_authorise_scholarship'] = null;	    
     	    
     break;
     
   }
+}
+
+
+function is_scholarship_authorisation_existing($studentUID, $sessionName){
+	
+  $rs = db_query("SELECT nid FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s' ", $studentUID, $sessionName);
+  
+  if(db_affected_rows($rs) > 0) return true;
+  
+  return false;
+}
+
+
+function is_instalment_authorisation_existing($studentUID, $sessionName){
+	
+  $rs = db_query("SELECT nid FROM {content_type_school_fee_approved_instalments} WHERE field_sai_student_uid=%d AND field_sai_session_name_value='%s' ", $studentUID, $sessionName);
+  
+  if(db_affected_rows($rs) > 0) return true;
+  
+  return false;
 }
 
 
@@ -10556,7 +10675,7 @@ function is_school_fee_summary_info_existing($paymentBriefNID, $summaryPaymentTy
 function post_fee_payment($varName){
 	
   //insert payment info
-  if(! is_school_fee_info_existing($_SESSION[$varName]['sudentUID'])){
+  if(! is_school_fee_info_existing($_SESSION[$varName]['studentUID'])){
     $_SESSION[$varName]['paymentBriefNID'] = insert_payment_brief_info($varName);
     
   	  
@@ -10592,10 +10711,10 @@ function insert_payment_brief_info($varName){
   $node->promote                            	= 0;
   $node->sticky                             	= 0;
   $node->comment                           	= 0;
-  $node->title                              	= "Payment brief - ". $_SESSION[$varName]['sudentUID'] .' - '. variable_get('eduerp_current_session', '');
+  $node->title                              	= "Payment brief - ". $_SESSION[$varName]['studentUID'] .' - '. variable_get('eduerp_current_session', '');
   $node->field_fee_payment_sponsor_fk[0]['nid']	= $_SESSION[$varName]['payment_sponsor']; 
   $node->field_fee_payment_status_fk[0]['nid']  = $_SESSION[$varName]['payment_brief_status'];
-  $node->field_student_uid_fk[0]['uid']        	= $_SESSION[$varName]['sudentUID'];
+  $node->field_student_uid_fk[0]['uid']        	= $_SESSION[$varName]['studentUID'];
   $node->field_fee_session_name[0]['value']     = variable_get('eduerp_current_session', '');
   $node->field_fee_total_amount[0]['value'] 	= $_SESSION[$varName]['setup_total_amount'];
   
@@ -10657,6 +10776,272 @@ function insert_payment_summary_info($varName){
   node_save($node);
   
   //return $node->nid;
+}
+
+
+function staff_display_scholarship_authorisations($sessionName) {
+  $html = "
+  <div id='assigned_courses'>
+  <b>Available List of Scholarship Authorisations - ". $sessionName ."</b><br /><br />";
+  
+  $scholarshipAuthorisations = get_scholarship_authorisations($sessionName);
+  if(! is_array($scholarshipAuthorisations) || ! sizeof($scholarshipAuthorisations))
+    return $html .= Error_Types(106) .'</div>';
+  //Please click on a Fee Item name to Edit it.<br />
+  $html .="
+  
+  <table border=1>
+    <tr>
+      <th><b>#</b></th>
+      <th><b>Mat. Num.</b></th>
+      <th><b>Full Name</b></th>
+      <th><b>Program Name</b></th>
+      
+      <th><b>Remarks</b></th>
+      <th><b>Date</b></th>
+      
+    </tr>";$i = 1;
+    
+    foreach ($scholarshipAuthorisations as $k => $v){
+      if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+        $html .= "
+         <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+           <td width='30px'>". $i++ ."</td>";
+           $student_profile = new UserProfile($v['student_uid']);
+           $programmeName = get_programmes($student_profile->profile_first_choice, true);
+           
+           //<td><a  href='" . url("staff/createmodifyfeeitem/$k") ."'>". $v['fee_item'] ."</a></td>
+           //<td>". $v['session_name'] ."</a></td>  <th><b>Session Name</b></th>
+           $html .="
+           <td>". $x = (! empty($student_profile->profile_matno) ? $student_profile->profile_matno : 'N/A') ."</td>
+           <td>". $student_profile->profile_last_name .', '. $student_profile->profile_first_name ."</a></td>
+           <td>". $programmeName[$student_profile->profile_first_choice] ."</a></td>
+           
+           <td>". $v['remarks'] ."</a></td>
+           <td>". $v['date'] ."</a></td>
+           
+         </tr>";
+      }
+
+  $html .= "
+  </table>
+  </div>";
+  return $html;
+
+}
+
+
+function get_scholarship_authorisations($sessionName) {
+  $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_session_name_value='%s' ORDER BY field_sas_session_name_value ", $sessionName);
+  $rs = array();
+  while ($f = db_fetch_object($r)){
+    $rs[$f->nid]['student_uid'] = $f->student_uid;
+    $rs[$f->nid]['session_name'] = $f->session_name;
+    $rs[$f->nid]['remarks'] = $f->remarks;
+    $rs[$f->nid]['date'] = $f->date;
+    
+  }
+  return $rs;
+}
+
+
+function get_instalment_authorisations($sessionName) {
+  $r = db_query("SELECT nid, field_sai_student_uid AS student_uid, field_sai_session_name_value AS session_name, field_sai_remarks_value AS remarks, DATE_FORMAT(field_sai_date_value, '%%D %%b %%Y') AS date FROM {content_type_school_fee_approved_instalments} WHERE field_sai_session_name_value='%s' ORDER BY field_sai_session_name_value ", $sessionName);
+  $rs = array();
+  while ($f = db_fetch_object($r)){
+    $rs[$f->nid]['student_uid'] = $f->student_uid;
+    $rs[$f->nid]['session_name'] = $f->session_name;
+    $rs[$f->nid]['remarks'] = $f->remarks;
+    $rs[$f->nid]['date'] = $f->date;
+    
+  }
+  return $rs;
+}
+
+
+function get_authorise_instalment_student_finder_form(){
+
+  $form['#title'] = 'Student Finder';
+  $form['mat_number'] = array(
+      '#title' => 'Matriculation / JAMB Number',
+      '#type' => 'textfield',
+      '#size' => 40,
+      '#required' => TRUE
+    );
+  
+  $form['submit'] = array(
+    '#value' => 'Search Now',
+    '#type' => 'submit'
+  );
+
+  return $form;
+	
+}
+
+
+
+function get_authorise_instalment_student_finder_form_validate($form, &$state){
+  
+}
+
+
+function get_authorise_instalment_student_finder_form_submit($form, &$state){
+  global $EDUERPstudentInitiated;
+  $values = $state['values'];
+  
+  $returnURL = 'staff/authoriseinstalment';
+  ini_student_fee_profile($values['mat_number'], 'eduerp_authorise_instalment', $returnURL);
+  
+}
+
+
+function staff_display_instalment_authorisations($sessionName) {
+  $html = "
+  <div id='assigned_courses'>
+  <b>Available List of Instalment Authorisations - ". $sessionName ."</b><br /><br />";
+  
+  $authorisations = get_instalment_authorisations($sessionName);
+  if(! is_array($authorisations) || ! sizeof($authorisations))
+    return $html .= Error_Types(106) .'</div>';
+  //Please click on a Fee Item name to Edit it.<br />
+  $html .="
+  
+  <table border=1>
+    <tr>
+      <th><b>#</b></th>
+      <th><b>Mat. Num.</b></th>
+      <th><b>Full Name</b></th>
+      <th><b>Program Name</b></th>
+      
+      <th><b>Remarks</b></th>
+      <th><b>Date</b></th>
+      
+    </tr>";$i = 1;
+    
+    foreach ($authorisations as $k => $v){
+      if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+        $html .= "
+         <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+           <td width='30px'>". $i++ ."</td>";
+           $student_profile = new UserProfile($v['student_uid']);
+           $programmeName = get_programmes($student_profile->profile_first_choice, true);
+           
+           //<td><a  href='" . url("staff/createmodifyfeeitem/$k") ."'>". $v['fee_item'] ."</a></td>
+           //<td>". $v['session_name'] ."</a></td>  <th><b>Session Name</b></th>
+           $html .="
+           <td>". $x = (! empty($student_profile->profile_matno) ? $student_profile->profile_matno : 'N/A') ."</td>
+           <td>". $student_profile->profile_last_name .', '. $student_profile->profile_first_name ."</a></td>
+           <td>". $programmeName[$student_profile->profile_first_choice] ."</a></td>
+           
+           <td>". $v['remarks'] ."</a></td>
+           <td>". $v['date'] ."</a></td>
+           
+         </tr>";
+      }
+
+  $html .= "
+  </table>
+  </div>";
+  return $html;
+
+}
+
+
+function staff_show_authorise_instalment_form(){
+	
+ 
+  $form['#title'] = 'School Fees Instalment Payment';
+  /*
+  $form['previous'] = array(
+    '#value' => 'Back',
+    '#type' => 'submit'
+  );
+  */
+   $form['remarks'] = array(
+    '#type' => 'textarea',
+    '#title' => 'Remarks - Brief details about the Instalment Payment',
+    '#size' => 255,
+    //'#required' => true
+  );
+   $form['lbl01'] = array(
+    '#type' => 'item',
+    '#value' => "<font color=#FF0000><b>By clicking 'Authorise Instalment Payment!' you acknowledge that the student whose details appear above has been authorised to pay his/her School Fees in Instalments for the Current Session only.</b></font>",
+    
+  );
+  $form['cmdCancel'] = array(
+    '#value' => 'Cancel',
+    '#type' => 'submit'
+  ); 
+  $form['submit'] = array(
+    '#value' => 'Authorise Instalment Payment!',
+    '#type' => 'submit'
+  );
+ 
+  return $form;	
+}
+
+
+
+function staff_show_authorise_instalment_form_validate($form, &$state){
+  $values = $state['values'];
+  
+  switch(trim(strtolower(strtoupper($values['op'])))){
+    case 'authorise instalment payment!':
+     
+      if(empty($values['remarks'])){
+    	form_set_error('remarks', Error_Types(161));    	    
+      }
+      
+      if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_instalment']['studentUID'], variable_get('eduerp_current_session', ''))){
+      	form_set_error('', Error_Types(162));   
+        return;	      
+      }
+      if(is_instalment_authorisation_existing($_SESSION['eduerp_authorise_instalment']['studentUID'], variable_get('eduerp_current_session', ''))){
+      	form_set_error('', Error_Types(163));   
+        return;	      
+      }
+      
+      
+    break; 	    
+  }
+  
+}
+
+
+
+function staff_show_authorise_instalment_form_submit($form, &$state){
+  global $user;
+  $values = $state['values'];
+  
+  switch(trim(strtolower(strtoupper($values['op'])))){
+    case 'authorise instalment payment!':
+      
+      $node = new stdClass();
+      $node->type                             	= 'school_fee_approved_instalments';
+      $node->uid                              	= 1;  // Admin
+      $node->status                           	= 1;  // Published
+      $node->promote                          	= 0;
+      $node->sticky                           	= 0;
+      $node->comment                          	= 0;
+      $node->title                            	= 'Authorise Instalment - '. $_SESSION['eduerp_authorise_instalment']['studentUID'] .' - '. variable_get('eduerp_current_session', '');
+      $node->field_sai_student[0]['uid']       	= $_SESSION['eduerp_authorise_instalment']['studentUID'];
+      $node->field_sai_session_name[0]['value'] = variable_get('eduerp_current_session', '');
+      $node->field_sai_remarks[0]['value']      = $values['remarks'];
+      $node->field_sai_staff[0]['uid']       	= $user->uid;
+      $node->field_sai_date[0]['value']     	= date("Y-m-d H:i:s"); 
+  
+      node_save($node);
+      drupal_set_message('Instalment Authorisation was successful!');   
+      unset($_SESSION['eduerp_authorise_instalment']); $_SESSION['eduerp_authorise_instalment'] = null;	
+      
+    break;
+    
+    case 'cancel':
+      unset($_SESSION['eduerp_authorise_instalment']); $_SESSION['eduerp_authorise_instalment'] = null;	    
+    	    
+    break;
+    
+  }
 }
 
 
