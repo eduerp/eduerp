@@ -2600,18 +2600,6 @@ function hostel_allocation_enter_mat_number_form(){
 }
 
 
-function get_student_info_by_jamb_number($jambno){
-
- $sql ="SELECT nspro.uid uid
-   FROM {node} nspro, {content_type_student_profile} spro
-   WHERE spro.field_profile_jambno_value='%s' AND nspro.type='student_profile' AND nspro.vid=spro.vid ";
- //, {content_type_profile} pro , IFNULL(field_profile_jambno_value, 'N/A') profile_jambno, IFNULL(field_profile_matno_value, 'N/A') profile_matno, field_profile_last_name_value profile_last_name, field_profile_first_name_value profile_first_name, field_profile_first_choice_nid profile_first_choice, field_profile_level_name_value profile_level_name, field_profile_gender_value profile_gender, field_profile_health_status_value profile_health_status
- return $rs = db_query($sql, $jambno);
- //if(db_affected_rows($rs) > 0) return true; else return false;
-
-}
-
-
 function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
   global $EDUERPstudentInitiated;
   $values = $form_state['values'];
@@ -2635,7 +2623,7 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
     }
   }
   else {
-    //a valid returning student
+    //a student with correct mat num
     $found = true;
 
   }
@@ -2671,8 +2659,16 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
 
     //drupal_set_message("JAMB num is ". $student_profile->profile_jambno);
     
-    if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == "")
+    if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == ""){
       form_set_error('mat_number', Error_Types(143));
+      unset($_SESSION['eduerp_reserve_room']); $_SESSION['eduerp_reserve_room']=null; 
+      if($EDUERPstudentInitiated){
+      	drupal_goto("student/hostelreservation/");      
+      }
+      else{
+      	drupal_goto("hostel_allocation/direct_reservation/");     
+      }
+    }
        
      
     
