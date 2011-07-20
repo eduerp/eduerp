@@ -6,9 +6,8 @@
 var displayUrl = function(response) {
 
     var result = Drupal.parseJson(response);
-    window.alert(result.data);
     //$(id of the field to update with the value of the link).append
-    $('agreement-ajax-result').html(result.data);
+    //$('agreement-ajax-result').html(result.data);
 
 }
 

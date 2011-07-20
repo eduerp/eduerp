@@ -639,11 +639,11 @@ function student_theme() {
       ),
   );
 
-  /*$field = array(
+  $field = array(
       'student_field_uncleared' => array(
           'arguments' => array('node' => NULL, 'element' => NULL)
       ),
-  );*/
+  );
   $field['uncleared'] = content_fields('field_profile_mode_of_entry');
   $field['uncleared_reasons'] = 'uncleared_reasons';
   $custom['extras'] = $field;
@@ -1703,4 +1703,9 @@ function student_hostelreservation_cart_submit($form, &$form_state) {
             }
             break;
     }
+}
+
+function student_init() {
+  //drupal_add_js - to add the js
+  drupal_add_js(drupal_get_path('module', 'student') .'/student.js');
 }

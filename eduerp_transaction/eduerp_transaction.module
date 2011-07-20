@@ -5,7 +5,7 @@
  */
 
 /**
- * Implementation hook_menu
+ * Implementation of hook_perm()
  * @return <type>
  */
 function eduerp_transaction_perm() {
@@ -13,7 +13,7 @@ function eduerp_transaction_perm() {
 }
 
 /**
- * hook_menu implementation
+ * Implementation of hook_menu()
  */
 function eduerp_transaction_menu() {
     $items = array();
@@ -67,7 +67,6 @@ function eduerp_transaction_theme() {
  * Displays reservation information as well as perform checkout functions
  */
 function eduerp_transaction_checkout_form(&$form_state) {
-    //$form['#theme'] = theme('');
     global $user, $EDUERPstudentInitiated;
 
     $path = drupal_get_path('module', 'hostel_allocation');
@@ -82,16 +81,10 @@ function eduerp_transaction_checkout_form(&$form_state) {
     if(module_exists('hostel_allocation')) {
         drupal_set_message('hostel_allocation exits');
         $student_hostel_reservation = module_invoke('get_reservation_info', $user->uid);
-        dsm($student_hostel_reservation);
-        //dsm(module_invoke('get_reservation_info', $EDUERPstudentInitiated));
-        dsm(module_invoke('hostel_allocation', 'get_reservation_info', 955));
-        dsm(get_reservation_info($user->uid));
     }
     if(!empty($student_hostel_reservation)) {
         //$output .= $student_hostel_reservation->hostel_name;
     }
-    //$form['#theme'] = theme('eduerp_transaction_display_reservation_info', $bank_account, $type);
-    //$form['#theme'] = theme('item_list', $output);
 
     $form['submit'] = array(
         '#type' => 'submit',
@@ -99,35 +92,4 @@ function eduerp_transaction_checkout_form(&$form_state) {
     );
 
     return $form;
-}
-/*
- * hook_form_alter implementation
- */
-function eduerp_transaction_form_alter(&$form, $form_state, $form_id) {
-    if($form_id == 'hostel_allocation_reports_switch_form') {
-
-    }
-
-    // retrieve the selected hostel name item
-    $selected_hostel_name = '';
-
-    // retrieve ubercart price for each hostels.
-    // select sell_price from uc_product where nid = {selected_hostel_name_nid}[nid]
-    $hostel_price = '';
-
-    // add here a textfield that will perform valuation based on the selected shopping cart item price.
-
-    // add here hidden fields to store the price of each items. The value of the hidden fields is passed
-    // the textfield above.
-}
-
-
-function eduerp_transaction_menu_alter(&$callbacks) {
-    //views_menu_alter(&$calbacks);
-    // if func_exists
-    //dsm($callbacks);
-
-    // find /cart in the $callback
-
-    // if(empty(uc_cart_get_contents())), add
 }
