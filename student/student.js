@@ -69,6 +69,59 @@ Drupal.behaviors.student = function(context) {
 			}
 			return true;
 	}
+	
+	// student clearance at /student/clearance?jambno
+	
+	var cleared = 'edit-field-clearance-cleared';
+	var not_cleared = 'edit-field-uncleared-wrapper';
+	var reasons_uncleared = 'edit-field-uncleared-reasons-wrapper';
+	
+	$('#' + reasons_uncleared).hide();
+	
+	var elements_uncleared = [not_cleared, reasons_uncleared];
+	var elements_hidden = [not_cleared];
+	
+	$('#' + cleared, context).bind('click', function(){
+		/*$.each(elements_uncleared, function(i, n) {
+			$('#' + elements_uncleared[i]).toggle("slow");
+		});*/
+		//$('#' + cleared).attr("slow");
+		// force to be Hidden
+		$('#' + reasons_uncleared).hide();
+		$('#' + not_cleared).toggle("slow");
+		$.each(elements_hidden, function(i, n) {
+			if($('#' + elements_hidden[i] + ' input').is(":hidden")){
+				alert('yes');
+				$('#' + elements_hidden[i] + ' input').attr('checked', false);
+			}
+			//$('#' + elements_hidden[i] + ' input:hidden').attr('checked', '');
+		});	
+	});
+	
+	$('#' + not_cleared, context).bind('click', function(){
+		//$('#' + not_cleared + ' input').attr("checked", "checked");
+		$('#' + reasons_uncleared).toggle("slow");
+		//$('#' + cleared).toggle("slow");
+	});
+	
+	// for each element, if anyone is hidden, attr('checked', '')
+	//$.each(elements_hidden, function(i, n) {
+		/*if($('#' + elements_hidden[i] + 'input').is(":hidden")){
+			alert('yes');
+			$('#' + elements_hidden[i] + 'input').attr('checked', '');
+		}*/
+		
+			//$('#' + elements_hidden[i]).toggle("slow");
+	//});		
+	
+	var isVisible = function(elem){
+		var $elem = $(elem);
+		//First check if elem is hidden through css as this is not very costly:
+		if($elem.getStyle('display') == 'none' || $elem.getStyle('visibility') == 'hidden' ){
+						//elem is set through CSS stylesheet or inline to invisible
+						return false;
+		}
+	}
 }
 
 // $.each(Drupal.setting.SelectedRegFormFields).blur(function() {

@@ -635,20 +635,26 @@ function student_theme() {
       'arguments' => array('element' => NULL),
     ),
       'student_field_uncleared' => array(
-          //'arguments' => array('node' => NULL, 'element' => NULL)
+          'arguments' => array('node' => NULL, 'element' => NULL)
       ),
-  );
-
-  $field = array(
-      'student_field_uncleared' => array(
+			'student_field_uncleared_reasons' => array(
+          'arguments' => array('node' => NULL, 'element' => NULL)
+      ),
+			'student_field_deferred' => array(
           'arguments' => array('node' => NULL, 'element' => NULL)
       ),
   );
-  $field['uncleared'] = content_fields('field_profile_mode_of_entry');
-  $field['uncleared_reasons'] = 'uncleared_reasons';
-  $custom['extras'] = $field;
+
+  /*$field = array(
+      'student_field_uncleared' => array(
+          'arguments' => array('node' => NULL, 'element' => NULL)
+      ),
+  );*/
+  //$field['uncleared'] = content_fields('field_profile_mode_of_entry');
+  //$field['uncleared_reasons'] = 'uncleared_reasons';
+  //$custom['extras'] = $field;
   $custom = array_merge($custom, _module_views_templates($theme_path));
-  //dsm($custom);
+  dsm($custom);
   //dsm(student_clearance_node_load($student_id));
   return $custom;
 }
@@ -690,47 +696,44 @@ function _module_views_templates($templates_path) {
 }
 
 /**
- * Renders student_field_uncleared cck field
- * @param <type> $node
- * @return <type>
+ * Renders student_field_uncleared checkbox
+ * 
+ * 
  */
 function theme_student_field_uncleared() {
-    $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
-    $node = student_clearance_node_load($student_id);
-    $field = content_fields('field_clearance_uncleared', $node->type);
-    //dsm(content_field_instance_read('student_clearance'));
-    $type = $node->type;
-    $fields = content_fields();
-    $type_fields = array();
-    foreach ($fields as $field_name => $field_data)
-    {
-      if ($field_data['type_name'] == $type)
-      {
-        $type_fields[$field_name] = $field_data;
-      }
-    }
-    //dsm($type_fields);
-    $node->build_mode = 'cck_blocks';
-    $node->content = $type_fields;
-    $content = array();
-    $content[$node->nid] = node_build_content($node, FALSE, TRUE);
-    //dsm($node->field_verification_date[0]['value']);
-    //dsm(content_view_field($field, $node, FALSE, FALSE));
-    //content_field_form($form, $form_state, $field)
-    $form['field_clearance_uncleared'] = array();
-    $form['#node'] = $node;
-    //dsm(theme_checkbox(text_widget($form['#node'], $field['widget']['default_value'][0]['value'], $field, $field['widget'])));
-    //$element = optionwidgets_widget($form['#node'], $form_state['values'][$field['field_name']], $field, $field['widget']);
-    //$element = optionwidgets_widget($form['#node'], $field['widget']['default_value'][0]['value'], $field, $field['widget']);
-
-    //dsm(theme_optionwidgets_onoff($element));
-
-    //dsm(theme_form_element($element, $form_state['values'][$field['field_name']]));
-    $str = array('#printed' => 'simple string');
-    $element = drupal_render($str);
-    return $element;
+	$element = array(
+		'#title' => t('Not Cleared'),
+		'#name' => 'field-uncleared',
+		'#id' => 'edit-field-uncleared',
+		//'#value' => 1,
+		//'#attributes' => array('checked' => 'checked')
+	);
+	return theme('checkbox', $element);
 }
 
+function theme_student_field_uncleared_reasons() {
+	$element = array(
+		'#title' => t('Reasons not cleared'),
+		'#name' => 'field-uncleared-reasons',
+		'#id' => 'edit-field-uncleared-reasons',
+		'#options' => array('incomplete grade', 'low score'),
+		'#multiple' => 1,
+		'#attributes' => array('class' => '')
+	);
+	
+	return theme('select', $element);
+
+}
+
+function theme_student_field_deferred() {
+	$element = array(
+		'#title' => t('Defer to next session'),
+		'#name' => 'field-defered',
+		'#id' => 'edit-field-deferred',
+		'#value' => 0
+	);
+	return theme('checkbox', $element);
+}
 /**
  * A simple wrapper to call node_load for student_clearance
  * content type.
@@ -750,34 +753,6 @@ function student_clearance_node_load($student_id) {
     $student_clearance = node_load($node);
   }
   return $student_clearance;
-}
-
-function student_preprocess_views_view_table(&$variables) {
-  $variables['ntypes'] = node_get_types('type', 'clearance_agreement');
-  $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
-  $node = student_clearance_node_load($student_id);
-  $field = content_fields('field_clearance_uncleared', $node->type);
-  $type = $node->type;
-  $fields = content_fields();
-  $type_fields = array();
-  foreach ($fields as $field_name => $field_data) {
-    if ($field_data['type_name'] == $type) {
-      $type_fields[$field_name] = $field_data;
-    }
-  }
-  //dsm($type_fields);
-  $node->content = $type_fields;
-  //$node->build_mode = 'cck_blocks';
-  $variables['node'] = $node;
-  //$variables['uncleared'] = drupal_get_form('student_clearance_fields_extra_form');
-  //dsm($variables);
-}
-
-function student_clearance_fields_extra_form($form) {
-    $form['uncleared'] = array(
-        'type' => 'checkbox'
-    );
-    return $form;
 }
 
 function theme_student_formatter_default($element) {

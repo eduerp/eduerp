@@ -26,6 +26,17 @@ function student_clearance_node_info() {
       'min_word_count' => '0',
       'help' => '',
     ),
+    'student_clearance' => array(
+      'name' => t('Student Clearance'),
+      'module' => 'features',
+      'description' => t('Student clearance stores clearance data for students. This includes the date the clearance was made, who was cleared and who did the clearance. Also it stores student results verification data as well.'),
+      'has_title' => '1',
+      'title_label' => t('Title'),
+      'has_body' => '0',
+      'body_label' => '',
+      'min_word_count' => '0',
+      'help' => '',
+    ),
   );
   return $items;
 }
@@ -97,6 +108,19 @@ function student_clearance_rules_defaults() {
             '#weight' => 0,
           ),
         ),
+        '#version' => 6003,
+      ),
+      'rules_user_logs_in_for_the_first_time' => array(
+        '#type' => 'rule',
+        '#set' => 'event_user_login',
+        '#label' => 'User logs in for the first time',
+        '#active' => 1,
+        '#weight' => '0',
+        '#categories' => array(
+          '0' => 'student',
+          'student_clearance' => 'student_clearance',
+        ),
+        '#status' => 'default',
         '#version' => 6003,
       ),
     ),
