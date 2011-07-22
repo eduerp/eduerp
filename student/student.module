@@ -645,27 +645,11 @@ function student_theme() {
       ),
   );
 
-  /*$field = array(
-      'student_field_uncleared' => array(
-          'arguments' => array('node' => NULL, 'element' => NULL)
-      ),
-  );*/
-  //$field['uncleared'] = content_fields('field_profile_mode_of_entry');
-  //$field['uncleared_reasons'] = 'uncleared_reasons';
-  //$custom['extras'] = $field;
   $custom = array_merge($custom, _module_views_templates($theme_path));
-  dsm($custom);
   //dsm(student_clearance_node_load($student_id));
   return $custom;
 }
 
-function student_element_uncleared() {
-    $form['uncleared'] = array(
-        'value' => content_fields('field_profile_mode_of_entry')
-    );
-    $element = drupal_render($form);
-    return $element;
-}
 /**
  * helper function to expose the templates in the module's theme folder for rendering
  * views
@@ -691,7 +675,6 @@ function _module_views_templates($templates_path) {
       ),
     );
   }
-  //dsm($templates);
   return $templates;
 }
 
