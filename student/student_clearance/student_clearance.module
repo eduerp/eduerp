@@ -63,7 +63,8 @@ function student_clearance_pdf_agreement_ahah_callback() {
 	}else {
 		$output .= l(t('Download agreement'), $form['agreement_pdf_ahah']['#value'], array('absolute' => TRUE, 'attributes' => array('target' => '_blank')));
 	}
-  drupal_json(array('status' => TRUE, 'data' => $output)); //print drupal_json brings up an alert window
+	//print drupal_json brings up an alert window
+  drupal_json(array('status' => TRUE, 'data' => $output)); 
 }
 
 /**
@@ -176,6 +177,7 @@ function student_clearance_agree_submit($form, &$form_state) {
 
 	if($form_state['values']['field_agreement_agree']) {
 		//$form['field_agreement_agree']['#attributes'] = array('disabled' => 'disabled');
+		return;
 	}
 }
 
@@ -205,6 +207,7 @@ function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
 		case 'prepare':
 			if(student_clearance_agreement_isset($node)) {
 				//$node->field_agreement_agree[0]['value'] = 1;
+				return;
 			}
 			break;
 	}

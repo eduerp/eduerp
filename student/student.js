@@ -80,6 +80,7 @@ Drupal.behaviors.student = function(context) {
 	
 	var elements_uncleared = [not_cleared, reasons_uncleared];
 	var elements_hidden = [not_cleared];
+
 	
 	$('#' + cleared, context).bind('click', function(){
 		/*$.each(elements_uncleared, function(i, n) {
@@ -90,9 +91,11 @@ Drupal.behaviors.student = function(context) {
 		$('#' + reasons_uncleared).hide();
 		$('#' + not_cleared).toggle("slow");
 		$.each(elements_hidden, function(i, n) {
-			if($('#' + elements_hidden[i] + ' input').is(":hidden")){
-				alert('yes');
-				$('#' + elements_hidden[i] + ' input').attr('checked', false);
+			if($('#' + elements_hidden[i]).css('display') == 'none'){
+				//$('#' + elements_hidden[i] + ' input').setAttribute("checked", "");
+				//$('#' + elements_hidden[i] + ' input').removeAttribute("checked");
+				//$('#' + elements_hidden[i] + ' input').checked = false;
+				//$('#' + elements_hidden[i] + ' input').attr('checked', false);
 			}
 			//$('#' + elements_hidden[i] + ' input:hidden').attr('checked', '');
 		});	
