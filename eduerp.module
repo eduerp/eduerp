@@ -1,4 +1,5 @@
 <?php
+// $Id$
 
 function eduerp_menu() {
 
@@ -84,6 +85,19 @@ function eduerp_admin_settings() {
     '#default_value' => variable_get('eduerp_agreement', ''),
     '#description' => t("Enter here the agreement (terms of use) that binds the student and the institution.")
   );
+	
+	if (!module_exists('token')) {
+    $form['content']['#description'] .= ' ' . t('Optionally, you may install <a href="http://drupal.org/project/token">Token module</a> to insert placeholders   into the node body.');
+  }
+  else {
+    $form['tokens'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Tokens'),
+      '#description' => theme('token_help', array('global', 'user')),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+	}
   
   return system_settings_form($form);
 }

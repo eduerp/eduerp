@@ -53,9 +53,29 @@
     ?>
       <tr class="<?php echo $row_class; ?>">
         <th style="text-align:right">
-          <input type="checkbox" name="clearance" value="1" CLEARANCE_OPTIONS />
+          <input type="checkbox" name="clearance" id="edit-field-clearance-cleared" value="1" CLEARANCE_OPTIONS />
         </th>
         <td>Clear Student</td>
+      </tr>
+			<?php
+      $row_class = ($row_class == "even") ? "odd" : "even";
+    ?>
+      <tr class="<?php echo $row_class; ?>">
+        <th style="text-align:right">
+          <!--<input type="checkbox" name="field-clearance-uncleared" id="edit-field-clearance-uncleared" value="0" class="form-checkbox" />-->
+        </th>
+        <!--<td>Not Cleared</td>-->
+				<td><?php print theme('student_field_uncleared');?></td>
+				<td><?php print theme('student_field_uncleared_reasons');?></td>
+      </tr>
+			<?php
+      $row_class = ($row_class == "even") ? "odd" : "even";
+    ?>
+      <tr class="<?php echo $row_class; ?>">
+        <th style="text-align:right">
+          <!--<input type="checkbox" name="field-clearance-deferred" id="edit-field-clearance-deferred" value="0" class="form-checkbox" />-->
+        </th>
+        <td><?php print theme('student_field_deferred');?></td>
       </tr>
     <?php
       $row_class = ($row_class == "even") ? "odd" : "even";
