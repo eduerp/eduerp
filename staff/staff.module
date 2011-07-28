@@ -9518,6 +9518,7 @@ function staff_school_fees_create_modify_fee_setup1_form() {
   if ($editMode) $form['fee_structure_type']['#options'] = array(''=>'--select one--') + get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type'], true);
 
   
+  
   //if ($feeSetup){
     $form['cmdCancel'] = array(
       '#value' => 'Cancel',
@@ -9569,6 +9570,14 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
 function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
   $values = $state['values'];
   $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  /*
+  if($form_state['storage']['page'] == 1) {
+    $form_state['rebuild'] = TRUE;
+    $form_state['storage']['page']++;
+  }
+  */
+  //$form_state['rebuild'] = TRUE;
+  //$form_state['storage']['page'] = 2;
   switch(trim(strtolower(strtoupper($values['op'])))){
     case'continue':
       if(! $editMode){
@@ -9585,6 +9594,7 @@ function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
       if(trim(strtolower(strtoupper(substr($feeStructure['name'],0,7)))) != 'program' && isset($_SESSION['eduerp_fee_setup']['programme_nid'])){
         unset($_SESSION['eduerp_fee_setup']['programme_nid']); // = null;  
       }
+      
       break;   
       
     case 'cancel':
@@ -9964,7 +9974,7 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
     }
   }
   
-  $_SESSION['eduerp_fee_setup']['fee_structure_name'] = $values['fee_structure_name'];
+  //$_SESSION['eduerp_fee_setup']['fee_structure_name'] = $values['fee_structure_name'];
   
   
   //$_SESSION['eduerp_fee_setup']['first_installment'] = $values['first_installment'];
@@ -9988,7 +9998,8 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
     break;
     
     case 'continue':
-       $_SESSION['eduerp_page'] = 3; 
+       $_SESSION['eduerp_page'] = 3; unset($_POST['eduerp_page']);
+       drupal_goto('staff/createmodifyfeestup'); 
        //drupal_set_message("continue");
     break;
     case 'cancel':
@@ -10059,6 +10070,7 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
       break;
     case 'back':
       $_SESSION['eduerp_page'] = 2; unset($_POST['eduerp_page']);
+      drupal_goto('staff/createmodifyfeestup');
       
     break;
     
