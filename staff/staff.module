@@ -8349,7 +8349,7 @@ function staff_school_fees_create_modify_school_fee_setup(){
   global $user;
   ob_start();
   
-  $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   if (! staff_has_eduerp_role($user->uid, 0, 0, array('Bursar'))) $isAuthorized = false; else $isAuthorized = true;
   
   $html = "";
@@ -9487,7 +9487,7 @@ function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
 
 function staff_school_fees_create_modify_fee_setup1_form() {
   
-  $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   if ($editMode && ! $_SESSION['eduerp_fee_setup']['page_one_assigned']) {
     //if (empty($_POST['fee_structure_type'])) {
       //prepare the edit data
@@ -9569,7 +9569,7 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
 
 function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
   $values = $state['values'];
-  $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   /*
   if($form_state['storage']['page'] == 1) {
     $form_state['rebuild'] = TRUE;
@@ -9608,7 +9608,7 @@ function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
 
 
 function staff_school_fees_create_modify_fee_setup2_form() {
-  $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   //display the list of all available fee items
   //get fee items
   $feeItems = get_school_fee_items();
@@ -9821,7 +9821,7 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 
 //! is_numeric($values[$k.'txt'])
 function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state) {
-  $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   
   $values = $state['values'];
   
@@ -10045,7 +10045,7 @@ function staff_school_fees_create_modify_fee_setup3_form() {
 function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state) {
    $values = $state['values'];
   //make sure that the combination is not existing
-  $editMode = (arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   switch(trim(strtolower(strtoupper($values['op'])))){
     case 'submit':
       $programNID = isset($_SESSION['eduerp_fee_setup']['programme_nid']) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
@@ -10118,7 +10118,7 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
        
        foreach($studentLevels as $slID => $slName){
         foreach($studentNationalities as $snID => $snName){
-	       if(arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))){
+	       if((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))){
 		 //for update
 		 
 		 //get the node nid
@@ -10168,7 +10168,7 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
 	       
 	       
 	       
-	       if(arg(2) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))){
+	       if((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))){
 		 //we need to delete all previous inserts
 		 //get previous details
 		
