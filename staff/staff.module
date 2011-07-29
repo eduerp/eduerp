@@ -9999,7 +9999,10 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
     
     case 'continue':
        $_SESSION['eduerp_page'] = 3; unset($_POST['eduerp_page']);
-       drupal_goto('staff/createmodifyfeestup'); 
+       if(arg(2))
+       	 drupal_goto('staff/createmodifyfeestup/'. arg(2));
+       else
+         drupal_goto('staff/createmodifyfeestup'); 
        //drupal_set_message("continue");
     break;
     case 'cancel':
@@ -10070,7 +10073,10 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
       break;
     case 'back':
       $_SESSION['eduerp_page'] = 2; unset($_POST['eduerp_page']);
-      drupal_goto('staff/createmodifyfeestup');
+      if(arg(2))
+       	 drupal_goto('staff/createmodifyfeestup/'. arg(2));
+      else
+         drupal_goto('staff/createmodifyfeestup'); 
       
     break;
     
@@ -10105,7 +10111,7 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
        
        //this is where we'll submit the entire fee setup
        // fee setup CCK
-       $programNID = isset($_SESSION['eduerp_fee_setup']['programme_nid']) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
+       $programNID = (isset($_SESSION['eduerp_fee_setup']['programme_nid']) && is_numeric($_SESSION['eduerp_fee_setup']['programme_nid'])) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
        
        $programInfo = get_programmes($programNID, true);
        $_SESSION['eduerp_fee_setup']['fee_structure_name'] = ($programNID == 0) ? 'General Fee Structure' : $programInfo[$programNID];
