@@ -8450,7 +8450,10 @@ function staff_school_fees_scholarship_payment(){
   else{
     //show summary
     $html .= show_student_info($_SESSION['eduerp_authorise_scholarship']);
+    $html .= '<br /><hr /><br />';
+    $html .= show_school_fees_payment_option("eduerp_authorise_scholarship", $_SESSION['eduerp_authorise_scholarship']['studentUID'], $_SESSION['eduerp_authorise_scholarship']['programNID'], $_SESSION['eduerp_authorise_scholarship']['levelType'], $_SESSION['eduerp_authorise_scholarship']['nationalityType']);
     
+    $html .="<br />";
     /*
     //we need to set some defaults for scholarship payments
     
@@ -8505,7 +8508,7 @@ function staff_school_fees_authorise_instalment_payment(){
   $html .= '<hr /><br />';
   if(! isset($_SESSION['eduerp_authorise_instalment']['studentUID'])){
     
-    $html .= "<b>Authorise Instalment Payment</b> - Please provide either the JAMB or Matrculation Number of the Student.<br />";
+    $html .= "<b>Authorise Instalment Payment - ". variable_get('eduerp_current_session', '') ."</b> - Please provide either the JAMB or Matrculation Number of the Student.<br />";
     $html .= '<br />';
     if($isAuthorized){
       $html .= drupal_get_form('get_authorise_instalment_student_finder_form');
@@ -8522,6 +8525,8 @@ function staff_school_fees_authorise_instalment_payment(){
   else{
     //show summary
     $html .= show_student_info($_SESSION['eduerp_authorise_instalment']);
+    $html .= '<br /><hr /><br />';
+    $html .= show_school_fees_payment_option("eduerp_authorise_instalment", $_SESSION['eduerp_authorise_instalment']['studentUID'], $_SESSION['eduerp_authorise_instalment']['programNID'], $_SESSION['eduerp_authorise_instalment']['levelType'], $_SESSION['eduerp_authorise_instalment']['nationalityType']);
     
     $html .="<br />";
     $html .= drupal_get_form('staff_show_authorise_instalment_form');
@@ -10749,6 +10754,8 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       //make sure no payment info exists for the student for the current session
       //if(is_school_fee_info_existing($studentInfo->uid)){
       //drupal_set_message($_SESSION[$varName]['summaryPaymentType']);
+      
+      
       /**
       The check below is no longer applcable
       
@@ -10772,7 +10779,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       	      
       }
       
-      
+      //drupal_set_message('MOE is '. $student_profile->profile_mode_of_entry);
       //valid mat or JAMB number was found
       $_SESSION[$varName]['studentUID'] = $student_profile->uid;
       $_SESSION[$varName]['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
@@ -10781,8 +10788,9 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       $_SESSION[$varName]['mat_num'] = ! empty($student_profile->profile_matno) ? $student_profile->profile_matno : 'N/A';
       $_SESSION[$varName]['jamb_num'] = $student_profile->profile_jambno;
       $_SESSION[$varName]['gender'] = strtolower($student_profile->profile_gender);
+      $_SESSION[$varName]['mode_of_entry'] = strtolower($student_profile->profile_mode_of_entry);
       //$_SESSION['eduerp_authorise_scholarship']['health_status'] = strtolower($student_profile->profile_health_status);
-      $_SESSION[$varName]['program_nid'] = $student_profile->profile_first_choice;
+      $_SESSION[$varName]['programNID'] = $student_profile->profile_first_choice;
       
       $_SESSION[$varName]['country_name'] = ! empty($student_profile->profile_country_name) ? $student_profile->profile_country_name : 'N/A';
       
@@ -10810,13 +10818,29 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       	return;
       }
       $_SESSION[$varName]['levelType'] = null;
+      
+      
+      //get the level of the student
+      $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
+      
+      if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
+        $levelStatus = "freshman";
+      }
+      elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) != "UME"){
+      	$levelStatus = "freshman";    
+      	      
+      }
+      else{
+        $levelStatus = "returning student";    
+      }
+      
       while($r = db_fetch_object($rs)){
-        if(empty($student_profile->profile_matno) && trim(strtolower(strtoupper($r->level_type_name))) == 'freshman'){
+        if($levelStatus == "freshman" && trim(strtolower(strtoupper($r->level_type_name))) == "freshman"){
       	  $_SESSION[$varName]['levelType'] = $r->nid;
       	  break;
         }
         
-        if(! empty($student_profile->profile_matno) && trim(strtolower(strtoupper($r->level_type_name))) == 'returning student'){
+        if($levelStatus == "returning student" && trim(strtolower(strtoupper($r->level_type_name))) == "returning student"){
       	  $_SESSION[$varName]['levelType'] = $r->nid;
       	  break;
         }
@@ -10903,6 +10927,10 @@ function show_student_info($info){
     <tr>
       <td style='width:150px;'>Matriculation Number:</td>
       <td>". strtoupper(strtolower($info['mat_num'])) ."</td>
+    </tr>
+    <tr>
+      <td style='width:150px;'>Mode of Entry:</td>
+      <td>". strtoupper(strtolower($info['mode_of_entry'])) ."</td>
     </tr>
     <tr>
       <td>Full Name:</td>
@@ -11100,6 +11128,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
     $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), 0, false);
     
     $id = 0;
+    
   }
   else{
     //get fee setup details
@@ -11115,35 +11144,39 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
   
   //fine. Now get his/her own particular fee structure
   if($id == 0)
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND (field_fee_setup_program_nid_value=0 OR field_fee_setup_program_nid_value IS NULL) ", $nationalityType, $levelType);
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND (field_fee_setup_program_nid_value=0 OR field_fee_setup_program_nid_value IS NULL)  AND field_fee_setup_session_value='%s'  ", $nationalityType, $levelType, variable_get('eduerp_current_session', ''));
   else
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND field_fee_setup_program_nid_value=%d ", $nationalityType, $levelType, $id);
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ", $nationalityType, $levelType, $id, variable_get('eduerp_current_session', ''));
   
   $feeSetup = db_fetch_object($rs);
   $setupNID = $feeSetup->nid;
   
   $_SESSION[$varName]['studentFeeSetupNID'] = $setupNID;
   
-  
+  //drupal_set_message('setup total is '.$feeOption[$setupNID]['setup_total_amount']);
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
   
   $_SESSION[$varName]['setup_total_amount'] = $feeOption[$setupNID]['setup_total_amount'];
-  $_SESSION[$varName]['first_instalment'] = $feeOption[$setupNID]['first_instalment'];
-  $_SESSION[$varName]['second_instalment'] = $feeOption[$setupNID]['second_instalment'];
+  //$_SESSION[$varName]['first_instalment'] = $feeOption[$setupNID]['first_instalment'];
+  //$_SESSION[$varName]['second_instalment'] = $feeOption[$setupNID]['second_instalment'];
   
   $_SESSION[$varName]['fee_structure_nid'] = $feeOption[$setupNID]['fee_structure_nid'];
-  $_SESSION[$varName]['fee_program_nid'] = $feeOption[$setupNID]['program_nid'];
+  $_SESSION[$varName]['fee_program_nid'] = $feeOption[$setupNID]['program_nid '];
   
   //display the fee setup
   $html = "
   <div id='assigned_courses'><br />
-  <b>Matching School Fee Setup</b><br />";
+  <b>Matching School Fee Setup - ". variable_get('eduerp_current_session', '') ."</b><br />";
   
   $html .="
   <table border=1 >
     <tr>
-      <td width='200px;'>Fee Structure Type:</td>
+      <td width='200px;'>Fee Structure Name:</td>
       <td><b>". $feeOption[$setupNID]['fee_structure_name'] ."</b></td>
+    </tr>
+    <tr>
+      <td width='200px;'>Fee Structure Type:</td>
+      <td><b>". $feeOption[$setupNID]['fee_structure_class_name'] ."</b></td>
     </tr>";
     
     if(isset($feeOption[$setupNID]['program_nid']) && $feeOption[$setupNID]['program_nid'] != 0){
@@ -11169,7 +11202,8 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
     <tr>
       <td >Fee Amount:</td>
       <td><b>". number_format($feeOption[$setupNID]['setup_total_amount'], 2) ."</b></td>
-    </tr>
+    </tr>";
+    /*
     <tr>
       <td >First Installment:</td>
       <td><b>". $x = (is_numeric($feeOption[$setupNID]['first_instalment']) ? number_format($feeOption[$setupNID]['first_instalment'], 2) : $feeOption[$setupNID]['first_instalment']) ."</b></td>
@@ -11178,6 +11212,8 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
       <td >Second Installment:</td>
       <td><b>". $x = (is_numeric($feeOption[$setupNID]['second_instalment']) ? number_format($feeOption[$setupNID]['second_instalment'], 2) : $feeOption[$setupNID]['second_instalment']) ."</b></td>
     </tr>
+    */
+    $html .="
   </table>
   </div>";
   
