@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // $Id$
 
 include_once('student_clearance.features.inc');
@@ -231,7 +231,8 @@ function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
 * 
 * Marking as WON'T FIX
 *
-* @todo trigger a pdf download instead of browser display
+* @todo trigger a pdf download instead of browser display. 
+* Implement hook_file_download to get this done.
 */
 function todo_student_clearance_init() {
 	global $user;	
@@ -261,6 +262,17 @@ function todo_student_clearance_init() {
 		}
 		fclose ($fd);
 		exit;
+	}
+}
+
+/**
+ * Implementation of hook_file_download
+ * 
+ */
+function student_clearance_file_download($file) {
+	$arg = (arg(0) == 'student' && arg(1) == 'agreement' && arg(2) == 'pdf' && is_numeric(arg(3)));
+	if($arg) {
+		return array(drupal_set_header("Content-type: application/pdf"));
 	}
 }
 
