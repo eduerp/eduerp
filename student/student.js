@@ -1,4 +1,4 @@
-﻿/* 
+/* 
  * @file
  *
  * Common js scripts for student module
