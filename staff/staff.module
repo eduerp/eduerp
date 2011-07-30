@@ -11166,6 +11166,8 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
   //display the fee setup
   $html = "
   <div id='assigned_courses'><br />
+  <script type='text/javascript' src='../misc/drupal.js'></script>
+  <script type='text/javascript' src='../misc/collapse.js'></script>
   <b>Matching School Fee Setup - ". variable_get('eduerp_current_session', '') ."</b><br />";
   
   $html .="
@@ -11202,21 +11204,60 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
     <tr>
       <td >Fee Amount:</td>
       <td><b>". number_format($feeOption[$setupNID]['setup_total_amount'], 2) ."</b></td>
-    </tr>";
-    /*
-    <tr>
-      <td >First Installment:</td>
-      <td><b>". $x = (is_numeric($feeOption[$setupNID]['first_instalment']) ? number_format($feeOption[$setupNID]['first_instalment'], 2) : $feeOption[$setupNID]['first_instalment']) ."</b></td>
     </tr>
-    <tr>
-      <td >Second Installment:</td>
-      <td><b>". $x = (is_numeric($feeOption[$setupNID]['second_instalment']) ? number_format($feeOption[$setupNID]['second_instalment'], 2) : $feeOption[$setupNID]['second_instalment']) ."</b></td>
-    </tr>
-    */
-    $html .="
   </table>
   </div>";
   
+  //show the details here
+  $html .="
+  <div id='assigned_courses'><br />
+  <table border=0>";
+  
+         //show the setup details here  
+         $html .="
+         <tr>
+           <td colspan=9>
+             <fieldset class='collapsible collapsed'><legend>". $feeOption[$setupNID]['fee_structure_class_name'] ." - ". $feeOption[$setupNID]['level_name'] ." - ". $feeOption[$setupNID]['nationality_name'] ." - View details</legend>";
+             //get the fee items
+              $details = get_fee_setup_item_details($setupNID);
+              if(db_affected_rows($details) > 0){
+                $html .="
+                 <table>
+                   <tr>
+                     <th width='15px'>#</th>
+                     <th width='250px'>Fee Item</th>
+                     <th>Full Amount</th>
+                     <th>First Instalment Amount</th>
+                     <th>Second Instalment Amount</th>
+                   </tr>";$l=1;
+                   while($r = db_fetch_object($details)){
+                     $html .="
+                     <tr>
+                       <td>". $l++ ."</td>
+                       <td>". $r->item_name ."</td>
+                       <td>". number_format($r->full_amount, 2) ."</td>
+                       <td>". number_format($r->instalment1_amount, 2) ."</td>
+                       <td>". number_format($r->instalment2_amount, 2) ."</td>
+                     </tr>
+                     ";
+                   	   
+                   }
+                 
+                 $html .="
+               </table>";
+               }
+               else{
+                 $html .= Error_Types(106);
+               }
+             $html .="
+             </fieldset>
+           </td>
+         </tr>";
+     // }
+      
+   $html .="
+   </table>
+   </div>";
   return $html;
   
 }
