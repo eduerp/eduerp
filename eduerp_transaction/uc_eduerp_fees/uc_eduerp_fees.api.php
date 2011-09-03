@@ -3,7 +3,7 @@
 /**
  * @file
  * 
- * Documentation of all hooks in uc_fees module
+ * Documentation of all hooks in uc_eduerp_fees module
  */ 
 
  /**

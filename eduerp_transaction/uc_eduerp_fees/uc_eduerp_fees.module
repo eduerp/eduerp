@@ -14,12 +14,23 @@ function uc_eduerp_fees_add_to_cart($fees) {
 	$fees = module_invoke_all('uc_eduerp_fees_eduerp_fees');
 	//(object)$fees = uc_eduerp_fees_fees();
 	
+	// get fees type or it's attribute combination
 	$type = $fees->type;
+	
+	// get it's attribute combination
+	
+	// The paid fees items
+	$paid_fee_items = uc_eduerp_fees_paid_items();
+	
 	// get the fees description
 	
 	// get the fees type name e.g Full Fees or First Installment or Second installment
 	
 	// test to know if the fees is paid for or not.
+	if(in_array(the fees type), $paid_fee_items) {
+		//drupal get the current destination and set message, Sorry, you have already paid for this
+		// item.
+	}
 	
 	// if the type of fees is second installment, test to see if first installment has 
 	// been paid. If yes, add only the second installment to cart. If no, return NULL
@@ -91,9 +102,11 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
 }
 
 /**
- * All paid fees items
+ * All paid fees items gotten from EduPay
  * 
+ * @return 
+ * 	- $items: Paid items
  */ 
 function uc_eduerp_fees_paid_items() {
-	
+	return $items;
 }
