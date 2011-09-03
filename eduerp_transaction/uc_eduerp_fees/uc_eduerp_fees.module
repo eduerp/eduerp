@@ -14,9 +14,21 @@ function uc_eduerp_fees_add_to_cart($fees) {
 	$fees = module_invoke_all('uc_eduerp_fees_eduerp_fees');
 	//(object)$fees = uc_eduerp_fees_fees();
 	
+	$type = $fees->type;
 	// get the fees description
 	
 	// get the fees type name e.g Full Fees or First Installment or Second installment
+	
+	// test to know if the fees is paid for or not.
+	
+	// if the type of fees is second installment, test to see if first installment has 
+	// been paid. If yes, add only the second installment to cart. If no, return NULL
+	if($fees->type == $fees[2]){ // assuming $fees[2] holds for second installment
+		// test if $fees[1] is paid for
+		// if FALSE
+		// $fees = NULL;
+		// return NULL;
+	}
 	
 	$data = $fees['data']; // All other fee setup values as data, both for Fees and hostel
 	
@@ -58,7 +70,7 @@ function uc_eduerp_fees_eduerp_fees($fees) {
 		'options' => $fees_item['options']
 	);
 	$fees['hostel'] = array(
-		'item' => get_hostel_fees(),
+		'item' => get_hostel_fees($uid),
 		'description' => t('Hostel fees description'),
 	);
 	return $fees;
@@ -76,4 +88,12 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
     $function($fees);
   }
   return $fees;
+}
+
+/**
+ * All paid fees items
+ * 
+ */ 
+function uc_eduerp_fees_paid_items() {
+	
 }
