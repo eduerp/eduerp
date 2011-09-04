@@ -18,26 +18,31 @@ function uc_eduerp_fees_add_to_cart($fees) {
 	$type = $fees->type;
 	
 	// get it's attribute combination
+	$attributes = uc_eduerp_fees_fees_attributes($fees);
 	
 	// The paid fees items
-	$paid_fee_items = uc_eduerp_fees_paid_items();
+	$paid_fees_items = uc_eduerp_fees_paid_items();
 	
 	// get the fees description
 	
 	// get the fees type name e.g Full Fees or First Installment or Second installment
 	
-	// test to know if the fees is paid for or not.
-	if(in_array(the fees type), $paid_fee_items) {
-		//drupal get the current destination and set message, Sorry, you have already paid for this
+	// if $fees is paid for.
+	if(in_array($attributes), $paid_fees_items) {
+		//drupal get the current destination and set message, Sorry, you have already paid for 
+		//this
 		// item.
+		$fees = array();
 	}
 	
+	// This is not relevant any longer. Just test if the fees item is paid for or not. If it 
+	// is already paid for, set fees to NULL
 	// if the type of fees is second installment, test to see if first installment has 
 	// been paid. If yes, add only the second installment to cart. If no, return NULL
 	if($fees->type == $fees[2]){ // assuming $fees[2] holds for second installment
 		// test if $fees[1] is paid for
 		// if FALSE
-		// $fees = NULL;
+		// $fees = array();
 		// return NULL;
 	}
 	
@@ -109,4 +114,39 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
  */ 
 function uc_eduerp_fees_paid_items() {
 	return $items;
+}
+
+/**
+ * Gets the fees attributes including 
+ * 	- product_nid
+ * 	- attribute_id
+ * 	- option_id
+ * 
+ */ 
+function uc_eduerp_fees_fees_attributes($fees) {
+	foreach($fees as $key => $fee) {
+		// get the attribute combination
+	}
+	return $attribute;
+}
+
+/**
+ * Implementation of hook_update_{hook}
+ *
+ * @see 
+ */
+function uc_eduerp_fees_update_fees($uid, $status) {
+	// run ubercart update query here to update an order
+	//db_query('UPDATE {uc_orders} set ')
+	module_load_include('inc', 'node', 'node.pages');
+	$node = (object)array('type' => 'page');
+    node_object_prepare($node);
+		
+    $node->is_new = 1;
+    $node->author = 'kayode';
+    $node->author = $uid;
+    $node->title = t("Ubercart Fees update, status = $status");
+    $node->body = t('Just testing uc_eduerp_fees_update_fees for Ubercart Fees update');
+		
+	return array('node_added', node_save($node));
 }
