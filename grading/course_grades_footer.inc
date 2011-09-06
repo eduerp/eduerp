@@ -728,7 +728,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
 
   $sql = "SELECT
       d.field_college_id_nid AS college_id,
-      c.field_department_nid_nid AS department_id,
+      c.field_department_nid_nid AS department_id
     FROM {content_type_department} d, {content_type_course} c
     WHERE
       d.nid=c.field_department_nid_nid AND
@@ -736,7 +736,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
   $staffresult = db_query($sql, $coursecode);
   $staff = db_fetch_object($staffresult);
 
-  $sql = "SELECT uid AS hod_uid
+  $sql = "SELECT DISTINCT uid AS hod_uid
     FROM {eduerp_roles}
     WHERE (department_id=%d OR college_id=%d OR (department_id=0 AND college_id=0)) AND role IN ($inroles)";
   $hodresult = db_query($sql, $staff->department_id, $staff->college_id);
@@ -1137,7 +1137,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
 
   $sql = "SELECT
       d.field_college_id_nid AS college_id,
-      c.field_department_nid_nid AS department_id,
+      c.field_department_nid_nid AS department_id
     FROM {content_type_department} d, {content_type_course} c
     WHERE
       d.nid=c.field_department_nid_nid AND
@@ -1145,7 +1145,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
   $staffresult = db_query($sql, $coursecode);
   $staff = db_fetch_object($staffresult);
 
-  $sql = "SELECT uid AS dean_uid
+  $sql = "SELECT DISTINCT uid AS dean_uid
     FROM {eduerp_roles}
     WHERE (department_id=%d OR college_id=%d OR (department_id=0 AND college_id=0)) AND role IN ($inroles)";
   $hodresult = db_query($sql, $staff->department_id, $staff->college_id);
