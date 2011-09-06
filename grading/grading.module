@@ -153,9 +153,9 @@ function grading_field_access($op, $field, $account, $node = NULL) {
         }
 
         // Retrieve the locked indicators for all fields for any student_grades that reference the same course and session as this student_grades node
-        // and the user has edit rights by being some kind of Examination Officer
+        // and the user has edit rights by being some kind of Grade Editor
 
-        $inroles = "'Department Examination Officer', 'Faculty Examination Officer', 'University Examination Officer'";
+        $inroles = "'Department Grade Editor', 'Faculty Grade Editor', 'University Grade Editor'";
 
         $sql = "SELECT DISTINCT sg.nid, sg.field_ca1locked_value AS field_ca1, sg.field_ca2locked_value AS field_ca2, sg.field_ca3locked_value AS field_ca3, sg.field_ca4locked_value AS field_ca4, sg.field_examscorelocked_value AS field_exam_score
           FROM
@@ -184,7 +184,7 @@ function grading_field_access($op, $field, $account, $node = NULL) {
         }
 
         // Can this user edit grades after final approval?
-        $inroles = "'University Examination Officer'";
+        $inroles = "'University Grade Editor'";
 
         $sql = "SELECT 1
           FROM
@@ -493,13 +493,13 @@ function grading_node_grants($account, $op) {
   $roles = db_query($sql, $account->uid);
   while ($role = db_fetch_object($roles)) {
 
-    $viewdepartmentgrading = array('Head of Department', 'Department Examination Officer', 'Department Examination Viewer');
+    $viewdepartmentgrading = array('Head of Department', 'Department Grade Editor', 'Department Examination Officer');
     if (in_array($role->role, $viewdepartmentgrading)) $department_ids[] = $role->department_id;
 
-    $viewcollegegrading = array('Dean of Faculty', 'Faculty Examination Officer', 'Faculty Examination Viewer');
+    $viewcollegegrading = array('Dean of Faculty', 'Faculty Grade Editor', 'Faculty Examination Officer');
     if (in_array($role->role, $viewcollegegrading)) $college_ids[] = $role->college_id;
 
-    $viewuniversitygrading = array('Registrar', 'Vice-Chancellor', 'University Examination Officer', 'University Examination Viewer');
+    $viewuniversitygrading = array('Registrar', 'Vice-Chancellor', 'University Grade Editor', 'University Examination Viewer');
     if (in_array($role->role, $viewuniversitygrading)) $university = true;
 
     $viewuniversityapprovedgrading = array('Academic Staff', 'Registry');
@@ -858,7 +858,7 @@ function _grading_ahah_stats() {
   $output .= '<tr><td colspan="2">Departmental Grading Approval Status...</td></tr>';
 
   // Find Registrar uid
-  $inroles = "'Registrar', 'University Examination Officer'";
+  $inroles = "'Registrar', 'University Grade Editor'";
 
   $sql = "SELECT uid AS registrar_uid
     FROM {eduerp_roles}
@@ -872,7 +872,7 @@ function _grading_ahah_stats() {
   if (empty($registrar_uid)) $registrar_uid = 0;
 
   // Find VC uid
-  $inroles = "'Vice-Chancellor', 'University Examination Officer'";
+  $inroles = "'Vice-Chancellor', 'University Grade Editor'";
 
   $sql = "SELECT uid AS vc_uid
     FROM {eduerp_roles}
@@ -1917,9 +1917,9 @@ function _grading_ahah_studentdetails() {
   $rs = db_query($sql, $student_profile->profile_first_choice);
   $r = db_fetch_object($rs);
 
-  if (!staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Examination Officer', 'Registrar', 'Vice-Chancellor')) &&
-    !staff_has_eduerp_role($user->uid, $r->nid, 0, array('Department Examination Viewer', 'Department Examination Officer', 'Head of Department')) &&
-    !staff_has_eduerp_role($user->uid, 0, $r->field_college_id_nid, array('Faculty Examination Viewer', 'Faculty Examination Officer', 'Dean of Faculty'))) {
+  if (!staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Grade Editor', 'Registrar', 'Vice-Chancellor')) &&
+    !staff_has_eduerp_role($user->uid, $r->nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) &&
+    !staff_has_eduerp_role($user->uid, 0, $r->field_college_id_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
     print drupal_to_js(array('data' => 'You do Not have Rights to see data for this Student', 'status' => true));
     exit();
   }
