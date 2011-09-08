@@ -1664,7 +1664,8 @@ function student_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
     eduerp_add_role($account, 'Applicant');
-    $edit['roles'] = NULL;
+    //$edit['roles'] = NULL;
+		$edit['roles'] += $account->roles;
   }
 }
 
