@@ -37,9 +37,15 @@ function uc_eduerp_fees_add_to_cart($fees) {
 	
 	// Before item is added to cart, check for late registration value
 	// if late registration period is reached, set fees to NULL
+	if($fees->late_registered_expired) {
+		$fees = NULL;
+	}
 	
 	// Before item is added to cart, check for hostel reservation value
 	// if hostel reservation has expired, set fees to NULL
+	if($fees->hostel_reservation_expired) {
+		$fees = NULL;
+	}
 	
 	// This is not relevant any longer. Just test if the fees item is paid for or not. If it 
 	// is already paid for, set fees to NULL
