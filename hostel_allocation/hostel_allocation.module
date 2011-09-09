@@ -2759,6 +2759,9 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   $_SESSION['eduerp_reserve_room']['block_nid'] = $values['block_nid'];
   if($_SESSION['eduerp_reserve_room']['reservation_type'] == 'single') $_SESSION['eduerp_reserve_room']['room_nid'] = $values['room_nid'];
   ini_hostel_variables();
+  
+  
+  $student_profile = new UserProfile($_SESSION['eduerp_reserve_room']['student_uid']);
   /*
   $EDUERPallocationCategory = array(
 	array('name' => 'Freshmen', 'value' => '1'),
@@ -2796,9 +2799,13 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   $studCate = array();
 
   //test for freshman
-  if(substr(student_next_level($_SESSION['eduerp_reserve_room']['student_uid'], variable_get('eduerp_current_session', '')), 0, 1) == 1)
+  $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
+  if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
     $studCate[] = "freshmen";
-
+  }elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) != "UME"){
+    $levelStatus = "freshman";          
+  }
+  
     /*
     ! isset($_SESSION['eduerp_reserve_room']['mat_num']) ||
   	  $_SESSION['eduerp_reserve_room']['mat_num'] == "" ||
@@ -3189,7 +3196,7 @@ function DateAdd($interval, $number, $date) {
 
 function get_reservation_info($studentUID){
 
-  $sql = "SELECT field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, Date_Format( field_reservation_date_value, '%%D %%b, %%Y' ) as reservation_date, Date_Format( field_expiry_date_value, '%%D %%b, %%Y' )  as expiry_date, ctrr.field_room_id_nid AS room_nid, ctrr.field_reservation_category_id_nid AS category_nid, ctb.nid AS block_nid
+  $sql = "SELECT field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, Date_Format( field_reservation_date_value, '%%D %%b, %%Y' ) as reservation_date, Date_Format( field_expiry_date_value, '%%D %%b, %%Y' )  as expiry_date, field_expiry_date_value as normal_expiry_date, ctrr.field_room_id_nid AS room_nid, ctrr.field_reservation_category_id_nid AS category_nid, ctb.nid AS block_nid, field_uc_product_id_nid as product_nid
   		  FROM {content_type_hostels} cth, {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr
   		  WHERE ctr.nid=ctrr.field_room_id_nid AND ctr.field_block_id_nid=ctb.nid AND ctb.field_hostel_id_nid=cth.nid
   		  AND ctrr.field_student_id_uid=%d ";

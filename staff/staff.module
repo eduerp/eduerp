@@ -8350,6 +8350,11 @@ function staff_school_fees_create_modify_school_fee_setup(){
   global $user;
   ob_start();
   
+  //$sf = get_fee_items(954);
+  //echo "<pre>";
+  //$a = print_r($sf);
+  //echo "</pre>";
+  
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   if (! staff_has_eduerp_role($user->uid, 0, 0, array('Bursar'))) $isAuthorized = false; else $isAuthorized = true;
   
@@ -8822,7 +8827,7 @@ function is_fee_item_existing_in_uc_products($itemName){
 	
   $rs = db_query("SELECT ctp.nid FROM {content_type_product} ctp 
   	  INNER JOIN {node} n ON ctp.nid=n.nid 
-  	  WHERE n.title='%s' ", $itemName);	
+  	  WHERE n.title='%s' AND type='product' ", $itemName);	
   
   if(db_affected_rows($rs) > 0) return true;
   
@@ -8834,7 +8839,7 @@ function get_fee_item_uc_products_nid($itemName){
 	
   $rs = db_query("SELECT ctp.nid AS nid FROM {content_type_product} ctp 
   	  INNER JOIN {node} n ON ctp.nid=n.nid 
-  	  WHERE n.title='%s' ", $itemName);	
+  	  WHERE n.title='%s' AND type='product' ", $itemName);	
   
   $r = db_fetch_object($rs);
   
@@ -8866,7 +8871,7 @@ function gen_fee_product_sku(){
 }
 
 
-function create_uc_product($itemName){
+function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
 
   //generate SKU for this product
   $node = new stdClass();
@@ -8884,7 +8889,7 @@ function create_uc_product($itemName){
   $node->model 		= gen_fee_product_sku(); // the SKU is a required field
   $node->list_price 	= 0.00;
   $node->cost 		= 0.00;
-  $node->sell_price 	= 0.00;
+  $node->sell_price 	= $amount;
   $node->default_qty 	= 1;
   $node->pkg_qty 	= 1;
 
@@ -8914,12 +8919,13 @@ function create_uc_product($itemName){
   	  
   }
   
-  //attach attribute to the Product
-  $info['productNID'] = $productNID; 
-  $info['aid'] = $attribute['aid']; 
-  $info['label'] = "Fee Structure";
-  attach_uc_attribute_to_product($info);
-  
+  if($$attachAttributes){
+    //attach attribute to the Product
+    $info['productNID'] = $productNID; 
+    $info['aid'] = $attribute['aid']; 
+    $info['label'] = "Fee Structure";
+    attach_uc_attribute_to_product($info);
+  }
   return $productNID;
 	
 }
@@ -9240,7 +9246,7 @@ function initialize_school_fee_module_tables(){
     //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_settings}');
   if(db_affected_rows($rs) <= 0){
-    $items = array(array('name'=>'School Fees Collection Start Date', 'data'=>'2011-07-01'), array('name'=>'Late Registration Start Date', 'data'=>'2011-10-01'), array('name'=>'Late Registration Amount', 'data'=>'5000'), array('name'=>'Local Country Name', 'data'=>'156'),);
+    $items = array(array('name'=>'Activate Second Instalment Payment', 'data'=>'0'), array('name'=>'Late Registration Start Date', 'data'=>'2011-10-01'), array('name'=>'Late Registration Amount', 'data'=>'5000'), array('name'=>'Local Country Name', 'data'=>'156'),);
     foreach($items as $v){
       $node = new stdClass();
       $node->type                             		= 'school_fee_settings';
@@ -9255,6 +9261,9 @@ function initialize_school_fee_module_tables(){
   
       node_save($node);
     }
+    
+    //create the product
+    create_uc_product('Late Registration Charges', 0.00, false);
     
   }
   
@@ -9433,6 +9442,16 @@ function staff_school_fees_modify_fee_settings_form() {
       );    
       if ($feeItem) $form['fee_item']['#value'] = $feeItem->name;  
     }
+    elseif(trim(strtolower(strtoupper($feeSettings->settings_name))) == 'activate second instalment payment'){
+      $form[$feeSettings->nid] = array(
+      '#type' => 'select',
+      '#options' => array(''=>'--select one--') + array('0'=>'No', '1'=>'Yes'), 
+      '#title' => $feeSettings->settings_name,
+      '#required'  => TRUE,
+      '#default_value' => $feeSettings->settings_value,
+      );    
+      if ($feeItem) $form['fee_item']['#value'] = $feeItem->name;  
+    }
     else{
       $form[$feeSettings->nid] = array(
       '#title' => $feeSettings->settings_name,
@@ -9464,7 +9483,7 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
   if($editMode){
     //get the item
     $item = get_school_fee_settings(arg(2));
-    if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'school fees collection start date' || trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'late registration start date'){
+    if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'late registration start date'){
       if(! is_Date($values[arg(2)]))
         form_set_error(arg(2), Error_Types(114));
     }
@@ -9484,8 +9503,31 @@ function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
   
   $node = node_load(arg(2));
   $node->field_fee_settings_value[0]['value']  = $values[arg(2)];
-    
+
   node_save($node);
+  
+  $item = get_school_fee_settings(arg(2));
+  //drupal_set_message(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))));
+  if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'late registration amount'){//late registration amount
+    //drupal_set_message('for late reg!<br />');
+    //update late registration product amount
+    if(is_uc_late_registration_existing("Late Registration Charges")){
+      // drupal_set_message('for update!<br />');
+      //update the amount
+      $ucLateRegInfo = get_uc_late_registration_info("Late Registration Charges");
+      $node = node_load($ucLateRegInfo['product_nid']);
+      //$node->title = $values['fee_item'];
+      $node->sell_price = $values[arg(2)];
+      node_save($node);	  
+    }
+    else{
+      // drupal_set_message('for create!<br />');
+      //create late reg as a uc product
+      create_uc_product("Late Registration Charges", $values[arg(2)], false);
+    	    
+    }
+  }
+  
   drupal_set_message('Fee Settings was updated!<br />');
   drupal_goto("staff/updatesettings");
 }
@@ -10533,7 +10575,7 @@ function show_fee_setup_page_two_info(){
 
 function get_fee_setup_item_details($setupNID){
 	
-  $rs = db_query('SELECT ctsfisd.nid nid, field_fee_full_payment_amount_value full_amount, IFNULL(field_fee_instalment1_amount_value, 0) AS instalment1_amount, IFNULL(field_fee_instalment2_amount_value, 0) AS instalment2_amount, field_fee_item_value item_name, field_fee_item_fk_nid item_nid  
+  $rs = db_query('SELECT ctsfisd.nid nid, field_uc_product_nid_nid product_nid, field_fee_full_payment_amount_value full_amount, IFNULL(field_fee_instalment1_amount_value, 0) AS instalment1_amount, IFNULL(field_fee_instalment2_amount_value, 0) AS instalment2_amount, field_fee_item_value item_name, field_fee_item_fk_nid item_nid, field_is_scholarship_applicable_value is_scholarship_applicable  
   	  FROM {content_type_school_fee_item_setup_details} ctsfisd
   	  INNER JOIN {content_type_school_fee_items} ctsfi ON ctsfisd.field_fee_item_fk_nid=ctsfi.nid
   	  WHERE field_fee_item_setup_fk_nid=%d ', $setupNID);
@@ -10553,6 +10595,81 @@ function staff_school_fees_test_fee_setup_form() {
    return $form;
  
 
+}
+
+
+function get_late_registration_info(){
+
+  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Late Registration Start Date", "Late Registration Amount");
+  
+  while($rs = db_fetch_object($r)){
+    //echo $rs->settings_name;
+    $name = ($rs->settings_name == 'Late Registration Start Date') ? 'start_date' : 'late_reg_amount';
+    $lateRegInfo[$name] = $rs->settings_value;
+  }
+  
+  return $lateRegInfo;
+}
+
+
+function is_second_instalment_activated(){
+
+  $r = db_query("SELECT field_fee_settings_name_value settings_name, field_fee_settings_value_value settigs_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s'", "activate second instalment payment");
+  
+  $rs = db_fetch_object($r);
+  if($rs->settigs_value == '1') return true;
+  
+  return false;
+  
+}
+
+/*
+function get_uc_late_registration_info(){
+
+  $r = db_query("SELECT field_fee_settings_name_value settings_name, field_fee_settings_value_value settigs_value FROM content_type_school_fee_settings WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Late Registration Start Date", "Late Registration Amount");
+  
+  while($rs = db_fetch_object($r)){
+    $name = ($rs->settings_name == 'Late Registration Start Date') ? 'start_date' : 'late_reg_amount';
+    $lateRegInfo[$name] = $rs->settings_value;
+  }
+  
+  return $lateRegInfo;
+}
+*/
+
+function is_uc_late_registration_existing($name){
+	
+  $rs = db_query("SELECT p.nid FROM node n 
+  	  INNER JOIN content_type_product ctp ON n.nid=ctp.nid
+  	  INNER JOIN uc_products p ON ctp.nid=p.nid
+  	  WHERE n.title='%s' AND n.type='product'", $name);
+  
+  if(db_affected_rows($rs) >= 1) return true;
+  
+  return false;
+  
+}
+
+
+function get_uc_late_registration_info($name){
+	
+  $rs = db_query("SELECT p.nid, title, sell_price FROM node n 
+  	  INNER JOIN content_type_product ctp ON n.nid=ctp.nid
+  	  INNER JOIN uc_products p ON ctp.nid=p.nid
+  	  WHERE n.title='%s' AND n.type='product'", $name);
+  
+  if(db_affected_rows($rs) >= 1) {
+    $r = db_fetch_object($rs);
+    
+    $info['product_nid'] = $r->nid;
+    $info['name'] = $r->title;
+    $info['amount'] = $r->sell_price;
+    return $info;
+    
+  }
+  
+  return 0;
+  
 }
 
 
@@ -11117,10 +11234,10 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
   }
   
   //test if his/her program has program specific setup
-  $rs = db_query('SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d ', $programNID);
+  $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d  AND field_fee_setup_session_value='%s' ", $programNID, variable_get('eduerp_current_session', ''));
   if(db_affected_rows($rs) <=0){
     //now test if general setup exists
-    $rs = db_query('SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0');
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0  AND field_fee_setup_session_value='%s'", variable_get('eduerp_current_session', ''));
     if(db_affected_rows($rs) <=0){
       return Error_Types(159);	    
     }
@@ -11713,6 +11830,310 @@ function get_country_info($countryID=0){
     $countries[] = strip_tags(Error_Types(106));
     
     return $countries;
+}
+
+
+function fees_ini_student_profile($studentUID){
+  
+      $student_profile = new UserProfile($studentUID);
+      
+      if(! is_object($student_profile)) return 0;
+      
+      $studentFeeProfile['studentUID'] = $student_profile->uid;
+      $studentFeeProfile['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
+      $studentFeeProfile['first_choice_nid'] = $student_profile->profile_first_choice;
+      $studentFeeProfile['level_name'] = $student_profile->profile_level_name;
+      $studentFeeProfile['mat_num'] = ! empty($student_profile->profile_matno) ? $student_profile->profile_matno : 'N/A';
+      $studentFeeProfile['jamb_num'] = $student_profile->profile_jambno;
+      $studentFeeProfile['gender'] = strtolower($student_profile->profile_gender);
+      $studentFeeProfile['mode_of_entry'] = strtolower($student_profile->profile_mode_of_entry);
+      //$_SESSION['eduerp_authorise_scholarship']['health_status'] = strtolower($student_profile->profile_health_status);
+      $studentFeeProfile['programNID'] = $student_profile->profile_first_choice;
+      
+      $studentFeeProfile['country_name'] = ! empty($student_profile->profile_country_name) ? $student_profile->profile_country_name : 'N/A';
+      
+
+      $programmeName = get_programmes($student_profile->profile_first_choice, true);
+      $studentFeeProfile['programme_name'] = $programmeName[$student_profile->profile_first_choice];
+
+    
+      
+      if(! isset($studentFeeProfile['jamb_num']) || $studentFeeProfile['jamb_num'] == ""){
+        //echo "no JAMB Number";
+        return 0;
+      }
+      
+      //get level types
+      $rs = db_query('SELECT nid, field_level_type_value level_type_name FROM {content_type_school_fee_level_types} ');
+      if(db_affected_rows($rs) <= 0){
+      	
+      	return 0;
+      }
+      
+      //get the level of the student
+      $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
+      
+      if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
+        $levelStatus = "freshman";
+      }
+      elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) != "UME"){
+      	$levelStatus = "freshman";    
+      	      
+      }
+      else{
+        $levelStatus = "returning student";    
+      }
+      
+      while($r = db_fetch_object($rs)){
+        if($levelStatus == "freshman" && trim(strtolower(strtoupper($r->level_type_name))) == "freshman"){
+      	  $studentFeeProfile['levelType'] = $r->nid;
+      	  break;
+        }
+        
+        if($levelStatus == "returning student" && trim(strtolower(strtoupper($r->level_type_name))) == "returning student"){
+      	  $studentFeeProfile['levelType'] = $r->nid;
+      	  break;
+        }
+      }	
+      
+      if(! $studentFeeProfile['levelType']){
+        
+      	return 0;	      
+      }
+      
+      //get nationality types
+      $rs = db_query('SELECT nid, field_nationality_type_value nationality_type_name FROM {content_type_school_fee_nationality_types} ');
+      if(db_affected_rows($rs) <= 0){
+      	
+      	return 0;
+      }
+      
+      //get the local country name from setting
+      $rs1 = db_query("SELECT country_id, country_name FROM {country} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
+      if(db_affected_rows($rs1) <= 0){
+      	
+      	return 0;
+      }
+      
+      
+      $localCountry = db_fetch_object($rs1);
+      
+      while($r = db_fetch_object($rs)){
+      	if(trim($student_profile->profile_country_name) == trim($localCountry->country_name)){
+      	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'local'){	
+      	    $studentFeeProfile['nationalityType'] = $r->nid;
+      	    break;
+      	  }
+      		
+      	}
+      	if(trim($student_profile->profile_country_name) != trim($localCountry->country_name)){
+      	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'international'){	
+      	    $studentFeeProfile['nationalityType'] = $r->nid;
+      	    break;
+      	  }
+      		
+      	}    
+      	
+      }	
+      
+      if(! $studentFeeProfile['nationalityType']){
+        
+      	return 0;	      
+      }
+      
+      //print_r($studentFeeProfile);
+  return $studentFeeProfile;
+	
+}
+
+
+function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType){
+  //return;
+  $feeOption = array();
+  $feeStudentOption = array();
+  /*
+  //make sure that fee setup is correct
+  $val = is_fee_setup_correct();
+  if($val != 1){
+    //form_set_error('', Error_Types($val));
+    return 0;
+  }
+  */
+  
+  //test if his/her program has program specific setup
+  $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ", $programNID, variable_get('eduerp_current_session', ''));
+  if(db_affected_rows($rs) <=0){
+    //now test if general setup exists
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND field_fee_setup_session_value='%s' ", variable_get('eduerp_current_session', ''));
+    if(db_affected_rows($rs) <=0){
+      //return Error_Types(159);
+      
+      return $feeStudentOption;
+    }
+    //get fee setup details  
+    $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), 0, false);
+    
+    $id = 0;
+    
+  }
+  else{
+    //get fee setup details
+    $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $programNID, false);
+    $id = $programNID;
+  }
+ 
+  
+  if(! isset($feeOption) || ! is_array($feeOption) || ! sizeof($feeOption)){
+    //return Error_Types(159);	  
+    return $feeStudentOption;
+  }
+   
+  //fine. Now get his/her own particular fee structure
+  if($id == 0)
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND (field_fee_setup_program_nid_value=0 OR field_fee_setup_program_nid_value IS NULL)  AND field_fee_setup_session_value='%s'  ", $nationalityType, $levelType, variable_get('eduerp_current_session', ''));
+  else
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ", $nationalityType, $levelType, $id, variable_get('eduerp_current_session', ''));
+  
+  $feeSetup = db_fetch_object($rs);
+  $setupNID = $feeSetup->nid;
+  
+  
+  
+  //drupal_set_message('setup total is '.$feeOption[$setupNID]['setup_total_amount']);
+  $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
+  
+  if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)) return $feeStudentOption;
+  
+  //echo "<pre>";
+  //print_r($feeOption);
+  //echo "</pre>";
+  
+  $feeStudentOption['studentFeeSetupNID'] = $setupNID;
+  $feeStudentOption['nationality_name'] = $feeOption[$setupNID]['nationality_name'];
+  $feeStudentOption['fee_structure_name'] = $feeOption[$setupNID]['fee_structure_name'];
+  $feeStudentOption['level_name'] = $feeOption[$setupNID]['level_name'];
+ 
+  
+  //test if student is on scholarship
+  $feeStudentOption['is_student_on_scholarship'] = is_scholarship_authorisation_existing($studentUID, variable_get('eduerp_current_session', '')) == true ? '1' : '0';
+  
+  //test if student is authorised to pay in instalments
+  $feeStudentOption['instalment_payment_authorised'] = is_instalment_authorisation_existing($studentUID, variable_get('eduerp_current_session', '')) == true ? '1' : '0';
+  
+  //get session name
+  $feeStudentOption['session_name'] = variable_get('eduerp_current_session', '');
+  
+ 
+  $details = get_fee_setup_item_details($setupNID);
+
+
+  $i=0;
+  while($r = db_fetch_object($details)){
+    
+    if($feeStudentOption['instalment_payment_authorised'] == '1'){
+      //for instalment payments	
+      $feeStudentOption['fee_item_details'][$i]['item_description'] = $feeStudentOption['fee_structure_name'] ." - ". $feeStudentOption['level_name'] ." - ". $feeStudentOption['nationality_name'] ." (". $r->item_name . " - Instalment1)";
+      $feeStudentOption['fee_item_details'][$i]['amount'] = $r->instalment1_amount;
+      $feeStudentOption['fee_item_details'][$i]['product_nid'] = $r->product_nid;
+      $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
+  
+      $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+  
+      $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
+      $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
+      
+      //check if second instalment collection is activated
+      if(is_second_instalment_activated()){
+        //second instalment collection is activated
+        $i++;
+        $feeStudentOption['fee_item_details'][$i]['item_description'] = $feeStudentOption['fee_structure_name'] ." - ". $feeStudentOption['level_name'] ." - ". $feeStudentOption['nationality_name'] ." (". $r->item_name . " - Instalment2)";
+        $feeStudentOption['fee_item_details'][$i]['amount'] = $r->instalment2_amount;
+        $feeStudentOption['fee_item_details'][$i]['product_nid'] = $r->product_nid;
+        $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
+  
+        $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+  
+        $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
+        $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
+      	      
+      }
+      
+    }
+    else{
+      //for one time payments
+      $feeStudentOption['fee_item_details'][$i]['item_description'] = $feeStudentOption['fee_structure_name'] ." - ". $feeStudentOption['level_name'] ." - ". $feeStudentOption['nationality_name'] ." (". $r->item_name . " - Full Amount)";
+      $feeStudentOption['fee_item_details'][$i]['amount'] = $r->full_amount;
+      $feeStudentOption['fee_item_details'][$i]['product_nid'] = $r->product_nid;
+      $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
+  
+      $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+  
+      $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
+      $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
+  
+  
+      //;
+    }
+ 
+    $i++;
+  }
+
+  //now check for late registration info
+  
+  $ucLateRegInfo = get_uc_late_registration_info("Late Registration Charges");
+  
+  $lateRegInfo = get_late_registration_info();
+  
+  //echo "<pre>"; 
+  //print_r($lateRegInfo);
+  //echo "</pre>";
+  
+  $feeStudentOption['late_reg_info']['start_date'] = $lateRegInfo['start_date'];
+  if( Date('Y-m-d') >= $lateRegInfo['start_date']){
+    
+    $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
+    $feeStudentOption['late_reg_info']['product_nid'] = $ucLateRegInfo['product_nid'];
+    $feeStudentOption['late_reg_info']['product_description'] = $ucLateRegInfo['name'];
+  }
+  
+  
+  //now check for hostel
+  if(is_reservation_existing($studentUID)){
+   $ri = get_reservation_info($studentUID); 
+   $reservationInfo = db_fetch_object($ri);
+   
+   $hostelDescription = "Room: ". $reservationInfo->room_name ."<br />";
+   $hostelDescription .= "Block: ". $reservationInfo->block_name ."<br />";
+   $hostelDescription .= "Hostel: ". $reservationInfo->hostel_name;
+   
+   $feeStudentOption['hostel_info']['product_nid'] = $reservationInfo->product_nid;
+   $feeStudentOption['hostel_info']['hostel_description'] = $hostelDescription;
+   $feeStudentOption['hostel_info']['expiry_date'] = $reservationInfo->normal_expiry_date;
+    	  
+  }
+  
+  return $feeStudentOption;
+}
+
+
+function get_fee_items($studentUID){
+
+  //ini student profile
+  $studentFeeProfile = fees_ini_student_profile($studentUID);
+  
+  //echo "<pre>";
+  //print_r($studentFeeProfile);
+  //echo "</pre>";
+  if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return array();
+  
+  //echo "1 done! ";
+  $feeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType']);
+  
+  //echo "<pre>";
+  //print_r($feeItem);
+  //echo "</pre>";
+  
+  return $feeItem;
 }
 
 
