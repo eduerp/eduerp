@@ -15,7 +15,6 @@ Drupal.behaviors.student = function(context) {
 
 	$country_field.change( function () { 
 		if($(this).val() != 'Nigeria') {
-			//alert('yes');
 			$state_field.hide("slow");
 			$lga_field.hide("slow");
 		} else {

@@ -1,0 +1,197 @@
+<?php 
+
+/**
+ * @file
+ * Ubercart integration of EduERP fees
+ */ 
+
+/**
+ * Add fees object to cart
+ * 
+ */ 
+function uc_eduerp_fees_add_to_cart($fees) {
+	
+	$fees = module_invoke_all('uc_eduerp_fees_eduerp_fees');
+	//(object)$fees = uc_eduerp_fees_fees();
+	
+	// get fees type or it's attribute combination
+	$type = $fees->type;
+	
+	// get it's attribute combination
+	$attributes = uc_eduerp_fees_fees_attributes($fees);
+	
+	// The paid fees items
+	$paid_fees_items = uc_eduerp_fees_paid_items();
+	
+	// get the fees description
+	
+	// get the fees type name e.g Full Fees or First Installment or Second installment
+	
+	// if $fees is paid for.
+	if(in_array($attributes), $paid_fees_items) {
+		//drupal get the current destination and set message, Sorry, you have already paid for 
+		//this
+		// item.
+		$fees = array();
+	}
+	
+	// Before item is added to cart, check for late registration value
+	// if late registration period is reached, set fees to NULL
+	if($fees->late_registered_expired) {
+		$fees = NULL;
+	}
+	
+	// Before item is added to cart, check for hostel reservation value
+	// if hostel reservation has expired, set fees to NULL
+	if($fees->hostel_reservation_expired) {
+		$fees = NULL;
+	}
+	
+	// This is not relevant any longer. Just test if the fees item is paid for or not. If it 
+	// is already paid for, set fees to NULL
+	// if the type of fees is second installment, test to see if first installment has 
+	// been paid. If yes, add only the second installment to cart. If no, return NULL
+	if($fees->type == $fees[2]){ // assuming $fees[2] holds for second installment
+		// test if $fees[1] is paid for
+		// if FALSE
+		// $fees = array();
+		// return NULL;
+	}
+	
+	$data = $fees['data']; // All other fee setup values as data, both for Fees and hostel
+	
+	$added = FALSE;
+	if(!empty($fees)) {
+		foreach($fees as $fee) {
+			// With this we are going to have 2 items in cart; fees and hostel
+			uc_cart_add_item($fee->nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+		}
+		$added = TRUE;
+	}
+	if($added) {
+		drupal_goto("cart");
+	}
+	return $added;
+}
+
+/**
+ * Implementation of hook_eduerp_fees
+ * 
+ * Fees with all necessary setup information included
+ * Describes the fees structure.
+ * 
+ * @return 
+ * 	- $fees: The Fees object including it's type, setup
+ */ 
+function uc_eduerp_fees_eduerp_fees($fees) {
+	$global $user;
+	
+	$fees = array();
+	
+	$type = ''; // Full Fees or First Installment or Second installment
+	$uid = user_load($user);
+	$fees_item = get_fees_items($uid);
+	
+	$fees['fees'] = array(
+		'item' => $fees_item,
+		'description' => t('Selected fees description'),
+		'options' => $fees_item['options']
+	);
+	$fees['hostel'] = array(
+		'item' => get_hostel_fees($uid),
+		'description' => t('Hostel fees description'),
+	);
+	return $fees;
+}
+
+/**
+ * Hook to define fees_structure
+ * 
+ * @param $fees
+ * 	- The fees
+ */ 
+function uc_eduerp_fees_eduerp_fees_hook($fees) {
+  foreach (module_implements('eduerp_fees') as $module) {
+    $function = $module . '_eduerp_fees';
+    $function($fees);
+  }
+  return $fees;
+}
+
+/**
+ * All paid fees items gotten from EduPay
+ * 
+ * @return 
+ * 	- $items: Paid items
+ */ 
+function uc_eduerp_fees_paid_items() {
+	return $items;
+}
+
+/**
+ * Gets the fees attributes including 
+ * 	- product_nid
+ * 	- attribute_id
+ * 	- option_id
+ * 
+ */ 
+function uc_eduerp_fees_fees_attributes($fees) {
+	foreach($fees as $key => $fee) {
+		// get the attribute combination
+	}
+	return $attribute;
+}
+
+/**
+ * Implementation of hook_update_{hook}
+ *
+ * @see 
+ */
+function uc_eduerp_fees_update_fees($uid, $status) {
+	// run ubercart update query here to update an order
+	//db_query('UPDATE {uc_orders} set ')
+	module_load_include('inc', 'node', 'node.pages');
+	$node = (object)array('type' => 'page');
+    node_object_prepare($node);
+		
+    $node->is_new = 1;
+    $node->author = 'kayode';
+    $node->author = $uid;
+    $node->title = t("Ubercart Fees update, status = $status");
+    $node->body = t('Just testing uc_eduerp_fees_update_fees for Ubercart Fees update');
+		
+	return array('node_added', node_save($node));
+}
+
+/** 
+ * Implementation of hook_checkout_pane
+ * 
+ */  
+function uc_eduerp_fees_checkout_pane() {
+	
+	$fees = uc_eduerp_fees_get_fees();
+	foreach($fees as $fee) {
+		$panes[$fee->name] = array(
+			'id' => '', //pass in here the fee attribute
+			'callback' => 'uc_eduerp_fees_checkout_pane',
+			'title' => t('Your EduERP Fees items'),
+			'desc' => t('Below shows the fee items in your cart that you are about to pay for.'),
+			'weight' => 8,
+		);
+	}
+	
+	return $panes;
+}
+
+/**
+ * A single callback to display all fees in the cart
+ * in a generic checkout pane.
+ * 
+ * @param
+ * 	- $op: Operations
+ *  - $arg1: contains order information
+ *  - $arg2
+ */ 
+function uc_eduerp_fees_checkout_pane($op, &$arg1, $arg2){
+	
+}

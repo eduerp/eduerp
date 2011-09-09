@@ -1,0 +1,203 @@
+<?php
+/* 
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+ /**
+  * Implementation of hook_menu
+	* 
+	*/	
+function eduerp_transaction_services_menu() {
+	$items = array();
+	$items['service/fees/%/%'] = array(
+		'title' => t('Edupay fees service handler'),
+		'page callback' => 'do_callback',
+		'page arguments' => array(2,3),
+		'access callback' => TRUE,
+		'type' => MENU_CALLBACK,
+	);
+	return $items;
+}
+/*
+* Implementation of hook_disable()
+* Perform necessary actions before module is disabled. (like clear the services:methods cache)
+*/
+function eduerp_transaction_services_disable() {
+  cache_clear_all('services:methods', 'cache');
+}
+/*
+* Implementation of hook_enable()
+* Perform necessary actions after module is enabled. (like clear the services:methods cache)
+*/
+function eduerp_transaction_services_enable() {
+  cache_clear_all('services:methods', 'cache');
+}
+
+/*
+ * Implementation of hook_service()
+ * Required by all server modules
+ * Returns array defining all the methods available in the service
+ */
+function eduerp_transaction_services_service() {
+  return array(
+    
+    /**
+     * fees.paid
+     * We define methods in hashed arrays
+     */
+    array(
+      
+      /**
+       * #method - defines the namespace and method name
+       * the namespace is everything before the last period, so you can do
+       * methods like 'recipe.lunch.all' where 'recipe.lunch' is the namespace,
+       * or service, and 'all' is the method
+       */
+      //'#method' => 'recipe.all',
+			'#method' => 'fees.paid',
+      
+      // #callback - the php function to map the method call to
+      //'#callback' => 'recipe_service_all',
+			'#callback' => 'eduerp_transaction_services_fees_paid',
+      
+      /** 
+       * #args - a list of method arguments
+       * These may be in lazy form - array('string','array') with only an array
+       * of datatypes.
+       * Or, they may be in in the form of an array of hashed arrays like shown
+       * below:
+       */
+      '#args' => array(
+        array(
+          
+          // #name - the name of the argument
+          '#name' => 'uid',
+          
+          // #type - the datatype of the argument
+          '#type' => 'array',
+          
+          /**
+           * #optional - the argument is optional, true or false
+           * Because php functions cannot have a required argument after an 
+           * optional argument, arguments after an optional argument are set
+           * to optional regardless of the value of the #optional hash
+           */
+          //'#optional' => true,
+          
+          // #description - Used in the service browser
+          '#description' => 'A user with student role.'
+        ),
+				array(
+					'#name' => 'status',
+					'#type' => 'array',
+					'#description' => 'Status of the transaction'
+				)
+      ),
+      // #return - The return data type, may be used by certain server modules
+      '#return' => 'array',
+			//'#return' => '',
+      
+      // #help - Used in the service browser
+      '#help' => 'Helps to trigger an EduPay transaction as paid'
+    ),
+		
+		array(
+			'#method' => 'fees.paid.update',
+			'#callback' => 'eduerp_transaction_services_fees_paid_update',
+			'#args' => array(),
+			'#return' => 'array',
+			'#help' => 'Fees update service'
+		),
+    
+  );
+}
+/**
+ * custom service callback to handle fees
+ *
+ * @see eduerp_transaction_services_service
+ */
+function eduerp_transaction_services_fees_paid_update() {
+	print 'paid';
+	//return 'paid';
+}
+/**
+ * 
+ *  call like this: curl -X POST --data "status=paid" http://eduerp/service/fees/955/paid
+ * 
+ * Example post from edupay like this:
+ * >>> import urllib2
+ * >>> req = urllib2.Request('http://eduerp/service/fees/955/paid')
+ * >>> req.add_data('status=paid')
+ * >>> f = urllib2.urlopen(req)
+ * >>> print f.read()
+ * 
+ * The above python example will do a POST request to eduerp after the teller clicks
+ * on the paid checkbox.
+ */ 
+function do_callback($uid, $status, $updated = FALSE) {
+	global $user;
+	drupal_set_header('Content-Type: application/json');
+	
+	$uid = $_POST['uid'];
+	$status = $_POST['status'];
+	
+	$method = $_SERVER['REQUEST_METHOD'];
+	
+	switch($method) {
+		case 'GET':
+			print drupal_set_header('Status-Code: 403');// return 403 forbidden
+			//print drupal_json($forbidden);
+			exit;
+	}
+	if((is_null($status) | $status != 'paid') & is_null($uid)) {
+		print drupal_json(array('status' => TRUE, 'data' => 'error')); 
+		exit;
+	}
+	
+	// update the ubercart fees order based on $uid and $status values
+	if(module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $uid, $status)) {
+		$updated = TRUE;
+	}
+	//$updated = TRUE;
+	//print drupal_json($status); // get arguments passed to url
+	//return drupal_json('success');
+	
+	return drupal_json(array($uid => array($status => $updated)));
+}
+
+/**
+ * a hook declared by services, implemented by uc_eduerp_fees
+ * 
+ * @see uc_eduerp_fees_update_fees for example
+ */ 
+function eduerp_transaction_services_include_invoke() {
+	$args     = func_get_args();
+  $module = array_shift($args); // first argument of the function
+  $action  = array_shift($args); // 2nd argument of the function
+  $hook     = array_shift($args); // 3rd argument of the function
+  $function = $module .'_'. $action .'_'. $hook;
+  //drupal_system_list($module, $action);
+  //return eduerp_include_hook($module, $action, $hook) ? call_user_func_array($function, $args) : NULL;
+	return function_exists($module, $action, $hook) ? call_user_func_array($function, $args) : NULL;
+}
+/**
+ * Callback for "recipe.all"
+ * We need to include the fields argument and set a default value because
+ * it is optional,
+ * We do not need to include an API key or SESSID field if these are enabled
+ * for Services.  These arguments are handled by Services transparently and
+ * stripped before we reach this callback.
+ */
+function recipe_service_all($fields = array()) {
+  $result = db_query("SELECT nid FROM {node} WHERE type='recipe'");
+  
+  $nodes = array();
+  while ($node = db_fetch_object($result)) {
+    // services_node_load filters a node and returns only the requested fields.
+    $nodes[] = services_node_load(node_load($node->nid), $fields);
+  }
+  
+  // return the array result
+  return $nodes;
+}

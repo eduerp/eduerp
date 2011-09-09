@@ -189,7 +189,10 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 
   echo '</tbody></table>';
 
-  $inroles = "'Head of Department', 'Department Examination Officer', 'Faculty Examination Officer', 'University Examination Officer'";
+  // Used to...
+  // (1) Determine who can see the HOD (or equiv) Grade approval form
+  // (2) Determine who can see the HOD (or equiv) Grade unlock form
+  $inroles = "'Head of Department', 'Department Grade Editor', 'Faculty Grade Editor', 'University Grade Editor'";
 
   $sql = "SELECT uid AS hod_uid
     FROM {eduerp_roles}
@@ -216,7 +219,9 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
   $eduerpapprovalform->number_of_ca = $number_of_ca;
   $eduerpapprovalform->ca_approved_onebyone = $ca_approved_onebyone;
 
-  $inroles = "'Department Examination Officer', 'Faculty Examination Officer', 'University Examination Officer'";
+  // Used to...
+  // (1) Determine who can see the Lecturer (or equiv) Grade submission form in addition to the Lecturers
+  $inroles = "'Department Grade Editor', 'Faculty Grade Editor', 'University Grade Editor'";
 
   $sql = "SELECT uid AS lecturerequiv_uid
     FROM {eduerp_roles}
@@ -230,7 +235,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 
   // Do we want to show the Approval form for the Lecturer
   if (empty($hod_uid)) {
-    echo 'THERE IS NO HEAD OF DEPARTMENT OR EXAMINATION OFFICER ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED<br />';
+    echo 'THERE IS NO HEAD OF DEPARTMENT OR GRADE EDITOR ASSIGNED FOR THIS DEPARTMENT, ONE MUST BE ASSIGNED<br />';
   }
   elseif ($user->uid == $staff->lecturer_uid || $user->uid == $staff->lecturer_alternate_uid || in_array($user->uid, $lecturerequiv_uid_array)) {
     $showform = FALSE;
@@ -312,7 +317,9 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
     }
   }
 
-  $inroles = "'Dean of Faculty', 'Faculty Examination Officer', 'University Examination Officer'";
+  // Used to...
+  // (1) Determine who can see the Dean (or equiv) Grade approval form
+  $inroles = "'Dean of Faculty', 'Faculty Grade Editor', 'University Grade Editor'";
 
   $sql = "SELECT uid AS dean_uid
     FROM {eduerp_roles}
@@ -329,7 +336,7 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 
   // Do we want to show the Approval form for the HOD
   if (empty($dean_uid)) {
-    echo 'THERE IS NO DEAN OR EXAMINATION OFFICER ASSIGNED FOR THIS FACULTY, ONE MUST BE ASSIGNED<br />';
+    echo 'THERE IS NO DEAN OR GRADE EDITOR ASSIGNED FOR THIS FACULTY, ONE MUST BE ASSIGNED<br />';
   }
   elseif (in_array($user->uid, $hod_uid_array)) {
     $showform = FALSE;
@@ -715,12 +722,29 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
   }
 
   $firsttime = TRUE;
-  $hod_uid_array = explode(',', $hod_uid);
-  foreach ($hod_uid_array as $hod_uid_i) {
 
-    if (!empty($hod_uid_i)) {
-      $destination_user = user_load($hod_uid_i);
-      $user_profile = new UserProfile($hod_uid_i);
+  // Determine who gets notified when Lecturer (or equiv) submits grades
+  $inroles = "'Head of Department', 'Department Grade Editor', 'Department Examination Officer', 'Dean of Faculty', 'Faculty Grade Editor', 'Faculty Examination Officer', 'University Grade Editor'";
+
+  $sql = "SELECT
+      d.field_college_id_nid AS college_id,
+      c.field_department_nid_nid AS department_id
+    FROM {content_type_department} d, {content_type_course} c
+    WHERE
+      d.nid=c.field_department_nid_nid AND
+      c.field_code_value='%s'";
+  $staffresult = db_query($sql, $coursecode);
+  $staff = db_fetch_object($staffresult);
+
+  $sql = "SELECT DISTINCT uid AS hod_uid
+    FROM {eduerp_roles}
+    WHERE (department_id=%d OR college_id=%d OR (department_id=0 AND college_id=0)) AND role IN ($inroles)";
+  $hodresult = db_query($sql, $staff->department_id, $staff->college_id);
+  while ($hod = db_fetch_object($hodresult)) {
+
+    if (!empty($hod->hod_uid)) {
+      $destination_user = user_load($hod->hod_uid);
+      $user_profile = new UserProfile($hod->hod_uid);
     }
     else {
       $destination_user = NULL;
@@ -1107,12 +1131,29 @@ function approve_grades_hod_form_submit($form, &$form_state) {
   }
 
   $firsttime = TRUE;
-  $dean_uid_array = explode(',', $dean_uid);
-  foreach ($dean_uid_array as $dean_uid_i) {
 
-    if (!empty($dean_uid_i)) {
-      $destination_user = user_load($dean_uid_i);
-      $user_profile = new UserProfile($dean_uid_i);
+  // Determine who gets notified when HOD (or equiv) submits Grade approval form
+  $inroles = "'Dean of Faculty', 'Faculty Grade Editor', 'Faculty Examination Officer', 'University Grade Editor'";
+
+  $sql = "SELECT
+      d.field_college_id_nid AS college_id,
+      c.field_department_nid_nid AS department_id
+    FROM {content_type_department} d, {content_type_course} c
+    WHERE
+      d.nid=c.field_department_nid_nid AND
+      c.field_code_value='%s'";
+  $staffresult = db_query($sql, $coursecode);
+  $staff = db_fetch_object($staffresult);
+
+  $sql = "SELECT DISTINCT uid AS dean_uid
+    FROM {eduerp_roles}
+    WHERE (department_id=%d OR college_id=%d OR (department_id=0 AND college_id=0)) AND role IN ($inroles)";
+  $hodresult = db_query($sql, $staff->department_id, $staff->college_id);
+  while ($hod = db_fetch_object($hodresult)) {
+
+    if (!empty($hod->dean_uid)) {
+      $destination_user = user_load($hod->dean_uid);
+      $user_profile = new UserProfile($hod->dean_uid);
     }
     else {
       $destination_user = NULL;

@@ -117,10 +117,10 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
     db_query($sql);
     cache_clear_all('content:'. $sgnid->nid .':', content_cache_tablename(), TRUE);
 
-    if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (only an examination officer could have submitted this change)
+    if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (only an grade editor could have submitted this change)
 
       // Because of field access logic in grading module grading_field_access()...
-      // ... This has already been fully approved and is being changed by an examination officer, so set the student visible values
+      // ... This has already been fully approved and is being changed by an grade editor, so set the student visible values
       $sql = "UPDATE {content_type_student_grades} sg
         SET
           sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`,
@@ -358,7 +358,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
       $node->field_semester1[0]['value']     = $sem;
       $node->field_location1[0]['value']     = $loc;
       $node->field_what_approved[0]['value'] = $gradestext;
-      $node->field_action[0]['value']        = 'Changed by Examination Officer';
+      $node->field_action[0]['value']        = 'Changed by Grade Editor';
       node_save($node);
     }
   }
