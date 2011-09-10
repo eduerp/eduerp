@@ -8504,7 +8504,7 @@ function staff_school_fees_scholarship_payment(){
 function staff_school_fees_authorise_instalment_payment(){
   global $user;
   ob_start();
-  
+   
   $isAuthorized = staff_has_eduerp_role($user->uid, 0, 0, array('Bursar')) ? true : false;
   
   $html = "";
@@ -10896,6 +10896,16 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       	      
       }
       
+      
+      if($varName == "eduerp_authorise_instalment"){
+        //specific checks for scholarships
+        if(is_instalment_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
+	  drupal_set_message('Instalment Authorisation for the Student already exists');   
+	  return;	      
+	}
+      	      
+      }
+      
       //drupal_set_message('MOE is '. $student_profile->profile_mode_of_entry);
       //valid mat or JAMB number was found
       $_SESSION[$varName]['studentUID'] = $student_profile->uid;
@@ -12088,7 +12098,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //print_r($lateRegInfo);
   //echo "</pre>";
   
-  $feeStudentOption['late_reg_info']['start_date'] = $lateRegInfo['start_date'];
+  $feeStudentOption['late_reg_info']['late_registration_date'] = $lateRegInfo['start_date'];
   if( Date('Y-m-d') >= $lateRegInfo['start_date']){
     
     $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
