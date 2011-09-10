@@ -10888,6 +10888,12 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       */
       
       if($varName == "eduerp_authorise_scholarship"){
+      	//make sure he is not already enabled for instalment
+      	if(is_instalment_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
+	  drupal_set_message('Instalment Authorisation for the Student already exists');   
+	  return;	      
+	}
+	
         //specific checks for scholarships
         if(is_scholarship_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
 	  drupal_set_message('Scholarship Authorisation for the Student already exists');   
@@ -10898,7 +10904,13 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       
       
       if($varName == "eduerp_authorise_instalment"){
-        //specific checks for scholarships
+      	//specific checks for scholarships
+        if(is_scholarship_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
+	  drupal_set_message('Scholarship Authorisation for the Student already exists');   
+	  return;	      
+	}
+	
+        //specific checks for instalment payment
         if(is_instalment_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
 	  drupal_set_message('Instalment Authorisation for the Student already exists');   
 	  return;	      
