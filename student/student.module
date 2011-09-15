@@ -37,7 +37,7 @@ function student_menu() {
     'access arguments' => array('hostel_allocation user'),
     'type' => MENU_NORMAL_ITEM,
   );//hostel_allocation user
-  
+
   $items['student/hostelreservation/cart'] = array(
         'title' => t('Confirm reservation'),
         'description' => 'Display confirmation about allocation and perform checkout',
@@ -47,7 +47,7 @@ function student_menu() {
         'access arguments' => array('access cart items'),
         'type' => MENU_CALLBACK,
     );
-  
+
   return $items;
 }
 
@@ -413,18 +413,18 @@ function student_clearance() {
       $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
       $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
       drupal_set_message('Student\'s results verified');
-			
+
 			// set post value for deferred student
 		elseif(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
 			$student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
 			content_storage('update', $student_clearance);
-			
+
 		// set post value for uncleared student
-		elseif(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE) 
+		elseif(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
 		&& isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
 			$student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
 			content_storage('update', $student_clearance);
-	
+
     elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
@@ -437,7 +437,7 @@ function student_clearance() {
     endif;
 
     node_save($student_clearance);
-		
+
   } else {
     // node doesn't exist
     if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
@@ -452,20 +452,20 @@ function student_clearance() {
         $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
         drupal_set_message('Student\'s results verified');
       endif;
-			
+
 			// set post value for deferred student
 			if(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
 				$student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
 			endif;
-			
+
 			// set post value for reasons why a student is uncleared
-			if(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE) 
+			if(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
 			&& isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
 				$student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
 				$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
 				content_storage('update', $student_clearance);
 			endif;
-			
+
       if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
         $node->field_staff_clearance[0]['uid'] = $user->uid;
         $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
@@ -534,7 +534,7 @@ function _perform_clearance($student_id) {
  * @global  $user
  * @param <type> $student_id
  * @param <type> $clearance_date
- * @param  $user 
+ * @param  $user
  */
 function student_log_clearance($student_id, $clearance_date, $user) {
   global $user;
@@ -547,7 +547,7 @@ function student_log_clearance($student_id, $clearance_date, $user) {
   $student = $user_profile->profile_first_name . ' ' . $user_profile->profile_last_name;
 
   watchdog('Clearance', t('New clearance was successfully created by email, on studentid.'), array('email' => $user->mail, 'studentid' => $student));
-   
+
 }
 
 function set_matriculation_number($student_id, $formerProgID=0) {
@@ -707,7 +707,7 @@ function _module_views_templates($templates_path) {
 
 /**
  * Theme function for theme_student_field_uncleared
- * 
+ *
  * Renders student_field_uncleared checkbox
  * @see student_theme()
  */
@@ -725,14 +725,14 @@ function theme_student_field_uncleared() {
 
 /**
  * Theme function for theme_student_field_uncleared_reasons
- * 
+ *
  * Renders student_field_uncleared_reasons
  * @see student_theme()
  */
 function theme_student_field_uncleared_reasons() {
-	
+
 	$options = student_uncleared_get_reasons();
-	
+
 	$element = array(
 		'#title' => t('Reasons not cleared'),
 		'#name' => 'field-uncleared-reasons',
@@ -741,14 +741,14 @@ function theme_student_field_uncleared_reasons() {
 		'#multiple' => 1,
 		'#attributes' => array('class' => '')
 	);
-	
+
 	return theme('select', $element);
 
 }
 
 /**
  * Theme function for theme_student_field_deferred
- * 
+ *
  * Renders student_field_deferred checkbox
  * @see student_theme()
  */
@@ -769,24 +769,24 @@ function theme_student_field_deferred() {
  */
 function student_uncleared_get_reasons() {
 	include_once drupal_get_path('module', 'content') . '/includes/views/content.views.inc';
-	
+
 	$fields = content_fields();
   $field = array();
   $content_fields_data = array();
 	$allowed_values = array();
-	
+
   foreach($fields as $key => $field){
 		$field['field_name'] = 'field_uncleared_reasons';
 		$content_fields_data = content_views_field_views_data($field);
   }
-	
+
 	$field_allowed_values = db_fetch_object(db_query("SELECT global_settings FROM {content_node_field} WHERE field_name = '%s'", $field['field_name']));
-	
+
 	// unserialize the data
 	$field_settings = unserialize($field_allowed_values->global_settings);
-	
+
 	$allowed_values = explode("\r\n", trim($field_settings['allowed_values'], "\r\n"));
-	
+
 	return $allowed_values;
 }
 
@@ -934,7 +934,7 @@ function student_views_post_render(&$view, &$output, &$cache) {
   if ($view->name == "student_clearance") {
     // view mutation
     $student_id = $view->result[0]->users_uid;
-    
+
     $output = str_replace("STUDENTID", $student_id, $output);
 
     $row = false;
@@ -1566,53 +1566,6 @@ function change_student_program(&$user, $first_choice, $level) {
   create_student_program($user->uid);
 
   set_matriculation_number($user->uid, $formerProgID);
-}
-
-
-function _student_gr() {
-  static $titles;
-  if (!$titles) {
-     $titles[] = 'Select';
-     $r = db_query("select * from  {olevel_grades} order by grade_name");
-     while ($f = db_fetch_object($r))
-       $titles[$f->grade_id] = $f->grade_name;
-  }
-  return  $titles;
-}
-
-function _student_sub() {
-
-   static $titles;
-   if (!$titles) {
-      $titles[] = 'Select';
-      $r = db_query("select * from  {ext_exam_subject} order by subject_name");
-      while ($f = db_fetch_object($r))
-       $titles[$f->subject_id]=$f->subject_name;
-   }
-   return  $titles;
-}
-
-function _student_bod() {
-
-  static $titles;
-  if (!$titles) {
-    $titles[] = 'Select';
-    $r = db_query("select * from {ext_exam_body}  order by exam_body_name");
-    while ($f = db_fetch_object($r))
-      $titles[$f->exam_body_id] = $f->exam_body_name;
-    }
-   return  $titles;
-}
-
-function _student_rel() {
-
-  static $titles;
-  if (!$titles) {
-     $r = db_query("select * from {kin_relationship}  order by relation");
-     while ($f = db_fetch_object($r))
-        $titles[trim($f->relation)]=trim($f->relation);
-  }
-  return  $titles;
 }
 
 
