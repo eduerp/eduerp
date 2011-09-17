@@ -7805,7 +7805,7 @@ function initialize_school_fee_module_tables(){
     //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_settings}');
   if(db_affected_rows($rs) <= 0){
-    $items = array(array('name'=>'Activate Second Instalment Payment', 'data'=>'0'), array('name'=>'Late Registration Start Date', 'data'=>'2011-10-01'), array('name'=>'Late Registration Amount', 'data'=>'5000'), array('name'=>'Local Country Name', 'data'=>'156'),);
+    $items = array(array('name'=>'Activate Second Instalment Payment', 'data'=>'0'), array('name'=>'Last Date For Fee Payment Without Late Registration Charges', 'data'=>'2011-10-01'), array('name'=>'Late Registration Amount', 'data'=>'5000'), array('name'=>'Local Country Name', 'data'=>'156'),);
     foreach($items as $v){
       $node = new stdClass();
       $node->type                             		= 'school_fee_settings';
@@ -8042,7 +8042,7 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
   if($editMode){
     //get the item
     $item = get_school_fee_settings(arg(2));
-    if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'late registration start date'){
+    if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'Last Date For Fee Payment Without Late Registration Charges'){
       if(! is_Date($values[arg(2)]))
         form_set_error(arg(2), Error_Types(114));
     }
@@ -9159,11 +9159,11 @@ function staff_school_fees_test_fee_setup_form() {
 
 function get_late_registration_info(){
 
-  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Late Registration Start Date", "Late Registration Amount");
+  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
 
   while($rs = db_fetch_object($r)){
     //echo $rs->settings_name;
-    $name = ($rs->settings_name == 'Late Registration Start Date') ? 'start_date' : 'late_reg_amount';
+    $name = ($rs->settings_name == 'Last Date For Fee Payment Without Late Registration Charges') ? 'last_date' : 'late_reg_amount';
     $lateRegInfo[$name] = $rs->settings_value;
   }
 
@@ -9185,10 +9185,10 @@ function is_second_instalment_activated(){
 /*
 function get_uc_late_registration_info(){
 
-  $r = db_query("SELECT field_fee_settings_name_value settings_name, field_fee_settings_value_value settigs_value FROM content_type_school_fee_settings WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Late Registration Start Date", "Late Registration Amount");
+  $r = db_query("SELECT field_fee_settings_name_value settings_name, field_fee_settings_value_value settigs_value FROM content_type_school_fee_settings WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
 
   while($rs = db_fetch_object($r)){
-    $name = ($rs->settings_name == 'Late Registration Start Date') ? 'start_date' : 'late_reg_amount';
+    $name = ($rs->settings_name == 'Last Date For Fee Payment Without Late Registration Charges') ? 'last_date' : 'late_reg_amount';
     $lateRegInfo[$name] = $rs->settings_value;
   }
 
@@ -10669,8 +10669,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //print_r($lateRegInfo);
   //echo "</pre>";
 
-  $feeStudentOption['late_reg_info']['late_registration_date'] = $lateRegInfo['start_date'];
-  if( Date('Y-m-d') >= $lateRegInfo['start_date']){
+  $feeStudentOption['late_reg_info']['late_registration_date'] = $lateRegInfo['last_date'];
+  if( Date('Y-m-d') > $lateRegInfo['last_date']){
 
     $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
     $feeStudentOption['late_reg_info']['product_nid'] = $ucLateRegInfo['product_nid'];
@@ -10717,5 +10717,5 @@ function get_fee_items($studentUID){
   return $feeItem;
 }
 
-
+ 
 ?>
