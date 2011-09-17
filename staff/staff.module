@@ -1749,8 +1749,8 @@ function staff_create_edit_faculty() {
   echo '<br /><hr /><br />';
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
-
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
   }
   else {
     //if (isset($_POST['faculty_nid']))
@@ -1787,7 +1787,8 @@ function staff_create_edit_faculty() {
 
   if (! arg(2)) {
     if (! $isAuthorized) {
-      echo Error_Types(105);
+      //echo Error_Types(105);
+      drupal_set_message(Error_Types(105), 'error');
     }
     else {
       //if edit was selected then do not show the rest of the page
@@ -1812,8 +1813,8 @@ function staff_create_edit_dept() {
   echo '<br /><hr /><br />';
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
-
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
   }
   else {
       if (arg(2)){
@@ -1832,7 +1833,8 @@ function staff_create_edit_dept() {
   echo '<br /><hr /><br />';
   if (! arg(2)) {
     if (! $isAuthorized) {
-      echo Error_Types(105);
+      //echo Error_Types(105);
+      drupal_set_message(Error_Types(105), 'error');
     }
     else {
       //if edit was selected then do not show the rest of the page
@@ -2186,7 +2188,8 @@ function staff_create_edit_course() {
           else {
             echo "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/createeditcourse') ."'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
             echo '<br /><hr /><br />';
-            echo Error_Types(104);
+            //echo Error_Types(104);
+            drupal_set_message(Error_Types(104), 'error');
           }
         }
         else {//some small navigation
@@ -2199,7 +2202,8 @@ function staff_create_edit_course() {
           else {
             echo "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/createeditcourse') ."'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
             echo '<br /><hr /><br />';
-            echo Error_Types(104);
+            //echo Error_Types(104);
+            drupal_set_message(Error_Types(104), 'error');
           }
         }
       }//end of else of if proceed with course assignment
@@ -2218,7 +2222,8 @@ function staff_create_edit_course() {
         echo drupal_get_form('staff_edit_course_form');
       }
       else {//user cannot modify records
-        echo Error_Types(105);
+        //echo Error_Types(105);
+        drupal_set_message(Error_Types(105), 'error');
       }
       //display form for proceed to Course assignment
       echo '<br /><hr /><br />';
@@ -3008,8 +3013,10 @@ function staff_show_assign_course() {
   //echo "Below is a list of all availabel Staff and Course(s) that belong to <b>". $departmentInfo[arg(2)] ."</b> Department.<br /><br />";
   if ($canCreateModify)
     echo drupal_get_form('staff_assign_course_form');
-  else
-    echo Error_Types(104);
+  else{
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
+  }
 
 
   if (! arg(3)) {
@@ -3018,8 +3025,10 @@ function staff_show_assign_course() {
     echo "<b>Modify Assigned Lecturers and Timetables for Courses</b><br /> ";
     if ($canCreateModify)
       echo drupal_get_form('staff_edit_assigned_course_form');
-    else
-      echo Error_Types(105);
+    else{
+      //echo Error_Types(105);
+     drupal_set_message(Error_Types(105), 'error'); 
+    }
 
     //display missing courses in the department here
     echo '<br /><hr /><br />';
@@ -4073,8 +4082,10 @@ EOD;
 
   if ($canCreateModify)
     echo drupal_get_form('staff_assign_course_to_programme_form');
-  else
-    echo Error_Types(104);
+  else{
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
+  }
 
 
   if(! arg(3)) {
@@ -4309,7 +4320,7 @@ function staff_assign_course_to_programme_form() {
     $prog_course = $progCourse;
   }
   $levels = get_levels_from_programme_level_semester($programmeInfo->programme_nid);
-  if (sizeof($levels) <= 1) drupal_set_message(Error_Types(122));
+  if (sizeof($levels) <= 1) drupal_set_message(Error_Types(122), 'error');
 
   //we want to put the courses of the department at the top and then others will follow
   //$departmentCourses = staff_course($programmeInfo->department_nid);
@@ -4665,7 +4676,8 @@ function historical_course_list($programme_nid) {
     ORDER BY level_name, semester";
   $r = db_query($query, $programme_nid);
   if (db_affected_rows($r) <= 0) {
-    echo  strip_tags(Error_Types(106));
+    //echo  strip_tags(Error_Types(106));
+    drupal_set_message(Error_Types(106), 'error');
     return;
   }
   $html = "
@@ -4747,8 +4759,8 @@ function staff_student_progress_qualification() {
     }
   }
    else {
-     $str .=   Error_Types(127);
-
+     //$str .=   Error_Types(127);
+     drupal_set_message(Error_Types(127), 'error');
     }
   echo $str;
   unset($_SESSION['eduerp_return_msg']);
@@ -4934,6 +4946,7 @@ function  get_progress_qualification_details() {
   //build the table
   //note i am using cGPA as the root iterator because cGPA must exist for all students
   //print_r($cGPA);
+  $html = "";
   if(isset($cGPA) && is_array($cGPA)) {
   $html = "
   <table border=1>";$i=1;
@@ -5094,8 +5107,10 @@ function  get_progress_qualification_details() {
   $html .= "
   </table>";
   }
-  else
-   $html = strip_tags(Error_Types(106));
+  else{
+   //$html = strip_tags(Error_Types(106));
+   drupal_set_message(Error_Types(106), 'error');
+  }
   return $html;
   //unset($_SESSION['eduerp_qualification']);
 }
@@ -5313,8 +5328,10 @@ function staff_unregistered_students() {
     if (db_affected_rows($unregStudents) > 0) {
       $str  .= display_list_of_unregistered_students($unregStudents);
     }
-    else
-      $str .= Error_Types(106);
+    else{
+      //$str .= Error_Types(106);
+      drupal_set_message(Error_Types(106), 'error');
+    }
   }
 
   echo $str;
@@ -5576,7 +5593,8 @@ function staff_drop_registered_course() {
   }
   else {
     echo $navi;
-    echo Error_Types(127);
+    //echo Error_Types(127);
+    drupal_set_message(Error_Types(127), 'error');
 
   }
   unset($_SESSION['eduerp_drop_on']);
@@ -5627,7 +5645,7 @@ function get_student_drop_course_form_validate($form, &$state) {
   //check for remainders
   $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
   if(db_affected_rows($result) <= 0)
-    drupal_set_message(Error_Types(126));
+    drupal_set_message(Error_Types(126). 'error');
 }
 
 
@@ -5644,7 +5662,7 @@ function get_student_drop_course_form_submit($form, &$state) {
   //check for remainders
   $result = get_student_registered_courses($_SESSION['eduerp_drop_course_info']['studentInfo']['uid'], $_SESSION['eduerp_drop_course_info']['session'], $_SESSION['eduerp_drop_course_info']['semester']);
   if(db_affected_rows($result) <= 0)
-    drupal_set_message(Error_Types(126));
+    drupal_set_message(Error_Types(126), 'error');
 }
 
 
@@ -5691,7 +5709,7 @@ function get_student_course_instance_form_validate($form, &$state) {
      //check for registered course
     $registeredCourses = get_student_registered_courses($studentInfo->uid, $values['session'], $values['semester']);
     if (db_affected_rows($registeredCourses) <= 0) {
-      drupal_set_message(Error_Types(124));
+      drupal_set_message(Error_Types(124), 'error');
 
     }
     else {//course reg info exists
@@ -5763,7 +5781,8 @@ function staff_manual_course_reg() {
   }
   else {
     echo $navi;
-    echo Error_Types(127);
+    //echo Error_Types(127);
+    drupal_set_message(Error_Types(127), 'error');
 
   }
   unset($_SESSION['eduerp_reg_on']);
@@ -5815,7 +5834,7 @@ function get_student_unreg_course_form_validate($form, &$state) {
     //check for unregistered course
     $unRegisteredCourses = get_student_unregistered_courses($studentInfo->uid, $values['session'], $values['semester']);
     if (db_affected_rows($unRegisteredCourses) <= 0) {
-      drupal_set_message(Error_Types(128));
+      drupal_set_message(Error_Types(128), 'error');
 
     }
     else {//course reg info exists
@@ -5902,7 +5921,7 @@ function get_student_reg_course_form_validate($form, &$state) {
   //check for remainders
   $result = get_student_unregistered_courses($_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $_SESSION['eduerp_reg_course_info']['session'], $_SESSION['eduerp_reg_course_info']['semester']);
   if(db_affected_rows($result) <= 0)
-    drupal_set_message(Error_Types(126));
+    drupal_set_message(Error_Types(126), 'error');
 }
 
 
@@ -5946,7 +5965,7 @@ function get_student_reg_course_form_submit($form, &$state) {
   //check for remainders
   $result = get_student_unregistered_courses($_SESSION['eduerp_reg_course_info']['studentInfo']['uid'], $session, $semester);
   if(db_affected_rows($result) <= 0)
-    drupal_set_message(Error_Types(126));
+    drupal_set_message(Error_Types(126), 'error');
 }
 
 
@@ -6118,7 +6137,8 @@ function staff_change_student_programme() {
   }
   else {
     echo $navi;
-    echo Error_Types(127);
+    //echo Error_Types(127);
+    drupal_set_message(Error_Types(127), 'error');
 
   }
   unset($_SESSION['eduerp_change_prog_on']);
@@ -6455,6 +6475,7 @@ function get_courses_passed_by_student($first_choice, $uid) {
          ci.field_course_id_nid=c.nid AND
          IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value)>0";
      $result = db_query($sql, $first_choice, $uid);
+     $html = '';
      if (db_affected_rows($result) > 0) {
        $html = "
          <table border=1>
@@ -6482,9 +6503,10 @@ function get_courses_passed_by_student($first_choice, $uid) {
        $html .= "
          </table>";
      }
-     else
-       $html = strip_tags(Error_Types(106));
-
+     else{
+       //$html = strip_tags(Error_Types(106));
+       drupal_set_message(Error_Types(106), 'error');
+     }
 
      return $html;
 }
@@ -6839,7 +6861,8 @@ function staff_school_fees_admin(){
   $html = '<br /><hr /><br />';
   $isAuthorized = true; //please remember to take this off Israel
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -6891,7 +6914,8 @@ function staff_school_fees_create_modify_school_fee_item(){
     $html .= drupal_get_form('staff_school_fees_create_modify_fee_item_form');
   }
   else{
-    $html .= Error_Types(104);
+    //$html .= Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
   }
 
 
@@ -6931,7 +6955,8 @@ function staff_school_fees_create_modify_school_fee_setup(){
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup3_form');
     }
     else{
-      $html .= Error_Types(104);
+      //$html .= Error_Types(104);
+      drupal_set_message(Error_Types(104), 'error');
     }
   }
   elseif((isset($_SESSION['eduerp_page']) && $_SESSION['eduerp_page'] == 2) || (isset($_POST['eduerp_page']) && $_POST['eduerp_page']==2)){
@@ -6945,7 +6970,8 @@ function staff_school_fees_create_modify_school_fee_setup(){
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup2_form');
     }
     else{
-      $html .= Error_Types(104);
+      //$html .= Error_Types(104);
+      drupal_set_message(Error_Types(104), 'error');
     }
 
   }
@@ -6957,7 +6983,8 @@ function staff_school_fees_create_modify_school_fee_setup(){
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup1_form');
     }
     else{
-      $html .= Error_Types(104);
+      //$html .= Error_Types(104);
+      drupal_set_message(Error_Types(104), 'error');
     }
     $html .= '<br /><hr /><br />';
 
@@ -7003,7 +7030,8 @@ function staff_school_fees_scholarship_payment(){
       $html .= drupal_get_form('get_scholarship_payment_student_finder_form');
     }
     else {
-      $html .= Error_Types(104);
+      //$html .= Error_Types(104);
+      drupal_set_message(Error_Types(104), 'error');
     }
 
     //show those on scholarship for the current session
@@ -7078,7 +7106,8 @@ function staff_school_fees_authorise_instalment_payment(){
       $html .= drupal_get_form('get_authorise_instalment_student_finder_form');
     }
     else {
-      $html .= Error_Types(104);
+      //$html .= Error_Types(104);
+      drupal_set_message(Error_Types(104), 'error');
     }
 
     //show those on scholarship for the current session
@@ -7241,8 +7270,10 @@ function staff_display_school_fee_items() {
   <b>Available School Fee Items</b><br /><br />";
 
   $feeItems = get_school_fee_items();
-  if(! is_array($feeItems) || ! sizeof($feeItems))
+  if(! is_array($feeItems) || ! sizeof($feeItems)){
+    //drupal_set_message(Error_Types(106), 'error');
     return $html .= Error_Types(106) .'</div>';
+  }
 
   $html .="
   Please click on a Fee Item name to Edit it.<br />
@@ -7890,7 +7921,8 @@ function staff_school_fees_update_settings(){
       $html .= drupal_get_form('staff_school_fees_modify_fee_settings_form');
     }
     else {
-      $html .= Error_Types(104);
+      //$html .= Error_Types(104);
+      drupal_set_message(Error_Types(104), 'error');
     }
   }
   else {
@@ -8042,7 +8074,7 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
   if($editMode){
     //get the item
     $item = get_school_fee_settings(arg(2));
-    if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'Last Date For Fee Payment Without Late Registration Charges'){
+    if(trim(strtolower(strtoupper($item[arg(2)]['settings_name']))) == 'last date dor fee payment without late registration charges'){
       if(! is_Date($values[arg(2)]))
         form_set_error(arg(2), Error_Types(114));
     }
