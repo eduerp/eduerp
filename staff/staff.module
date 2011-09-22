@@ -8282,10 +8282,10 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 
       $feeSetupDetails = get_fee_setup_item_details($p->nid); //$feeSetupDetails = get_fee_setup_item_details(arg(2));
       while($r = db_fetch_object($feeSetupDetails)){
-        $_SESSION['eduerp_fee_setup']['items'][$p->level_id.$p->nationality_id.$r->item_nid.'full_amount'] = substr($r->full_amount, 0, -3);
+        $_SESSION['eduerp_fee_setup']['items'][$p->level_id ."-". $p->nationality_id ."-". $r->item_nid .'-full_amount'] = substr($r->full_amount, 0, -3);
 
-        $_SESSION['eduerp_fee_setup']['items'][$p->level_id.$p->nationality_id.$r->item_nid.'instalment1_amount'] = ($r->instalment1_amount != 0) ? substr($r->instalment1_amount, 0, -3) : 'N/A';
-        $_SESSION['eduerp_fee_setup']['items'][$p->level_id.$p->nationality_id.$r->item_nid.'instalment2_amount'] = ($r->instalment2_amount != 0) ? substr($r->instalment2_amount, 0, -3) : 'N/A';
+        $_SESSION['eduerp_fee_setup']['items'][$p->level_id ."-". $p->nationality_id ."-". $r->item_nid .'-instalment1_amount'] = ($r->instalment1_amount != 0) ? substr($r->instalment1_amount, 0, -3) : 'N/A';
+        $_SESSION['eduerp_fee_setup']['items'][$p->level_id ."-". $p->nationality_id ."-". $r->item_nid .'-instalment2_amount'] = ($r->instalment2_amount != 0) ? substr($r->instalment2_amount, 0, -3) : 'N/A';
       }
     }
 
@@ -8297,14 +8297,24 @@ function staff_school_fees_create_modify_fee_setup2_form() {
     foreach($studentNationalities as $snID => $snName){
 
       foreach($feeItems as $k => $v) {
-        if(! isset($_POST[$slID.$snID.$k.'full_amount'])){
+        //if(! isset($_POST[$slID.$snID.$k.'full_amount'])){
+        if(! isset($_POST[$slID ."-". $snID ."-". $k. '-full_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'])){
           $assignDefault=true;
-          $selFeeItems[$slID.$snID.$k.'full_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'];
+          //$selFeeItems[$slID.$snID.$k.'full_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'];
+          $selFeeItems[$slID ."-". $snID ."-". $k .'-full_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k  .'-full_amount'];
         }
 
-        if(! isset($_POST[$slID.$snID.$k.'instalment1_amount'])){
+        //if(! isset($_POST[$slID.$snID.$k.'instalment1_amount'])){
+        if(! isset($_POST[$slID ."-". $snID ."-". $k .'-instalment1_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'])){
           $assignDefault=true;
-          $selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
+          //$selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
+          $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
+        }
+        
+        if(! isset($_POST[$slID ."-". $snID ."-". $k .'-instalment2_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'])){
+          $assignDefault=true;
+          //$selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
+          $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment2_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
         }
       }
     }
@@ -8336,7 +8346,9 @@ function staff_school_fees_create_modify_fee_setup2_form() {
     }
     //
   }
-
+  //echo "<pre>";
+  //print_r($selFeeItems);
+  //echo "</pre>";
   $form['#title'] = 'Create / Modify Fee Setup Page2';
   /*
   $form['fee_structure_name'] = array(
@@ -8375,26 +8387,27 @@ function staff_school_fees_create_modify_fee_setup2_form() {
   foreach($studentLevels as $slID => $slName){
     foreach($studentNationalities as $snID => $snName){
 
-	  $form['extra'.$slID.$snID] = array(
+	  //$form['extra'.$slID.$snID] = array(
+	  $form["extra".$slID.$snID] = array(
 	    '#type' => 'fieldset',
 	    '#title' => $slName .' - '. $snName .' - ' . 'Available Fee Items',
 	    '#collapsed' => false,
 	    '#collapsible' => TRUE);
-	  $form['extra'.$slID.$snID]['fee_item_header'.$slID.$snID] = array(
+	  $form["extra".$slID . $snID]["fee_item_header-".$slID."-".$snID] = array(
 	    '#type' => 'item',
 	    '#value' => '<b>Fee Item</b>',
 	    '#size' => 20,
 	    '#prefix' => "<table border=1><tr><td width='50px;'>#</td><td width='250px;'>",
 	    '#suffix' => '</td>');
 
-	    $form['extra'.$slID.$snID]['fee_full_amount_header'.$slID.$snID] = array(
+	    $form["extra".$slID . $snID]["fee_full_amount_header-". $slID ."-". $snID] = array(
 	    '#type' => 'item',
 	    '#value' => '<b>Full Amount</b>',
 	    '#size' => 20,
 	    '#prefix' => '<td>',
 	    '#suffix' => '</td>');
 
-	    $form['extra'.$slID.$snID]['fee_instalment1_amount_header'.$slID.$snID] = array(
+	    $form["extra".$slID . $snID]["fee_instalment1_amount_header-".$slID. "-". $snID] = array(
 	    '#type' => 'item',
 	    '#value' => '<b>First Instalment Amount</b>',
 	    '#size' => 20,
@@ -8402,26 +8415,26 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 	    '#suffix' => '</td></tr>');
 	    $i=1;
 	    foreach($feeItems as $k => $v) {
-	      $form['extra'.$slID.$snID][$slID.$snID.$k.'lbl'] = array(
+	      $form["extra".$slID . $snID][$slID ."-". $snID. "-". $k. "-lbl"] = array(
 		'#type' => 'item',
 		'#value' => $v['fee_item'],
 		'#prefix' => "<tr><td>". $i++ ."</td><td width='250px;'>",
 		'#suffix' => '</td>');
-	      $form['extra'.$slID.$snID][$slID.$snID.$k.'full_amount'] = array(
+	      $form["extra".$slID . $snID][$slID ."-". $snID ."-". $k. "-full_amount"] = array(
 		'#type' => 'textfield',
 		'#default_value' => 'N/A',
 		'#size' => 10,
 		'#prefix' => '<td>',
 		'#suffix' => '</td>');
-	      if ($selFeeItems[$slID.$snID.$k.'full_amount']) $form['extra'.$slID.$snID][$slID.$snID.$k.'full_amount']['#value'] = $selFeeItems[$slID.$snID.$k.'full_amount'];
+	      if ($selFeeItems[$slID. "-" .$snID ."-". $k .'-full_amount']) $form["extra".$slID . $snID][$slID ."-". $snID ."-". $k .'-full_amount']['#value'] = $selFeeItems[$slID ."-". $snID ."-". $k .'-full_amount'];
 
-	      $form['extra'.$slID.$snID][$slID.$snID.$k.'instalment1_amount'] = array(
+	      $form['extra'.$slID.$snID][$slID ."-". $snID ."-". $k .'-instalment1_amount'] = array(
 		'#type' => 'textfield',
 		'#default_value' => 'N/A',
 		'#size' => 10,
 		'#prefix' => '<td>',
 		'#suffix' => '</td></tr>');
-	      if ($selFeeItems[$slID.$snID.$k.'instalment1_amount']) $form['extra'.$slID.$snID][$slID.$snID.$k.'instalment1_amount']['#value'] = $selFeeItems[$slID.$snID.$k.'instalment1_amount'];
+	      if ($selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount']) $form['extra'.$slID . $snID][$slID ."-". $snID ."-". $k .'-instalment1_amount']['#value'] = $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount'];
 
 	    }
 
@@ -8465,7 +8478,10 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
 
   $values = $state['values'];
-
+  //echo "<pre>";
+  //print_r($values);
+  //echo "</pre>";
+  
   //drupal_set_message(print_r($values));
   $feeItems = get_school_fee_items();
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
@@ -8488,28 +8504,28 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
 
              //$feeBlock[$slID][$snID] = false;
 
-             if((empty($values[$slID.$snID.$k.'full_amount']) || ! preg_match("/^[0-9]{1,9}$/", $values[$slID.$snID.$k.'full_amount'])) && trim($values[$slID.$snID.$k.'full_amount']) != 'N/A'){
-               form_set_error($slID.$snID.$k.'full_amount', Error_Types(107));
+             if((empty($values[$slID ."-". $snID ."-". $k .'-full_amount']) || ! preg_match("/^[0-9]{1,9}$/", $values[$slID ."-". $snID ."-". $k .'-full_amount'])) && trim($values[$slID ."-". $snID ."-". $k .'-full_amount']) != 'N/A'){
+               form_set_error($slID ."-". $snID ."-". $k .'-full_amount', Error_Types(107));
              }
              else{
-               $famount = $values[$slID.$snID.$k.'full_amount'];
+               $famount = $values[$slID ."-". $snID ."-". $k .'-full_amount'];
              }
 
-             if((empty($values[$slID.$snID.$k.'instalment1_amount']) || ! preg_match("/^[0-9]{1,9}$/", $values[$slID.$snID.$k.'instalment1_amount'])) && trim($values[$slID.$snID.$k.'instalment1_amount']) != 'N/A'){
-               form_set_error($slID.$snID.$k.'instalment1_amount', Error_Types(107));
+             if((empty($values[$slID ."-". $snID ."-". $k .'-instalment1_amount']) || ! preg_match("/^[0-9]{1,9}$/", $values[$slID ."-". $snID ."-". $k .'-instalment1_amount'])) && trim($values[$slID ."-". $snID ."-". $k .'-instalment1_amount']) != 'N/A'){
+               form_set_error($slID ."-". $snID ."-". $k .'-instalment1_amount', Error_Types(107));
              }
              else{
-               $iamount = $values[$slID.$snID.$k.'instalment1_amount'];
+               $iamount = $values[$slID ."-". $snID ."-". $k .'-instalment1_amount'];
              }
 
              //make sure for every first instalment specified there is a corresponding full amount
              if(is_numeric($iamount) && ! is_numeric($famount)){
-               form_set_error($slID.$snID.$k.'full_amount', Error_Types(165));
+               form_set_error($slID ."-". $snID ."-". $k .'-full_amount', Error_Types(165));
              }
 
              //make sure if first instalment is specified that it is less than total amount
              if(is_numeric($iamount) && is_numeric($famount) && $famount <= $iamount){
-               form_set_error($slID.$snID.$k.'instalment1_amount', Error_Types(164));
+               form_set_error($slID ."-". $snID ."-". $k .'-instalment1_amount', Error_Types(164));
 
              }
 
@@ -8587,27 +8603,27 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
   foreach($studentLevels as $slID => $slName){
     foreach($studentNationalities as $snID => $snName){
       foreach($feeItems as $k => $v) {
-        if(isset($values[$slID.$snID.$k.'full_amount'])){// || $values[$k.'txt'] == '0'
-          $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'] = $values[$slID.$snID.$k.'full_amount'];
+        if(isset($values[$slID ."-". $snID ."-". $k . '-full_amount'])){// || $values[$k.'txt'] == '0'
+          $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] = $values[$slID ."-". $snID ."-". $k .'-full_amount'];
         }
         else {
-          $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'] = 'N/A';
+          $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] = 'N/A';
         }
 
 
-        if(isset($values[$slID.$snID.$k.'instalment1_amount'])){// || $values[$k.'txt'] == '0'
-          $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'] = $values[$slID.$snID.$k.'instalment1_amount'];
+        if(isset($values[$slID ."-". $snID ."-". $k .'-instalment1_amount'])){// || $values[$k.'txt'] == '0'
+          $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'] = $values[$slID ."-". $snID ."-". $k .'-instalment1_amount'];
         }
         else {
-          $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'] = 'N/A';
+          $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'] = 'N/A';
         }
 
         //store values for instalment2
-        if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount']) && is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'])){
-          $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment2_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'] - $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
+        if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount']) && is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'])){
+          $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] - $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
         }
 	else{
-	  $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment2_amount'] = 'N/A';
+	  $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'] = 'N/A';
 
 	}
 
@@ -8694,8 +8710,8 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
   switch(trim(strtolower(strtoupper($values['op'])))){
     case 'submit':
       $programNID = is_numeric($_SESSION['eduerp_fee_setup']['programme_nid']) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
-
-      if(is_fee_setup_existing($programID, variable_get('eduerp_current_session', '')) && ! $editMode){
+      //echo $programNID;
+      if(is_fee_setup_existing($programNID, variable_get('eduerp_current_session', '')) && ! $editMode){
         form_set_error('submit', Error_Types(167));
         $_SESSION['eduerp_page'] = 3;
       }
@@ -8832,19 +8848,19 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
 	       //foreach($_SESSION['eduerp_fee_setup']['items'] as $k => $v){
 	       foreach($feeItems as $k => $feeItem) {
 		 //if(is_numeric($v) && $v > 0){
-		 if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'] > 0){
+		 if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] > 0){
 
 		   //we need to check if attribute options exists else we'll create them
 
 		   //construct the names of the option
 		   $ucOptionName[0]['name'] = $_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Full Amount)";
-		   $ucOptionName[0]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'];
+		   $ucOptionName[0]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];
 
 		   $ucOptionName[1]['name'] = $_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Instalment1)";
-		   $ucOptionName[1]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
+		   $ucOptionName[1]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
 
 		   $ucOptionName[2]['name'] = $_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Instalment2)";
-		   $ucOptionName[2]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment2_amount'];
+		   $ucOptionName[2]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
 
 		   foreach($ucOptionName as $u){
 
@@ -8895,9 +8911,9 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
 		   $node->title                              		= 'Fee Setup Details' .' - '. $k .' - '. $feeSetupNID;
 		   $node->field_fee_item_fk[0]['nid']          		= $k;
 		   $node->field_fee_item_setup_fk[0]['nid']           	= $feeSetupNID;
-		   $node->field_fee_full_payment_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'];//$v;
-		   $node->field_fee_instalment1_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
-		   $node->field_fee_instalment2_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment2_amount'];
+		   $node->field_fee_full_payment_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];//$v;
+		   $node->field_fee_instalment1_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
+		   $node->field_fee_instalment2_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
 		   //$node->field_fee_uc_oid[0]['value'] 			= $oid;
 
 		   node_save($node);
@@ -9132,15 +9148,15 @@ function show_fee_setup_page_two_info(){
 	    $i=1; $totalAmount=0;
           foreach($feeItems as $k => $v) {
             //if(isset($values[$k.'txt']) && $values[$k.'txt'] != 'N/A' && $values[$k.'txt'] > 0 ){
-            if(isset($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'] != 'N/A' && $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'] > 0 ){
+            if(isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] != 'N/A' && $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] > 0 ){
               //form_set_error($values[$k.'txt'], Error_Types(107));
               $html .="
               <tr>
                 <td>". $i++ ."</td>
                 <td>". $v['fee_item'] ."</td>
-                <td><b>". number_format($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'], 2) ."</b></td>
-                <td>". ($x = is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount']) ? "<b>". number_format($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'], 2) ."</b>" : 'N/A') . "</td>
-                <td>". ($x = is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment2_amount']) ? "<b>". number_format($_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment2_amount'], 2) ."</b>" : 'N/A') . "</td>
+                <td><b>". number_format($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'], 2) ."</b></td>
+                <td>". ($x = is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount']) ? "<b>". number_format($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'], 2) ."</b>" : 'N/A') . "</td>
+                <td>". ($x = is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount']) ? "<b>". number_format($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'], 2) ."</b>" : 'N/A') . "</td>
               </tr>";
 
               //$totalAmount += $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'];
