@@ -998,8 +998,8 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
             if (!empty($row->level)) $level2 = $row->level;
           }
 
-          // Set the level to 100 (probably) if the student's mode of entry is UME if not, then it's 200 (probably)
-          $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] == 'UME') ? $level1 : $level2;
+          // Set the level to 100 (probably) if the student's mode of entry is not DE, if it is DE then it's 200 (probably)
+          $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] != 'DE') ? $level1 : $level2;
         }
     }
   }
