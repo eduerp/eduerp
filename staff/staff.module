@@ -1715,7 +1715,7 @@ function staff_display_available_programmes() {
         <td><b>Min. Credit Load</b></td>
         <td><b>Type</b></td>
       </tr>";$i = 1;
-
+      $programTypes = programme_types();
       while($programme = db_fetch_object($programmes)){
         if ($i%2){$rcolor = "#E5E5E5";} else {$rcolor = "#FFFFFF";}
           $str .= "
@@ -1728,7 +1728,7 @@ function staff_display_available_programmes() {
                <td>". $programme->duration ."</td>
                <td>". $programme->max_duration ."</td>
                <td>". $programme->min_credit_load ."</td>
-               <td>". $programme->programme_type ."</td>
+               <td>". $programTypes[$programme->programme_type] ."</td>
 
              </tr>";
       }

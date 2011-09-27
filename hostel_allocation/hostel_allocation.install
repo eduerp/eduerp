@@ -21,6 +21,11 @@ function hostel_allocation_enable() {
   install_hostel_content_types('room_reservations_cck.txt', 'room_reservations');
   install_hostel_content_types('rooms_cck.txt', 'room');
   
+   // execute raw queries
+   db_query('ALTER TABLE {allocation_block_statistics} ENGINE = InnoDB');
+   db_query('ALTER TABLE {allocation_room_statistics} ENGINE = InnoDB');
+  
+  
   content_clear_type_cache();
 }
 
