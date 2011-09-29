@@ -57,15 +57,15 @@ function eduerp_perms_initialize() {
       'create profile content',
       'edit own profile content',
 
-      'edit field_profile_country_name',
-      'edit field_profile_dob',
-      'edit field_profile_first_name',
+      // 'edit field_profile_country_name',
+      // 'edit field_profile_dob',
+      // 'edit field_profile_first_name',
       'edit field_profile_maiden_name',
-      'edit field_profile_gender',
-      'edit field_profile_last_name',
-      'edit field_profile_lga_name',
+      // 'edit field_profile_gender',
+      // 'edit field_profile_last_name',
+      // 'edit field_profile_lga_name',
       'edit field_profile_marital_status',
-      'edit field_profile_middle_name',
+      // 'edit field_profile_middle_name',
       'edit field_profile_mobile_number',
       'edit field_profile_permanent_address',
       'edit field_profile_permanent_city',
@@ -73,7 +73,7 @@ function eduerp_perms_initialize() {
       'edit field_profile_photograph',
       'edit field_profile_religion',
       'edit field_profile_signature',
-      'edit field_profile_state_name_origin',
+      // 'edit field_profile_state_name_origin',
       'edit field_profile_title_name',
 
       'view field_profile_country_name',
@@ -150,6 +150,30 @@ function eduerp_install(){
     ),
   );
   drupal_execute('content_copy_import_form', $form_state);
+  
+  
+  
+  
+  
+  //these are installs for the school fees module
+  install_other_content_type('cck_school_fees_item_setup_details.txt', 'school_fee_item_setup_details');
+  install_other_content_type('cck_school_fees_approved_instalments.txt', 'school_fee_approved_instalments');
+  install_other_content_type('cck_school_fees_approved_scholarships.txt', 'school_fee_approved_scholarships');
+  install_other_content_type('cck_school_fees_items.txt', 'school_fee_items');
+  install_other_content_type('cck_school_fees_item_setup.txt', 'school_fee_item_setup');
+  install_other_content_type('cck_school_fees_settings.txt', 'school_fee_settings');
+  install_other_content_type('cck_school_fees_level_types.txt', 'school_fee_level_types');
+  install_other_content_type('cck_school_fees_structure_classes.txt', 'school_fee_structure_classes');
+  install_other_content_type('cck_school_fees_nationality_types.txt', 'school_fee_nationality_types');
+  
+  
+  // execute raw queries
+  db_query('CREATE INDEX field_fee_setup_session_value ON {content_type_school_fee_item_setup} (field_fee_setup_session_value)');
+  db_query('CREATE INDEX field_sas_session_name_value ON {content_type_school_fee_approved_scholarships} (field_sas_session_name_value)');
+  db_query('CREATE INDEX field_sai_session_name_value ON {content_type_school_fee_approved_instalments} (field_sai_session_name_value)');
+  
+  
+  
   content_clear_type_cache();
 
   drupal_set_message('eduerp module installed');
@@ -162,6 +186,8 @@ function eduerp_enable() {
   foreach ($perms as $role => $permissions) {
     permissions_grant_permissions($role, $permissions);
   }
+  
+  
 }
 
 function eduerp_disable() {
@@ -593,3 +619,19 @@ function eduerp_schema_6000() {
     'unique key' => array('code' => array('code')),
   );
 }
+
+function install_other_content_type($filename, $content_type_name) {
+  $content_type_data = file_get_contents(dirname(__FILE__) . '/cck/'.$filename);
+
+  // determine if to replace content type or create it
+  $content_type_info = content_types($content_type_name);
+
+  $form_state = array(
+    'values' => array(
+      'type_name' => (is_array($content_type_info) && array_key_exists('type', $content_type_info)) ? $content_type_name : '<create>',
+      'macro' => $content_type_data,
+    ),
+  );
+  drupal_execute('content_copy_import_form', $form_state);
+}
+?>

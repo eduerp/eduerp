@@ -2424,7 +2424,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
   global $EDUERPstudentInitiated;
   ob_start();
   //unset($_SESSION['eduerp_reserve_room']['page']);
-  
+
   if(arg(2) && isset($_SESSION['eduerp_reserve_room']['student_uid']) && arg(2) ==  $_SESSION['eduerp_reserve_room']['student_uid']){
     $page = 2;
   }
@@ -2434,8 +2434,8 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
   }
   $_SESSION['eduerp_reserve_room']['studentInitiated'] = ($studentInitiated !=0) ? $studentUID : $studentInitiated; //$studentInitiated;
   $EDUERPstudentInitiated = ($studentInitiated != 0) ? $studentUID : $studentInitiated;
-  
-  
+
+
   $isAuthorized = true;
   //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
 
@@ -2505,7 +2505,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
           echo "<b>Direct Room Reservation</b> - Please select the Block<br /><br /><br />";
 
         echo drupal_get_form('hostel_allocation_select_block_form');
-        
+
         break;
       case '1':
         unset($_SESSION['eduerp_reserve_room']);
@@ -2590,9 +2590,9 @@ function hostel_allocation_enter_mat_number_form(){
       );
 
     }
-    
-    
-    
+
+
+
     $form['submit'] = array('#id' => 'next', '#value' => 'Continue', '#type' => 'submit');
 
     return $form;
@@ -2658,20 +2658,20 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
 
 
     //drupal_set_message("JAMB num is ". $student_profile->profile_jambno);
-    
+
     if(! isset($_SESSION['eduerp_reserve_room']['jamb_num']) || $_SESSION['eduerp_reserve_room']['jamb_num'] == ""){
       form_set_error('mat_number', Error_Types(143));
-      unset($_SESSION['eduerp_reserve_room']); $_SESSION['eduerp_reserve_room']=null; 
+      unset($_SESSION['eduerp_reserve_room']); $_SESSION['eduerp_reserve_room']=null;
       if($EDUERPstudentInitiated){
-      	drupal_goto("student/hostelreservation/");      
+      	drupal_goto("student/hostelreservation/");
       }
       else{
-      	drupal_goto("hostel_allocation/direct_reservation/");     
+      	drupal_goto("hostel_allocation/direct_reservation/");
       }
     }
-       
-     
-    
+
+
+
     //$ps = node_load($student_profile->profile_first_choice);
 
     //$student_profile->profile_gender = 'male';
@@ -2755,12 +2755,12 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   global $EDUERPallocationCategory, $EDUERPstudentInitiated;
   $values = $form_state['values'];
   unset($_SESSION['eduerp_reserve_room']['page']);
-  
+
   $_SESSION['eduerp_reserve_room']['block_nid'] = $values['block_nid'];
   if($_SESSION['eduerp_reserve_room']['reservation_type'] == 'single') $_SESSION['eduerp_reserve_room']['room_nid'] = $values['room_nid'];
   ini_hostel_variables();
-  
-  
+
+
   $student_profile = new UserProfile($_SESSION['eduerp_reserve_room']['student_uid']);
   /*
   $EDUERPallocationCategory = array(
@@ -2802,10 +2802,10 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
   if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
     $studCate[] = "freshmen";
-  }elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) != "UME"){
-    $levelStatus = "freshman";          
+  }elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE"){
+    $studCate[] = "freshman";
   }
-  
+
     /*
     ! isset($_SESSION['eduerp_reserve_room']['mat_num']) ||
   	  $_SESSION['eduerp_reserve_room']['mat_num'] == "" ||
@@ -2867,7 +2867,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
            if($val) {
              $reserved = true;
              break;
-           } 
+           }
          }
        }
 
@@ -2894,7 +2894,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
         drupal_goto("student/hostelreservation");
       else
         drupal_goto("hostel_allocation/direct_reservation");
-    
+
     }
     else
       drupal_set_message(Error_Types(), 'error');
@@ -3844,7 +3844,7 @@ function save_reservation() {
  * @brief The hostel reservation data object
  * @return
  * The hostel allocation data object
- * 
+ *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function hostel_allocation_reserved_data() {
@@ -4021,10 +4021,10 @@ function hostel_allocation_order($op, &$order, $arg2) {
         else
           drupal_set_message(Error_Types(151), 'error');
       }
-      
+
 
       break;
-  } 
+  }
 }
 //reservation payment ends here
 
