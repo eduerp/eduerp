@@ -4,6 +4,8 @@
  * @author Kayode Odeyemi
  */
 
+define("INVOICE_REGENERATE", "regenerate");
+
 /**
  * Implementation of hook_perm()
  * @return <type>
@@ -16,26 +18,19 @@ function eduerp_transaction_perm() {
  * Implementation of hook_menu()
  */
 function eduerp_transaction_menu() {
+		global $user;
     $items = array();
-    /*$items['student/checkout'] = array(
-        'title' => t('Confirm reservation'),
-        'description' => 'Display confirmation about allocation and perform checkout',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('eduerp_transaction_checkout_form'),
-        'access callback' => 'user_access',
-        'access arguments' => array('perform checkout'),
-        'type' => MENU_CALLBACK,
-    );
-
-    $items['student/hostelreservation/cart/checkout'] = array(
-        'title' => t('Checkout your order'),
-        'description' => 'Checkout hostel reservation order',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('student_hostelreservation_checkout'),
-        'access callback' => 'user_access',
-        'access arguments' => array('checkout hostel order'),
-        'type' => MENU_CALLBACK,
-    );*/
+		if(module_exists('uc_eduerp_fees')) {
+			$items['user/%/fees/pay'] = array(
+				'title' => t('Pay fees'),
+				'description' => t('Pay all type of fees'),
+				'page callback' => 'uc_eduerp_fees_add_to_cart',
+				'page arguments' => array($user->uid),
+				'access callback' => 'user_access',
+        'access arguments' => array('access content'),
+				'type' => MENU_CALLBACK
+			);
+		}
     return $items;
 }
 
@@ -55,11 +50,6 @@ function eduerp_transaction_theme() {
     $theme['eduerp_transaction_display_reservation_info'] = $base + array(
         'arguments' => array(),
     );
-    /*$theme['tallybill_vertical_tabs'] = $base + array(
-        'arguments' => array('bank_account' => NULL, 'type' => 'savings', 'form' => NULL),
-        'template' => 'tallybill-vertical-tabs',
-    );*/
-
     return $theme;
 }
 
@@ -92,4 +82,9 @@ function eduerp_transaction_checkout_form(&$form_state) {
     );
 
     return $form;
+}
+
+function eduerp_transaction_init(){
+	module_load_include('inc', 'eduerp', 'eduerp.admin');
+	dsm(eduerp_get_institution('name'));
 }

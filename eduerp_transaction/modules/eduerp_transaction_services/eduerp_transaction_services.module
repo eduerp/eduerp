@@ -140,7 +140,7 @@ function do_callback($uid, $status, $updated = FALSE) {
 	drupal_set_header('Content-Type: application/json');
 	
 	$uid = $_POST['uid'];
-	$status = $_POST['status'];
+	$status = $_POST['status']; //type=status&status=paid
 	
 	$method = $_SERVER['REQUEST_METHOD'];
 	
@@ -155,6 +155,10 @@ function do_callback($uid, $status, $updated = FALSE) {
 		exit;
 	}
 	
+	// if service is invoice regeneration
+	if($status == INVOICE_REGENERATE) {
+		// run module_invoke invoice regenerate
+	}
 	// update the ubercart fees order based on $uid and $status values
 	if(module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $uid, $status)) {
 		$updated = TRUE;
