@@ -5476,7 +5476,7 @@ function staff_student_action_form() {
   );
   $form['event'] = array(
     '#type' => 'select',
-    '#options' => array('Graduated'=>'Graduated','Left Voluntarily'=>'Left Voluntarily','Repeat Session'=>'Repeat Session','Defer Session'=>'Defer Session','Left Forced'=>'Left Forced'),
+    '#options' => array('Graduated'=>'Graduated','Left Voluntarily'=>'Left Voluntarily','Repeat Session'=>'Repeat Session','Defer Session'=>'Defer Session','Left Forced'=>'Left Forced','Note'=>'Note'),
     '#title' => 'Event',
     '#form_panel_col' => 2,
     '#form_panel_row' => 1
@@ -8310,7 +8310,7 @@ function staff_school_fees_create_modify_fee_setup2_form() {
           //$selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
           $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
         }
-        
+
         if(! isset($_POST[$slID ."-". $snID ."-". $k .'-instalment2_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'])){
           $assignDefault=true;
           //$selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
@@ -8481,7 +8481,7 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
   //echo "<pre>";
   //print_r($values);
   //echo "</pre>";
-  
+
   //drupal_set_message(print_r($values));
   $feeItems = get_school_fee_items();
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
@@ -9207,7 +9207,7 @@ function staff_school_fees_test_fee_setup_form() {
 
 function get_late_registration_info(){
 
-  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value 
+  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value
   	  FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
 
   while($rs = db_fetch_object($r)){
@@ -10742,7 +10742,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
    $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
 
   }
- 
+
   return $feeStudentOption;
 }
 
