@@ -17,6 +17,7 @@ function uc_eduerp_fees_add_to_cart($student_id) {
 	//dsm(get_fee_items($student_id));
 	module_load_include('inc', 'student', 'student.rules');
 	
+	//$fees = array();
 	if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
 		$fees = $fees_items;
 	}
@@ -32,82 +33,82 @@ function uc_eduerp_fees_add_to_cart($student_id) {
 	//(object)$fees = uc_eduerp_fees_fees();
 	
 	// get fees type
-	$type = $fees->type;
+	//$type = $fees->type;
 	
 	// test if student is still a student (graduated or expelled)
-	$session = variable_get('eduerp_current_session', '') ? variable_get('eduerp_current_session', '') : NULL;
+	/*$session = variable_get('eduerp_current_session', '') ? variable_get('eduerp_current_session', '') : NULL;
 	if(!student_next_level($student_id, $session)){
 		$fees = NULL;
 		drupal_set_message('Sorry. Your student record is no longer eligible to pay fees', 'error');
-	}
+	}*/
 	
 	// get it's attribute combination. Attribute is treated as fees type
-	$attributes = uc_eduerp_fees_fees_attributes($fees);
+	//$attribute = uc_eduerp_fees_fees_attributes($fees);
 	
 	// The paid fees items
 	$paid_fees_items = uc_eduerp_fees_paid_items();
 	
-	// get the fees description
-	
-	// get the fees type name e.g Full Fees or First Installment or Second installment
-	
-	// if $fees is paid for.
-	if(in_array($attributes['attribute_id'], $paid_fees_items)) {
-		//drupal get the current destination and set message, Sorry, you have already paid for 
-		//this item.
-		$fees = array();
-		drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
-	}
-	
-	// Before item is added to cart, check for late registration value
-	// if late registration period is reached, set fees to NULL
-	if($fees->late_registered_expired) {
-		$fees = NULL;
-		drupal_set_message('Student registration for this session is closed. Consult the registry', 'error');
-	}
-	
-	// Before item is added to cart, check for hostel reservation value
-	// if hostel reservation has expired, set fees to NULL
-	// if the fees record contains hostel key(hostel attribute id), check for expiration
-	if(array_key_exists('hostel', $fees) && $fees->hostel_reservation_expired) {
-		$fees = NULL;
-		drupal_set_message('Your hostel reservation has expired. Please consult the registry', 'error');
-	}
-	
-	// This is not relevant any longer. Just test if the fees item is paid for or not. If it 
-	// is already paid for, set fees to NULL
-	// if the type of fees is second installment, test to see if first installment has 
-	// been paid. If yes, add only the second installment to cart. If no, return NULL
-	//if($fees->type == $fees[2]){ // assuming $fees[2] holds for second installment
-		// test if $fees[1] is paid for
-		// if FALSE
-		// $fees = array();
-		// return NULL;
+	/*for($i = 0; $i < count($fees); $i++){
+		foreach($fees[$i] as $item) {
+			dsm($item[$i]['item']);
+		}
+	}*/
+	foreach($fees as $fee){
+		//foreach($fee as $item){
+			//dsm($item);
+		//$attribute_id = $item['item']['attribute_id'];
+		//$attr_obj = uc_attribute_load($attribute_id);
+		
+		// if $fees is paid for.
+		//if(in_array($attr_obj->name, $paid_fees_items)) {
+			//drupal get the current destination and set message, Sorry, you have already paid for 
+			//this item.
+			//$fees = array();
+			//drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
+		//}
+		// get all fees nid
+		//$fees_nid = array();
+		$fees_nid[] = $fee['item']['product_nid'];
+		$data[] = $fee['options'];
+		$items = array('product_nid' => $fee['item']['product_nid'], 'data' => $fee['options']);
+		// get the fees description
+
+		// Before item is added to cart, check for late registration value
+		// if late registration period is reached, set fees to NULL
+		// status: Need work
+		/*if($fees->late_registered_expired) {
+			$fees = NULL;
+			drupal_set_message('Student registration for this session is closed. Consult the registry', 'error');
+		}*/
+		
+		// Before item is added to cart, check for hostel reservation value
+		// if hostel reservation has expired, set fees to NULL
+		// if the fees record contains hostel key(hostel attribute id), check for expiration
+		// status = Needs work
+		/*if(array_key_exists('hostel', $fees) && $fees->hostel_reservation_expired) {
+			$fees = NULL;
+			drupal_set_message('Your hostel reservation has expired. Please consult the registry', 'error');
+		}*/
+		
+		//$data = $fees['options']; // All other fee setup values as data, both for Fees and hostel
+		
 	//}
-	
-	$data = $fees['options']; // All other fee setup values as data, both for Fees and hostel
-	
-	// get all fees nid
-	$fees_nid = array();
-	foreach($fees as $product_fees) {
-		$fees_nid[] = $product_fees['item']['product_nid'];
 	}
-	
-	$added = FALSE;
-	if(!empty($fees_nid)) {
-		foreach($fees as $fee) {
+		$added = FALSE;
+		if(!empty($items)) {
 			// With this we are going to have 2 items in cart; fees and hostel
 			// uc_cart_add_item($fee->nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
 			// Test for type of object(fees) before adding to cart
-			uc_cart_add_item($fees_nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+			foreach($items as $item){
+				uc_cart_add_item($item['product_nid'], $qty = 1, $item['data'], $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+			}
+			$added = TRUE;
+		}else {
+			drupal_set_message('No fee items to add to cart', 'error');
 		}
-		$added = TRUE;
-	}else {
-		drupal_set_message('No fee items to add to cart', 'error');
-	}
-	if($added) {
-		drupal_goto("cart");
-	}
+		if($added) {
+			drupal_goto("cart");
+		}
 	return $added;
 }
 
@@ -128,7 +129,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 	$type = ''; // Full Fees or First Installment or Second installment
 	$uid = user_load($user->uid);
 	
-	static $fees_item;
+	//static $fees_item;
 	$fees_item = get_fee_items($uid->uid);
 	if(!empty($fees_item)){
 		// Fees
@@ -213,15 +214,14 @@ function uc_eduerp_fees_paid_items() {
  */ 
 function uc_eduerp_fees_fees_attributes($fees) {
 	if(!empty($fees)) {
-		foreach($fees['item'] as $key => $fee) {
-			// get the attribute combination, which is made up of option_id and attribute_id
-			$attribute = array(
-				'attribute' => array($key['option_id'], $key['attribute_id']),
-			);
-			//$attribute = $key['attribute_id'];
+		foreach($fees as $fee) {
+			$attribute_id = $fee['item']['attribute_id'];
+			$attr_obj = uc_attribute_load($attribute_id);
+			/*foreach($fee['item'] as $key => $fee_item) {
+			}*/
 		}
 	}
-	return $attribute;
+	return $attribute_id;
 }
 
 function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value = NULL) {
