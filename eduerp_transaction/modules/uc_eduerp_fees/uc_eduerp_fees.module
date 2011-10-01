@@ -5,9 +5,9 @@
  * Ubercart integration of EduERP fees
  */ 
 
- define('EDUERP_FEES_NORMAL', 'fees');
- 
- #define('EDUERP_FEES_HOSTEL', 'hostel');
+define('EDUERP_FEES_NORMAL', 'fees');
+define('EDUERP_FEES_HOSTEL', 'hostel');
+define('FEES_PAID', 'payment_received');
 
 /**
  * Add fees object to cart
@@ -18,11 +18,9 @@ function uc_eduerp_fees_add_to_cart($student_id) {
 	module_load_include('inc', 'student', 'student.rules');
 	
 	if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
-		dsm('invoked');
 		$fees = $fees_items;
 	}
-	//$fees = array('fees' => array(0 => array('amount' => '50000')));
-	dsm($fees);
+	//dsm($fees);
 	//ddebug_backtrace();
 	
 	// A student need to be cleared to progress
@@ -99,7 +97,7 @@ function uc_eduerp_fees_add_to_cart($student_id) {
 	if(!empty($fees_nid)) {
 		foreach($fees as $fee) {
 			// With this we are going to have 2 items in cart; fees and hostel
-			//uc_cart_add_item($fee->nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+			// uc_cart_add_item($fee->nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
 			// Test for type of object(fees) before adding to cart
 			uc_cart_add_item($fees_nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
 		}
@@ -128,25 +126,27 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 	global $user;
 	
 	$type = ''; // Full Fees or First Installment or Second installment
-	$uid = user_load($user);
+	$uid = user_load($user->uid);
 	
-	$fees_item = get_fee_items($uid);
+	static $fees_item;
+	$fees_item = get_fee_items($uid->uid);
 	if(!empty($fees_item)){
-		$fees_item['item'] = $fees_item['fee_item_details'];
-		
-		$fees_item['hostel'] = $fees_item['hostel_info'];
-		
+		// Fees
+		//dsm(array_shift($fees_item['fee_item_details']));
+		$fees_item['item'] = array_shift($fees_item['fee_item_details']);
 		$fees_item['options'] = array(
-			'uid' => $fees_item['studentFeeSetupNID'],
+			'nid' => $fees_item['studentFeeSetupNID'],
 			'nationality' =>  $fees_item['nationality_name'],
-			'name' => $fees_item['fee_structure_name'],
+			'programme' => $fees_item['fee_structure_name'], // Student course
 			'level_name' => $fees_item['level_name'],
-			'scholarship' => $fees_item['is_student_on_scholarship'],
-			'allow_instalment' => $fees_item['instalment_payment_authorised'],
+			'scholarship' => $fees_item['is_student_on_scholarship'], // True or False
+			'allow_instalment' => $fees_item['instalment_payment_authorised'], // True or False
 			'session' => $fees_item['session_name'],
 			'late_registration' => $fees_item['late_reg_info']
 			);
-			
+		
+		// hostel
+		$fees_item['hostel'] = $fees_item['hostel_info'];
 		$fees_item['options']['hostel'] = array(
 			'expiry_date' => $fees_item['hostel']['expiry_date']
 		);
@@ -155,18 +155,19 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 	}
 	
 	$fees['fees'] = array(
-		//'item' => $fees_item['item'],
-		'item' => array('fees' => array(0 => array('amount' => '50000'))),
-		'description' => t('Selected fees description'),
+		'item' => $fees_item['item'],
+		//'item' => array('fees' => array(0 => array('amount' => '50000'))),
+		'description' => $fees_item['item']['item_description'],
 		'options' => $fees_item['options'],
 		'type' => EDUERP_FEES_NORMAL
 	);
 	$fees['hostel'] = array(
 		//'item' => get_hostel_fees($uid),
-		'item' => $fees_item['hostel']['product_nid'],
+		//'item' => $fees_item['hostel']['product_nid'],
+		'item' => $fees_item['hostel'],
 		'description' => $fees_item['hostel']['hostel_description'],
 		'options' => $fees_item['options']['hostel'],
-		'type' => EDUERP_FEES_NORMAL
+		'type' => EDUERP_FEES_HOSTEL
 	);
 	return $fees;
 }
@@ -223,36 +224,71 @@ function uc_eduerp_fees_fees_attributes($fees) {
 	return $attribute;
 }
 
+function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value = NULL) {
+	foreach(module_list() as $module) {
+		$function = $module . '_update';
+		if(function_exists($function)) {
+			$function($op, $value, $schema, $field_value);
+		}
+	}
+}
+
+function uc_eduerp_fees_update_load($value, $schema, $field_value) {
+	// $value should remain the same. Shouldn't be passed by reference
+	$order_id = db_fetch_object(db_query("SELECT order_id FROM {$schema} WHERE tpin = '%s'", $value));
+	return $order_id;
+}
+function uc_eduerp_fees_update_update($value, $schema, $field_value) {
+	return db_query("UPDATE {$schema} set order_status = $field_value WHERE order_id = %d", $value);
+}
+function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
+	return db_query("DELETE FROM {$schema} WHERE order_id = %d", $value);
+}
 /**
  * Implementation of hook_update_{hook}
  *
  * @see 
  */
-function uc_eduerp_fees_update_fees($uid, $status) {
-	// If $status == paid
+function uc_eduerp_fees_update_fees($values) {
+	$order_id = uc_eduerp_fees_update_invoke('load', $values['tpin']);
+	$order = uc_order_load($order_id);
+	// If $status == payment_received
 	// load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from 
 	// edupay and update the ubercart order status to paid
 	// run ubercart update query here to update an order
-	//db_query('UPDATE {uc_orders} set ')
-	if($status == INVOICE_REGENERATE) {
-		// load the order_id by edupay tpin
-		// set the order to not paid. Parameters: uid and order id
-		// if uc_order_status_data($status, 'state') == 'pending') remove the order item from cart and unset all order related SESSION variables
-		//db_query('UPDATE {uc_orders} set ')
+	// db_query('UPDATE {uc_orders} set ')
+	if($values['status'] == FEES_PAID) { //Payment received
+		uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
+		//watchdog this
+	}
+	if($values['service'] == INVOICE_REGENERATE) {
+		// load the order_id by edupay tpin (query eduerp_trasaction table to get the pin )
+		//uc_eduerp_fees_update_invoke('load', $values['tpin'], 'eduerp_transaction');
+		// set the order to unpaid. Parameters: uid and order id. Ubercart prefers canceled
+		// db_query('UPDATE {uc_orders} set ')
+		// get the status of the order
+		// if it is not set to cancelled or is pending or in_checkout
+		// set it to cancel
+		$order_status = $order->order_status;
+		//$possible_statuses = array('canceled', 'pending', 'in_checkout');
+		if((uc_order_status_data($order_status, 'state') == 'pending' or 'in_checkout')) {
+			$status = t('canceled');
+			uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
+			// watchdog this
+		}
+		if(uc_order_status_data($order_status, 'state') == 'canceled') {
+			//remove the order item from cart and unset all order related SESSION variables
+			uc_eduerp_fees_update('delete', $order_id, 'uc_orders');
+			// watchdog this
+		}
 		// load and rebuild the user's order invoice
 		uc_eduerp_fees_invoice_regenerate();
 	}
-	module_load_include('inc', 'node', 'node.pages');
-	$node = (object)array('type' => 'page');
-    node_object_prepare($node);
-		
-    $node->is_new = 1;
-    $node->author = 'kayode';
-    $node->author = $uid;
-    $node->title = t("Ubercart Fees update, status = $status");
-    $node->body = t('Just testing uc_eduerp_fees_update_fees for Ubercart Fees update');
-		
-	return array('node_added', node_save($node));
+	// if the product_attribute sent from edupay is hostel revoke hostel allocation
+	if($values['type'] == EDUERP_FEES_HOSTEL) {
+		hostel_allocation_revoke_expired_reservation();
+		// watchdog this
+	}
 }
 
 function uc_eduerp_fees_invoice_regenerate() {
@@ -279,8 +315,9 @@ function uc_eduerp_fees_get_fees() {
 	return $order;
 }
 /** 
- * Implementation of hook_checkout_pane
+ * Implements hook_checkout_pane
  * 
+ * @todo Move into uc_edupay
  */  
 function uc_eduerp_fees_checkout_pane() {
 	
@@ -307,6 +344,8 @@ function uc_eduerp_fees_checkout_pane() {
  * 	- $op: Operations
  *  - $arg1: contains order information
  *  - $arg2
+ * 
+ * @todo Move into uc_edupay
  */ 
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
 	global $user;
@@ -320,6 +359,7 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
 /**
  * Implements hook_edupay
  * 
+ * @todo Move into uc_edupay
  */ 
 function uc_eduerp_fees_edupay($order){
 	
@@ -330,21 +370,47 @@ function uc_eduerp_fees_edupay($order){
 	if(!isset($order)) {
 		$order = $_SESSION['cart_order'];
 	}
-	dsm($institution);
 	if(!empty($institution)) {
 		$code = $institution->code;
-		$secret = $institution->secret;
-	}
-	$valid_institution = array($code, $secret);
-	$digest = md5(":" + implode('', $valid_institution));
+		$key = $institution->secret;
+		$amount = $order->order_total;
+		$identifier = '';
+		
+		$valid_institution = array(
+			'amount' => $amount,
+			'code' => $code, 
+			'identifier' => $identifier
+		);
 	
-	$data = array(
-		'code' => $code, // get from $institution
-		'digest' => $digest, // the university code, a colon, and an autogenerated secret code
-		'status' => uc_order_status_data($order->order_status, 'state'), // the order status at the time of processing. Get from order
-		'amount' => $order->order_total, //get from order. ubercart usually lumps all cart items together. We need to seperate them by product_attribute before sending to edupay
-		'identifier' => '', // set this if you need it
-		'fees' => $order // the order object at the time of processing
-	);
+		//$digest = md5(":" + implode('', $valid_institution));
+		$digest = _edupay_digest($code, $key, $valid_institution);
+		
+		$data = array(
+			'code' => $code, // get from $institution
+			'digest' => $digest, // the university code, a colon, and an autogenerated secret code
+			'status' => uc_order_status_data($order->order_status, 'state'), // the order status at the time of processing. Get from order
+			'amount' => $amount, //get from order. ubercart usually lumps all cart items together. We need to seperate them by product_attribute before sending to edupay
+			'identifier' => $identifier, // set this if you need it
+			'fees' => $order // the order object at the time of processing
+		);
+	}
+	
 	return $data;
+}
+
+/**
+ * EduPay digest 
+ * 
+ * @todo Move into uc_edupay
+ */ 
+function _edupay_digest($code, $key, $valid_institution) {
+	//$valid_institution = array('amount' => '0.0', 'code' => $code, 'identifier' => ' ');
+	if(!empty($valid_institution) && array_key_exists('code', $valid_institution)){
+		$text = 
+				$valid_institution['code'] . ":" . 
+				$valid_institution['identifier'] . ":" . 
+				$valid_institution['amount'] . ":" . 
+				$key;
+	}
+	return strtoupper(hash("md5", $text)); 
 }

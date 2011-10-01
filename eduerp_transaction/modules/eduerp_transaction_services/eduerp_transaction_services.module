@@ -10,10 +10,10 @@
 	*/	
 function eduerp_transaction_services_menu() {
 	$items = array();
-	$items['service/fees/%/%'] = array(
+	$items['service/fees/%/%/%'] = array(
 		'title' => t('Edupay fees service handler'),
 		'page callback' => 'do_callback',
-		'page arguments' => array(2,3),
+		'page arguments' => array(2,3,4),
 		'access callback' => TRUE,
 		'type' => MENU_CALLBACK,
 	);
@@ -135,13 +135,24 @@ function eduerp_transaction_services_fees_paid_update() {
  * The above python example will do a POST request to eduerp after the teller clicks
  * on the paid checkbox.
  */ 
-function do_callback($uid, $status, $updated = FALSE) {
+function do_callback($uid, $service = 'status', $status, $updated = FALSE) {
 	global $user;
 	drupal_set_header('Content-Type: application/json');
 	
+	//  and get the request POST data values
 	$uid = $_POST['uid'];
+	$service = $_POST['service'];
+	$type = $_POST['type'];
 	$status = $_POST['status']; //type=status&status=paid
+	$tpin = $_POST['tpin'];
 	
+	$values = array(
+		'uid' => $uid,
+		'service' => $service,
+		'type' => $type,// fees or hostel
+		'status' => $status,
+		'tpin' => $tpin
+	);
 	$method = $_SERVER['REQUEST_METHOD'];
 	
 	switch($method) {
@@ -150,18 +161,22 @@ function do_callback($uid, $status, $updated = FALSE) {
 			//print drupal_json($forbidden);
 			exit;
 	}
-	if((is_null($status) | $status != 'paid') & is_null($uid)) {
+	/*if((is_null($status) | $status != 'paid') & is_null($uid)) {
 		print drupal_json(array('status' => TRUE, 'data' => 'error')); 
 		exit;
+	}*/
+	
+	// update the ubercart fees order based on $uid and $status values
+	// using default service value of status
+	if(module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $values)) {
+		$updated = TRUE;
 	}
 	
 	// if service is invoice regeneration
-	if($status == INVOICE_REGENERATE) {
+	if($service == INVOICE_REGENERATE) {
 		// run module_invoke invoice regenerate
-	}
-	// update the ubercart fees order based on $uid and $status values
-	if(module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $uid, $status)) {
-		$updated = TRUE;
+		$product_attribute = $_POST['type'];
+		module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $values);
 	}
 	//$updated = TRUE;
 	//print drupal_json($status); // get arguments passed to url

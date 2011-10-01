@@ -2,7 +2,7 @@
 /**
  * @author Kayode Odeyemi
  * @file
- * Allows payment via edupay
+ * Allows payment via edupay. 
  */
 
 /**
@@ -161,8 +161,8 @@ function uc_edupay_invoice_form($form_state, $order) {
 	//if(!isset($form_state['storage'])) {
 
 			$invoice_form_settings = array(
-					//'pdflink' => $form_state['values']['pdflink'],
-					'pdflink' => $form['pdflink']['#value'],
+				//'pdflink' => $form_state['values']['pdflink'],
+				'pdflink' => $form['pdflink']['#value'],
 			);
 
 			//add the variable that contains the link to drupal_add_js
@@ -260,7 +260,9 @@ function uc_edupay_form($form_state, $order) {
  * @see uc_edupay_form
  * Makes 'add' service request to edupay.
  * Called when user submits order
- *
+ * 
+ * @deprecated @see _uc_edupay_process_order_request
+ * 
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function _uc_edupay_service_add() {
@@ -310,4 +312,12 @@ function uc_edupay_edupay_hook($order) {
     }
   }
   return $return;
+}
+
+/**
+ * Processes the order. Called whenever we have a new transaction
+ * 
+ */ 
+function _uc_edupay_process_order_request($order) {
+	
 }

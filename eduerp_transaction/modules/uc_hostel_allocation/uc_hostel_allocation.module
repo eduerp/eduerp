@@ -95,8 +95,8 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 								'timeout' => 0,
 							)
 						);*/
-						dsm($data);
-						dsm($arg1);
+						//dsm($data);
+						//dsm($arg1);
 						/*$data = array(
 							'code' => $university_code,
 							'digest' => 'digest', // get this from institution table
@@ -105,7 +105,7 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 							'amount' => 0.0,
 							'identifier' => ''
 						);*/
-						$uri = 'http://127.0.0.1/8000/api/transaction/add';
+						$uri = UC_EDUPAY_URL;
 					
 						// todo: Make oauth authentication to edupay
 						
@@ -121,12 +121,12 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 						
 						// if result->code is 200, parse the response and store tpin.
 						if($result->code == 200){
-							dsm($result);
+							//dsm($result);
 							$_SESSION['edupay_transaction_accepted'] = t('accepted');
 						}else {
 							// based on the response returned from edupay, provide the appropriate error message
 							//drupal_json();
-							dsm($result);
+							//dsm($result);
 							drupal_set_message(t('Oooops! Something went wrong! We are unable to process your transaction. Please contact bursary.'), 'error');
 							// Break everything
 							uc_cart_empty($arg1->order_id);
@@ -158,7 +158,7 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
             
         // Occurs when Submit Order is clicked
         case 'submit':
-					dsm("OP IS SUBMIT");
+					//dsm("OP IS SUBMIT");
 					//dsm("in op submit, arg1->transaction_id is " . $arg1->transaction_id);
 
 					// on submit, it is possible to also update $arg1->transaction_id into uc_orders data field
@@ -171,6 +171,9 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 						
 						// if the order is successful, empty the cart and invalidate SESSION variables
 						if(isset($_SESSION['edupay_transaction_accepted'])){
+							// set the order_status to completed
+							
+							// Break everything
 							uc_cart_empty(uc_cart_get_id());
 							// Clear our the session variables used to force the cart workflow.
 							unset($_SESSION['cart_order'], $_SESSION['do_complete'], $_SESSION['new_user']);
@@ -179,7 +182,7 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
-					dsm("OP IS SAVE");
+					//dsm("OP IS SAVE");
 					//store hostel data object in uc_order. Also store the generated transaction id and JAMB
 					// Number as part of the data during save op.
 					// retrieve the stored transaction_id and pass it to $arg1->data
@@ -204,7 +207,7 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
 
         // Load the hostel reservation data from the database.
         case 'load':
-					dsm("OP IS LOAD");
+					//dsm("OP IS LOAD");
 					$data = hostel_allocation_reserved_data();
 					$arg1->data = $data;
 					$arg1->studentid = $data->studentid;
