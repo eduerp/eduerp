@@ -9207,7 +9207,8 @@ function staff_school_fees_test_fee_setup_form() {
 
 function get_late_registration_info(){
 
-  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
+  $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value 
+  	  FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
 
   while($rs = db_fetch_object($r)){
     //echo $rs->settings_name;
@@ -10738,9 +10739,10 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
    $feeStudentOption['hostel_info']['product_nid'] = $reservationInfo->product_nid;
    $feeStudentOption['hostel_info']['hostel_description'] = $hostelDescription;
    $feeStudentOption['hostel_info']['expiry_date'] = $reservationInfo->normal_expiry_date;
+   $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
 
   }
-
+ 
   return $feeStudentOption;
 }
 
