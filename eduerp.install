@@ -173,7 +173,19 @@ function eduerp_install(){
   db_query('CREATE INDEX field_sai_session_name_value ON {content_type_school_fee_approved_instalments} (field_sai_session_name_value)');
   
   
-  
+  //create sku gen table
+  db_query("CREATE TABLE IF NOT EXISTS `gen_fee_item_sku` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `sku_name` varchar(50) NOT NULL,
+  `next_num` int(3) unsigned zerofill NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `next_num` (`next_num`)
+  ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 AUTO_INCREMENT=1 ");
+ 
+
+  db_query("INSERT INTO `gen_fee_item_sku` (`id`, `sku_name`, `next_num`) VALUES (1, 'PRODUCT-FEE-ITEM', 001)");
+
+
   content_clear_type_cache();
 
   drupal_set_message('eduerp module installed');
