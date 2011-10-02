@@ -776,7 +776,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       $node = new stdClass();
       $node->type                            = 'approval';
       $node->uid                             = 1;
-      $node->status                          = 1;
+      $node->status                          = 0;
       $node->promote                         = 0;
       $node->sticky                          = 0;
       $node->comment                         = 0;
@@ -944,7 +944,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   $node = new stdClass();
   $node->type                            = 'approval';
   $node->uid                             = 1;
-  $node->status                          = 1;
+  $node->status                          = 0;
   $node->promote                         = 0;
   $node->sticky                          = 0;
   $node->comment                         = 0;
@@ -1185,7 +1185,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
       $node = new stdClass();
       $node->type                            = 'approval';
       $node->uid                             = 1;
-      $node->status                          = 1;
+      $node->status                          = 0;
       $node->promote                         = 0;
       $node->sticky                          = 0;
       $node->comment                         = 0;
@@ -1369,7 +1369,7 @@ function approve_grades_dean_form_submit($form, &$form_state) {
   $node = new stdClass();
   $node->type                            = 'approval';
   $node->uid                             = 1;
-  $node->status                          = 1;
+  $node->status                          = 0;
   $node->promote                         = 0;
   $node->sticky                          = 0;
   $node->comment                         = 0;
