@@ -70,29 +70,31 @@ function uc_eduerp_fees_pay_fees_form(&$form_state, $student_id) {
 		$type = $fee['type'];
 		$desc = $fee['description'];
 		
-		$form['eduerp_fees'][$type] = array(
-			'#type' => 'checkbox',
-			'#title' => strip_tags($desc),
-			'#default_value' => TRUE,
-			'#disabled' => TRUE //($type == 'fees')
-		);
-		$nid = $fee['item']['product_nid'];
-		$data = $fee['options'];
-		$data_nid = (string)$data['nid'];
-		$item = $fee['item'];
-		
-		$form['eduerp_fees'][$nid] = array(
-				'#type' => 'hidden',
-				'#value' => $nid,
-		);
-		$form['eduerp_fees']["product_item_$type"] = array(
-				'#type' => 'hidden',
-				'#value' => $item,
-		);
-		$form['eduerp_fees']['data_' . $data_nid] = array(
-				'#type' => 'hidden',
-				'#value' => $data,
-		);
+		if(!empty($type)){
+			$form['eduerp_fees'][$type] = array(
+				'#type' => 'checkbox',
+				'#title' => strip_tags($desc),
+				'#default_value' => TRUE,
+				'#disabled' => TRUE //($type == 'fees')
+			);
+			$nid = $fee['item']['product_nid'];
+			$data = $fee['options'];
+			$data_nid = (string)$data['nid'];
+			$item = $fee['item'];
+			
+			$form['eduerp_fees'][$nid] = array(
+					'#type' => 'hidden',
+					'#value' => $nid,
+			);
+			$form['eduerp_fees']["product_item_$type"] = array(
+					'#type' => 'hidden',
+					'#value' => $item,
+			);
+			$form['eduerp_fees']['data_' . $data_nid] = array(
+					'#type' => 'hidden',
+					'#value' => $data,
+			);
+		}
 	}
 	$form['eduerp_fees']['uid'] = array(
 		'#type' => 'hidden',
