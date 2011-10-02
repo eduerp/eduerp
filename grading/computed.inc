@@ -341,7 +341,7 @@ function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $ca
       $node = new stdClass();
       $node->type                            = 'approval';
       $node->uid                             = 1;
-      $node->status                          = 1;
+      $node->status                          = 0;
       $node->promote                         = 0;
       $node->sticky                          = 0;
       $node->comment                         = 0;
