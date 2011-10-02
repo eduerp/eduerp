@@ -5,7 +5,7 @@
  */
 
 define("INVOICE_REGENERATE", "regenerate");
-define("UC_EDUPAY_URL", 'http://127.0.0.1/8000/api/transaction/add');
+define("UC_EDUPAY_URL", 'http://banker:banker@127.0.0.1/8000/api/transaction/add'); // to be modified
 
 /**
  * Implementation of hook_perm()
@@ -20,13 +20,23 @@ function eduerp_transaction_perm() {
  */
 function eduerp_transaction_menu() {
 		global $user;
+		$uid = $user->uid;
     $items = array();
 		if(module_exists('uc_eduerp_fees')) {
-			$items['user/%/fees/pay'] = array(
+			/*$items['user/%/fees/pay'] = array(
 				'title' => t('Pay fees'),
 				'description' => t('Pay all type of fees'),
 				'page callback' => 'uc_eduerp_fees_add_to_cart',
 				'page arguments' => array($user->uid),
+				'access callback' => 'user_access',
+        'access arguments' => array('access content'),
+				'type' => MENU_CALLBACK
+			);*/
+			$items['user/%/fees/pay'] = array(
+				'title' => t('Pay fees'),
+				'description' => t('Pay all type of fees'),
+				'page callback' => 'drupal_get_form',
+				'page arguments' => array('uc_eduerp_fees_pay_fees_form', $uid),
 				'access callback' => 'user_access',
         'access arguments' => array('access content'),
 				'type' => MENU_CALLBACK

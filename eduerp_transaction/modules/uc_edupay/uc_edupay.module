@@ -35,9 +35,67 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
 					$form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td></tr></table>';
 				}
 			}
+		case 'uc_cart_view_form':
+			// @todo
+			// if a fee of type fees is in the cart,
+			// disable it from edit
+			// foreach of the fees in the cart, loadup its nid
+			// dsm(uc_cart_get_contents());
   }
 }
 
+/**
+ * implements hook_cart_item
+ * 
+ * 
+ */ 
+function uc_edupay_cart_item($op, &$item){
+	switch($op) {
+		case 'load':
+			$fees_type = EDUERP_FEES_NORMAL;
+			if($item->data['type'] == $fees_type){
+				// load registration
+				$late = uc_eduerp_fees_load_fee_options($fees_type);
+				$late_value = $late['late_registration'];
+				if(!is_null($late_value['late_registration_date'])){
+					$late_charges = $late_value['amount'];
+					// load its price
+					$price = $item['price'];
+					// add to the pprice
+					$price += $late_charges;
+					// modify title to read [title] + (Late registration included)
+					$text = t('Late Registration Included');
+					$item['title'] = $item['title'] . ' ' . $text;
+					//$item['title']  = theme('eduerp_fees_cart_title', $item['title'], $text);
+				}
+			}
+	}
+}
+
+function uc_edupay_theme(){
+	return array(
+		'eduerp_fees_cart_title' => array(
+			'arguments' => array($title => NULL, $text => NULL),
+		),
+	);
+}
+
+/**
+ * 
+ * 
+ * @todo To be rethemed during theming
+ */ 
+function theme_eduerp_fees_cart_title($title, $text) {
+	$output = $title . ' ' . "<span><strong>$text</strong></span>";
+	return $output;
+}
+
+/**
+ * 
+ * @todo Load the price of each item in cart
+ */ 
+function uc_edupay_load_price(){
+}
 /**
  * Implements hook_payment_method
  *
@@ -315,7 +373,9 @@ function uc_edupay_edupay_hook($order) {
 }
 
 /**
- * Processes the order. Called whenever we have a new transaction
+ * Processes the order. Called whenever we have a new transaction.
+ * 
+ * Wrapper for drupal_http_request
  * 
  */ 
 function _uc_edupay_process_order_request($order) {
