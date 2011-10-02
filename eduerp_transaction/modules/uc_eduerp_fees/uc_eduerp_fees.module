@@ -70,7 +70,8 @@ function uc_eduerp_fees_add_to_cart($student_id) {
 		//$fees_nid = array();
 		$fees_nid[] = $fee['item']['product_nid'];
 		$data[] = $fee['options'];
-		$items = array('product_nid' => $fee['item']['product_nid'], 'data' => $fee['options']);
+		$items[] = array('product_nid' => $fee['item']['product_nid'], 'data' => $fee['options']);
+		//dsm($items);
 		// get the fees description
 
 		// Before item is added to cart, check for late registration value
@@ -100,16 +101,18 @@ function uc_eduerp_fees_add_to_cart($student_id) {
 			// uc_cart_add_item($fee->nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
 			// Test for type of object(fees) before adding to cart
 			foreach($items as $item){
-				uc_cart_add_item($item['product_nid'], $qty = 1, $item['data'], $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+				//$node = node_load($item['product_nid']);
+				uc_cart_add_item($item['product_nid'], 1, $item['data'], $student_id, FALSE, FALSE, FALSE);
+				//uc_cart_add_item($node->nid, $node->default_qty);
 			}
 			$added = TRUE;
 		}else {
 			drupal_set_message('No fee items to add to cart', 'error');
 		}
-		if($added) {
+		//if($added) {
 			drupal_goto("cart");
-		}
-	return $added;
+		//}
+	//return $added;
 }
 
 /**
