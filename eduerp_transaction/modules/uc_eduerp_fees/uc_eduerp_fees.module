@@ -14,18 +14,21 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 	module_load_include('inc', 'student', 'student.rules');
 	$form = array();
 	
-	//$fees = array();
 	if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
 		$fees = $fees_items;
 	}
-	dsm($fees);
-	// @todo
+	//dsm($fees);
+	if (uc_cart_get_contents() == NULL) { // if cart is empty
+		$_SESSION['eduerp_fees_in_cart'] = FALSE;
+	}
+	
 	// If the student have these items in the cart already, redirect
 	// to the /cart to prevent increment in cart quantity
 	if($_SESSION['eduerp_fees_in_cart'] == TRUE) {
 		drupal_goto('cart');
 		drupal_set_message('Welcome back! Please continue from where you left off.');
 	}
+	
 	// A student need to be cleared to progress
 	/*if(!student_clearance_performed($student_id)) {
 		drupal_set_message('Sorry, you need to be cleared to progress', 'error');
@@ -67,7 +70,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 			//drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
 		}*/
 
-		// Invalidate fee if late registration period is reached,
+		// Invalidate fee if value of last_registration_date is the last date
 		if(uc_eduerp_fees_registration_is_late('fees')) {
 			$fee = NULL;
 			drupal_set_message('Student registration for this session is closed. Consult the registry', 'error');
@@ -148,14 +151,14 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 		// only if it's a product
 		if(!empty($product)){
 			uc_cart_add_item($product['item']['product_nid'], 1, $product['options'], $student_id);
-			$_SESSION['eduerp_fees_in_cart'] = TRUE;
 			$added = TRUE;
 		}else {
 			drupal_set_message('Sorry, you are not eligible to pay fees. Please contact bursary', 'error');
 			// watchdog this
 		}
 	}
-	if($added){
+	if($added){			
+		$_SESSION['eduerp_fees_in_cart'] = TRUE;
 		$form_state['redirect'] = 'cart';
 	}
 }
@@ -410,11 +413,11 @@ function uc_eduerp_fees_load_fee_options($type) {
 function uc_eduerp_fees_registration_is_late() {
 	$late = uc_eduerp_fees_load_fee_options(EDUERP_FEES_NORMAL);
 	$late_value = $late['late_registration'];
-	$late_date = $late_value['late_registration_date'];
+	$late_date = $late_value['last_registration_date'];
 	if(!is_null($late_date)){
 		$now = date('Y-m-d');
 		// if today's date == 
-		return ($now == $late_date) ? TRUE : FALSE;
+		return ($now >= $late_date) ? TRUE : FALSE;
 	}
 }
 
@@ -435,7 +438,7 @@ function uc_eduerp_fees_checkout_pane() {
 	
 	//$fees = uc_eduerp_fees_get_fees();
 	$items = uc_cart_get_contents();
-	//dsm($fees);
+	//dsm($items);
 	foreach($items as $fee) {
 		//dsm($fees);
 		$panes[$fee['title']] = array(
