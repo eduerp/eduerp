@@ -436,40 +436,6 @@ $handler->override_option('fields', array(
     'field' => 'field_gpaforstudent_value',
     'relationship' => 'field_student_gpa_nid',
   ),
-  'field_cgpaforstudent_sp_value' => array(
-    'label' => 'cGPA',
-    'alter' => array(
-      'alter_text' => 0,
-      'text' => '',
-      'make_link' => 0,
-      'path' => '',
-      'link_class' => '',
-      'alt' => '',
-      'prefix' => '',
-      'suffix' => '',
-      'help' => '',
-      'trim' => 0,
-      'max_length' => '',
-      'word_boundary' => 1,
-      'ellipsis' => 1,
-      'strip_tags' => 0,
-      'html' => 0,
-    ),
-    'link_to_node' => 0,
-    'label_type' => 'custom',
-    'format' => 'default',
-    'multiple' => array(
-      'group' => TRUE,
-      'multiple_number' => '',
-      'multiple_from' => '',
-      'multiple_reversed' => FALSE,
-    ),
-    'exclude' => 0,
-    'id' => 'field_cgpaforstudent_sp_value',
-    'table' => 'node_data_field_cgpaforstudent_sp',
-    'field' => 'field_cgpaforstudent_sp_value',
-    'relationship' => 'field_student_program_ref_gpa_nid',
-  ),
 ));
 $handler->override_option('sorts', array(
   'field_sess_name_value' => array(
@@ -554,6 +520,9 @@ $handler->override_option('access', array(
 $handler->override_option('cache', array(
   'type' => 'none',
 ));
+$handler->override_option('footer', '<?php
+require_once \'./\' . drupal_get_path(\'module\', \'eduerp\') . \'/student/student_footer.inc\';
+?>');
 $handler->override_option('footer_format', '3');
 $handler->override_option('footer_empty', 0);
 $handler->override_option('items_per_page', 100);
