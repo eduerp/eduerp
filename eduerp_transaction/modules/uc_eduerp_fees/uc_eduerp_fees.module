@@ -269,7 +269,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 		if(!empty($product)){
 			//uc_cart_add_item($product['item']['product_nid'], 1, $product['options'], $student_id);
 			//uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
-			uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
+			//uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
 			$added = TRUE;
 		}else {
 			drupal_set_message('Sorry, you are not eligible to pay fees. Please contact bursary', 'error');
@@ -278,8 +278,8 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 		}
 	}
 	if($added){			
-		$_SESSION['eduerp_fees_in_cart'] = TRUE;
-		$form_state['redirect'] = 'cart';
+		//$_SESSION['eduerp_fees_in_cart'] = TRUE;
+		//$form_state['redirect'] = 'cart';
 	}
 }
 
