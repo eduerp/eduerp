@@ -103,7 +103,7 @@ $result = db_query($sql, $user->uid, $user->uid);
 $failed = db_fetch_object($result);
 
 echo '<table class="body-table"><tbody>';
-echo '<tr><td valign="top" class="table-label">cGPA                     </td><td valign="top">' . $cgpa->field_cgpa_sp_value                  . '</td></tr>';
+echo '<tr><td valign="top" class="table-label">cGPA                     </td><td valign="top">' . $cgpa->field_cgpaforstudent_sp_value        . '</td></tr>';
 echo '<tr><td valign="top" class="table-label">Total Credit Units Taken </td><td valign="top">' . $cgpa->field_credit_load_completed_sp_value . '</td></tr>';
 echo '<tr><td valign="top" class="table-label">Total Units Required     </td><td valign="top">' . $cgpa->field_min_credit_load_program_value  . '</td></tr>';
 echo '<tr><td valign="top" class="table-label">Failed Course(s)         </td><td valign="top">' . $failed->failedlist                         . '</td></tr>';
