@@ -17,7 +17,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 	if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
 		$fees = $fees_items;
 	}
-	dsm($fees);
+	//dsm($fees);
 	if (uc_cart_get_contents() == NULL) { // if cart is empty
 		$_SESSION['eduerp_fees_in_cart'] = FALSE;
 	}
@@ -142,7 +142,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 				'#type' => 'checkbox',
 				'#title' => strip_tags($description),
 				'#default_value' => TRUE,
-				'#disabled' => TRUE //($type == 'fees')
+				'#disabled' => TRUE //($type == 'hostel')
 			);
 			
 			$form['eduerp_fees'][$nid] = array(
@@ -171,9 +171,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 	
 	return $form;
 }
-function map_items($items) {
-	
-}
+
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 	//dsm($form_state['values']);
 	$student_id = $form_state['values']['uid'];
@@ -262,7 +260,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 			$product[$key] = $fees_values;
 			$nid = $product[$key]['product_nid'];
 			if(array_key_exists('attribute_id', $product[$key])){
-				$product_attribute = uc_product_get_attributes($nid);
+				//$product_attribute = uc_product_get_attributes($nid);
 				//dsm($product_attribute);
 			}
 		//$product = $cart_item;
