@@ -17,7 +17,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 	if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
 		$fees = $fees_items;
 	}
-	//dsm($fees);
+	dsm($fees);
 	if (uc_cart_get_contents() == NULL) { // if cart is empty
 		$_SESSION['eduerp_fees_in_cart'] = FALSE;
 	}
@@ -55,14 +55,10 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 		'#collapsible' => TRUE,
 	);
 	foreach($fees as $fee){
-		
 		$type = $fee['type'];
-		$desc = $fee['description'];
-		
-		$nid = $fee['item']['product_nid'];
-		$data = $fee['options'];
-		$data_nid = (string)$data['nid'];
-		$item = $fee['item'];
+		$description = $fee['description'];
+		$options = $fee['options'];
+		$options_nid = (string)$options['nid'];
 		
 		// if $fees is paid for break everything
 		/*if(in_array($attr_obj->name, $paid_fees_items)) {
@@ -71,6 +67,18 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 		}*/
 
 		// Invalidate fee if value of last_registration_date is the last date
+		// Updates: late payment should still be allowed even after last_registration_date
+		// So, these sort of fee items will not timeout. Reason, last_registration_date value
+		// will be NULL or its date value will be in the past.
+		
+		// Israel statement: "Any transaction awaiting in the queue, for 
+		// current date > last_registration_date(not >=), without Late Registration Charge 
+		// included, must expire."
+		
+		// Payment must still be allowed even when last_registration_date is reached. The 
+		// difference is that from the 1st day following last_registration_date, Late
+		// Registration Charge must apply.
+		// status: Needs work ()
 		if(uc_eduerp_fees_registration_is_late('fees')) {
 			$fee = NULL;
 			drupal_set_message('Student registration for this session is closed. Consult the registry', 'error');
@@ -85,11 +93,54 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 			drupal_set_message('Your hostel reservation has expired. Please consult the registry', 'error');
 		}*/
 
-		// Build a checkbox
-		if(!empty($fee)) {
+		if($type == EDUERP_FEES_NORMAL) {
+			foreach($fee['item'] as $key => $value){
+				$nids[$key] = $value['product_nid'];
+				//$nid[] = $fee['product_nid'];
+				//$item = $fee['item'];
+				$items[$key] = $value;
+				$desc[$key] = $value['item_description'];
+				
+				$form['eduerp_fees']["$type_$key"] = array(
+					'#type' => 'checkbox',
+					'#title' => strip_tags($desc[$key]),
+					'#default_value' => TRUE,
+					'#disabled' => TRUE //($type == 'fees')
+				);
+			}
+			//dsm($nids);
+			//dsm($items);
+			// construct fees hidden fields separately
+			foreach($nids as $nid) {
+				$form['eduerp_fees'][$type . '_' . $nid] = array(
+					'#type' => 'hidden',
+					'#value' => $nid,
+				);
+			}
+			foreach($items as $item) {
+				// @todo
+				// Would be appropriate to use item_description here 
+				// but it is very unstructured and inconsistent
+				$id = $item['product_nid']; 
+				$form['eduerp_fees']['product_item_' . $type . '_' . $id] = array(
+						'#type' => 'hidden',
+						'#value' => $item,
+				);
+			}
+			$form['eduerp_fees']['options_' . $type. '_' . $options_nid] = array(
+					'#type' => 'hidden',
+					'#value' => $options,
+			);
+		}
+		// Do the rest of the things for hostel
+		if($type == EDUERP_FEES_HOSTEL) {
+			$item = $fee['item'];
+			$nid = $fee['item']['product_nid'];
+			
+			// Build a checkbox
 			$form['eduerp_fees'][$type] = array(
 				'#type' => 'checkbox',
-				'#title' => strip_tags($desc),
+				'#title' => strip_tags($description),
 				'#default_value' => TRUE,
 				'#disabled' => TRUE //($type == 'fees')
 			);
@@ -102,9 +153,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 					'#type' => 'hidden',
 					'#value' => $item,
 			);
-			$form['eduerp_fees']['data_' . $data_nid] = array(
+			$form['eduerp_fees']["options_$type_" . $options_nid] = array(
 					'#type' => 'hidden',
-					'#value' => $data,
+					'#value' => $options,
 			);
 		}
 	}
@@ -120,16 +171,80 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 	
 	return $form;
 }
-
+function map_items($items) {
+	
+}
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
+	dsm($form_state['values']);
 	$student_id = $form_state['values']['uid'];
+	$values = array();
 	foreach($form_state['values'] as $key => $value) {
-		$nids = array($key[1], $key[4]);
+		//$nids = array($key[1], $key[4]);
 		$vkeys[] = $key;
+		$values[$key] = $value;
 	}
+	dsm($vkeys);
+	dsm($values);
+	dsm($values['product_item_fees_5253']);
+	$key_search = implode(',', array_values($vkeys));
+	dsm($key_search);
+	preg_match_all('/product_item_fees_\d{4}/', $key_search, $matches);
+	// match options for fees option
+	preg_match_all('/options_fees_\d{4}/', $key_search, $fees_option_matches);
+	// find all hostel keys if it exists
+	if(array_key_exists('hostel', $vkeys)) {
+		preg_match_all('/product_item_hostel_\d{4}/', $key_search, $hostel_matches);
+		preg_match_all('/options_hostel_\d{4}/', $key_search, $hostel_option_matches);
+	}
+	dsm($matches);
+	dsm($fees_option_matches);
+	$matchs = array(
+		'fees' => array_shift($matches),
+		'fees_options' => array_shift($fees_option_matches),
+		'hostel' => array_key_exists('hostel', $vkeys) ? array_shift($hostel_matches) : array(),
+		'hostel_options' => array_key_exists('hostel', $vkeys) ? array_shift($hostel_option_matches) : array()
+	);
+	//$matchs['fees'] = array_shift($matches);
+	dsm($matchs);
+	$func = function($item, &$item_value) {
+		$fees_items = array($item => $item_value);
+		//$fees_items = array($item => 1);
+		return $fees_items;
+	};
+	$product_fees = array();
+	foreach($matchs['fees'] as $key => $value){
+		$product_fees[$key] = $form_state['values'][$value];
+		//$items = array_map($func, $match, $values);
+	}
+	foreach($matchs['fees_options'] as $key => $value) {
+		$fees_options['options'] = $form_state['values'][$value];
+	}
+	foreach($matchs['hostel_options'] as $key => $value) {
+		$hostel_options['options'] = $form_state['values'][$value];
+	}
+	//dsm($v);
+	$cart_items = array(
+		'product_item_fees' => array(
+			'item' => $product_fees,
+			'options' => $fees_options['options']
+		),
+		'hostel_item_fees' => array(
+			'item' => $matchs['hostel'],
+			'options' => array_key_exists('hostel', $vkeys)? $hostel_options['options'] : array()
+		)
+	);
+	dsm($cart_items);
+	// remove all traces of hostel if it's not available
+	if(!array_key_exists('hostel', $vkeys)) {
+		unset($cart_items['hostel_item_fees']);
+	}
+	// subject = vkeys
+	// for each of $vkeys that matches regex pattern
+	// put all 
+	// $items = all of its values
 	// @todo Move into a function and find alternative ways to get the
 	// cart keys. Also get the quantity of each fee item to pass to uc_cart_add_item
-	$cart_nids = array(
+	/*$cart_nids = array(
 		$vkeys[2] => array(
 			'item' => $form_state['values'][$vkeys[2]], 
 			'options' => $form_state['values'][$vkeys[3]]
@@ -139,22 +254,30 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 			'options' => $form_state['values'][$vkeys[7]]
 		),
 	);
-	
-	// remove all traces of hostel if it's not available
-	if(!isset($form_state['values']['hostel'])) {
-		unset($cart_nids[$vkeys[6]]);
-	}
+	*/
 	
 	$added = FALSE;
-	foreach($cart_nids as $cart_nid){
-		$product = $cart_nid;
+	foreach($cart_items as $product_item){
+		$cart_item = $product_item;
+		foreach($product_item['item'] as $key => $fees_values) {
+			$product[$key] = $fees_values;
+			$nid = $product[$key]['product_nid'];
+			if(array_key_exists('attribute_id', $product[$key])){
+				$product_attribute = uc_product_get_attributes($nid);
+				dsm($product_attribute);
+			}
+		//$product = $cart_item;
+		dsm($product);
 		// only if it's a product
 		if(!empty($product)){
-			uc_cart_add_item($product['item']['product_nid'], 1, $product['options'], $student_id);
+			//uc_cart_add_item($product['item']['product_nid'], 1, $product['options'], $student_id);
+			//uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
+			uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
 			$added = TRUE;
 		}else {
 			drupal_set_message('Sorry, you are not eligible to pay fees. Please contact bursary', 'error');
 			// watchdog this
+		}
 		}
 	}
 	if($added){			
@@ -187,7 +310,11 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 	$fees_item = get_fee_items($uid->uid);
 	if(!empty($fees_item)){
 		// Fees
-		$fees_item['item'] = array_shift($fees_item['fee_item_details']);
+		//$fees_item['item'] = array_shift($fees_item['fee_item_details']);
+		$fees_item['item'] = $fees_item['fee_item_details'];
+		foreach($fees_item['item'] as $key => $value) {
+			$description[$key] = $value['item_description'];
+		}
 		$fees_item['options'] = array(
 			'type' => EDUERP_FEES_NORMAL,
 			'nid' => $fees_item['studentFeeSetupNID'],
@@ -214,7 +341,8 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 	$fees['fees'] = array(
 		'item' => $fees_item['item'],
 		//'item' => array('fees' => array(0 => array('amount' => '50000'))),
-		'description' => $fees_item['item']['item_description'],
+		//'description' => $fees_item['item']['item_description'],
+		'description' => $description,
 		'options' => $fees_item['options'],
 		'type' => EDUERP_FEES_NORMAL,
 		'title' => t('Fees') // Human-readable name
