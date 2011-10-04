@@ -7,7 +7,7 @@ global $user;
 $sql = "SELECT
       sp.field_student_ref_sp_uid AS uid,
       u.name AS mat,
-      sp.field_cgpa_sp_value,
+      sp.field_cgpaforstudent_sp_value,
       sp.field_credit_load_completed_sp_value,
       p.field_min_credit_load_program_value,
       SUBSTRING(spro.field_profile_reg_session_value, 1, 4) - spro.field_profile_yearofentry_value + 1 AS elapsed_years,
@@ -55,7 +55,7 @@ $sql = "SELECT
         WHERE
           sg.field_mat_no_uid=%d AND
           sg.field_course_instance_nid=ci.nid AND
-          sg.field_examscorelocked_value>0 AND
+          sg.field_examscorelocked_value>4 AND
           sg.field_dropped_value=0 AND
           ci.field_course_id_nid=c.nid AND
           ci.field_course_id_nid=pc.course_id AND
@@ -79,7 +79,7 @@ $sql = "SELECT
         WHERE
           sg0.field_mat_no_uid=%d AND
           sg0.field_course_instance_nid=ci0.nid AND
-          sg0.field_examscorelocked_value>0 AND
+          sg0.field_examscorelocked_value>4 AND
           sg0.field_dropped_value=0 AND
           ci0.field_course_id_nid=c0.nid AND
           ci0.field_course_id_nid=pc0.course_id AND
