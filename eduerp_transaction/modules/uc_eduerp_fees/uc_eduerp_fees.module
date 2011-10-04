@@ -264,15 +264,16 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 			$nid = $product[$key]['product_nid'];
 			if(array_key_exists('attribute_id', $product[$key])){
 				$product_attribute = uc_product_get_attributes($nid);
-				dsm($product_attribute);
+				array_push($cart_item['options'], $product_attribute);
+				//dsm($product_attribute);
 			}
 		//$product = $cart_item;
-		dsm($product);
+		//dsm($product);
 		// only if it's a product
 		if(!empty($product)){
 			//uc_cart_add_item($product['item']['product_nid'], 1, $product['options'], $student_id);
 			//uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
-			uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id);
+			uc_cart_add_item($product[$key]['product_nid'], 1, $cart_item['options'], $student_id, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
 			$added = TRUE;
 		}else {
 			drupal_set_message('Sorry, you are not eligible to pay fees. Please contact bursary', 'error');
@@ -437,6 +438,8 @@ function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
  * Implementation of hook_update_{hook}
  *
  * @see 
+ * 
+ * @todo Convert this to rules and triggers
  */
 function uc_eduerp_fees_update_fees($values) {
 	$order_id = uc_eduerp_fees_update_invoke('load', $values['tpin']);
@@ -533,6 +536,18 @@ function uc_eduerp_fees_load_fee_options($type) {
 }
 
 /**
+ * Orders are regarded as items in UC.
+ * Provides extra access to data in the order throughout
+ * the life time of the ordering process.
+ * 
+ * @param
+ *  - type: Fees or Hostel
+ */ 
+function uc_eduerp_fees_load_item_options($type){
+	
+}
+
+/**
  * Determines whether late registration period is reached
  * 
  * @return Bool
@@ -569,7 +584,7 @@ function uc_eduerp_fees_checkout_pane() {
 	//dsm($items);
 	foreach($items as $fee) {
 		//dsm($fees);
-		$panes[$fee['title']] = array(
+		$panes[$fee->title] = array(
 			'id' => '', //pass in here the fee attribute
 			'callback' => 'uc_checkout_pane_eduerp_fees',
 			'title' => t('Your EduERP Fees items'),
@@ -593,10 +608,23 @@ function uc_eduerp_fees_checkout_pane() {
  */ 
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
 	global $user;
-	//dsm($arg1);
+	dsm($arg1);
+	dsm($arg2);
+	
+	$items = uc_cart_get_contents();
+	
 	switch ($op) {
 		case 'view':
 			// if item in the cart is of type fees
+			// for each on the items and display them in fees pane
+			foreach($items as $fee){
+				//if()
+			}
+			
+			// if hostel in contained, display in separate hostel
+			// pane
+			
+		case 'review':
 	}
 }
 
