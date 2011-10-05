@@ -445,7 +445,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 				// Make request to external payment gateway
 				$result = _uc_edupay_process_order_request($arg1);
 				$response = $result->data;
-				$code = result->code;
+				$code = $result->code;
 				dsm($arg1);
 				
 				switch($code){
@@ -500,7 +500,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 					// All others not handled
 					default:
 						// watchdog the status code and status message
-						watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)))
+						watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)));
 				}				
             
         // Occurs when Submit Order is clicked
