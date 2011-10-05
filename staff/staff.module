@@ -178,6 +178,14 @@ function staff_menu() {
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
   );
+  
+  
+   $items['staff/testattributes'] = array(
+    'title' => 'Testing Attributes and Options',
+    'page callback' => 'staff_school_fees_test_attr',
+    'access arguments' => array('student payments'),
+    'type' => MENU_CALLBACK
+  );
 
   //fee menus ends here
   return $items;
@@ -6888,6 +6896,13 @@ function staff_school_fees_admin(){
 
     $html .= '<b>Authorise Instalment Payment</b> - Enable a Student to pay his/her Fees in instalments  for the Current Session only.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a>';
+    
+    
+    $html .= '<br />';
+     $html .= '<br />';
+
+    $html .= '<b>Test Cart Entries</b> - Test how ubercart adds attributes and options to cart.<br />';
+    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/testattributes') . '">Proceed To Test</a>';
     $html .= '<br /><br />';
 
   }
@@ -10770,4 +10785,46 @@ function get_fee_items($studentUID){
 }
 
 
+function staff_school_fees_test_attr(){
+ global $user;
+  ob_start();
+  $html = drupal_get_form('show_attr_test_form');
+ 
+  echo $html;
+  return ob_get_clean();
+	
+}
+	
+function show_attr_test_form(){
+  $form['#title'] = 'Test Data';
+  
+  $form['submit'] = array(
+    '#value' => 'Add Test Data to Cart',
+    '#type' => 'submit'
+  );
+
+  return $form;	
+	
+}
+
+function show_attr_test_form_submit($form, &$state){
+  /*
+  //for tests on my local copy
+  $nid = 5286;
+  $qty = 1;
+  $data = array(
+  	  'attributes' => array('4'=>'9')
+  	  );
+  uc_cart_add_item($nid, $qty, $data);
+  
+  */
+  
+  //for test on staging server
+  $nid = 5268; //product NID
+  $qty = 1;
+  $data = array(
+  	  'attributes' => array('1'=>'49') //where 1 = attribute ID and 49 = option ID
+  	  );
+  uc_cart_add_item($nid, $qty, $data);
+}
 ?>
