@@ -5,7 +5,7 @@
  */
 
 define("INVOICE_REGENERATE", "regenerate");
-define("UC_EDUPAY_URL", 'http://banker:banker@127.0.0.1/8000/api/transaction/add'); // to be modified
+define("UC_EDUPAY_URL", 'http://banker:banker@127.0.0.1:8000/api/transaction/add'); // to be modified
 
 /**
  * Implementation of hook_perm()
@@ -41,8 +41,158 @@ function eduerp_transaction_menu() {
         'access arguments' => array('access content'),
 				'type' => MENU_CALLBACK
 			);
+			$items['admin/settings/eduerp/transaction'] = array (
+				'title' => 'EduERP Transaction Settings',
+				'page callback' => 'eduerp_transaction_overview',
+				//'page arguments' => array ('eduerp_transaction_overview'),
+				'access arguments' => array('administer site configuration'), // administer_transaction
+				'type' => MENU_NORMAL_ITEM,
+			);
+			$items['admin/settings/eduerp/transaction/overview'] = array(
+				'title' => 'Overview',
+				'description' => 'EduERP Transaction Settings',
+				'access arguments' => array('administer site configuration'),
+				'weight' => -10,
+				'type' => MENU_DEFAULT_LOCAL_TASK,
+				//'file' => 'uc_store.admin.inc',
+			);
+			$items['admin/settings/eduerp/transaction/auth/basic'] = array(
+				'title' => t('Edupay Basic Auth'),
+				'description' => t('Basic authentication to Edupay'),
+				'page callback' => 'drupal_get_form',
+				'page arguments' => array('eduerp_transaction_edupay_basic_auth'),
+				'access arguments' => array('administer site configuration'),
+				'type' => MENU_LOCAL_TASK,
+				#'file' => 'eduerp_transaction.admin.inc'
+			);
+			$items['admin/settings/eduerp/transaction/oauth/consumer'] = array(
+				'title' => t('Edupay Consumer'),
+				'description' => t('A consumer key for authentication in Edupay'),
+				'page callback' => 'drupal_get_form',
+				'page arguments' => array('eduerp_transaction_edupay_auth_consumer'),
+				'access arguments' => array('administer site configuration'),
+				'type' => MENU_LOCAL_TASK,
+				#'file' => 'eduerp_transaction.admin.inc'
+			);
+			$items['admin/settings/eduerp/transaction/oauth/token'] = array(
+				'title' => t('Edupay Token'),
+				'description' => t('Get authorization to make transaction using Edupay'),
+				'page callback' => 'drupal_get_form',
+				'page arguments' => array('eduerp_transaction_edupay_token_request'),
+				'access arguments' => array('administer site configuration'),
+				'type' => MENU_LOCAL_TASK,
+				#'file' => 'eduerp_transaction.admin.inc'
+			);
 		}
     return $items;
+}
+
+/**
+ * Describes eduerp transaction as well as its links
+ * to other sub-modules in it
+ * 
+ * 
+ */ 
+function eduerp_transaction_overview(){
+	// pass
+	return '';
+}
+
+/**
+ * Basic authentication settings to edupay
+ * 
+ */ 
+function eduerp_transaction_edupay_basic_auth($form_state){
+	$form['edupay_basic_auth'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Edupay Basic Authentication'),
+		//'#collapsible' => TRUE
+	);
+	$form['edupay_basic_auth']['edupay_user'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Edupay Username'),
+		'#description' => t('Enter the username for edupay authentication'),
+		'#default_value' => variable_get('edupay_user', 'username')
+	);
+	$form['edupay_basic_auth']['edupay_pass'] = array(
+		'#type' => 'password',
+		'#title' => t('Edupay Password'),
+		'#description' => t('Enter the password for that accompanies the username you entered above.'),
+		'#default_value' => variable_get('edupay_pass', 'password')
+	);
+	$form['edupay_basic_auth']['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save')
+	);
+	return $form;
+}
+
+function eduerp_transaction_edupay_auth_consumer($form_state) {
+	$form['edupay_oauth_auth'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Consumer protected authentication'),
+		'#collapsible' => TRUE
+	);
+	$form['edupay_oauth_auth']['oauth_consumer_key'] = array(
+		'#type' => 'textfield',
+		'#title' => t('Consumer key:'),
+		'#description' => t('Enter your consumer key as given by Edupay'),
+		'#default_value' => variable_get('oauth_consumer_key', '')
+	);
+	$form['edupay_oauth_auth']['oauth_consumer_secret'] = array(
+		'#type' => 'password',
+		'#title' => t('Consumer secret:'),
+		'#description' => t('Enter your consumer secret as given by Edupay'),
+		'#default_value' => variable_get('oauth_consumer_secret', '')
+	);
+	$form['edupay_oauth_auth']['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save')
+	);
+	return $form;
+}
+function eduerp_transaction_edupay_token_request($form_state) {
+	$form['edupay_oauth_token'] = array(
+		'#type' => 'fieldset',
+		'#title' => t('Consumer token for secured request'),
+		'#collapsible' => TRUE
+	);
+	$form['edupay_oauth_token']['token_buttons'] = array();
+	$form['edupay_oauth_token']['token_buttons']['eduerp_transaction_generate_token_key'] = array(
+		'#type' => 'button',
+		'#value' => t('Generate token key'),
+		'#submit' => array('eduerp_transaction_generate_token_key_submit'),
+	);
+	$form['edupay_oauth_token']['token_buttons']['eduerp_transaction_generate_token_secret'] = array(
+		'#type' => 'button',
+		'#value' => t('Generate token secret'),
+		'#submit' => array('eduerp_transaction_generate_token_key_submit'),
+	);
+	$form['edupay_oauth_token']['markup'] = array(
+		'#type' => 'markup',
+		'#value' => t('Alternatively, get both at once'),
+		'#prefix' => '<div class="eduerp-transaction-span">',
+		'#suffix' => '</div>'
+	);
+	$form['edupay_oauth_token']['token_buttons']['eduerp_transaction_generate_token'] = array(
+		'#type' => 'button',
+		'#value' => t('Generate token'),
+		'#submit' => array('eduerp_transaction_generate_token_submit'),
+	);
+	return $form;
+}
+/**
+ * Implementation of hook_help().
+ */
+function eduerp_transaction_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#eduerp_transaction':
+      $output = file_get_contents(drupal_get_path('module', 'eduerp_transaction') .'/README.txt');
+      return module_exists('markdown') ? filter_xss_admin(module_invoke('markdown', 'filter', 'process', 0, -1, $output)) : '<pre>'. check_plain($output) .'</pre>';
+    case 'admin/settings/eduerp/transaction':
+      //return '<p>'. t('A "Feature" is a certain type of Drupal module with contains a package of configuration that, when enabled, provides a new set of functionality for your Drupal site. Enable features by selecting the checkboxes below and clicking the Save configuration button. If the configuration of the feature has been changed its "State" will be either "overridden" or "needs review", otherwise it will be "default", indicating that the configuration has not been changed. Click on the state to see more details about the feature and its components.') .'</p>';
+			return theme('eduerp_transaction_overview');
+  }
 }
 
 /*
@@ -58,6 +208,9 @@ function eduerp_transaction_theme() {
         'path' => "$path",
     );
 
+		$theme['eduerp_transaction_overview'] = $base + array(
+        'arguments' => array(),
+    );
     $theme['eduerp_transaction_display_reservation_info'] = $base + array(
         'arguments' => array(),
     );

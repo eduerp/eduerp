@@ -136,6 +136,7 @@ function uc_payment_method_edupay($op, &$arg1) {
 				'#title' => t('Make edupay selected by default when checking out your order'),
 				'#default_value' => variable_get('uc_edupay_payment_method', 'edupay'),
 			);
+			// @todo Change to using configuration setting at admin/settings/eduerp/transaction
 			$form['edupay_user'] = array(
 				'#type' => 'textfield',
 				'#title' => t('Edupay Username'),
@@ -450,19 +451,20 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 				
 				switch($code){
 					case 200:
+						// @todo Test authentication, test digest and test fees data structure
 						dsm($result);
 						$_SESSION['edupay_transaction_accepted'] = t('accepted');
 						// get tpin from result
 						$tpin = $response->tpin;
 						//$_SESSION['transaction_id'] = _uc_edupay_trans_id($arg1);
 						$success = FALSE;
-						if(!isset($arg1->transaction_id)) {
+						if((!isset($arg1->transaction_id) && !empty($tpin))) {
 							$arg1->transaction_id = _uc_edupay_trans_id($arg1);
 							// Store the transaction_id and tpin in db
 							db_query("
-									INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id)
-									VALUES(%d, '%s', %d)",
-											$arg1->uid, $arg1->transaction_id, $arg1->order_id
+									INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id, tpin)
+									VALUES(%d, '%s', %d, '%s')",
+											$arg1->uid, $arg1->transaction_id, $arg1->order_id, $tpin
 											);
 							$success = TRUE;
 							if($success) {
@@ -470,9 +472,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 							} else {
 									drupal_error_handler('IN81', 'Your new Order failed', 'uc_hostel_allocation', '81');
 							}
-						} else {
-							// do an update of the eduerp_transaction table where transaction_id = _uc_hostel_allocation_load_transaction
-							return FALSE;
 						}
 					// status codes to provide try again functionality for 500, 503, 504, 417,
 					// AJAX functionality for try again request
@@ -497,7 +496,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 							uc_cart_empty($arg1->order_id);
 						}
 					
-					// All others not handled
+					// All others as default
 					default:
 						// watchdog the status code and status message
 						watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)));
@@ -514,7 +513,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 						// Before uc_payment_process function can be called, you need to write a gateway callback
 						// to do the actual processing. In the regards, we will simply made a web service call
 						// to edupay to store the generated transaction_id and jamb number
-						//uc_payment_process('edupay', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
+						// uc_payment_process('edupay', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
 						
 						// if the order is successful, empty the cart and invalidate SESSION variables
 						if(isset($_SESSION['edupay_transaction_accepted'])){
@@ -678,7 +677,7 @@ function uc_edupay_edupay($order){
 		$code = $institution->code;
 		$key = $institution->secret;
 		$amount = $order->order_total;
-		$identifier = '';
+		$identifier = ' '; // space equivalent to NULL right?
 		
 		$valid_institution = array(
 			'amount' => $amount,
