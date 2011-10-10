@@ -769,7 +769,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     $body .= "Semester: $sem\n";
     $body .= "Location: $loc\n\n";
     $body .= "Lecturer's comment...\n";
-    $body .= str_replace('<br />', "\n", $comment);
+    $body .= htmlspecialchars(str_replace('<br />', "\n", $comment), ENT_COMPAT, 'UTF-8');
     $body .= "\n\n{$name}\n\n";
 
     if ($firsttime) {
@@ -938,7 +938,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   $body .= "Semester: $sem\n";
   $body .= "Location: $loc\n\n";
   $body .= "Head of Department's comment...\n";
-  $body .= str_replace('<br />', "\n", $comment);
+  $body .= htmlspecialchars(str_replace('<br />', "\n", $comment), ENT_COMPAT, 'UTF-8');
   $body .= "\n\n{$name}\n";
 
   $node = new stdClass();
@@ -999,7 +999,7 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
   $body .= "Semester: $sem\n";
   $body .= "Location: $loc\n\n";
   $body .= "Head of Department's comment...\n";
-  $body .= str_replace('<br />', "\n", $comment);
+  $body .= htmlspecialchars(str_replace('<br />', "\n", $comment), ENT_COMPAT, 'UTF-8');
   $body .= "\n\n{$name}\n";
 
   if (!empty($destination_user)) {
@@ -1178,7 +1178,7 @@ function approve_grades_hod_form_submit($form, &$form_state) {
     $body .= "Semester: $sem\n";
     $body .= "Location: $loc\n\n";
     $body .= "HOD's comment...\n";
-    $body .= str_replace('<br />', "\n", $comment);
+    $body .= htmlspecialchars(str_replace('<br />', "\n", $comment), ENT_COMPAT, 'UTF-8');
     $body .= "\n\n{$name}\n\n";
 
     if ($firsttime) {
