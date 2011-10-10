@@ -20,7 +20,7 @@ Drupal.behaviors.uc_edupay = function(context) {
 }
 
 /*$(document).ready(function(){
-	var pdflink = Drupal.settings.uc_edupay.pdflink;
+  var pdflink = Drupal.settings.uc_edupay.pdflink;
         window.alert(pdflink);
 });*/
 

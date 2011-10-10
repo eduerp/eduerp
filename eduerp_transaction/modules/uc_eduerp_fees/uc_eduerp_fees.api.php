@@ -19,11 +19,11 @@
  * @ingroup hooks
  */
 function hook_eduerp_fees($fees) {
-	$fees = array();
-	$fees['fees_name'] = array(
-		'item' => 'The fees item',
-		'description' => t('Fees description'),
-		'options' => 'Any other options array to pass along'
-	);
-	return $fees;
+  $fees = array();
+  $fees['fees_name'] = array(
+    'item' => 'The fees item',
+    'description' => t('Fees description'),
+    'options' => 'Any other options array to pass along'
+  );
+  return $fees;
 }

@@ -33,34 +33,34 @@ function uc_hostel_allocation_checkout_pane() {
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_checkout_pane_hostel_allocation($op, &$arg1, $arg2) {
-	global $user;
-	$html = hostel_allocation_show_reserved_room($user->uid);
-	switch ($op) {
-		case 'view':
-			//dsm("uc_checkout_pane_pane ID, OP IS VIEW");
-			$description = t('Your hostel allocation data');
-			
-			$contents['html'] = array(
-					'#value' => $html
-			);
-			return array('description' => $description, 'contents' => $contents);
+  global $user;
+  $html = hostel_allocation_show_reserved_room($user->uid);
+  switch ($op) {
+    case 'view':
+      //dsm("uc_checkout_pane_pane ID, OP IS VIEW");
+      $description = t('Your hostel allocation data');
+      
+      $contents['html'] = array(
+          '#value' => $html
+      );
+      return array('description' => $description, 'contents' => $contents);
 
-		// show the order details at /cart/checkout/review
-		case 'review':
-			//dsm("uc_checkout_pane_pane ID, OP IS REVIEW");
-			//$review[] = array('title' => t('Your reservation data'), 'data' => unserialize($arg1->data));
-			$review[] = array('title' => t('Your reservation data'), 'data' => $html);
-			return $review;
-			break;
+    // show the order details at /cart/checkout/review
+    case 'review':
+      //dsm("uc_checkout_pane_pane ID, OP IS REVIEW");
+      //$review[] = array('title' => t('Your reservation data'), 'data' => unserialize($arg1->data));
+      $review[] = array('title' => t('Your reservation data'), 'data' => $html);
+      return $review;
+      break;
 
-		// Occurs when Review Order is clicked. You can do validation of the hostel allocation pane here
-		case 'process':
-			//dsm("uc_checkout_pane_pane ID, OP IS PROCESS");
+    // Occurs when Review Order is clicked. You can do validation of the hostel allocation pane here
+    case 'process':
+      //dsm("uc_checkout_pane_pane ID, OP IS PROCESS");
 
-			if(!isset($arg1->transaction_id) && !isset($_SESSION['cart_order'])) {
-					return array(array('pass' => FALSE, 'message' => t('We were unable to process your credit card.')));
-			}
-	}
+      if(!isset($arg1->transaction_id) && !isset($_SESSION['cart_order'])) {
+          return array(array('pass' => FALSE, 'message' => t('We were unable to process your credit card.')));
+      }
+  }
 }
 
 
@@ -75,148 +75,148 @@ function uc_hostel_allocation_order($op, &$arg1, $arg2) {
     switch ($op) {
         // Called when an order is created
         case 'new':
-					// process payment here instead of case submit
-					// make POST request to edupay, sending uid, amount, university code, digest,
-					// ubercart status, product attribute, late_registration_date_value
-					// hostel_registration_expiry_date_value
-					// get the return tpin from edupay
-					// insert into eduerp_transaction the order_id and tpin
-					
-					// module_invoke('uc_eduerp_fees', 'edupay')
-					if($data = module_invoke('uc_eduerp_fees', 'edupay', $arg1)) {
-						//$data_arr[] = get_object_vars($data->fees);
-						/*$data['fees'][] = array(
-							'fees' => array(
-								'status' => $arg1->order_status,
-								'timeout' => 0,
-							),
-							'hostel' => array(
-								'status' => $arg1->order_status,
-								'timeout' => 0,
-							)
-						);*/
-						//dsm($data);
-						//dsm($arg1);
-						/*$data = array(
-							'code' => $university_code,
-							'digest' => 'digest', // get this from institution table
-							'status' => 'pending',
-							'fees' => $arg1,
-							'amount' => 0.0,
-							'identifier' => ''
-						);*/
-						$uri = UC_EDUPAY_URL;
-					
-						// todo: Make oauth authentication to edupay
-						
-						// temporarily we are storing the username and password for edupay authentication
-						// in eduerp. This is not right and will be replaced with oauth
-						$uri['user'] = variable_get('edupay_user', '');
-						$uri['pass'] = variable_get('edupay_pass', '');
-						
-						$header = drupal_set_header('Content-Type: application/json');
-						$method = 'POST';
-						
-						$result = drupal_http_request($uri, $header, $method, $data);
-						
-						// if result->code is 200, parse the response and store tpin.
-						if($result->code == 200){
-							//dsm($result);
-							$_SESSION['edupay_transaction_accepted'] = t('accepted');
-						}else {
-							// based on the response returned from edupay, provide the appropriate error message
-							//drupal_json();
-							//dsm($result);
-							drupal_set_message(t('Oooops! Something went wrong! We are unable to process your transaction. Please contact bursary.'), 'error');
-							// Break everything
-							uc_cart_empty($arg1->order_id);
-						}
-						
-						drupal_set_message("OP IS NEW");
-						//$_SESSION['transaction_id'] = _uc_hostel_allocation_trans_id($arg1);
-						$success = FALSE;
-						if(!isset($arg1->transaction_id)) {
-							$arg1->transaction_id = _uc_hostel_allocation_trans_id($arg1);
-							// Store the transaction_id in db
-							db_query("
-									INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id)
-									VALUES(%d, '%s', %d)",
-											$arg1->uid, $arg1->transaction_id, $arg1->order_id
-											);
-							$success = TRUE;
-							if($success) {
-									drupal_set_message("Order transaction Created Successfully");
-							} else {
-									drupal_error_handler('IN81', 'Your new Order failed', 'uc_hostel_allocation', '81');
-							}
-						} else {
-							// do an update of the eduerp_transaction table where transaction_id = _uc_hostel_allocation_load_transaction
-							//db_query('UPDATE {eduerp_transaction} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' AND reservation_count > 0 ')
-							return FALSE;
-						}
-					}
+          // process payment here instead of case submit
+          // make POST request to edupay, sending uid, amount, university code, digest,
+          // ubercart status, product attribute, late_registration_date_value
+          // hostel_registration_expiry_date_value
+          // get the return tpin from edupay
+          // insert into eduerp_transaction the order_id and tpin
+          
+          // module_invoke('uc_eduerp_fees', 'edupay')
+          if($data = module_invoke('uc_eduerp_fees', 'edupay', $arg1)) {
+            //$data_arr[] = get_object_vars($data->fees);
+            /*$data['fees'][] = array(
+              'fees' => array(
+                'status' => $arg1->order_status,
+                'timeout' => 0,
+              ),
+              'hostel' => array(
+                'status' => $arg1->order_status,
+                'timeout' => 0,
+              )
+            );*/
+            //dsm($data);
+            //dsm($arg1);
+            /*$data = array(
+              'code' => $university_code,
+              'digest' => 'digest', // get this from institution table
+              'status' => 'pending',
+              'fees' => $arg1,
+              'amount' => 0.0,
+              'identifier' => ''
+            );*/
+            $uri = UC_EDUPAY_URL;
+          
+            // todo: Make oauth authentication to edupay
+            
+            // temporarily we are storing the username and password for edupay authentication
+            // in eduerp. This is not right and will be replaced with oauth
+            $uri['user'] = variable_get('edupay_user', '');
+            $uri['pass'] = variable_get('edupay_pass', '');
+            
+            $header = drupal_set_header('Content-Type: application/json');
+            $method = 'POST';
+            
+            $result = drupal_http_request($uri, $header, $method, $data);
+            
+            // if result->code is 200, parse the response and store tpin.
+            if($result->code == 200){
+              //dsm($result);
+              $_SESSION['edupay_transaction_accepted'] = t('accepted');
+            }else {
+              // based on the response returned from edupay, provide the appropriate error message
+              //drupal_json();
+              //dsm($result);
+              drupal_set_message(t('Oooops! Something went wrong! We are unable to process your transaction. Please contact bursary.'), 'error');
+              // Break everything
+              uc_cart_empty($arg1->order_id);
+            }
+            
+            drupal_set_message("OP IS NEW");
+            //$_SESSION['transaction_id'] = _uc_hostel_allocation_trans_id($arg1);
+            $success = FALSE;
+            if(!isset($arg1->transaction_id)) {
+              $arg1->transaction_id = _uc_hostel_allocation_trans_id($arg1);
+              // Store the transaction_id in db
+              db_query("
+                  INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id)
+                  VALUES(%d, '%s', %d)",
+                      $arg1->uid, $arg1->transaction_id, $arg1->order_id
+                      );
+              $success = TRUE;
+              if($success) {
+                  drupal_set_message("Order transaction Created Successfully");
+              } else {
+                  drupal_error_handler('IN81', 'Your new Order failed', 'uc_hostel_allocation', '81');
+              }
+            } else {
+              // do an update of the eduerp_transaction table where transaction_id = _uc_hostel_allocation_load_transaction
+              //db_query('UPDATE {eduerp_transaction} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' AND reservation_count > 0 ')
+              return FALSE;
+            }
+          }
             
         // Occurs when Submit Order is clicked
         case 'submit':
-					//dsm("OP IS SUBMIT");
-					//dsm("in op submit, arg1->transaction_id is " . $arg1->transaction_id);
+          //dsm("OP IS SUBMIT");
+          //dsm("in op submit, arg1->transaction_id is " . $arg1->transaction_id);
 
-					// on submit, it is possible to also update $arg1->transaction_id into uc_orders data field
-					if ($arg1->payment_method == 'edupay') {
-						// process payment
-						// Before uc_payment_process function can be called, you need to write a gateway callback
-						// to do the actual processing. In the regards, we will simply made a web service call
-						// to edupay to store the generated transaction_id and jamb number
-						//uc_payment_process('edupay', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
-						
-						// if the order is successful, empty the cart and invalidate SESSION variables
-						if(isset($_SESSION['edupay_transaction_accepted'])){
-							// set the order_status to completed
-							
-							// Break everything
-							uc_cart_empty(uc_cart_get_id());
-							// Clear our the session variables used to force the cart workflow.
-							unset($_SESSION['cart_order'], $_SESSION['do_complete'], $_SESSION['new_user']);
-						}
-					}
+          // on submit, it is possible to also update $arg1->transaction_id into uc_orders data field
+          if ($arg1->payment_method == 'edupay') {
+            // process payment
+            // Before uc_payment_process function can be called, you need to write a gateway callback
+            // to do the actual processing. In the regards, we will simply made a web service call
+            // to edupay to store the generated transaction_id and jamb number
+            //uc_payment_process('edupay', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
+            
+            // if the order is successful, empty the cart and invalidate SESSION variables
+            if(isset($_SESSION['edupay_transaction_accepted'])){
+              // set the order_status to completed
+              
+              // Break everything
+              uc_cart_empty(uc_cart_get_id());
+              // Clear our the session variables used to force the cart workflow.
+              unset($_SESSION['cart_order'], $_SESSION['do_complete'], $_SESSION['new_user']);
+            }
+          }
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
-					//dsm("OP IS SAVE");
-					//store hostel data object in uc_order. Also store the generated transaction id and JAMB
-					// Number as part of the data during save op.
-					// retrieve the stored transaction_id and pass it to $arg1->data
+          //dsm("OP IS SAVE");
+          //store hostel data object in uc_order. Also store the generated transaction id and JAMB
+          // Number as part of the data during save op.
+          // retrieve the stored transaction_id and pass it to $arg1->data
 
-					if(!isset($arg1->transaction_id)) {
-							$arg1->transaction_id = _uc_hostel_allocation_load_transaction($arg1);
-					}
-					if ($arg1->payment_method == 'edupay') {
-							$edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
-							$data = $arg1->data;
-							$data->edupay_data = serialize($edupay_data);
-							//dsm($data);
-							//dsm(unserialize($data->edupay_data));
-							db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
-					}
-					//db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
-					/*if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
-							db_query("UPDATE {uc_orders} SET data = '%s' "
-							."WHERE order_id = %d AND uid = %d", $arg1->data,
-							 $arg1->order_id, $arg1->uid);
-					}*/
+          if(!isset($arg1->transaction_id)) {
+              $arg1->transaction_id = _uc_hostel_allocation_load_transaction($arg1);
+          }
+          if ($arg1->payment_method == 'edupay') {
+              $edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
+              $data = $arg1->data;
+              $data->edupay_data = serialize($edupay_data);
+              //dsm($data);
+              //dsm(unserialize($data->edupay_data));
+              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+          }
+          //db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
+          /*if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
+              db_query("UPDATE {uc_orders} SET data = '%s' "
+              ."WHERE order_id = %d AND uid = %d", $arg1->data,
+               $arg1->order_id, $arg1->uid);
+          }*/
 
         // Load the hostel reservation data from the database.
         case 'load':
-					//dsm("OP IS LOAD");
-					$data = hostel_allocation_reserved_data();
-					$arg1->data = $data;
-					$arg1->studentid = $data->studentid;
-					if(isset($_SESSION['transaction_id'])) {
-							unset($_SESSION['transaction_id']);
-					}
-					//dsm(_uc_hostel_allocation_trans_id($arg1));
-					//dsm($arg1->studentid);
-					break;
+          //dsm("OP IS LOAD");
+          $data = hostel_allocation_reserved_data();
+          $arg1->data = $data;
+          $arg1->studentid = $data->studentid;
+          if(isset($_SESSION['transaction_id'])) {
+              unset($_SESSION['transaction_id']);
+          }
+          //dsm(_uc_hostel_allocation_trans_id($arg1));
+          //dsm($arg1->studentid);
+          break;
     }
 
 }
