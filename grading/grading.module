@@ -1189,7 +1189,7 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
     $body .= "Session: $session\n";
     $body .= "semester: $semester\n\n";
     $body .= "Registrar's comment...\n";
-    $body .= htmlspecialchars(str_replace('<br />', "\n", $comment), ENT_COMPAT, 'UTF-8');
+    $body .= str_replace('<br />', "\n", $comment);
     $body .= "\n\n{$name}\n";
 
     if ($firsttime) {
