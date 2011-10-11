@@ -7,6 +7,9 @@
 define("INVOICE_REGENERATE", "regenerate");
 define("UC_EDUPAY_URL", 'http://banker:banker@127.0.0.1:8000/api/transaction/add'); // to be modified
 
+// @todo Make institution retrieval a global setting
+//define("", eduerp_get_institution('name'));
+
 /**
  * Implementation of hook_perm()
  * @return <type>
@@ -74,6 +77,11 @@ function eduerp_transaction_menu() {
         'type' => MENU_LOCAL_TASK,
         #'file' => 'eduerp_transaction.admin.inc'
       );
+      $items['eduerp-transaction/token/callback'] = array(
+        'page callback' => 'eduerp_transacton_token_ahah_callback',
+        'access callback' => TRUE,
+        'type' => MENU_CALLBACK,
+      );
     }
     return $items;
 }
@@ -126,23 +134,25 @@ function eduerp_transaction_edupay_auth_consumer($form_state) {
   );
   $form['edupay_oauth_auth']['oauth_consumer_key'] = array(
     '#type' => 'textfield',
-    '#title' => t('Consumer key:'),
+    '#title' => t('Consumer key'),
     '#description' => t('Enter your consumer key as given by Edupay'),
-    '#default_value' => variable_get('oauth_consumer_key', '')
+    '#default_value' => variable_get('oauth_consumer_key', ''),
+    '#required' => TRUE
   );
   $form['edupay_oauth_auth']['oauth_consumer_secret'] = array(
-    '#type' => 'password',
-    '#title' => t('Consumer secret:'),
+    '#type' => 'textarea',
+    '#title' => t('Consumer secret'),
     '#description' => t('Enter your consumer secret as given by Edupay'),
     '#default_value' => variable_get('oauth_consumer_secret', '')
   );
-  $form['edupay_oauth_auth']['submit'] = array(
+  /*$form['edupay_oauth_auth']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save')
-  );
-  return $form;
+  );*/
+  return system_settings_form($form);
 }
-function eduerp_transaction_edupay_token_request($form_state) {
+function eduerp_transaction_edupay_token_request(&$form_state) {
+  $form['#cache'] = TRUE;
   $form['edupay_oauth_token'] = array(
     '#type' => 'fieldset',
     '#title' => t('Consumer token for secured request'),
@@ -169,9 +179,214 @@ function eduerp_transaction_edupay_token_request($form_state) {
     '#type' => 'button',
     '#value' => t('Generate token'),
     '#submit' => array('eduerp_transaction_generate_token_submit'),
+    '#ahah' => array(
+      'path' => 'eduerp-transaction/token/callback',
+      'wrapper' => 'edupay_oauth_token_results',
+      'effect' => 'fade',
+      //'method' => 'replace'
+    )
   );
+  $form['oauth_token_results_ahah'] = array(
+    '#type' => 'markup',
+    '#value' => '<div id="edupay_oauth_token_results"></div>'
+  );
+  /*$form['edupay_oauth_token_results'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Token results'),
+    '#prefix' => '<div id="edupay_oauth_token_results">',
+    '#suffix' => '</div>',
+    '#collapsible' => FALSE,
+  );*/  
+    //if($form_state['submitted'] == TRUE){
+    // foreach of ..., build a textfield, inserting values respectively
+    // replace first_name with dynamic values of token_access and token_secret
+    //dsm($form_state['values']);
+    /*$form['edupay_oauth_token_results']['textfield']['oauth_token'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Token access'),
+      '#default_value' => variable_get('oauth_token', '')
+    );
+    $form['edupay_oauth_token_results']['textfield']['oauth_token_secret'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Token secret'),
+      '#default_value' => variable_get('oauth_token_secret', '')
+    );
+    $form['edupay_oauth_token_results']['token']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+      '#submit' => array('eduerp_transaction_token_result_submit'),
+    );*/
+  //}
+  //dsm($_SESSION['oauth-result-form']);
+  if(isset($_SESSION['form-test'])) {
+    $form['test'] = array(
+      '#type' => $_SESSION['form-test']['#type'],
+      '#title' => $_SESSION['form-test']['#title'],
+      '#default_value' => $_SESSION['form-test']['#default_value'],
+      '#value' => $_SESSION['form-test']['#value']
+    );
+  }
+  $result = $_SESSION['oauth-result-form'];
+  $fieldset = $result['edupay_oauth_token_results'];
+  $token_field = $result['oauth_token'];
+  $token_secret_field = $result['oauth_token_secret'];
+  $submit = $result['submit'];
+  
+  if(isset($result)) {
+    //$form['edupay_oauth_token_results'] = drupal_render($result['edupay_oauth_token_results']);
+    $form['edupay_oauth_token_results'] = array(
+      '#type' => $fieldset['#type'],
+      '#title' => $fieldset['#title'],
+      '#collapsible' => $fieldset['#collapsible']
+    );
+    $form['edupay_oauth_token_results']['oauth_token'] = array(
+      '#type' => $token_field['#type'],
+      '#title' => $token_field['#title'],
+      '#description' => $token_field['#description'],
+      '#default_value' => $token_field['#default_value'],
+      '#value' => $token_field['#value']
+    );
+    $form['edupay_oauth_token_results']['oauth_token_secret'] = array(
+      '#type' => $token_secret_field['#type'],
+      '#title' => $token_secret_field['#title'],
+      '#description' => $token_secret_field['#description'],
+      '#default_value' => $token_secret_field['#default_value'],
+      '#value' => $token_secret_field['#value']
+    );
+    $form['edupay_oauth_token_results']['submit'] = array(
+      '#type' => $submit['#type'],
+      '#value' => $submit['#value'],
+      '#submit' => array_shift($submit['#submit'])
+    );
+  }
+  
   return $form;
 }
+
+/**
+ * AHAH Submit callback to make request for a token
+ * 
+ * 
+ */ 
+function eduerp_transacton_token_ahah_callback() {
+  $form_state = array('storage' => NULL, 'submitted' => FALSE);
+  $form_build_id = $_POST['form_build_id'];
+  
+  $form = form_get_cache($form_build_id, $form_state);
+  $args = $form['#parameters'];
+  $form_id = array_shift($args);
+  $form_state['post'] = $form['#post'] = $_POST;
+  $form['#programmed'] = $form['#redirect'] = FALSE;
+
+  drupal_process_form($form_id, $form, $form_state);
+  
+  // send a token request to edupay
+  // agrhhh. Don't like this
+  module_load_include('inc', 'eduerp', 'eduerp.admin');
+  $institution = eduerp_get_institution('name');
+  $header = array('Content-Type' => 'application/x-www-form-urlencoded');
+  $params = array(
+    'oauth_consumer_key' => variable_get('oauth_consumer_key', ''), 
+    'institution_name' => $institution->name, 
+    'institution_code' => $institution->code
+  );
+  
+  $result = drupal_http_request('', $header, 'GET', http_build_query($params, '', '&'));
+  $response = $result->data;
+  $code = $result->code;
+  
+  // parse the response
+  switch($code) {
+    case 200:
+      $token_access = $response->token_access;
+      $token_secret = $response->token_secret;
+  }
+  
+  // populate the textfield with token access and token secret values
+  $textfields = $form['edupay_oauth_token_results'];
+  
+  $form['test'] = array(
+    '#type' => 'textfield',
+    '#title' => 'test',
+    '#default_value' => 'hey',
+    '#value' => 'sup'
+  );
+  // @todo: take this through drupal_get_form and form_set_cache
+  $form['edupay_oauth_token_results'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Token results'),
+    '#collapsible' => FALSE,
+  );  
+  $form['edupay_oauth_token_results']['textfield']['oauth_token'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Token access'),
+    '#default_value' => variable_get('oauth_token', ''),
+    '#value' => 'sup'
+  );
+  $form['edupay_oauth_token_results']['textfield']['oauth_token_secret'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Token secret'),
+    '#default_value' => variable_get('oauth_token_secret', ''),
+    '#value' => 'sup'
+  );
+  $form['edupay_oauth_token_results']['token']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#submit' => array('eduerp_transaction_token_result_submit'),
+  );
+  if(!isset($_SESSION['oauth-result-form'])) {
+    $output = drupal_render($form['test']);
+    $output .= drupal_render($form['edupay_oauth_token_results']);
+    $output .= drupal_render($form['edupay_oauth_token_results']['textfield']['oauth_token']);
+    $output .= drupal_render($form['edupay_oauth_token_results']['textfield']['oauth_token_secret']);
+    $output .= drupal_render($form['edupay_oauth_token_results']['token']['submit']);
+      
+    $elements = array(
+      'edupay_oauth_token_results' => $form['edupay_oauth_token_results'],
+      'oauth_token' => $form['edupay_oauth_token_results']['textfield']['oauth_token'],
+      'oauth_token_secret' => $form['edupay_oauth_token_results']['textfield']['oauth_token_secret'],
+      'submit' => $form['edupay_oauth_token_results']['token']['submit']
+    );
+    $_SESSION['oauth-result-form'] = $elements;
+  } else {
+    //$_SESSION['oauth-result-form'] = array();
+    unset($_SESSION['oauth-result-form']);
+    $output = array();
+  }
+  
+  return drupal_json(array('status' => TRUE, 'data' => $output));
+}
+
+/**
+ * A form build that results from an AHAH callback
+ * 
+ * 
+ * @todo To be used in place of session['oauth-result-form'] in
+ * next release version
+ */
+function eduerp_transaction_oauth_result_form($form_state) {
+  // help me
+}
+/**
+ * Submit callback to save token results
+ * 
+ * 
+ */ 
+function eduerp_transaction_token_result_submit($form, &$form_state) {
+  
+}
+/**
+ * Submit callback to make request for a token
+ * 
+ * 
+ */ 
+function eduerp_transaction_generate_token_submit($form, &$form_state) {
+  switch($form_state['values']['op']) {
+    case t('Generate token'):
+      $form_state['submitted'] = TRUE;
+  }
+}
+
 /**
  * Implementation of hook_help().
  */
@@ -270,26 +485,31 @@ function eduerp_transaction_init(){
   $uri['pass'] = variable_get('edupay_pass', '');
   
   //$header = drupal_set_header('Content-Type: application/json');
-  $header = array('Content-Type' => 'application/x-www-form-urlencoded');
-  $method = 'POST';
+  #$header = array('Content-Type' => 'application/x-www-form-urlencoded');
+  #$method = 'POST';
   
   //$result = drupal_http_request($uri, $header, $method, http_build_query($data, '', '&'));
   
-  // if result->code is 200, parse the response and store tpin.
-  /*if($result->code == 200){
-    dsm($result);
-  }else {
-    dsm($result);
-    drupal_set_message(t('Oooops! Something went wrong! We are unable to process your transaction. Please contact bursary.'), 'error');
-  }*/
-            
-  /*$name = 'Content-Type';
-  $value = 'application/json';
-  $values = array(
-    'method' => 'POST',
-    'headers' => array('Content-Type: application/json')
+  module_load_include('inc', 'eduerp', 'eduerp.admin');
+  $institution = eduerp_get_institution('name');
+  $header = array('Content-Type' => 'application/x-www-form-urlencoded');
+  $params = array(
+    'oauth_consumer_key' => variable_get('oauth_consumer_key', ''), 
+    'institution_name' => ucfirst(strtolower($institution->name)), 
+    'institution_code' => $institution->code
   );
-  $httpclientrequest = new HttpClientRequest(UC_EDUPAY_URL, $values);
-  $httpclientrequest.setHeader($name, $value);*/
+  
+  //$result = OAuthRequest::from_request('GET', 'http://127.0.0.1:8000/api/oauth/token_request', $params);
+  $result = drupal_http_request('http://127.0.0.1:8000/api/oauth/token_request', $header, 'POST', http_build_query($params, '', '&'));
+  //dsm($result);
+  /**$response = $result->data;
+  $code = $result->code;
+  
+  // parse the response
+  switch($code) {
+    case 200:
+      $token_access = $response->token_access;
+      $token_secret = $response->token_secret;
+  }*/
             
 }
