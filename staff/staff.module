@@ -178,8 +178,8 @@ function staff_menu() {
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
   );
-  
-  
+
+
    $items['staff/testattributes'] = array(
     'title' => 'Testing Attributes and Options',
     'page callback' => 'staff_school_fees_test_attr',
@@ -2506,6 +2506,7 @@ function Error_Types($num = 0) {
   case '165': $msg = $prifix1 . 'Full Amount MUST be specified!<br />'; break;
   case '166': $msg = $prifix1 . 'Full Amount MUST be entered for at least one Fee Item in each Fee Block!<br />'; break;
   case '167': $msg = $prifix1 . 'A similar Fee Structure already exists. Kindly consider Editing it instead!<br />'; break;
+  case '168': $msg = $prifix1 . 'double quote, less than or greater than characters are not allowed!<br />'; break;
 
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
@@ -2743,6 +2744,38 @@ function staff_create_course_form_validate($form, $form_state) {
   //make sure that no spaces in course code
   if (strpos($form_state['values']['course_code'], " "))
     form_set_error('course_code', Error_Types(109));
+
+  // Security checks
+  $text = $form_state['values']['course_code'];
+  if (!empty($text)) {
+    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+      form_set_error('course_code', Error_Types(168));
+    }
+  }
+  $text = $form_state['values']['course_title'];
+  if (!empty($text)) {
+    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+      form_set_error('course_title', Error_Types(168));
+    }
+  }
+  $text = $form_state['values']['course_description'];
+  if (!empty($text)) {
+    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+      form_set_error('course_description', Error_Types(168));
+    }
+  }
+  $text = $form_state['values']['prerequisites_codes'];
+  if (!empty($text)) {
+    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+      form_set_error('prerequisites_codes', Error_Types(168));
+    }
+  }
+  $text = $form_state['values']['prerequisite_desc'];
+  if (!empty($text)) {
+    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+      form_set_error('prerequisite_desc', Error_Types(168));
+    }
+  }
 
   //if prerequisites is not empty then make sure it conforms
   if (! empty($form_state['values']['prerequisites_codes'])) {
@@ -3182,6 +3215,13 @@ function staff_assign_course_form_validate($form, &$form_state) {
     }
   }
 
+  // Security checks
+  $text = $form_state['values']['timetable'];
+  if (!empty($text)) {
+    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+      form_set_error('timetable', Error_Types(168));
+    }
+  }
 }
 
 
@@ -3737,11 +3777,22 @@ function staff_create_programme_form_validate($form, &$form_state) {
 
     if(! preg_match("/^[0-9]{1,3}$/", trim($form_state['values']['min_credit_load'])) || $form_state['values']['min_credit_load'] <= 0) form_set_error('min_credit_load', Error_Types(107));
 
+    // Security checks
+    $text = $form_state['values']['programme_name'];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error('programme_name', Error_Types(168));
+      }
+    }
+    $text = $form_state['values']['programme_abbr'];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error('programme_abbr', Error_Types(168));
+      }
+    }
   }
   else
     form_set_error('department_nid', Error_Types(117));
-
-
 }
 
 
@@ -6896,8 +6947,8 @@ function staff_school_fees_admin(){
 
     $html .= '<b>Authorise Instalment Payment</b> - Enable a Student to pay his/her Fees in instalments  for the Current Session only.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a>';
-    
-    
+
+
     $html .= '<br />';
      $html .= '<br />';
 
@@ -10789,22 +10840,22 @@ function staff_school_fees_test_attr(){
  global $user;
   ob_start();
   $html = drupal_get_form('show_attr_test_form');
- 
+
   echo $html;
   return ob_get_clean();
-	
+
 }
-	
+
 function show_attr_test_form(){
   $form['#title'] = 'Test Data';
-  
+
   $form['submit'] = array(
     '#value' => 'Add Test Data to Cart',
     '#type' => 'submit'
   );
 
-  return $form;	
-	
+  return $form;
+
 }
 
 function show_attr_test_form_submit($form, &$state){
@@ -10816,9 +10867,9 @@ function show_attr_test_form_submit($form, &$state){
   	  'attributes' => array('4'=>'9')
   	  );
   uc_cart_add_item($nid, $qty, $data);
-  
+
   */
-  
+
   //for test on staging server
   $nid = 5268; //product NID
   $qty = 1;
