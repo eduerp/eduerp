@@ -6,6 +6,17 @@
  */
 
 /**
+* 
+* 
+*/ 
+function uc_edupay_menu() {
+  $items = array();
+  $items[''] = array(
+  
+  );
+  return $items;
+}
+/**
  * hook_form_alter override
  * @param <type> $form
  * @param <type> $form_state
@@ -72,6 +83,10 @@ function uc_edupay_cart_item($op, &$item){
   }
 }
 
+/**
+ * Implements hook_theme
+ * 
+ */ 
 function uc_edupay_theme(){
   return array(
     'eduerp_fees_cart_title' => array(
@@ -81,7 +96,7 @@ function uc_edupay_theme(){
 }
 
 /**
- * 
+ * Themes the cart item title
  * 
  * @todo To be rethemed during theming
  */ 
@@ -135,6 +150,12 @@ function uc_payment_method_edupay($op, &$arg1) {
         '#type' => 'checkbox',
         '#title' => t('Make edupay selected by default when checking out your order'),
         '#default_value' => variable_get('uc_edupay_payment_method', 'edupay'),
+      );
+      $form['uc_edupay_auth_method_oauth'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Use high security authentication mechanism to process fees'),
+        '#description' => t('Defaults to yes. Uncheck to use basic authentication'),
+        '#default_value' => variable_get('uc_edupay_auth_method_oauth', 1),
       );
       // @todo Change to using configuration setting at admin/settings/eduerp/transaction
       $form['edupay_user'] = array(
@@ -381,9 +402,7 @@ function uc_edupay_edupay_hook($order) {
  * Wrapper for drupal_http_request
  * 
  */ 
-function _uc_edupay_process_order_request(&$order) {
-  
-  // module_invoke('uc_edupay', 'edupay')
+function _uc_edupay_process_order_request_basic(&$order) {  
   if($data = module_invoke('uc_edupay', 'edupay', $order)) {
     //$data_arr[] = get_object_vars($data->fees);
     /*$data['fees'][] = array(
@@ -396,7 +415,7 @@ function _uc_edupay_process_order_request(&$order) {
         'timeout' => 0,
       )
     );*/
-    dsm($data);
+    //dsm($data);
     //dsm($order);
     /*$data = array(
       'code' => $university_code,
@@ -407,7 +426,7 @@ function _uc_edupay_process_order_request(&$order) {
       'identifier' => ''
     );*/
     $items = $data['fees'];
-    $uri = UC_EDUPAY_URL;
+    $uri = UC_EDUPAY_BASIC_URL;
 
     // @todo: Make oauth authentication to edupay
     // temporarily we are storing the username and password for edupay authentication
@@ -420,7 +439,149 @@ function _uc_edupay_process_order_request(&$order) {
     
     $result = drupal_http_request($uri, $header, $method, http_build_query($data, '', '&'));
 
-    return $result;
+    $response = $result->data;
+    $code = $result->code;
+    
+    switch($code){
+      case 200:
+        // @todo Test authentication, test digest and test fees data structure
+        $_SESSION['edupay_transaction_accepted'] = t('accepted');
+        // get tpin from result
+        $tpin = $response->tpin;
+        //$_SESSION['transaction_id'] = _uc_edupay_trans_id($arg1);
+        $success = FALSE;
+        if((!isset($arg1->transaction_id) && !empty($tpin))) {
+          $arg1->transaction_id = _uc_edupay_trans_id($arg1);
+          // Store the transaction_id and tpin in db
+          db_query("
+              INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id, tpin)
+              VALUES(%d, '%s', %d, '%s')",
+                  $arg1->uid, $arg1->transaction_id, $arg1->order_id, $tpin
+                  );
+          $success = TRUE;
+          if($success) {
+              drupal_set_message("Order transaction Created Successfully");
+          } else {
+              drupal_error_handler('IN81', 'Your new Order failed', 'uc_edupay', '81');
+          }
+        }
+        break;
+      // status codes to provide try again functionality for 500, 503, 504, 417,
+      // AJAX functionality for try again request
+      case 408: // Request Timeout
+      case 417: // Expectation Failed
+      case 500: // Internal Server Error
+      case 503: // Service Unavailable
+      case 504: // Gateway Timeout
+        drupal_set_message('Something went wrong somewhere. Please try again');
+        watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)));
+        break;
+      // All fictitious actions
+      case 502: // Bad Gateway
+      case 505: // HTTP Version Not Supported
+        // based on the response returned from edupay, provide the appropriate error message
+        // Display a Try Again link so the user can try again.
+        //drupal_json();
+        //dsm($result);
+        drupal_set_message(t('Oooops! Something went wrong! We are unable to process your transaction. Please contact bursary.'), 'error');
+        watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)));
+        // Break everything
+        // Disable the submit order button and also make /checkout/complete return 400 (Bad request). Happens if the user knows this URL and wants to fake it
+        if (uc_cart_get_contents() == NULL) {
+          uc_cart_empty($arg1->order_id);
+        }
+        break;
+      // All others as default
+      default:
+        // watchdog the status code and status message
+        watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)));
+        break;
+    }
+  }
+}
+
+/**
+ * Process fees via oauth authentication and
+ * authorization mechanism
+ * 
+ * @param
+ *  - order: The order in the cart
+ *    order is already passed by reference from hook_order
+ */ 
+function _uc_edupay_process_order_request($order) {
+  if($data = module_invoke('uc_edupay', 'edupay', $order)) {
+    //dsm($data);
+    //dsm(uc_order_load($_SESSION['cart_order']));
+    $order->products = _uc_edupay_fees_order_items();
+    // @todo: foreach of the product in order->product, add order_status
+    if(module_exists('oauth_common')) {
+      $consumer = new stdClass();
+      $consumer->key = variable_get('oauth_consumer_key', '');
+      $consumer->secret = variable_get('oauth_consumer_secret', '');
+      $token_request = variable_get('oauth_token', '');
+      //$signature_method = 'HMAC-SHA1';
+      
+      $path = UC_EDUPAY_URL;
+        $options = array(
+          'token' => TRUE,
+          'params' => $order,
+          'realm' => NULL,
+          'get' => FALSE
+        );
+        
+      $header = array('Content-Type' => 'application/x-www-form-urlencoded');
+      $method = 'POST';
+    
+      $result = drupal_http_request($path, $header, $method, http_build_query($order, '', '&'));
+    
+      //dsm($result);
+    
+      // catch all necessary exceptions if edupay is down
+      /*try {
+        $oauthclient = new EdupayOauthClient($consumer, $token_request);
+      dsm($order);
+
+        $path = UC_EDUPAY_URL;
+        $options = array(
+          'token' => TRUE,
+          'params' => $order,
+          'realm' => NULL,
+          'get' => FALSE
+        );
+        
+        $result = $oauthclient->get($path, $options);
+        
+        dsm($result);
+      } catch(Exception $e) {
+        drupal_set_message($e->getMessage(), 'error');
+        watchdog('uc_edupay', t('@uid cannot continue with order process due to @error', array('@uid' => $order->uid, '@error' => $e->getMessage())), WATCHDOG_SEVERE);
+        global $socket_closed;
+        $socket_closed = TRUE;
+        // set the order state to canceled
+        unset($_SESSION['cart_order']);
+        uc_order_update_status($order->order_id, 'canceled');
+        $_SESSION['do_review'] = FALSE;
+        $_SESSION['checkout_valid'] = FALSE;
+        $_SESSION['checkout-redirect'] = TRUE;
+        drupal_goto('cart/checkout'); // drupal_get_destination
+      }*/
+    }
+  }
+}
+
+function uc_edupay_socket_closed() {
+  global $socket_closed;
+  
+  return isset($socket_closed); // return TRUE if it's set
+}
+
+class EdupayOauthClient extends DrupalOauthClient {
+  
+  public function __construct($consumer, $request_token = NULL, $signature_method = NULL, $version = NULL) {
+    parent::__construct($consumer, $request_token = NULL, $signature_method = NULL, $version = NULL);
+  }
+  public function get($path, $options = array()) {
+    return parent::get($path, $options = array());
   }
 }
 
@@ -443,65 +604,13 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         // get the return tpin from edupay
         // insert into eduerp_transaction the order_id and tpin
         
-        // Make request to external payment gateway
-        $result = _uc_edupay_process_order_request($arg1);
-        $response = $result->data;
-        $code = $result->code;
-        dsm($arg1);
-        
-        switch($code){
-          case 200:
-            // @todo Test authentication, test digest and test fees data structure
-            dsm($result);
-            $_SESSION['edupay_transaction_accepted'] = t('accepted');
-            // get tpin from result
-            $tpin = $response->tpin;
-            //$_SESSION['transaction_id'] = _uc_edupay_trans_id($arg1);
-            $success = FALSE;
-            if((!isset($arg1->transaction_id) && !empty($tpin))) {
-              $arg1->transaction_id = _uc_edupay_trans_id($arg1);
-              // Store the transaction_id and tpin in db
-              db_query("
-                  INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id, tpin)
-                  VALUES(%d, '%s', %d, '%s')",
-                      $arg1->uid, $arg1->transaction_id, $arg1->order_id, $tpin
-                      );
-              $success = TRUE;
-              if($success) {
-                  drupal_set_message("Order transaction Created Successfully");
-              } else {
-                  drupal_error_handler('IN81', 'Your new Order failed', 'uc_hostel_allocation', '81');
-              }
-            }
-          // status codes to provide try again functionality for 500, 503, 504, 417,
-          // AJAX functionality for try again request
-          case 408: // Request Timeout
-          case 417: // Expectation Failed
-          case 500: // Internal Server Error
-          case 503: // Service Unavailable
-          case 504: // Gateway Timeout
-            drupal_set_message('Something went wrong somewhere. Please try again');
-            
-          // All fictitious actions
-          case 502: // Bad Gateway
-          case 505: // HTTP Version Not Supported
-            // based on the response returned from edupay, provide the appropriate error message
-            // Display a Try Again link so the user can try again.
-            //drupal_json();
-            //dsm($result);
-            drupal_set_message(t('Oooops! Something went wrong! We are unable to process your transaction. Please contact bursary.'), 'error');
-            // Break everything
-            // Disable the submit order button and also make /checkout/complete return 400 (Bad request). Happens if the user knows this URL and wants to fake it
-            if (uc_cart_get_contents() == NULL) {
-              uc_cart_empty($arg1->order_id);
-            }
-          
-          // All others as default
-          default:
-            // watchdog the status code and status message
-            watchdog('uc_edupay', t('Transaction failed on @uid. Status code: @code, Status error message: @error', array('@uid' => $arg1->uid, '@code' => $result->code, '@error' => $result->status_message)));
-        }        
-            
+        if(variable_get('uc_edupay_auth_method_oauth', 1)) {
+          _uc_edupay_process_order_request($arg1);
+        } else {
+          // Make request to external payment gateway
+          _uc_edupay_process_order_request_basic($arg1);
+        }
+        //dsm($arg1);    
         // Occurs when Submit Order is clicked
         case 'submit':
           //dsm("OP IS SUBMIT");
@@ -517,7 +626,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             
             // if the order is successful, empty the cart and invalidate SESSION variables
             if(isset($_SESSION['edupay_transaction_accepted'])){
-              // set the order_status to completed
+              // @todo set the order_status to completed
               
               // Break everything
               uc_cart_empty(uc_cart_get_id());
@@ -539,7 +648,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           // retrieve the stored transaction_id and pass it to $arg1->data
 
           if(!isset($arg1->transaction_id)) {
-              $arg1->transaction_id = _uc_hostel_allocation_load_transaction($arg1);
+              $arg1->transaction_id = _uc_edupay_load_transaction($arg1);
           }
           if ($arg1->payment_method == 'edupay') {
               $edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
@@ -556,19 +665,40 @@ function uc_edupay_order($op, &$arg1, $arg2) {
                $arg1->order_id, $arg1->uid);
           }*/
 
-        // Load the hostel reservation data from the database.
+        // The real order object that will be put into $_SESSION['cart_order'].
         case 'load':
           //dsm("OP IS LOAD");
-          $data = hostel_allocation_reserved_data();
-          $arg1->data = $data;
-          $arg1->studentid = $data->studentid;
+          //$data = hostel_allocation_reserved_data();
+          //$data = uc_cart_get_contents();
+          //$arg1->data = $data;
+          //$arg1->studentid = $data->studentid;
           if(isset($_SESSION['transaction_id'])) {
-              unset($_SESSION['transaction_id']);
+            unset($_SESSION['transaction_id']);
           }
-          //dsm(_uc_edupay_trans_id($arg1));
-          //dsm($arg1->studentid);
           break;
     }
+}
+
+/**
+ * Load Transaction
+ * A Transaction occurs when an order operation is new
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */
+
+function _uc_edupay_load_transaction($order) {
+    if(!isset($order_id)) {
+        return FALSE;
+    }
+    $order_id = $order->order_id;
+
+    $sql = 'SELECT transaction_id
+        FROM {eduerp_transaction}
+        WHERE order_id = %d';
+    
+    $result = db_result(db_query($sql, $order_id));
+    $loaded_transaction = $result;
+    return $load_transaction;
 }
 
 /**
@@ -595,9 +725,7 @@ function _uc_edupay_trans_id($order) {
         'order_id' => $order_id,
         'uid' => $user_id
     );
-
     $trans_id .= implode('', $trans_schema);
-
     return $trans_id;
 }
 
@@ -608,7 +736,7 @@ function _uc_edupay_trans_id($order) {
 function uc_edupay_checkout_pane() {
   //$fees = uc_eduerp_fees_get_fees();
   $items = uc_cart_get_contents();
-  dsm($items);
+  //dsm($items);
   foreach($items as $fee) {
     $panes[$fee->title] = array(
       'id' => $fee->cart_item_id, //pass in here the fee attribute
@@ -633,13 +761,12 @@ function uc_edupay_checkout_pane() {
  */ 
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   global $user;
-  //dsm($arg1);
-  
   //$items = uc_cart_get_contents();
   $zz = uc_cart_get_contents();
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
+  //dsm($items);
   switch ($op) {
     case 'view':
       // if item in the cart is of type fees
@@ -649,16 +776,80 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
         //uc_eduerp_fees_load_item_options()
         //$type[$key] = $fee_item['data']['type'];
         //if($key['data']['type'] == EDUERP_FEES_NORMAL){
-        $item[$key] = $fee;
+        //$item[$key] = $fee;
         // get its options
         //$data[] = uc_eduerp_fees_load_item_options(); // Content is made up everything including data
         $data[$key] = $fee['data'];
         $description[$key] = $fee['title'];
         return array('description' => t('Content title is %title', array('%title' => $description[$key])), array('contents' => $data[$key]));
       }
-      
+      break;
     case 'review':
+    case 'process':
   }
+}
+
+/**
+ * 
+ * @todo Make a hook of this
+ */ 
+function _uc_edupay_fees_order_items() {
+  $zz = uc_cart_get_contents();
+  foreach($zz as $z){
+    $items[] = get_object_vars($z);
+  }
+  /*$data['fees'][] = array(
+      'fees' => array(
+        'status' => $arg1->order_status,
+        'timeout' => 0,
+      ),
+      'hostel' => array(
+        'status' => $arg1->order_status,
+        'timeout' => 0,
+      )*/
+  $data = array();
+  $description = array();
+  $products = array();
+  foreach($items as $key => $fee){
+    $item[$key] = $fee;
+    $data[$key] = $fee['data'];
+    $description[$key] = $fee['title'];
+  }
+  //dsm($item);
+  $types = array();
+  foreach($item as $key => $value) {
+    $types[] = $value['data']['type'];
+    $titles[$key] = $value['title'];
+    $pos = array();
+    foreach($titles as $k => $title) {
+      $pos[$k] = array(
+        $title => array(
+          'nid' => $value['nid'],
+          'cart_item_id' => $value['cart_item_id'],
+          'amount' => $value['price'],
+          'programme' => $value['data']['programme'],
+          'level' => $value['data']['level_name'],
+          'session' => $value['data']['session']
+          )
+        );
+    }
+    if($value['data']['type'] == 'fees') {
+      $products[$value['data']['type']]['fee'] = $pos;
+      $products[$value['data']['type']]['timeout'] = $value['data']['late_registration_date'];
+    }
+    if(in_array('hostel', $types)) {
+      $hostel['hostel'] = array(
+        'nid' => $value['nid'],
+        'cart_item_id' => $value['cart_item_id'],
+        'amount' => $value['price'], // or 'amount' => $value['data']['amount']
+        'timeout' => $value['data']['expiry_date']
+      );
+      // @todo: go through drupal_alter once we have a hook of this function
+      array_push($hostel, $products);
+    }
+  }
+  //dsm($pos);
+  return $products;
 }
 
 /**
