@@ -1944,7 +1944,8 @@ function staff_update_dept_form() {
 
 
 function staff_create_edit_faculty_form_validate($form, &$form_state) {
-  //unset($_SESSION['eduerp_fac_nid']);
+  //unset($_SESSION['eduerp_fac_nid']); 
+  
   if (arg(2) && is_valid_faculty(arg(2))) {//validate EDIT
     if (is_Faculty_Name_Existing($form_state['values']['faculty_name'], arg(2)))
       form_set_error('faculty_name', Error_Types(101));
@@ -1960,6 +1961,16 @@ function staff_create_edit_faculty_form_validate($form, &$form_state) {
       form_set_error('faculty_abbreviation', Error_Types(102));
   }
 
+  // Security checks
+  $formFields = array("faculty_name", "faculty_abbreviation", "faculty_subdomain");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }
 }
 
 
@@ -2013,6 +2024,17 @@ function staff_create_edit_dept_form_validate($form, &$form_state) {
   else {//validate CREATE
     if(is_Department_Name_Existing($form_state['values']['department_name']))
       form_set_error('department_name', Error_Types(103));
+  }
+  
+  // Security checks
+  $formFields = array("department_name", "department_code");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
   }
 
 }
@@ -2721,7 +2743,7 @@ function staff_create_course_form() {
 
   return $form;
 
-}
+} 
 
 
 function staff_create_course_form_validate($form, $form_state) {
@@ -6917,16 +6939,16 @@ function staff_school_fees_admin(){
 
 
 
-  $isAuthorized = true;
+  //$isAuthorized = true;
 
   $html = '<br /><hr /><br />';
-  $isAuthorized = true; //please remember to take this off Israel
-  if (! $isAuthorized) {
+  
+  //if (! $isAuthorized) {
     //echo Error_Types(104);
-    drupal_set_message(Error_Types(104), 'error');
+  //  drupal_set_message(Error_Types(104), 'error');
 
-  }
-  else {
+  //}
+  //else {
     $html .= "<font size = '1px'><a href = 'semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;School Fees Administration</font><br /><br />";
     $html .= '<hr /><br />';
 
@@ -6950,13 +6972,13 @@ function staff_school_fees_admin(){
 
 
     $html .= '<br />';
-     $html .= '<br />';
+    // $html .= '<br />';
 
-    $html .= '<b>Test Cart Entries</b> - Test how ubercart adds attributes and options to cart.<br />';
-    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/testattributes') . '">Proceed To Test</a>';
-    $html .= '<br /><br />';
+    //$html .= '<b>Test Cart Entries</b> - Test how ubercart adds attributes and options to cart.<br />';
+    //$html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/testattributes') . '">Proceed To Test</a>';
+    //$html .= '<br /><br />';
 
-  }
+  //}
 
   $html .= '<br /><hr /><br />';
 
@@ -7241,6 +7263,18 @@ function staff_school_fees_create_modify_fee_item_form_validate($form, &$state) 
   $editMode = (arg(2) && is_fee_item_existing(arg(2))) ? true : false;
   $itemNID = $editMode ? arg(2) : 0;
   //make sure that no duplicates exist
+  
+  // Security checks
+  $formFields = array("fee_item");
+  foreach($formFields as $v){
+    $text = $state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }
+  
   if( is_fee_item_existing($values['fee_item'], true, $itemNID)){
     form_set_error('fee_item', Error_Types(152));
   }
@@ -8148,6 +8182,17 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
     }
     elseif(! is_numeric($values[arg(2)])) {
     	form_set_error(arg(2), Error_Types(107));
+    }
+    
+    // Security checks
+    $formFields = array(arg(2));
+    foreach($formFields as $v){
+      $text = $state['values'][$v];
+      if (!empty($text)) {
+        if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+          form_set_error($v, Error_Types(168));
+        }
+      }
     }
   }
   else {
@@ -9834,7 +9879,18 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
       if(empty($values['remarks'])){
     	form_set_error('remarks', Error_Types(161));
       }
-
+      
+      // Security checks
+      $formFields = array("remarks");
+      foreach($formFields as $v){
+        $text = $state['values'][$v];
+        if (!empty($text)) {
+          if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+            form_set_error($v, Error_Types(168));
+          }
+        }
+      }
+  
       if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_scholarship']['studentUID'], variable_get('eduerp_current_session', ''))){
       	form_set_error('', Error_Types(162));
         return;
@@ -10435,7 +10491,19 @@ function staff_show_authorise_instalment_form_validate($form, &$state){
       if(empty($values['remarks'])){
     	form_set_error('remarks', Error_Types(161));
       }
-
+      
+      // Security checks
+      $formFields = array("remarks");
+      foreach($formFields as $v){
+        $text = $state['values'][$v];
+        if (!empty($text)) {
+          if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+            form_set_error($v, Error_Types(168));
+          }
+        }
+      }
+      
+      
       if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_instalment']['studentUID'], variable_get('eduerp_current_session', ''))){
       	form_set_error('', Error_Types(162));
         return;
