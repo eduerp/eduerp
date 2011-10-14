@@ -197,7 +197,7 @@ function eduerp_transaction_edupay_token_request(&$form_state) {
     '#suffix' => '</div>',
     '#collapsible' => FALSE,
   );*/  
-  dsm($_SESSION['oauth-result-form']);
+  //dsm($_SESSION['oauth-result-form']);
   
   $result = $_SESSION['oauth-result-form'];
   $fieldset = $result['edupay_oauth_token_results'];
@@ -238,7 +238,7 @@ function eduerp_transaction_edupay_token_request(&$form_state) {
       '#submit' => $submit['#submit']
     );
   }
-  dsm($form);
+  //dsm($form);
   return $form;
 }
 
@@ -325,7 +325,7 @@ function eduerp_transacton_token_ahah_callback() {
         '#submit' => system_settings_form_submit($form, $form_state)
       );
       if(!isset($_SESSION['oauth-result-form'])) {
-        $output = drupal_render($form['test']);
+        //$output = drupal_render($form['test']);
         $output .= drupal_render($form['edupay_oauth_token_results']);
         $output .= drupal_render($form['edupay_oauth_token_results']['status']);
         $output .= drupal_render($form['edupay_oauth_token_results']['textfield']['oauth_token']);

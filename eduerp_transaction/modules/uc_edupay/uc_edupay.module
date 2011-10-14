@@ -5,9 +5,11 @@
  * Allows payment via edupay. 
  */
 
+require_once drupal_get_path('module', 'oauth_common') . '/includes/DrupalOauthClient.inc';
+ 
 /**
 * 
-* 
+* @todo
 */ 
 function uc_edupay_menu() {
   $items = array();
@@ -16,6 +18,7 @@ function uc_edupay_menu() {
   );
   return $items;
 }
+
 /**
  * hook_form_alter override
  * @param <type> $form
@@ -91,6 +94,9 @@ function uc_edupay_theme(){
   return array(
     'eduerp_fees_cart_title' => array(
       'arguments' => array($title => NULL, $text => NULL),
+    ),
+    'eduerp_cart_review_table' => array(
+      'arguments' => array($contents => NULL)
     ),
   );
 }
@@ -742,8 +748,10 @@ function uc_edupay_checkout_pane() {
       'id' => $fee->cart_item_id, //pass in here the fee attribute
       'callback' => 'uc_checkout_pane_eduerp_fees',
       'title' => $fee->title,
-      'desc' => t('Below shows the fee items in your cart @title payment.', array('@title' => $fee->cart_item_id)),
+      'desc' => t('Below shows the fee items in your cart @title payment.', array('@title' => $fee->title)),
       'weight' => 8,
+      'process' => TRUE,
+      'collapsible' => TRUE,
     );
   }
   return $panes;
@@ -761,6 +769,7 @@ function uc_edupay_checkout_pane() {
  */ 
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   global $user;
+  //dsm($arg1);
   //$items = uc_cart_get_contents();
   $zz = uc_cart_get_contents();
   foreach($zz as $z){
@@ -771,24 +780,134 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
     case 'view':
       // if item in the cart is of type fees
       // for each on the items and display them in fees pane
+      $description = array();
+      //$contents = array();
+      $x = array();
       foreach($items as $key => $fee){
         // load its options
         //uc_eduerp_fees_load_item_options()
         //$type[$key] = $fee_item['data']['type'];
         //if($key['data']['type'] == EDUERP_FEES_NORMAL){
-        //$item[$key] = $fee;
+        $item[$key] = $fee;
         // get its options
-        //$data[] = uc_eduerp_fees_load_item_options(); // Content is made up everything including data
-        $data[$key] = $fee['data'];
-        $description[$key] = $fee['title'];
-        return array('description' => t('Content title is %title', array('%title' => $description[$key])), array('contents' => $data[$key]));
+        //$data[] = uc_eduerp_fees_load_item_options();
+        //$description[$key] = $fee['title'];
+        /*$contents[$key] = array(
+          //'#value' => $fee['data'],
+          '#type' => 'markup',
+          //'#title' => $description[$key],
+          '#value' => '<div>The content</div>',
+          //'#value' => theme('eduerp_cart_review_table', $fee['data']),
+          //'#theme' => theme('eduerp_cart_review_table', $fee['data']),
+        );*/
+        //$contents[$key] = $fee['data'];
+      /*$x[$key] = array(
+        'description' => t('Content title is %title', array('%title' => $description[$key])), 
+        'contents' => $contents[$key]
+        );*/
       }
-      break;
+      foreach($item as $key => $value) {
+        $types[] = $value['data']['type'];
+        $titles[$key] = $value['title'];
+        $nid[$key] = $value['nid'];
+        $cart_item_id[$key] = $value['cart_item_id'];
+        $programme[$key] = $value['data']['programme'];
+        $level[$key] = $value['data']['level_name'];
+        $amount[$key] = $value['price'];
+        $session[$key] = $value['data']['session'];
+        
+        // @todo put $all array only for type fees
+        // Get only the stuffs we need by nid
+        $all[] = array(
+          $nid[$key] = array(
+            'nid' => $value['nid'],
+            'type' => $value['data']['type'], 
+            'title' => $value['title'], 
+            'amount' => $value['price'],
+            'programme' => $value['data']['programme'],
+            'level' => $value['data']['level_name'],
+            'session' => $value['data']['session'],
+            'nationality' => $value['data']['nationality'],
+            'cart_item_id' => $value['cart_item_id'],
+          )
+        );
+      }
+      //dsm($all);
+      foreach($all as $value) {
+        foreach($value as $key => $order_item) {
+          $description[$key] = $order_item['title'];
+          $contents[$key] = array(
+            '#type' => 'fieldset',
+            '#title' => $description[$key],
+            //'#description' => $description[$key],
+            //'#value' => $contents
+          );
+          $contents[$key]['data'] = array(
+            //'#type' => 'markup',
+            '#value' => $order_item,
+          );
+          $x[] = array(
+            'description' => t('Content title is %title', array('%title' => $description[$key])), 
+            'contents' => $contents[$key]
+          );
+        }
+      }
+      //dsm($x);
+      //dsm($description);
+      //dsm($contents);
+      /*foreach($x as $fees_pane) {
+        return array_shift($fees_pane);
+      }*/
+      //dsm($y);
+        //return $y;
+      return $x;
+      //return array('description' => $description, array('contents' =>  $content));
     case 'review':
     case 'process':
   }
 }
 
+function theme_eduerp_cart_review_table($contents) {
+  //dsm($contents);
+  //$header = array();
+  /*$items = array(
+    'item' => $contents['nid'],
+    'type' => $contents['type'],
+    'nationality' => $contents['nationality'],
+    'programme' => $contents['programme'],
+    'level' => $contents['level_name'],
+    'session' => $contents['session'],
+    'amount' => ''
+  );*/
+  foreach($contents as $content) {
+   
+  }
+  //dsm($items);
+  $header = array(
+    array('data' => t('Item No.'), 'class' => 'price'),
+    array('data' => t('Type'), 'class' => 'price'),
+    array('data' => t('Nationality'), 'class' => 'price'),
+    array('data' => t('Programme'), 'class' => 'price'),
+    array('data' => t('Level'), 'class' => 'price'),
+    array('data' => t('Session'), 'class' => 'price'),
+    array('data' => t('Amount'), 'class' => 'price'),
+    //array('data' => t('Late registration'), 'class' => 'price'),
+    //array('data' => t('Instalments allowed'), 'class' => 'price'),
+  );
+  
+  
+  $rows[] = array(
+      array('data' => t('ddddd'), 'class' => 'price'),
+      array('data' => t('ddddd'), 'class' => 'price'),
+      array('data' => t('ddddd'), 'class' => 'price'),
+      array('data' => t('ddddd'), 'class' => 'price'),
+      array('data' => t('ddddd'), 'class' => 'price'),
+      array('data' => t('ddddd'), 'class' => 'price'),
+      array('data' => t(''), 'class' => 'price'),
+    );
+    
+  return theme('table', $header, $rows, array('class' => 'cart-review'));
+}
 /**
  * 
  * @todo Make a hook of this
