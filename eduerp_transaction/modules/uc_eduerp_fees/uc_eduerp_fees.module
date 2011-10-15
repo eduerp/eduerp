@@ -185,6 +185,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   }
   //dsm($vkeys);
   //dsm($values);
+  // @todo: Rework regex to reflect no limit to digits
   $key_search = implode(',', array_values($vkeys));
   preg_match_all('/product_item_fees_\d{4}/', $key_search, $matches);
   // match options for fees option
@@ -248,7 +249,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     ),
   );
   */
-  
+  dsm($cart_items);
   $added = FALSE;
   foreach($cart_items as $product_item){
     $cart_item = $product_item;

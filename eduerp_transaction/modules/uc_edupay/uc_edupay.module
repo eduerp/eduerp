@@ -5,9 +5,11 @@
  * Allows payment via edupay. 
  */
 
+require_once drupal_get_path('module', 'oauth_common') . '/includes/DrupalOAuthClient.inc';
+ 
 /**
 * 
-* 
+* @todo
 */ 
 function uc_edupay_menu() {
   $items = array();
@@ -16,6 +18,7 @@ function uc_edupay_menu() {
   );
   return $items;
 }
+
 /**
  * hook_form_alter override
  * @param <type> $form
@@ -63,10 +66,11 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
 function uc_edupay_cart_item($op, &$item){
   switch($op) {
     case 'load':
+    dsm($item);
       $fees_type = EDUERP_FEES_NORMAL;
-      /*if($item->data['type'] == $fees_type){
+      if($item->data['type'] == $fees_type){
         // load registration
-        $late = uc_eduerp_fees_load_fee_options($fees_type);
+        /*$late = uc_eduerp_fees_load_fee_options($fees_type);
         $late_value = $late['late_registration'];
         if(!is_null($late_value['last_registration_date'])){
           $late_charges = $late_value['amount'];
@@ -78,8 +82,9 @@ function uc_edupay_cart_item($op, &$item){
           $text = t('Late Registration Included');
           $item['title'] = $item['title'] . ' ' . $text;
           //$item['title']  = theme('eduerp_fees_cart_title', $item['title'], $text);
-        }
-      }*/
+        }*/
+        //if(in_array())
+      }
   }
 }
 
@@ -91,6 +96,9 @@ function uc_edupay_theme(){
   return array(
     'eduerp_fees_cart_title' => array(
       'arguments' => array($title => NULL, $text => NULL),
+    ),
+    'eduerp_cart_review_table' => array(
+      'arguments' => array($contents => NULL)
     ),
   );
 }
@@ -651,12 +659,12 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               $arg1->transaction_id = _uc_edupay_load_transaction($arg1);
           }
           if ($arg1->payment_method == 'edupay') {
-              $edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
-              $data = $arg1->data;
-              $data->edupay_data = serialize($edupay_data);
-              //dsm($data);
-              //dsm(unserialize($data->edupay_data));
-              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+            $edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
+            $data = $arg1->data;
+            $data->edupay_data = serialize($edupay_data);
+            //dsm($data);
+            //dsm(unserialize($data->edupay_data));
+            db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
           }
           //db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
           /*if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
@@ -687,18 +695,18 @@ function uc_edupay_order($op, &$arg1, $arg2) {
  */
 
 function _uc_edupay_load_transaction($order) {
-    if(!isset($order_id)) {
-        return FALSE;
-    }
-    $order_id = $order->order_id;
+  if(!isset($order_id)) {
+      return FALSE;
+  }
+  $order_id = $order->order_id;
 
-    $sql = 'SELECT transaction_id
-        FROM {eduerp_transaction}
-        WHERE order_id = %d';
-    
-    $result = db_result(db_query($sql, $order_id));
-    $loaded_transaction = $result;
-    return $load_transaction;
+  $sql = 'SELECT transaction_id
+      FROM {eduerp_transaction}
+      WHERE order_id = %d';
+  
+  $result = db_result(db_query($sql, $order_id));
+  $loaded_transaction = $result;
+  return $load_transaction;
 }
 
 /**
@@ -711,22 +719,22 @@ function _uc_edupay_load_transaction($order) {
  */
 function _uc_edupay_trans_id($order) {
 
-    static $trans_id = '';
+  static $trans_id = '';
 
-    $rand = mt_rand(0, mt_getrandmax());
-    $order_id = $order->order_id;
-    $user_id = $order->uid;
-    $date = date('Ymd');
+  $rand = mt_rand(0, mt_getrandmax());
+  $order_id = $order->order_id;
+  $user_id = $order->uid;
+  $date = date('Ymd');
 
-    $trans_schema = array(
-        'char' => '#',
-        'random' => $rand,
-        'trans_date' => $date,
-        'order_id' => $order_id,
-        'uid' => $user_id
-    );
-    $trans_id .= implode('', $trans_schema);
-    return $trans_id;
+  $trans_schema = array(
+      'char' => '#',
+      'random' => $rand,
+      'trans_date' => $date,
+      'order_id' => $order_id,
+      'uid' => $user_id
+  );
+  $trans_id .= implode('', $trans_schema);
+  return $trans_id;
 }
 
 /** 
@@ -742,8 +750,10 @@ function uc_edupay_checkout_pane() {
       'id' => $fee->cart_item_id, //pass in here the fee attribute
       'callback' => 'uc_checkout_pane_eduerp_fees',
       'title' => $fee->title,
-      'desc' => t('Below shows the fee items in your cart @title payment.', array('@title' => $fee->cart_item_id)),
+      'desc' => t('Below shows the fee items in your cart @title payment.', array('@title' => $fee->title)),
       'weight' => 8,
+      'process' => TRUE,
+      'collapsible' => TRUE,
     );
   }
   return $panes;
@@ -761,6 +771,7 @@ function uc_edupay_checkout_pane() {
  */ 
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   global $user;
+  //dsm($arg1);
   //$items = uc_cart_get_contents();
   $zz = uc_cart_get_contents();
   foreach($zz as $z){
@@ -771,24 +782,102 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
     case 'view':
       // if item in the cart is of type fees
       // for each on the items and display them in fees pane
+      $description = array();
+      //$contents = array();
+      $x = array();
       foreach($items as $key => $fee){
-        // load its options
-        //uc_eduerp_fees_load_item_options()
-        //$type[$key] = $fee_item['data']['type'];
-        //if($key['data']['type'] == EDUERP_FEES_NORMAL){
-        //$item[$key] = $fee;
-        // get its options
-        //$data[] = uc_eduerp_fees_load_item_options(); // Content is made up everything including data
-        $data[$key] = $fee['data'];
-        $description[$key] = $fee['title'];
-        return array('description' => t('Content title is %title', array('%title' => $description[$key])), array('contents' => $data[$key]));
+        $item[$key] = $fee;
       }
-      break;
+      foreach($item as $key => $value) {
+        $types[] = $value['data']['type'];
+        $titles[$key] = $value['title'];
+        $nid[$key] = $value['nid'];
+        $cart_item_id[$key] = $value['cart_item_id'];
+        $programme[$key] = $value['data']['programme'];
+        $level[$key] = $value['data']['level_name'];
+        $amount[$key] = $value['price'];
+        $session[$key] = $value['data']['session'];
+        
+        // @todo put $all array only for type fees
+        // Get only the stuffs we need by nid
+        $all[] = array(
+          $nid[$key] = array(
+            'nid' => $value['nid'],
+            'type' => $value['data']['type'], 
+            'title' => $value['title'], 
+            'amount' => $value['price'],
+            'programme' => $value['data']['programme'],
+            'level' => $value['data']['level_name'],
+            'session' => $value['data']['session'],
+            'nationality' => $value['data']['nationality'],
+            'cart_item_id' => $value['cart_item_id'],
+          )
+        );
+      }
+      foreach($all as $value) {
+        foreach($value as $key => $order_item) {
+          $description[$key] = $order_item['title'];
+          $contents[$key] = array(
+            '#type' => 'fieldset',
+            //'#title' => $description[$key],
+            //'#description' => $description[$key],
+            //'#value' => $contents
+          );
+          $contents[$key]['data'] = array(
+            //'#type' => 'markup',
+            '#value' => theme('eduerp_cart_review_table', $order_item)
+          );
+          $x[] = array(
+            'description' => t('Content title is %title', array('%title' => $description[$key])), 
+            'contents' => $contents[$key]
+          );
+        }
+      }
+      //dsm($x);
+      //dsm($description);
+      //dsm($contents);
+      foreach($x as $fees_pane) {
+        return $fees_pane;
+      }
     case 'review':
     case 'process':
   }
 }
 
+function theme_eduerp_cart_review_table(&$contents) {
+  //dsm($contents);
+  $contents = uc_cart_get_contents();
+  foreach($contents as $content) {
+   if($content->data['type'] == 'fees'){
+     $rows[] = array(
+        array('data' => $content->nid, 'class' => 'price'),
+        array('data' => $content->data['type'], 'class' => 'price'),
+        array('data' => $content->title, 'class' => 'price'),
+        array('data' => $content->price, 'class' => 'price'),
+        array('data' => $content->data['programme'], 'class' => 'price'),
+        array('data' => $content->data['level_name'], 'class' => 'price'),
+        array('data' => $content->data['session'], 'class' => 'price'),
+        array('data' => $content->data['nationality'], 'class' => 'price'),
+        array('data' => $content->cart_item_id, 'class' => 'price'),
+      );
+   }
+  }
+  $header = array(
+    array('data' => t('Item No.'), 'class' => 'price'),
+    array('data' => t('Type'), 'class' => 'price'),
+    array('data' => t('Title'), 'class' => 'price'),
+    array('data' => t('Amount'), 'class' => 'price'),
+    array('data' => t('Programme'), 'class' => 'price'),
+    array('data' => t('Level'), 'class' => 'price'),
+    array('data' => t('Session'), 'class' => 'price'),
+    array('data' => t('Nationality'), 'class' => 'price'),
+    array('data' => t('Cart item id'), 'class' => 'price'),
+    //array('data' => t('Late registration'), 'class' => 'price'),
+    //array('data' => t('Instalments allowed'), 'class' => 'price'),
+  );
+    
+  return theme('table', $header, $rows, array('class' => 'cart-review'));
+}
 /**
  * 
  * @todo Make a hook of this
