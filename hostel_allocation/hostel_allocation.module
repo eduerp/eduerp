@@ -237,7 +237,16 @@ function hostel_allocation_create_edit_hostel_form_validate($form, &$form_state)
       form_set_error('hostel_name', Error_Types(131));
   }
 
-
+  // Security checks
+  $formFields = array("hostel_name", "hostel_description");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }  
 }
 
 
@@ -669,7 +678,17 @@ function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
     form_set_error('price', Error_Types(144));
 
   }
-
+  
+  // Security checks
+  $formFields = array("block_name");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }  
 }
 
 
@@ -1057,6 +1076,16 @@ function hostel_allocation_create_edit_room_form_validate($form, &$form_state){
 
   }
 
+  // Security checks
+  $formFields = array("room_name");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }  
 }
 
 
@@ -1326,6 +1355,16 @@ function hostel_allocation_create_edit_category_form_validate($form, &$form_stat
   }
 
 
+  // Security checks
+  $formFields = array("category_name");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }  
 }
 
 
@@ -2081,7 +2120,17 @@ function hostel_allocation_create_edit_global_settings_form_validate($form, &$fo
 
 
   }
-
+  
+  // Security checks
+  $formFields = array("settings_name");
+  foreach($formFields as $v){
+    $text = $form_state['values'][$v];
+    if (!empty($text)) {
+      if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
+        form_set_error($v, Error_Types(168));
+      }
+    }
+  }  
 }
 
 
