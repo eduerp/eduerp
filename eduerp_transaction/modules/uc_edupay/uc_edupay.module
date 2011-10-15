@@ -62,30 +62,80 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
  * implements hook_cart_item
  * 
  * 
+ * @param
+ *  - $item is a call to uc_get_cart_contents()
  */ 
 function uc_edupay_cart_item($op, &$item){
   switch($op) {
     case 'load':
-    dsm($item);
+    //dsm($item);
       $fees_type = EDUERP_FEES_NORMAL;
       if($item->data['type'] == $fees_type){
         // load registration
-        /*$late = uc_eduerp_fees_load_fee_options($fees_type);
+        $late = uc_eduerp_fees_load_fee_options($fees_type);
         $late_value = $late['late_registration'];
-        if(!is_null($late_value['last_registration_date'])){
+        // if late registration date value is set and its amount is not empty
+        // if a fees item recognized as Tuition (of Full Amount or Instalment1) is among the 
+        // items in cart
+        if(!is_null($late_value['last_registration_date'])){ 
+          $extras = uc_eduerp_fees_load_extras($item->cart_id, 'fees');
+          if($item->title == 'tuition' and ($extras[$item->data['nid']]['fees_payment_format'] == FEES_FULL or FEES_FIRST_INSTALMENT))
           $late_charges = $late_value['amount'];
           // load its price
-          $price = $item['price'];
+          $price = $item->price;
           // add to the pprice
           $price += $late_charges;
           // modify title to read [title] + (Late registration included)
           $text = t('Late Registration Included');
-          $item['title'] = $item['title'] . ' ' . $text;
-          //$item['title']  = theme('eduerp_fees_cart_title', $item['title'], $text);
-        }*/
-        //if(in_array())
+          $item->title = $item->title . ' ' . $text;
+          //$item->title  = theme('eduerp_fees_cart_title', $item->title, $text);
+        }
+        if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
+          // round such fee item amount to zero
+          $price_info = array(
+            'price' => 0
+          );
+          // Initialize the context.
+          $context = array(
+            'revision' => 'altered',
+            'type' => 'amount',
+          );
+          $item->price = uc_price($price_info, $context);
+          // reflect change in cart
+          $text = t('Scholarship Applicable');
+          $item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
+        }
+        
+        // Late Registration Fee must NOT be added to the cart for a student if 
+        // “Tuition Fees” (Full Amount or instalment 1 of them) is not simultaneously being 
+        // added to the cart.
+        // That is, late registration fee is only summed up to fees in the cart only if "Tuition" 
+        // is among the fees items being requested to be added to cart.
+        
+        // If fees item contains the word Instalment in its description,
+        // module_invoke()
+        // @todo Move to uc_eduerp_fees
       }
   }
+}
+
+/**
+ * A hook to mark a fee item as an instalment
+ * 
+ * A fee item is recognized as full or instalment if it contains the word
+ * "Full Amount", "Instalment1" or "Instalment2" in its description
+ */ 
+function uc_eduerp_fees_instalment() {
+  
+}
+
+/**
+ * A hook to modify the price of an item in cart
+ * 
+ * 
+ */ 
+function uc_edupay_fees_price_alter() {
+  
 }
 
 /**
@@ -108,12 +158,20 @@ function uc_edupay_theme(){
  * 
  * @todo To be rethemed during theming
  */ 
-function theme_eduerp_fees_cart_title($title, $text) {
-  $output = $title . ' ' . "<span><strong>$text</strong></span>";
+function theme_eduerp_fees_cart_title($title, $text, $context = NULL) {
+  if($context == 'scholarship') {
+    // do scholarship specific theming
+    $output = $title . ' ' . "<span class='cart-scholarship-text' style='color:#CE1B0F'><strong>$text</strong></span>";
+  }
+  else {
+    $output = $title . ' ' . "<span style='color:#CE1B0F'><strong>$text</strong></span>";
+  }
   return $output;
 }
 
 /**
+ * Detailed override of uc_price for modifying cart
+ * price of an item
  * 
  * @todo Load the price of each item in cart
  */ 
@@ -742,7 +800,7 @@ function _uc_edupay_trans_id($order) {
  * 
  */  
 function uc_edupay_checkout_pane() {
-  //$fees = uc_eduerp_fees_get_fees();
+  //$fees = uc_eduerp_fees_get_fees_order();
   $items = uc_cart_get_contents();
   //dsm($items);
   foreach($items as $fee) {
