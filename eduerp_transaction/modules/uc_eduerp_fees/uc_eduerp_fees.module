@@ -1,6 +1,8 @@
 <?php 
 
 /**
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ * 
  * @file
  * Ubercart integration of EduERP fees
  */ 
@@ -110,7 +112,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         $nids[$key] = $value['product_nid'];
         $items[$key] = $value;
         $desc[$key] = $value['item_description'];
-        //$value['extras'] = 'hey';
         
         $form['eduerp_fees']["$type_$key"] = array(
           '#type' => 'checkbox',
@@ -132,14 +133,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         // Identify extras
         // foreach of the fees item description, parse it to extract the extras
         $key_search = $item['item_description'];
-        preg_match_all('/Full Amount|Instalment1|Instalment2/', $key_search, $matches);
-        //dsm($matches);
-        foreach($matches as $key => $value) {
-          $item['extras']['fees_payment_format'] = $value;
+        foreach(module_implements('eduerp_fees_alter') as $module) {
+          $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search);
         }
-        // for each module_implements(eduerp_fees_alter)
-        // call module_invoke('uc_eduerp_fees', 'eduerp_fees_alter', $value, $context='description')
-        
         // @todo
         // Would be appropriate to use item_description here 
         // but it is very unstructured and inconsistent
@@ -320,9 +316,10 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         drupal_write_record('fees', $fees, 'fee_id');
       }
       else {
+        // do an insert
         drupal_write_record('fees', $fees);
-      // watchdog drupal write record
-      watchdog('fees', t('New fee record created by @uid', array('@uid' => $cartId)));
+        // watchdog drupal write record
+        watchdog('fees', t('New fee record created by @uid', array('@uid' => $cartId)));
       }
     }else {
       drupal_set_message(t('Sorry, you are not eligible to pay fees. Please contact bursary'), 'error');
@@ -360,7 +357,6 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
   $fees_item = get_fee_items($uid->uid);
   if(!empty($fees_item)){
     // Fees
-    //$fees_item['item'] = array_shift($fees_item['fee_item_details']);
     $fees_item['item'] = $fees_item['fee_item_details'];
     foreach($fees_item['item'] as $key => $value) {
       $description[$key] = $value['item_description'];
@@ -433,15 +429,24 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
  * Implements hook_eduerp_fees_eduerp_fees_alter
  * 
  */ 
-function uc_eduerp_fees_eduerp_fees_alter(&$fees) {
+function uc_eduerp_fees_eduerp_fees_alter(&$items) {
   // array search the context value
   // when gotten, inject stuffs into $extras key
+  if(!empty($items)) {
+    preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
+    foreach($matches as $key => $value) {
+      return $value;
+    }
+  }
 }
+
 /**
  * All paid fees items gotten from EduPay
  * 
- * @return 
- *   - $items: Paid items
+ * @params $items
+ *  Paid items
+ * 
+ * @return array
  */ 
 function uc_eduerp_fees_paid_items() {
   //$items include product_nid, attribute_id and status
@@ -477,7 +482,6 @@ function uc_eduerp_fees_fees_attributes($fees) {
 function uc_eduerp_fees_load_extras($uid, $type) {
   switch($type) {
     case 'fees':
-      // select * from fees where uid = $uid
       $result = db_query("SELECT * FROM {fees} WHERE uid = %d and type = '%s'", $uid, $type);
       while($fee_object = db_fetch_object($result)) {
         $extras[$fee_object->nid] = unserialize($fee_object->extras);
@@ -487,7 +491,7 @@ function uc_eduerp_fees_load_extras($uid, $type) {
     case 'hostel':
       $result = db_query("SELECT * FROM {fees} WHERE uid = %d and type = '%s'", $uid, $type);
       while($fee_object = db_fetch_object($result)) {
-        $extras[$fee_object->nid] = $fee_object;
+        $extras[$fee_object->nid] = unserialize($fee_object->extras);
       }
       return $extras;
       break;
@@ -496,8 +500,6 @@ function uc_eduerp_fees_load_extras($uid, $type) {
 
 /**
  * hook_update_invoke declaration
- * 
- * 
  */ 
 function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value = NULL) {
   foreach(module_list() as $module) {
@@ -626,8 +628,8 @@ function uc_eduerp_fees_get_fees_order() {
 /**
  * Loads a subset of fees by type
  * 
- * @param 
- *   - type
+ * @param $type
+ *   fees or hostel
  * 
  * @return 
  *   - array
@@ -646,8 +648,8 @@ function uc_eduerp_fees_load_fee_options($type) {
  * Provides extra access to data in the order throughout
  * the life time of the ordering process.
  * 
- * @param
- *  - type: Fees or Hostel
+ * @param $type
+ *  fees or hostel
  */ 
 function uc_eduerp_fees_load_item_options($type){
   
