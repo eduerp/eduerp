@@ -392,7 +392,7 @@ class courseselectionsclass {
  * perform student clearance
  */
 function student_clearance() {
-	dsm($_POST);
+  dsm($_POST);
   global $user;
   $student_id = $_POST['student_uid'];
 
@@ -414,16 +414,16 @@ function student_clearance() {
       $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
       drupal_set_message('Student\'s results verified');
 
-			// set post value for deferred student
-		elseif(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
-			$student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-			content_storage('update', $student_clearance);
+      // set post value for deferred student
+    elseif(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
+      $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
+      content_storage('update', $student_clearance);
 
-		// set post value for uncleared student
-		elseif(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
-		&& isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
-			$student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-			content_storage('update', $student_clearance);
+    // set post value for uncleared student
+    elseif(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
+    && isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
+      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+      content_storage('update', $student_clearance);
 
     elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
@@ -453,18 +453,18 @@ function student_clearance() {
         drupal_set_message('Student\'s results verified');
       endif;
 
-			// set post value for deferred student
-			if(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
-				$student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-			endif;
+      // set post value for deferred student
+      if(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
+        $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
+      endif;
 
-			// set post value for reasons why a student is uncleared
-			if(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
-			&& isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
-				$student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-				$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
-				content_storage('update', $student_clearance);
-			endif;
+      // set post value for reasons why a student is uncleared
+      if(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
+      && isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
+        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        content_storage('update', $student_clearance);
+      endif;
 
       if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
         $node->field_staff_clearance[0]['uid'] = $user->uid;
@@ -477,9 +477,9 @@ function student_clearance() {
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
       endif;
       node_save($node);
-			if(module_exists('rules')) {
-				rules_invoke_event('student_cleared',  $user, $student_id, $node);
-			}
+      if(module_exists('rules')) {
+        rules_invoke_event('student_cleared',  $user, $student_id, $node);
+      }
     }
   }
 
@@ -664,10 +664,10 @@ function student_theme() {
       'student_field_uncleared' => array(
           'arguments' => array('node' => NULL, 'element' => NULL)
       ),
-			'student_field_uncleared_reasons' => array(
+      'student_field_uncleared_reasons' => array(
           'arguments' => array('node' => NULL, 'element' => NULL)
       ),
-			'student_field_deferred' => array(
+      'student_field_deferred' => array(
           'arguments' => array('node' => NULL, 'element' => NULL)
       ),
   );
@@ -712,15 +712,15 @@ function _module_views_templates($templates_path) {
  * @see student_theme()
  */
 function theme_student_field_uncleared() {
-	$element = array(
-		'#title' => t('Not Cleared'),
-		'#name' => t('field-uncleared'),
-		'#id' => t('edit-field-uncleared'),
-		'#value' => 0,
-		//'#attributes' => array('checked' => ''),
-		'#return_value' => variable_get('field-uncleared', TRUE)
-	);
-	return theme('checkbox', $element);
+  $element = array(
+    '#title' => t('Not Cleared'),
+    '#name' => t('field-uncleared'),
+    '#id' => t('edit-field-uncleared'),
+    '#value' => 0,
+    //'#attributes' => array('checked' => ''),
+    '#return_value' => variable_get('field-uncleared', TRUE)
+  );
+  return theme('checkbox', $element);
 }
 
 /**
@@ -731,18 +731,18 @@ function theme_student_field_uncleared() {
  */
 function theme_student_field_uncleared_reasons() {
 
-	$options = student_uncleared_get_reasons();
+  $options = student_uncleared_get_reasons();
 
-	$element = array(
-		'#title' => t('Reasons not cleared'),
-		'#name' => 'field-uncleared-reasons',
-		'#id' => 'edit-field-uncleared-reasons',
-		'#options' => $options,
-		'#multiple' => 1,
-		'#attributes' => array('class' => '')
-	);
+  $element = array(
+    '#title' => t('Reasons not cleared'),
+    '#name' => 'field-uncleared-reasons',
+    '#id' => 'edit-field-uncleared-reasons',
+    '#options' => $options,
+    '#multiple' => 1,
+    '#attributes' => array('class' => '')
+  );
 
-	return theme('select', $element);
+  return theme('select', $element);
 
 }
 
@@ -753,14 +753,14 @@ function theme_student_field_uncleared_reasons() {
  * @see student_theme()
  */
 function theme_student_field_deferred() {
-	$element = array(
-		'#title' => t('Defer to next session'),
-		'#name' => 'field-defered',
-		'#id' => 'edit-field-deferred',
-		'#value' => 0, // this is for setting checked="checked". We are not setting it due to theme_chechbox bug
-		'#return_value' => variable_get('field-defered', TRUE)
-	);
-	return theme('checkbox', $element);
+  $element = array(
+    '#title' => t('Defer to next session'),
+    '#name' => 'field-defered',
+    '#id' => 'edit-field-deferred',
+    '#value' => 0, // this is for setting checked="checked". We are not setting it due to theme_chechbox bug
+    '#return_value' => variable_get('field-defered', TRUE)
+  );
+  return theme('checkbox', $element);
 }
 
 /**
@@ -768,26 +768,26 @@ function theme_student_field_deferred() {
  * @return array
  */
 function student_uncleared_get_reasons() {
-	include_once drupal_get_path('module', 'content') . '/includes/views/content.views.inc';
+  include_once drupal_get_path('module', 'content') . '/includes/views/content.views.inc';
 
-	$fields = content_fields();
+  $fields = content_fields();
   $field = array();
   $content_fields_data = array();
-	$allowed_values = array();
+  $allowed_values = array();
 
   foreach($fields as $key => $field){
-		$field['field_name'] = 'field_uncleared_reasons';
-		$content_fields_data = content_views_field_views_data($field);
+    $field['field_name'] = 'field_uncleared_reasons';
+    $content_fields_data = content_views_field_views_data($field);
   }
 
-	$field_allowed_values = db_fetch_object(db_query("SELECT global_settings FROM {content_node_field} WHERE field_name = '%s'", $field['field_name']));
+  $field_allowed_values = db_fetch_object(db_query("SELECT global_settings FROM {content_node_field} WHERE field_name = '%s'", $field['field_name']));
 
-	// unserialize the data
-	$field_settings = unserialize($field_allowed_values->global_settings);
+  // unserialize the data
+  $field_settings = unserialize($field_allowed_values->global_settings);
 
-	$allowed_values = explode("\r\n", trim($field_settings['allowed_values'], "\r\n"));
+  $allowed_values = explode("\r\n", trim($field_settings['allowed_values'], "\r\n"));
 
-	return $allowed_values;
+  return $allowed_values;
 }
 
 /**
@@ -1656,7 +1656,7 @@ function student_user($op, &$edit, &$account, $category = NULL) {
   if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
     eduerp_add_role($account, 'Applicant');
     //$edit['roles'] = NULL;
-		$edit['roles'] += $account->roles;
+    $edit['roles'] += $account->roles;
   }
 }
 
@@ -1684,6 +1684,11 @@ function student_hostelreservation_cart(&$form_state) {
     global $user;
     // retrieve the reserved hostel based on current student
     $data = hostel_allocation_reserved_data();
+
+    if(empty($data)) {
+        //drupal_set_message("You have already made an hostel reservation.");
+        return TRUE;
+    }
 
     //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
     $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
