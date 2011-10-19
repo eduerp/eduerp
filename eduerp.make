@@ -44,6 +44,7 @@ projects[strongarm][subdir] = "contrib"
 ; Content
 projects[auto_nodetitle][subdir] = "contrib"
 projects[wysiwyg][subdir] = "contrib"
+projects[ckeditor][subdir] = "contrib"
 projects[print][subdir] = "contrib"
 projects[glossary][subdir] = "contrib"
 projects[content_profile][subdir] = "contrib"
