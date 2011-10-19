@@ -80,7 +80,7 @@ projects[uc_views][subdir] = "contrib"
 
 ; Themes/Theming
 projects[fusion][type] = theme
-projects[absessive][type] = theme
+projects[abessive][type] = theme
 projects[skinr][subdir] = "contrib"
 projects[form_panel][subdir] = "contrib"
 
