@@ -11,6 +11,12 @@ projects[eduerp][download][type] = "git"
 projects[eduerp][download][url] = "git@dev.datasphir.com:eduerp"
 projects[eduerp][type] = "module"
 
+; EduERP - editablefields
+projects[editablefields][download][type] = "git"
+projects[editablefields][download][url] = "git@dev.datasphir.com:editablefields"
+projects[editablefields][type] = "module"
+
+
 ; Admin
 projects[backup_migrate][subdir] = "contrib"
 projects[advanced_help][subdir] = "contrib"
@@ -19,7 +25,7 @@ projects[advanced_help][subdir] = "contrib"
 projects[cck][subdir] = "contrib"
 projects[computed_field][subdir] = "contrib"
 projects[date][subdir] = "contrib"
-projects[editablefields][subdir] = "contrib"
+;projects[editablefields][subdir] = "contrib"
 projects[filefield][subdir] = "contrib"
 projects[imagefield][subdir] = "contrib"
 
