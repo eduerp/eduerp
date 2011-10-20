@@ -146,6 +146,11 @@ function eduerp_install() {
 
   db_query("INSERT INTO `gen_fee_item_sku` (`id`, `sku_name`, `next_num`) VALUES (1, 'PRODUCT-FEE-ITEM', 001)");
 
+  db_query("INSERT INTO `webapp_institution` (`id`, `name`, `code`, `secret`) VALUES
+    (1, 'UNIVERSITY A', 'UNIA', '2fd0bba6b1774ed391c1ff8467f52a5d'),
+    (2, 'UNIVERSITY B', 'UNIB', 'ffaedcdf6cc045cfbb220299720a79d6'),
+    (3, 'UNIVERSITY C', 'UNIC', '927a220e63cd42feb70ab03f43b727f3')");
+
   drupal_set_message('eduerp module installed');
 }
 
@@ -587,6 +592,37 @@ function eduerp_schema() {
         'not null' => TRUE,
       ),
     ),
+  );
+
+  $schema['webapp_institution'] = array(
+    'description' => t('A replica table in edupay for storing all institutions'),
+    'fields' => array(
+      'id' => array(
+        'description' => t('Institution ID'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => t('Institution Name e.g. University of Lagos'),
+        'type' => 'varchar',
+        'length' => '100',
+        'not null' => TRUE,
+      ),
+        'code' => array(
+        'description' => t('Institution code for identification'),
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+      ),
+        'secret' => array(
+        'description' => t('A 32bit hash generated automatically using RFC 1433 standard'),
+        'type' => 'varchar',
+        'length' => '32',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique key' => array('code' => array('code')),
   );
 
   return $schema;
