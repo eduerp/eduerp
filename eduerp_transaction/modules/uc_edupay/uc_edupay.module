@@ -77,48 +77,48 @@ function uc_edupay_cart_item($op, &$item){
         // load registration
         $late = uc_eduerp_fees_load_fee_options($fees_type);
         $late_value = $late['late_registration'];
-        // if late registration date value is set and its amount is not empty
-        // if a fees item recognized as Tuition (of Full Amount or Instalment1) is among the 
-        // items in cart
-        if(!is_null($late_value['last_registration_date'])){ 
+        
+        # if late registration date value is set and its amount is not empty
+        if(!is_null($late_value['last_registration_date'])){
+          # We need the date in UNIX timestamp and as integer
+          $late_value['last_registration_date'] = intval(strtotime($late_value['last_registration_date']));
+          
+          # if a fees item recognized as Tuition (of Full Amount or Instalment1) 
+          # is among the items in cart
           $extras = uc_eduerp_fees_load_extras($item->cart_id, 'fees');
-          if($item->title == 'tuition' and ($extras[$item->data['nid']]['fees_payment_format'] == FEES_FULL or FEES_FIRST_INSTALMENT))
-          $late_charges = $late_value['amount'];
-          // load its price
-          $price = $item->price;
-          // add to the pprice
-          $price += $late_charges;
-          // modify title to read [title] + (Late registration included)
-          $text = t('Late Registration Included');
-          $item->title = $item->title . ' ' . $text;
-          //$item->title  = theme('eduerp_fees_cart_title', $item->title, $text);
+          if($item->title == 'tuition' and ($extras[$item->data['nid']]['fees_payment_format'] == FEES_FULL or FEES_FIRST_INSTALMENT)) {
+            $late_charges = $late_value['amount'];
+            $price = $item->price;
+            
+            # add to the pprice
+            $price += $late_charges;
+            
+            // modify title to read [title] + (Late registration included)
+            $text = t('Late Registration Included');
+            $item->title = $item->title . ' ' . $text;
+            //$item->title  = theme('eduerp_fees_cart_title', $item->title, $text);
+          }
         }
+        
+        # Alter scholarship
         if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
           // round such fee item amount to zero
           $price_info = array(
             'price' => 0
           );
+          
           // Initialize the context.
           $context = array(
             'revision' => 'altered',
             'type' => 'amount',
           );
           $item->price = uc_price($price_info, $context);
+          
           // reflect change in cart
           $text = t('Scholarship Applicable');
-          $item->title = $item->title . $text;
+          $item->title = $item->title . ' ' . $text;
           //$item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
         }
-        
-        // Late Registration Fee must NOT be added to the cart for a student if 
-        // “Tuition Fees” (Full Amount or instalment 1 of them) is not simultaneously being 
-        // added to the cart.
-        // That is, late registration fee is only summed up to fees in the cart only if "Tuition" 
-        // is among the fees items being requested to be added to cart.
-        
-        // If fees item contains the word Instalment in its description,
-        // module_invoke()
-        // @todo Move to uc_eduerp_fees
       }
   }
 }
@@ -603,6 +603,11 @@ function _uc_edupay_process_order_request($order) {
     //dsm($data);
     //dsm(uc_order_load($_SESSION['cart_order']));
     $order->products = _uc_edupay_fees_order_items($order);
+    // @todo If scholarship is inclusive and hostel is not inclusive, don't send
+    // transaction to edupay.
+    // If scholarship is inclusive and hostel is inclusive, send only hostel
+    // values as items meant to be paid for to edupay
+    
     // @todo: foreach of the product in order->product, add order_status
     if(module_exists('oauth_common')) {
       $consumer = new stdClass();
@@ -640,7 +645,27 @@ function _uc_edupay_process_order_request($order) {
         
         $result = $oauthclient->get($path, $options);
         
-        //dsm($result);
+        // @todo: Take all through AJAX
+        //  - Parse oauth authentication response status code
+        //  - Parse fees data structure response status code
+        //  - Parse the response status code of the queued task
+        // Only when there's a success should a redirect to cart/checkout/review be made
+        // If any of the above fails, redirect to same page (cart/checkout)
+        $code = $result->code;
+        if($result->headers['Content-Type'] == 'application/json') {
+          $response = json_decode($result->data);
+          if($response->status == 201){
+            $result->code = 201;
+          }
+        }
+        switch($code) {
+          case 201:
+            continue;
+          case 200:
+            break;
+        }
+        
+        dsm($result);
       } catch(Exception $e) {
         drupal_set_message($e->getMessage(), 'error');
         watchdog('uc_edupay', t('@uid cannot continue with order process due to @error', array('@uid' => $order->uid, '@error' => $e->getMessage())), WATCHDOG_SEVERE);
@@ -1050,7 +1075,7 @@ function theme_eduerp_cart_review_table(&$contents) {
  * 
  * @todo Make a hook of this
  * 
- * bug: Returns a single nid of multiple products
+ * @todo Pass institution, scholarship to products
  */ 
 function _uc_edupay_fees_order_items($order) {
   $zz = uc_cart_get_contents();
@@ -1077,20 +1102,27 @@ function _uc_edupay_fees_order_items($order) {
         'programme' => $value['data']['programme'],
         'level' => $value['data']['level_name'],
         'session' => $value['data']['session'],
+        'timeout' => $value['data']['late_registration_date'],
+        'uid' => $order->uid,
+        'status' => $order->order_status,
+        'email' => $order->primary_email,
+        'order_id' => $order->order_id
     );
     $all[] = $nid[$key];
     if($value['data']['type'] == 'fees') {
       $products[$value['data']['type']] = $all;
-      $products[$value['data']['type']]['timeout'] = $value['data']['late_registration_date']; 
-      $products[$value['data']['type']]['uid'] = $order->uid; // uid, order_status
+      /*$products[$value['data']['type']]['timeout'] = $value['data']['late_registration_date']; 
+      $products[$value['data']['type']]['uid'] = $order->uid;
       $products[$value['data']['type']]['status'] = $order->order_status;
       $products[$value['data']['type']]['email'] = $order->primary_email;
-      $products[$value['data']['type']]['order_id'] = $order->order_id;
+      $products[$value['data']['type']]['order_id'] = $order->order_id;*/
     }
     if(in_array('hostel', $types)) {
       $hostel['hostel'] = array(
         'nid' => $value['nid'],
+        'type' => 'hostel', // get from the array
         'cart_item_id' => $value['cart_item_id'],
+        'title' => $value['title'], 
         'amount' => $value['price'], // or 'amount' => $value['data']['amount']
         'timeout' => $value['data']['expiry_date'],
         'uid' => $order->uid,

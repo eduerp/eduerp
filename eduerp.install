@@ -596,9 +596,16 @@ function eduerp_schema() {
     ),
   );
 
+  $schema[] = eduerp_schema_6000();
+  
   return $schema;
 }
 
+/**
+ * 
+ * @todo This is meant to be hook_update_N.
+ * To be reviewed
+ */ 
 function eduerp_schema_6000() {
     $schema['webapp_institution'] = array(
     'description' => t('A replica table in edupay for storing all institutions'),
@@ -630,6 +637,7 @@ function eduerp_schema_6000() {
     'primary key' => array('id'),
     'unique key' => array('code' => array('code')),
   );
+  return $schema;
 }
 
 function install_other_content_type($filename, $content_type_name) {
@@ -646,4 +654,3 @@ function install_other_content_type($filename, $content_type_name) {
   );
   drupal_execute('content_copy_import_form', $form_state);
 }
-?>

@@ -95,7 +95,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     // status: Needs work ()
     if(uc_eduerp_fees_registration_is_late('fees')) {
       $fee = NULL;
-      drupal_set_message('Student registration for this session is closed. Consult the registry', 'error');
+      drupal_set_message(t('Student registration for this session is closed. Consult the registry'), 'error');
     }
 
     // Before item is added to cart, check for hostel reservation value
@@ -657,6 +657,9 @@ function uc_eduerp_fees_load_item_options($type){
 
 /**
  * Determines whether late registration period is reached
+ * 
+ * Since no info is given from get_fee_item about the timezone,
+ * it defaults to Drupal's timezone
  * 
  * @return Bool
  * 
