@@ -1,12 +1,12 @@
 <?php
 
 function hostel_allocation_menu() {
-  $items['hostel_allocation/alloc_admin'] = array(
+  $items['staff/alloc_admin'] = array(
     'title' => 'Hostel Administration',
     'page callback' => 'hostel_admin',
     'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_NORMAL_ITEM,
-
+    'weight' => -34,
   );
 
   $items['hostel_allocation/create_modify_hostel']=array(
@@ -246,7 +246,7 @@ function hostel_allocation_create_edit_hostel_form_validate($form, &$form_state)
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -678,7 +678,7 @@ function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
     form_set_error('price', Error_Types(144));
 
   }
-  
+
   // Security checks
   $formFields = array("block_name");
   foreach($formFields as $v){
@@ -688,7 +688,7 @@ function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -1085,7 +1085,7 @@ function hostel_allocation_create_edit_room_form_validate($form, &$form_state){
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -1364,7 +1364,7 @@ function hostel_allocation_create_edit_category_form_validate($form, &$form_stat
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -2120,7 +2120,7 @@ function hostel_allocation_create_edit_global_settings_form_validate($form, &$fo
 
 
   }
-  
+
   // Security checks
   $formFields = array("settings_name");
   foreach($formFields as $v){
@@ -2130,7 +2130,7 @@ function hostel_allocation_create_edit_global_settings_form_validate($form, &$fo
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 

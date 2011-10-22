@@ -9,11 +9,12 @@ function student_menu() {
   );
 
   $items['student/course'] = array(
-   'title' => 'Course Registration',
-   'page callback' => 'drupal_get_form',
-   'page arguments' => array('student_course_form'),
-   'access arguments' => array('student course'),
-   'type' => MENU_NORMAL_ITEM,
+    'title' => 'Course Registration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('student_course_form'),
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => -32,
   );
 
   $items['student/listcourses'] = array(
@@ -21,6 +22,7 @@ function student_menu() {
     'page callback' => 'student_courses',
     'access arguments' => array('student course'),
     'type' => MENU_NORMAL_ITEM,
+    'weight' => -30,
   );
 
   $items['student/liststudents'] = array(
@@ -29,6 +31,7 @@ function student_menu() {
     'page arguments' => array('liststudents'),
     'access arguments' => array('student list students'),
     'type' => MENU_NORMAL_ITEM,
+    'weight' => -38,
   );
 
   $items['student/hostelreservation'] = array(
@@ -36,7 +39,8 @@ function student_menu() {
     'page callback' => 'student_hostel_reservation',
     'access arguments' => array('hostel_allocation user'),
     'type' => MENU_NORMAL_ITEM,
-  );//hostel_allocation user
+    'weight' => -26,
+  );
 
   $items['student/hostelreservation/cart'] = array(
         'title' => t('Confirm reservation'),

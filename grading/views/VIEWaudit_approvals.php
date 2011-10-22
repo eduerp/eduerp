@@ -674,7 +674,7 @@ $handler->override_option('menu', array(
   'type' => 'normal',
   'title' => 'Grading Audit Approvals',
   'description' => '',
-  'weight' => '-44',
+  'weight' => '-42',
   'name' => 'navigation',
 ));
 $handler->override_option('tab_options', array(
