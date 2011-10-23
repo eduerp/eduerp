@@ -238,7 +238,7 @@ function hostel_allocation_create_edit_hostel_form_validate($form, &$form_state)
   }
 
   // Security checks
-  $formFields = array("hostel_name", "hostel_description");
+  $formFields = array("hostel_name");
   foreach($formFields as $v){
     $text = $form_state['values'][$v];
     if (!empty($text)) {
@@ -256,7 +256,7 @@ function hostel_allocation_create_edit_hostel_form_submit($form, &$form_state) {
     $node = node_load(arg(2));
     $node->title                            = $form_state['values']['hostel_name'];
     $node->field_hostel_name[0]['value']    = $form_state['values']['hostel_name'];
-    $node->field_description[0]['value']    = $form_state['values']['hostel_description'];
+    $node->field_description[0]['value']    = check_markup($form_state['values']['hostel_description'], FILTER_FORMAT_DEFAULT, FALSE);
     $node->field_hostel_status[0]['value']  = $form_state['values']['hostel_status'];
 
     drupal_set_message($form_state['values']['hostel_name'] . ' Hostel was modified successfully!<br />');
@@ -273,8 +273,8 @@ function hostel_allocation_create_edit_hostel_form_submit($form, &$form_state) {
     $node->sticky                            = 0;
     $node->comment                           = 0;
     $node->title                             = $form_state['values']['hostel_name'];
-    $node->field_hostel_name[0]['value'] 	 = $form_state['values']['hostel_name'];
-    $node->field_description[0]['value'] 	 = $form_state['values']['hostel_description'];
+    $node->field_hostel_name[0]['value'] 	   = $form_state['values']['hostel_name'];
+    $node->field_description[0]['value']     = check_markup($form_state['values']['hostel_description'], FILTER_FORMAT_DEFAULT, FALSE);
     $node->field_hostel_status[0]['value'] 	 = $form_state['values']['hostel_status'];
 
     //$department = $node->nid;
