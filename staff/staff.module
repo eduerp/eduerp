@@ -1673,16 +1673,16 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
 
                $str .="
                <td><font $rowColor >". $course->course_level ."</font></td>
-               <td><font $rowColor >". $course->course_code ."</font></td>
+               <td><font $rowColor >". check_markup($course->course_code, FILTER_FORMAT_DEFAULT, FALSE) ."</font></td>
                <td><font $rowColor >". $course->course_title ."</font></td>
                <td><font $rowColor >". $course->credit_load ."</font></td>
                <td><font $rowColor >". $course->prerequisite_codes ."</font></td>
-               <td><font $rowColor >". $course->prerequisite_desc ."</font></td>
-               <td><font $rowColor >". $course->course_description ."</font></td>
+               <td><font $rowColor >". check_markup($course->prerequisite_desc, FILTER_FORMAT_DEFAULT, FALSE) ."</font></td>
+               <td><font $rowColor >". check_markup($course->course_description, FILTER_FORMAT_DEFAULT, FALSE) ."</font></td>
                <td><font $rowColor >". $course->course_semester ."</font></td>";
                if ($forassigned)
                  $str .="
-               <td><font $rowColor >". $course->timetable ."</font></td>";
+               <td><font $rowColor >". check_markup($course->timetable, FILTER_FORMAT_DEFAULT, FALSE) ."</font></td>";
                $str .="
 
              </tr>";
@@ -2645,7 +2645,7 @@ function staff_create_course_form() {
 
   $form['course_title'] = array(
     '#title' => 'Course Title',
-    '#type' => 'textarea',
+    '#type' => 'textfield',
     '#size' => 255,
     '#required' => TRUE
   );
@@ -2670,7 +2670,7 @@ function staff_create_course_form() {
 
   $form['prerequisites_codes'] = array(
     '#title' => 'Prerequisite Codes - List of course_code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed',
-    '#type' => 'textarea',
+    '#type' => 'textfield',
     '#size' => 255
 
   );
@@ -2781,22 +2781,10 @@ function staff_create_course_form_validate($form, $form_state) {
       form_set_error('course_title', Error_Types(168));
     }
   }
-  $text = $form_state['values']['course_description'];
-  if (!empty($text)) {
-    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
-      form_set_error('course_description', Error_Types(168));
-    }
-  }
   $text = $form_state['values']['prerequisites_codes'];
   if (!empty($text)) {
     if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
       form_set_error('prerequisites_codes', Error_Types(168));
-    }
-  }
-  $text = $form_state['values']['prerequisite_desc'];
-  if (!empty($text)) {
-    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
-      form_set_error('prerequisite_desc', Error_Types(168));
     }
   }
 
@@ -2861,9 +2849,7 @@ function staff_create_course_form_validate($form, $form_state) {
   $totalMarks = $values['ca1'] + $values['ca2'] + $values['ca3'] + $values['ca4'] + $values['exam_mark'];
   if ($totalMarks < 0 || $totalMarks > 100) {
     form_set_error('exam_mark', Error_Types(129));
-
   }
-
 }
 
 
@@ -3225,7 +3211,6 @@ function staff_assign_course_proceed_form_submit($form, &$state) {
 function staff_assign_course_form_validate($form, &$form_state) {
   //make sure it is unique for course/semester/session
 
-
   if (arg(3)) {//validate EDIT variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
@@ -3235,14 +3220,6 @@ function staff_assign_course_form_validate($form, &$form_state) {
   else {
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'])) {
       form_set_error('course_code', Error_Types(113));
-    }
-  }
-
-  // Security checks
-  $text = $form_state['values']['timetable'];
-  if (!empty($text)) {
-    if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
-      form_set_error('timetable', Error_Types(168));
     }
   }
 }
@@ -3316,7 +3293,7 @@ function staff_edit_assigned_course_form(){
  if (db_affected_rows() > 0) {
    while ($row = db_fetch_object($assigned)){
      if ($row->course_instance_id != "")
-       $assignedCourses[$row->course_instance_id] = $row->code;
+       $assignedCourses[$row->course_instance_id] = check_plain($row->code);
    }
  }
  else
@@ -3352,9 +3329,6 @@ function staff_edit_assigned_course_form_submit($form, $form_state) {
 
 
 function get_Assigned_Courses($session, $department_nid, $semester) {
-  $morewhere = "";
-  //if ($semester != 0)
-  //  $morewhere = "pc.semester='". $semester ."' AND";
   $sql = "SELECT
   ci.nid AS course_instance_id,
   CONCAT(c.field_code_value, IF(ci.field_location_value > 1, CONCAT(' (', CAST(ci.field_location_value AS CHAR), ': ', LEFT(ci.field_timetable_value, 100), ')'), '')) AS code
@@ -3366,51 +3340,6 @@ function get_Assigned_Courses($session, $department_nid, $semester) {
       ci.field_semester_name_value='%s'
       ORDER BY code";
       $r = db_query($sql,$department_nid, $session, $semester);
-/*
-  $sql = "SELECT DISTINCT
-        pc.level course_level,
-        c.field_code_value course_code,
-        p.field_programme_name_value programme_name,
-        d.field_department_name_value dept_name,
-        co.field_college_name_value,
-        ci.nid nid,
-        ci.field_lecturer_uid lecturer_uid,
-        field_creditload_value AS credit_load,
-        field_prerequisite_codes_value AS prerequisite_codes,
-        field_prerequisite_value AS prerequisite_desc,
-        pc.semester course_semester,
-        field_course_description_value AS course_description,
-        field_coursetitle_value AS course_title
-      FROM {program_course} pc
-      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
-      LEFT JOIN {content_type_course_instance} ci
-      ON
-        c.nid=ci.field_course_id_nid AND
-        pc.semester=ci.field_semester_name_value AND
-        ci.field_sess_name_value='". $session ."'
-      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
-      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
-      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
-      WHERE " . $morewhere . " d.nid='". $department_nid ."'
-      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";*/
-
-    /*
-  $r = db_query("SELECT DISTINCT
-        ci.nid,
-        c.field_code_value course_code
-
-        FROM  {content_type_course} c
-      LEFT JOIN {content_type_course_instance} ci
-      ON
-        c.nid=ci.field_course_id_nid AND
-        ci.field_sess_name_value='%s'
-
-
-      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
-
-      WHERE d.nid=%d
-      ORDER BY c.field_code_value ", $session, $department_nid);
-  */
   return $r;
 }
 
@@ -3420,33 +3349,6 @@ function get_department_running_courses($session, $department_nid, $semester = 0
   if ($semester != 0)
     $morewhere = " pc.semester='". $semester ."' AND ";
 
-  $sql = "SELECT DISTINCT
-        pc.level course_level,
-        c.field_code_value course_code,
-        p.field_programme_name_value programme_name,
-        d.field_department_name_value dept_name,
-        co.field_college_name_value,
-        ci.nid clean_nid,
-        ci.field_lecturer_uid lecturer_uid,
-        field_creditload_value AS credit_load,
-        field_prerequisite_codes_value AS prerequisite_codes,
-        field_prerequisite_value AS prerequisite_desc,
-        pc.semester course_semester,
-        field_course_description_value AS course_description,
-        field_coursetitle_value AS course_title,
-        c.nid nid
-      FROM {program_course} pc
-      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
-      LEFT JOIN {content_type_course_instance} ci
-      ON
-        c.nid=ci.field_course_id_nid AND
-        pc.semester=ci.field_semester_name_value AND
-        ci.field_sess_name_value='". $session ."'
-      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
-      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
-      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
-      WHERE  $morewhere d.nid='". $department_nid ."'
-      ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level ";
   $sql = "SELECT DISTINCT
         pc.level course_level,
         c.field_code_value course_code,
@@ -4287,7 +4189,7 @@ function show_verified_assigned_courses(&$result) {
       <td>". $f->level ."</td>
       <td>". $f->credit_load ."</td>
       <td>". $f->Prerequisites_codes ."</td>
-      <td>". $f->Prerequisites_description ."</td>
+      <td>". check_markup($f->prerequisites_description, FILTER_FORMAT_DEFAULT, FALSE) ."</td>
       <td>". $f->course_semester ."</td>
 
    </tr>";
@@ -4712,7 +4614,7 @@ function course_specify_list(&$r) {
       <td><font $fcolor>". $f->credit_load ."</font></td>
       <td><font $fcolor>". $f->staff_name ."</font></td>
       <td><font $fcolor>". $f->prerequisites_codes ."</font></td>
-      <td><font $fcolor>". $f->prerequisites_description ."</font></td>";
+      <td><font $fcolor>". check_markup($f->prerequisites_description, FILTER_FORMAT_DEFAULT, FALSE) ."</font></td>";
     if ($canCreateModify)
       $html .= "
       <td><input type='button' class='delete_btn' value='Delete' onClick=\"delete_assignment($f->program_course_id);\" /></td>
@@ -4795,7 +4697,7 @@ function historical_course_list($programme_nid) {
       <td>". $f->credit_load ."</td>
       <td>". $f->staff_name ."</td>
       <td>". $f->prerequisites_codes ."</td>
-      <td>". $f->prerequisites_description ."</td>
+      <td>". check_markup($f->prerequisites_description, FILTER_FORMAT_DEFAULT, FALSE) ."</td>
    </tr>";
 
   }
@@ -5951,7 +5853,7 @@ function get_student_reg_course_form() {
 
     if (db_affected_rows($result) > 0) {
       while($r = db_fetch_object($result))
-      $courses[$r->course_instance] = $r->course_code;
+      $courses[$r->course_instance] = check_plain($r->course_code);
     }
   }
 
@@ -9881,17 +9783,6 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
     	form_set_error('remarks', Error_Types(161));
       }
 
-      // Security checks
-      $formFields = array("remarks");
-      foreach($formFields as $v){
-        $text = $state['values'][$v];
-        if (!empty($text)) {
-          if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
-            form_set_error($v, Error_Types(168));
-          }
-        }
-      }
-
       if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_scholarship']['studentUID'], variable_get('eduerp_current_session', ''))){
       	form_set_error('', Error_Types(162));
         return;
@@ -10318,7 +10209,7 @@ function staff_display_scholarship_authorisations($sessionName) {
            <td>". $student_profile->profile_last_name .', '. $student_profile->profile_first_name ."</a></td>
            <td>". $programmeName[$student_profile->profile_first_choice] ."</a></td>
 
-           <td>". $v['remarks'] ."</a></td>
+           <td>". check_markup($v['remarks'], FILTER_FORMAT_DEFAULT, FALSE) ."</a></td>
            <td>". $v['date'] ."</a></td>
 
          </tr>";
@@ -10434,7 +10325,7 @@ function staff_display_instalment_authorisations($sessionName) {
            <td>". $student_profile->profile_last_name .', '. $student_profile->profile_first_name ."</a></td>
            <td>". $programmeName[$student_profile->profile_first_choice] ."</a></td>
 
-           <td>". $v['remarks'] ."</a></td>
+           <td>". check_markup($v['remarks'], FILTER_FORMAT_DEFAULT, FALSE) ."</a></td>
            <td>". $v['date'] ."</a></td>
 
          </tr>";
@@ -10492,18 +10383,6 @@ function staff_show_authorise_instalment_form_validate($form, &$state){
       if(empty($values['remarks'])){
     	form_set_error('remarks', Error_Types(161));
       }
-
-      // Security checks
-      $formFields = array("remarks");
-      foreach($formFields as $v){
-        $text = $state['values'][$v];
-        if (!empty($text)) {
-          if (str_replace('&', '&amp;', $text) != htmlspecialchars($text, ENT_COMPAT, 'UTF-8')) { // Also validates UTF-8
-            form_set_error($v, Error_Types(168));
-          }
-        }
-      }
-
 
       if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_instalment']['studentUID'], variable_get('eduerp_current_session', ''))){
       	form_set_error('', Error_Types(162));
