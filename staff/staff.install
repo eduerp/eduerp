@@ -398,27 +398,4 @@ function staff_disable() {
     permissions_revoke_permissions($role, $permissions);
   }
 }
-
-function staff_schema() {
-  $schema['staff_role'] = array(
-    'description' => t('Stores the different staff roles'),
-    'fields' => array(
-      'role_id' => array(
-        'description' => t('Role ID'),
-        'type' => 'serial',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'role_name' => array(
-        'description' => t('Role name'),
-        'type' => 'varchar',
-        'length' => '20',
-        'not null' => TRUE,
-      ),
-    ),
-    'primary key' => array('role_id'),
-  );
-
-  return $schema;
-}
 ?>

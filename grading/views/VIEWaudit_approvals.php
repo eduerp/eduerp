@@ -669,12 +669,12 @@ $handler->override_option('style_options', array(
   'default' => 'created',
 ));
 $handler = $view->new_display('page', 'Page', 'page_1');
-$handler->override_option('path', 'auditapprovals');
+$handler->override_option('path', 'grading/auditapprovals');
 $handler->override_option('menu', array(
   'type' => 'normal',
   'title' => 'Grading Audit Approvals',
   'description' => '',
-  'weight' => '-44',
+  'weight' => '-42',
   'name' => 'navigation',
 ));
 $handler->override_option('tab_options', array(
