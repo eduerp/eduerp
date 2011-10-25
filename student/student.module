@@ -9,11 +9,12 @@ function student_menu() {
   );
 
   $items['student/course'] = array(
-   'title' => 'Student Course Registration Form',
-   'page callback' => 'drupal_get_form',
-   'page arguments' => array('student_course_form'),
-   'access arguments' => array('student course'),
-   'type' => MENU_NORMAL_ITEM,
+    'title' => 'Course Registration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('student_course_form'),
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => -32,
   );
 
   $items['student/listcourses'] = array(
@@ -21,6 +22,7 @@ function student_menu() {
     'page callback' => 'student_courses',
     'access arguments' => array('student course'),
     'type' => MENU_NORMAL_ITEM,
+    'weight' => -30,
   );
 
   $items['student/liststudents'] = array(
@@ -29,6 +31,7 @@ function student_menu() {
     'page arguments' => array('liststudents'),
     'access arguments' => array('student list students'),
     'type' => MENU_NORMAL_ITEM,
+    'weight' => -38,
   );
 
   $items['student/hostelreservation'] = array(
@@ -36,7 +39,8 @@ function student_menu() {
     'page callback' => 'student_hostel_reservation',
     'access arguments' => array('hostel_allocation user'),
     'type' => MENU_NORMAL_ITEM,
-  );//hostel_allocation user
+    'weight' => -26,
+  );
 
   $items['student/hostelreservation/cart'] = array(
         'title' => t('Confirm reservation'),
@@ -187,7 +191,7 @@ class courseselectionsclass {
         '#default_value' => $default_value,
         '#disabled' => $disabled,
         '#prefix' => '<tr><td>',
-        '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td>{$row->credit_load}</td><td>{$row->timetable}</td><td>{$row->level}</td><td>{$row->field_prerequisite_value}{$block}</td></tr>"
+        '#suffix' => "</td><td>{$row->course_title}</td><td>" . check_markup($row->course_description, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->credit_load}</td><td>" . check_markup($row->timetable, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->level}</td><td>" . check_markup($row->field_prerequisite_value, FILTER_FORMAT_DEFAULT, FALSE) . "{$block}</td></tr>"
       );
 
       // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
@@ -307,7 +311,7 @@ class courseselectionsclass {
           '#default_value' => FALSE,
           '#disabled' => FALSE,
           '#prefix' => $extraprefix . '<tr><td>',
-          '#suffix' => "</td><td>{$row->course_title}</td><td>{$row->course_description}</td><td></td><td>{$row->timetable}</td><td>{$row->level}</td><td></td></tr>"
+          '#suffix' => "</td><td>{$row->course_title}</td><td>" . check_markup($row->course_description, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td></td><td>" . check_markup($row->timetable, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->level}</td><td></td></tr>"
         );
 
         if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {

@@ -1,12 +1,12 @@
 <?php
 
 function hostel_allocation_menu() {
-  $items['hostel_allocation/alloc_admin'] = array(
+  $items['staff/alloc_admin'] = array(
     'title' => 'Hostel Administration',
     'page callback' => 'hostel_admin',
     'access arguments' => array('hostel_allocation admin'),
     'type' => MENU_NORMAL_ITEM,
-
+    'weight' => -34,
   );
 
   $items['hostel_allocation/create_modify_hostel']=array(
@@ -126,7 +126,7 @@ function hostel_allocation_create_modify_hostel() {
 
   echo '<br /><hr /><br />';
 
-  echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
+  echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
 
 
   if (! $isAuthorized) {
@@ -238,7 +238,7 @@ function hostel_allocation_create_edit_hostel_form_validate($form, &$form_state)
   }
 
   // Security checks
-  $formFields = array("hostel_name", "hostel_description");
+  $formFields = array("hostel_name");
   foreach($formFields as $v){
     $text = $form_state['values'][$v];
     if (!empty($text)) {
@@ -246,7 +246,7 @@ function hostel_allocation_create_edit_hostel_form_validate($form, &$form_state)
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -256,7 +256,7 @@ function hostel_allocation_create_edit_hostel_form_submit($form, &$form_state) {
     $node = node_load(arg(2));
     $node->title                            = $form_state['values']['hostel_name'];
     $node->field_hostel_name[0]['value']    = $form_state['values']['hostel_name'];
-    $node->field_description[0]['value']    = $form_state['values']['hostel_description'];
+    $node->field_description[0]['value']    = check_markup($form_state['values']['hostel_description'], FILTER_FORMAT_DEFAULT, FALSE);
     $node->field_hostel_status[0]['value']  = $form_state['values']['hostel_status'];
 
     drupal_set_message($form_state['values']['hostel_name'] . ' Hostel was modified successfully!<br />');
@@ -273,8 +273,8 @@ function hostel_allocation_create_edit_hostel_form_submit($form, &$form_state) {
     $node->sticky                            = 0;
     $node->comment                           = 0;
     $node->title                             = $form_state['values']['hostel_name'];
-    $node->field_hostel_name[0]['value'] 	 = $form_state['values']['hostel_name'];
-    $node->field_description[0]['value'] 	 = $form_state['values']['hostel_description'];
+    $node->field_hostel_name[0]['value'] 	   = $form_state['values']['hostel_name'];
+    $node->field_description[0]['value']     = check_markup($form_state['values']['hostel_description'], FILTER_FORMAT_DEFAULT, FALSE);
     $node->field_hostel_status[0]['value'] 	 = $form_state['values']['hostel_status'];
 
     //$department = $node->nid;
@@ -394,7 +394,7 @@ function hostel_allocation_create_modify_block() {
 
   echo '<br /><hr /><br />';
 
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -678,7 +678,7 @@ function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
     form_set_error('price', Error_Types(144));
 
   }
-  
+
   // Security checks
   $formFields = array("block_name");
   foreach($formFields as $v){
@@ -688,7 +688,7 @@ function hostel_allocation_create_edit_block_form_validate($form, &$form_state){
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -821,7 +821,7 @@ function hostel_allocation_create_modify_room() {
 
   echo '<br /><hr /><br />';
 
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Room</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Room</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1085,7 +1085,7 @@ function hostel_allocation_create_edit_room_form_validate($form, &$form_state){
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -1226,7 +1226,7 @@ function hostel_allocation_create_modify_category() {
 
 
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1364,7 +1364,7 @@ function hostel_allocation_create_edit_category_form_validate($form, &$form_stat
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -1568,9 +1568,9 @@ function hostel_allocation_create_modify_allocation_rules() {
 
   echo '<br /><hr /><br />';
   if(! $blockSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
   else
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1948,9 +1948,9 @@ function hostel_allocation_modify_global_settings(){
 
   echo '<br /><hr /><br />';
   if(! $settingSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
   else
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -2120,7 +2120,7 @@ function hostel_allocation_create_edit_global_settings_form_validate($form, &$fo
 
 
   }
-  
+
   // Security checks
   $formFields = array("settings_name");
   foreach($formFields as $v){
@@ -2130,7 +2130,7 @@ function hostel_allocation_create_edit_global_settings_form_validate($form, &$fo
         form_set_error($v, Error_Types(168));
       }
     }
-  }  
+  }
 }
 
 
@@ -2490,9 +2490,9 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
 
   echo '<br /><hr /><br />';
   //if(! $settingSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Direct Room Reservation</b></font>";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Direct Room Reservation</b></font>";
   //else
-  //  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
+  //  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   //$navi .= '<br /><hr /><br />';
 
   //check if reservation can proceed
@@ -2523,7 +2523,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
     switch($page):
     /*
       case '3':
-        echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Summary  (Step 3 of 3)</b></font><br /><br />";
+        echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Summary  (Step 3 of 3)</b></font><br /><br />";
         echo hostel_allocation_show_student_info();
         echo '<br /><hr /><br />';
         echo hostel_allocation_show_reservation_summary_info();
@@ -2541,7 +2541,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
         */
       case '2':
       	if( ! $studentInitiated)
-        echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
+        echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
 
 	echo hostel_allocation_show_student_info();
         echo '<br /><hr /><br />';
@@ -2966,7 +2966,7 @@ function hostel_allocation_select_block_form_submit($form, &$form_state){
 
    if (strtolower($values['op']) == 'cancel') {
       //unset($_SESSION['eduerp_reserve_room']);
-      //drupal_goto('hostel_allocation/alloc_admin');
+      //drupal_goto('staff/alloc_admin');
 
    }
 
@@ -3262,7 +3262,7 @@ function hostel_allocation_reports(){
   $isAuthorized = true;
 
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Hostel Allocation / Reservation Reports</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Hostel Allocation / Reservation Reports</b></font><br /><br />";
   echo $navi;
   echo '<br /><hr /><br />';
 
@@ -3393,7 +3393,7 @@ function hostel_allocation_reports_switch_form_submit(&$form, &$form_state){
 function hostel_allocation_room_reservation_report($blockNID=0){
   ob_start();
   $html = "";
- //$html .= "<br /><hr /><br /><font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Room Reservation Reports</b></font><br /><hr /><br />";
+ //$html .= "<br /><hr /><br /><font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Room Reservation Reports</b></font><br /><hr /><br />";
 
  //CONCAT(field_profile_last_name_value, ', ', field_profile_first_name_value, field_profile_maiden_name_value) full_name,
  $sql = "SELECT field_profile_last_name_value last_name, field_profile_first_name_value first_name, field_profile_matno_value matno, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, field_reservation_date_value date_reserved, field_expiry_date_value 	expiry_date
