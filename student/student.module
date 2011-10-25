@@ -1610,6 +1610,24 @@ function change_student_program(&$user, $first_choice, $level) {
   set_matriculation_number($user->uid, $formerProgID);
 }
 
+/**
+ * Loads a complete user profile of the student. 
+ * 
+ * @param $student_id
+ *  - Current student
+ * 
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
+ */ 
+function student_load_student_profile($student_id) {
+  global $user;
+  $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
+  $user_profile = new UserProfile($student_id);
+  if((!empty($user_profile->profile_matno) &&
+      eduerp_has_role($user, 'Student') && !empty($user_profile->profile_first_name)
+        && !empty($user_profile->profile_last_name))) {
+    return $user_profile;
+  }
+}
 
 //Israel's functions starts here
 function student_hostel_reservation(){

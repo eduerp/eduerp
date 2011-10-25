@@ -75,11 +75,12 @@ function student_registration_strongarm() {
   $strongarm->value = array(
     'title' => '-5',
     'revision_information' => '-3',
-    'author' => '13',
-    'options' => '14',
+    'author' => '20',
+    'options' => '25',
     'comment_settings' => '-1',
     'menu' => '-4',
     'path' => '-2',
+    'print' => '30',
   );
 
   $export['content_extra_weights_student_profile'] = $strongarm;
