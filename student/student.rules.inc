@@ -40,20 +40,20 @@ function student_rules_condition_info() {
 }
 
 function student_clearance_performed($student_id) {
+  global $user;
+  $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
+  
+  $user_profile = new UserProfile($student_id);
 
-    $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
-    
-    $user_profile = new UserProfile($student_id);
+  if((!empty($user_profile->profile_matno) &&
+    eduerp_has_role($user, 'Student') && !empty($user_profile->profile_first_name)
+      && !empty($user_profile->profile_last_name))) {
 
-    if((!empty($student_profile->profile_matno) &&
-      eduerp_has_role($student_id, 'Student') && !empty($user_profile->profile_first_name)
-        && !empty($user_profile->profile_last_name))) {
-
-        return TRUE;
-    }
-    else {
-        return FALSE;
-    }
+      return TRUE;
+  }
+  else {
+      return FALSE;
+  }
 }
 
 /**

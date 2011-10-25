@@ -71,6 +71,17 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $options = $fee['options'];
     $options_nid = (string)$options['nid'];
       
+    // Add more user information since student has been cleared
+    $profile = student_load_student_profile($student_id);
+    $options['jambno'] = $profile->profile_jambno;
+    $fullnames = array($profile->profile_first_name, $profile->profile_last_name);
+    $options['fullnames'] = implode(' ', $fullnames);
+    
+    // Add institution
+    module_load_include('inc', 'eduerp', 'eduerp.admin');
+    $institution = eduerp_get_institution('name');
+    $options['institution'] = $institution->id;
+    
     // The paid fees items
     $paid_fees_items = uc_eduerp_fees_paid_items();
     
@@ -134,6 +145,8 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         // foreach of the fees item description, parse it to extract the extras
         $key_search = $item['item_description'];
         foreach(module_implements('eduerp_fees_alter') as $module) {
+          // @todo - Make hook_eduerp_fees_alter argument to be options so that extras
+          // can be altered with multiple items
           $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search);
         }
         // @todo
@@ -159,8 +172,8 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         }
       }
       $form['eduerp_fees']['options_' . $type. '_' . $options_nid] = array(
-          '#type' => 'hidden',
-          '#value' => $options,
+        '#type' => 'hidden',
+        '#value' => $options,
       );
     }
     // Do the rest of the things for hostel
@@ -219,13 +232,13 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   //dsm($values);
   // @todo: Rework regex to reflect no limit to digits
   $key_search = implode(',', array_values($vkeys));
-  preg_match_all('/product_item_fees_\d{4}/', $key_search, $matches);
+  preg_match_all('/product_item_fees_\d+/', $key_search, $matches);
   // match options for fees option
-  preg_match_all('/options_fees_\d{4}/', $key_search, $fees_option_matches);
+  preg_match_all('/options_fees_\d+/', $key_search, $fees_option_matches);
   // find all hostel keys if it exists
   if(array_key_exists('hostel', $vkeys)) {
-    preg_match_all('/product_item_hostel_\d{4}/', $key_search, $hostel_matches);
-    preg_match_all('/options_hostel_\d{4}/', $key_search, $hostel_option_matches);
+    preg_match_all('/product_item_hostel_\d+/', $key_search, $hostel_matches);
+    preg_match_all('/options_hostel_\d+/', $key_search, $hostel_option_matches);
   }
   $matchs = array(
     'fees' => array_shift($matches),

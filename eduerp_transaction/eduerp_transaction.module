@@ -277,7 +277,7 @@ function eduerp_transacton_token_ahah_callback() {
     if($response->status == 406){
       $result->code = 406;
     }
-    if($response->status == 401 or 403){
+    if(($response->status == 401 or 403)){
       $result->code = 401;
     }
   }
@@ -473,6 +473,7 @@ function eduerp_transaction_form_eduerp_transaction_edupay_token_request_alter(&
  */ 
 function eduerp_transaction_init(){
   //$fee_items['item'] = get_fee_items(955);
+  //dsm(student_load_student_profile(955));
   $data = array(
     'code' => 'UNIB',
     'digest' => '9EF3FD4D2115DA62F0FA83F25E5F8A2F',

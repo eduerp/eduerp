@@ -973,7 +973,7 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
-  //dsm($items);
+  dsm($items);
   switch ($op) {
     case 'view':
       // if item in the cart is of type fees
@@ -1075,7 +1075,7 @@ function theme_eduerp_cart_review_table(&$contents) {
  * 
  * @todo Make a hook of this
  * 
- * @todo Pass institution, scholarship to products
+ * @todo Pass institution, scholarship, student name and JAMB number to products
  */ 
 function _uc_edupay_fees_order_items($order) {
   $zz = uc_cart_get_contents();
@@ -1089,7 +1089,7 @@ function _uc_edupay_fees_order_items($order) {
     $data[$key] = $fee['data'];
     $description[$key] = $fee['title'];
   }
-  //dsm($item);
+  dsm($item);
   $types = array();
   foreach($item as $key => $value) {
     $types[] = $value['data']['type'];
@@ -1104,9 +1104,12 @@ function _uc_edupay_fees_order_items($order) {
         'session' => $value['data']['session'],
         'timeout' => $value['data']['late_registration_date'],
         'uid' => $order->uid,
+        'jamb_no' => $value['data']['jamb_no'],
+        'fullnames' => $value['data']['fullnames'],
+        'institution' => $value['data']['institution'],
         'status' => $order->order_status,
         'email' => $order->primary_email,
-        'order_id' => $order->order_id
+        'order_id' => $order->order_id,
     );
     $all[] = $nid[$key];
     if($value['data']['type'] == 'fees') {
@@ -1126,9 +1129,12 @@ function _uc_edupay_fees_order_items($order) {
         'amount' => $value['price'], // or 'amount' => $value['data']['amount']
         'timeout' => $value['data']['expiry_date'],
         'uid' => $order->uid,
+        'jamb_no' => $value['data']['jamb_no'],
+        'fullnames' => $value['data']['fullnames'],
+        'institution' => $value['data']['institution'],
         'status' => $order->order_status,
         'email' => $order->primary_email,
-        'order_id' => $order->order_id
+        'order_id' => $order->order_id,
       );
       // @todo: go through drupal_alter once we have a hook of this function
       array_push($hostel, $products);
