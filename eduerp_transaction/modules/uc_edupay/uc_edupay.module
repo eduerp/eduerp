@@ -14,12 +14,59 @@ require_once drupal_get_path('module', 'oauth_common') . '/includes/DrupalOAuthC
 */ 
 function uc_edupay_menu() {
   $items = array();
-  $items[''] = array(
-  
+  $items['admin/settings/eduerp/transaction/edupay'] = array(
+    'title' => t('Edupay settings'),
+    'description' => t('Configure settings for edupay'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_edupay_config_form'), # the form_id
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
   );
   return $items;
 }
 
+function uc_edupay_config_form($form_state) {
+  $form['uc_edupay_config'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Edupay remote site settings'),
+  );
+  $form['uc_edupay_config']['uc_edupay_token_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Edupay Token Endpoint'),
+    '#description' => t('Enter the URL where token will be requested.'),
+    '#default_value' => variable_get('uc_edupay_token_url', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['uc_edupay_transaction_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Edupay Transaction Endpoint'),
+    '#description' => t('Enter the Edupay URL where transactions will be processed.'),
+    '#default_value' => variable_get('uc_edupay_transaction_url', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['uc_edupay_config_host'] = array(
+    '#type' => 'radios',
+    '#title' => t('Host configuration'),
+    '#default_value' => variable_get('uc_edupay_config_host', 1),
+    '#options' => array(t('Local'), t('Remote')),
+    '#description' => t('Set whether to communicate to Edupay locally or remotely')
+  );
+  return system_settings_form($form);
+}
+
+function uc_edupay_config_form_validate($form, &$form_state) {
+  if(isset($form_state['values']['token_url'])) {
+    if(!valid_url($form_state['values']['token_url'], TRUE)) {
+      form_error($form['uc_edupay_config']['token_url'], t('The token endpoint url is invalid.'));
+    }
+  }
+  if(isset($form_state['values']['transaction_url'])) {
+    if(!valid_url($form_state['values']['transaction_url'], TRUE)) {
+      form_error($form['uc_edupay_config']['transaction_url'], t('The transaction endpoint url is invalid.'));
+    }
+  }
+  return $form;
+}
 /**
  * Implements hook_form_alter()
  * 
@@ -600,7 +647,6 @@ function _uc_edupay_process_order_request_basic(&$order) {
  */ 
 function _uc_edupay_process_order_request($order) {
   if($data = module_invoke('uc_edupay', 'edupay', $order)) {
-    //dsm($data);
     //dsm(uc_order_load($_SESSION['cart_order']));
     $order->products = _uc_edupay_fees_order_items($order);
     // @todo If scholarship is inclusive and hostel is not inclusive, don't send
@@ -608,7 +654,6 @@ function _uc_edupay_process_order_request($order) {
     // If scholarship is inclusive and hostel is inclusive, send only hostel
     // values as items meant to be paid for to edupay
     
-    // @todo: foreach of the product in order->product, add order_status
     if(module_exists('oauth_common')) {
       $consumer = new stdClass();
       $consumer->key = variable_get('oauth_consumer_key', '');
@@ -635,7 +680,7 @@ function _uc_edupay_process_order_request($order) {
       try {
         $oauthclient = new EdupayOauthClient($consumer, $token_request);
 
-        $path = UC_EDUPAY_URL;
+        $path = variable_get('uc_edupay_config_host', TRUE) ? variable_get('uc_edupay_transaction_url', ''): UC_EDUPAY_URL;
         $options = array(
           'token' => TRUE, 
           'params' => $order->products,
@@ -973,7 +1018,7 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
-  dsm($items);
+  //dsm($items);
   switch ($op) {
     case 'view':
       // if item in the cart is of type fees
@@ -1104,7 +1149,7 @@ function _uc_edupay_fees_order_items($order) {
         'session' => $value['data']['session'],
         'timeout' => $value['data']['late_registration_date'],
         'uid' => $order->uid,
-        'jamb_no' => $value['data']['jamb_no'],
+        'jamb_no' => $value['data']['jambno'],
         'fullnames' => $value['data']['fullnames'],
         'institution' => $value['data']['institution'],
         'status' => $order->order_status,
@@ -1129,7 +1174,7 @@ function _uc_edupay_fees_order_items($order) {
         'amount' => $value['price'], // or 'amount' => $value['data']['amount']
         'timeout' => $value['data']['expiry_date'],
         'uid' => $order->uid,
-        'jamb_no' => $value['data']['jamb_no'],
+        'jamb_no' => $value['data']['jambno'],
         'fullnames' => $value['data']['fullnames'],
         'institution' => $value['data']['institution'],
         'status' => $order->order_status,

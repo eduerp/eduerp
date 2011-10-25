@@ -1,6 +1,5 @@
 <?php
 /**
- * @todo Move all codes related to payment into this module
  * @author Kayode Odeyemi
  */
 
@@ -91,8 +90,6 @@ function eduerp_transaction_menu() {
 /**
  * Describes eduerp transaction as well as its links
  * to other sub-modules in it
- * 
- * 
  */ 
 function eduerp_transaction_overview(){
   // pass
@@ -270,14 +267,16 @@ function eduerp_transacton_token_ahah_callback() {
     'institution_code' => $institution->code
   );
   
-  $result = drupal_http_request(EDUPAY_REQUEST_TOKEN_URL, $header, 'POST', http_build_query($params, '', '&'));
+  $token_url = variable_get('uc_edupay_config_host', TRUE) ? variable_get('uc_edupay_token_url', '') : EDUPAY_REQUEST_TOKEN_URL;
+  
+  $result = drupal_http_request($token_url, $header, 'POST', http_build_query($params, '', '&'));
   $code = $result->code;
   if($result->headers['Content-Type'] == 'application/json') {
     $response = json_decode($result->data);
     if($response->status == 406){
       $result->code = 406;
     }
-    if(($response->status == 401 or 403)){
+    if($response->status == (401 or 403)){
       $result->code = 401;
     }
   }
@@ -473,7 +472,6 @@ function eduerp_transaction_form_eduerp_transaction_edupay_token_request_alter(&
  */ 
 function eduerp_transaction_init(){
   //$fee_items['item'] = get_fee_items(955);
-  //dsm(student_load_student_profile(955));
   $data = array(
     'code' => 'UNIB',
     'digest' => '9EF3FD4D2115DA62F0FA83F25E5F8A2F',
