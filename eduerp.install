@@ -8,51 +8,6 @@ include_once drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
  */
 function eduerp_perms_initialize() {
   $permissions = array(
-    'Administrator' => array(
-      'create profile content',
-      'delete any profile content',
-      'edit any profile content',
-
-      'edit field_profile_country_name',
-      'edit field_profile_dob',
-      'edit field_profile_first_name',
-      'edit field_profile_maiden_name',
-      'edit field_profile_gender',
-      'edit field_profile_last_name',
-      'edit field_profile_lga_name',
-      'edit field_profile_marital_status',
-      'edit field_profile_middle_name',
-      'edit field_profile_mobile_number',
-      'edit field_profile_permanent_address',
-      'edit field_profile_permanent_city',
-      'edit field_profile_permanent_state',
-      'edit field_profile_photograph',
-      'edit field_profile_religion',
-      'edit field_profile_signature',
-      'edit field_profile_state_name_origin',
-      'edit field_profile_title_name',
-
-      'view field_profile_country_name',
-      'view field_profile_department_id',
-      'view field_profile_dob',
-      'view field_profile_first_name',
-      'view field_profile_maiden_name',
-      'view field_profile_gender',
-      'view field_profile_last_name',
-      'view field_profile_lga_name',
-      'view field_profile_marital_status',
-      'view field_profile_middle_name',
-      'view field_profile_mobile_number',
-      'view field_profile_permanent_address',
-      'view field_profile_permanent_city',
-      'view field_profile_permanent_state',
-      'view field_profile_photograph',
-      'view field_profile_religion',
-      'view field_profile_signature',
-      'view field_profile_state_name_origin',
-      'view field_profile_title_name',
-    ),
-
     'authenticated user' => array(
       'create profile content',
       'edit own profile content',
@@ -150,6 +105,11 @@ function eduerp_install() {
     (1, 'UNIVERSITY A', 'UNIA', '2fd0bba6b1774ed391c1ff8467f52a5d'),
     (2, 'UNIVERSITY B', 'UNIB', 'ffaedcdf6cc045cfbb220299720a79d6'),
     (3, 'UNIVERSITY C', 'UNIC', '927a220e63cd42feb70ab03f43b727f3')");
+
+  db_query("INSERT INTO eduerp_roles VALUES (1, 1,  0, 0, 'Role Assigner')");
+
+  variable_set('eduerp_allow_student_registrations', '1');
+  variable_set('user_register', 1);
 
   drupal_set_message('eduerp module installed');
 }
@@ -629,10 +589,10 @@ function eduerp_schema() {
 }
 
 /*
- * 
+ *
  * @todo This is meant to be hook_update_N.
  * To be reviewed
- */ 
+ */
 function eduerp_schema_6000() {
     $schema['webapp_institution'] = array(
     'description' => t('A replica table in edupay for storing all institutions'),
