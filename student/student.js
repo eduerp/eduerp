@@ -27,8 +27,10 @@ Drupal.behaviors.student = function(context) {
 	
 	var lastname_field = $('#edit-field-profile-last-name-0-value');
 	var firstname_field = $('#edit-field-profile-first-name-0-value');
+  var middlename_field = $('#edit-field-profile-middle-name-0-value');
+  var maidenname_field = $('#edit-field-profile-maiden-name-0-value');
 
-	var arr = ['edit-field-profile-last-name-0-value-wrapper', 'edit-field-profile-first-name-0-value-wrapper'];
+  var arr = ['edit-field-profile-last-name-0-value-wrapper', 'edit-field-profile-first-name-0-value-wrapper', 'edit-field-profile-middle-name-0-value-wrapper', 'edit-field-profile-maiden-name-0-value-wrapper'];
 	
 	// do a foreach if possible on arr
 	$.each(arr, function(i, n) {
@@ -46,26 +48,48 @@ Drupal.behaviors.student = function(context) {
 		var field = firstname_field;
 		checkNameFields(field, $(this).val());
 	});
+  middlename_field.blur(function() {
+    var field = middlename_field;
+    checkNameFields(field, $(this).val());
+  });
+  maidenname_field.blur(function() {
+    var field = maidenname_field;
+    checkNameFields(field, $(this).val());
+  });
 	
 	
 	// the regex
 	var checkNameFields = function(field, value) {
 		var name_regex = /(^[A-Z]\w+(\s)*)/;
 		if(field == lastname_field && !(name_regex.test(value))) {
-				$('.edit-field-profile-last-name-0-value-wrapper').text('incorrent entry. Example John');
+        $('.edit-field-profile-last-name-0-value-wrapper').text('First letter must be in Upper case, rest in lower case. Example John');
 				$('.edit-field-profile-last-name-0-value-wrapper').show();
 				//$('#lastname').css({width: "80px", height: "80px", float: "right"});
 				return false;
 			} else {
 				$('.edit-field-profile-last-name-0-value-wrapper').hide();
 			}
-			if(field == firstname_field && !(name_regex.test(value))) {
-				$('.edit-field-profile-first-name-0-value-wrapper').text('incorrent entry. Example John');
+    if(field == firstname_field && !(name_regex.test(value))) {
+        $('.edit-field-profile-first-name-0-value-wrapper').text('First letter must be in Upper case, rest in lower case. Example John');
 				$('.edit-field-profile-first-name-0-value-wrapper').show();
 				return false;
 			} else {
 				$('.edit-field-profile-first-name-0-value-wrapper').hide();
 			}
+    if(field == middlename_field && !(name_regex.test(value))) {
+        $('.edit-field-profile-middle-name-0-value-wrapper').text('First letter must be in Upper case, rest in lower case. Example John');
+        $('.edit-field-profile-middle-name-0-value-wrapper').show();
+        return false;
+      } else {
+        $('.edit-field-profile-middle-name-0-value-wrapper').hide();
+      }
+    if(field == maidenname_field && !(name_regex.test(value))) {
+        $('.edit-field-profile-maiden-name-0-value-wrapper').text('First letter must be in Upper case, rest in lower case. Example John');
+        $('.edit-field-profile-maiden-name-0-value-wrapper').show();
+        return false;
+      } else {
+        $('.edit-field-profile-maiden-name-0-value-wrapper').hide();
+      }
 			return true;
 	}
 	
