@@ -11,9 +11,10 @@ function student_registration_content_default_fields() {
     'field_name' => 'field_personal_email',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '18',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -72,9 +73,10 @@ function student_registration_content_default_fields() {
     'field_name' => 'field_profile_first_choice',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '8',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -161,9 +163,10 @@ function student_registration_content_default_fields() {
     'field_name' => 'field_profile_health_disability',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '11',
+      'parent' => 'group_health_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -219,9 +222,10 @@ crippled|Crippled',
     'field_name' => 'field_profile_health_status',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '10',
+      'parent' => 'group_health_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -275,9 +279,10 @@ disabled|Disabled',
     'field_name' => 'field_profile_hobbies',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '9',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -332,8 +337,8 @@ disabled|Disabled',
     'field_name' => 'field_profile_jambno',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '38',
-      'parent' => 'group_educational_information',
+      'weight' => '1',
+      'parent' => '',
       'label' => array(
         'format' => 'inline',
       ),
@@ -395,9 +400,10 @@ disabled|Disabled',
     'field_name' => 'field_profile_kin_address',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '25',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -452,9 +458,10 @@ disabled|Disabled',
     'field_name' => 'field_profile_kin_city',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '26',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -509,9 +516,10 @@ disabled|Disabled',
     'field_name' => 'field_profile_kin_mobile',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '24',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -566,9 +574,10 @@ disabled|Disabled',
     'field_name' => 'field_profile_kin_name',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '21',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -623,9 +632,10 @@ disabled|Disabled',
     'field_name' => 'field_profile_kin_relationship',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '22',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -686,9 +696,10 @@ Other',
     'field_name' => 'field_profile_kin_telephone',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '23',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -743,9 +754,10 @@ Other',
     'field_name' => 'field_profile_kin_title',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '20',
+      'parent' => 'group_next_of_kin_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -800,9 +812,10 @@ Other',
     'field_name' => 'field_profile_level_name',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '7',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -865,9 +878,10 @@ return $rows;',
     'field_name' => 'field_profile_matno',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '2',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -927,8 +941,8 @@ return $rows;',
     'field_name' => 'field_profile_mode_of_entry',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '39',
-      'parent' => 'group_educational_information',
+      'weight' => 0,
+      'parent' => '',
       'label' => array(
         'format' => 'inline',
       ),
@@ -964,12 +978,10 @@ return $rows;',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '30',
     'allowed_values' => 'UME
 DE
-MATRIC
-OND
-NCE',
+MATRIC',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
@@ -991,8 +1003,8 @@ NCE',
     'field_name' => 'field_profile_mode_of_study',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '40',
-      'parent' => 'group_educational_information',
+      'weight' => '3',
+      'parent' => '',
       'label' => array(
         'format' => 'inline',
       ),
@@ -1052,9 +1064,10 @@ Part_Time',
     'field_name' => 'field_profile_olevel_exams_1',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '32',
+      'parent' => 'group_olevels_first',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1112,9 +1125,10 @@ F9',
     'field_name' => 'field_profile_olevel_exams_2',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '38',
+      'parent' => 'group_olevels_second',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1184,9 +1198,10 @@ F9',
     'field_name' => 'field_profile_olevel_insti1',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '31',
+      'parent' => 'group_olevels_first',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1241,9 +1256,10 @@ F9',
     'field_name' => 'field_profile_olevel_insti2',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '37',
+      'parent' => 'group_olevels_second',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1298,9 +1314,10 @@ F9',
     'field_name' => 'field_profile_olevel_qual_1',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '30',
+      'parent' => 'group_olevels_first',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1361,9 +1378,10 @@ WAEC',
     'field_name' => 'field_profile_olevel_qual_2',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '36',
+      'parent' => 'group_olevels_second',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1424,9 +1442,10 @@ WAEC',
     'field_name' => 'field_profile_reg_semester',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '6',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1493,9 +1512,10 @@ return $rows;',
     'field_name' => 'field_profile_reg_session',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '5',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1558,9 +1578,10 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_address',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '12',
+      'parent' => 'group_sponsor_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1620,9 +1641,10 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_city',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '13',
+      'parent' => 'group_sponsor_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1677,9 +1699,10 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_mobile',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '16',
+      'parent' => 'group_sponsor_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1734,9 +1757,10 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_name',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '11',
+      'parent' => 'group_sponsor_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1791,9 +1815,10 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_phone',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '15',
+      'parent' => 'group_sponsor_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1848,9 +1873,10 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_state',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '14',
+      'parent' => 'group_sponsor_information',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1905,9 +1931,10 @@ return $rows;',
     'field_name' => 'field_profile_yearofentry',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '4',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
@@ -1974,9 +2001,10 @@ return $rows;',
     'field_name' => 'field_university_email',
     'type_name' => 'student_profile',
     'display_settings' => array(
+      'weight' => '17',
+      'parent' => '',
       'label' => array(
-        'format' => 'above',
-        'exclude' => 0,
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'default',
