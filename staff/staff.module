@@ -9631,7 +9631,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       }
 
       //get the local country name from setting
-      $rs1 = db_query("SELECT country_id, country_name FROM {country} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
+      $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
       if(db_affected_rows($rs1) <= 0){
       	form_set_error('mat_number', Error_Types(143));
 
@@ -10466,7 +10466,7 @@ function delete_node($nodeID){
 
 function get_country_info($countryID=0){
 
-  $sql = "SELECT country_id, country_name FROM {country} ";
+  $sql = "SELECT country_id, country_name FROM {eduerp_countries} ";
   if($countryID != 0) $sql .= " WHERE country_id=%d ";
 
   $rs = db_query($sql, $countryID);
@@ -10558,7 +10558,7 @@ function fees_ini_student_profile($studentUID){
       }
 
       //get the local country name from setting
-      $rs1 = db_query("SELECT country_id, country_name FROM {country} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
+      $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
       if(db_affected_rows($rs1) <= 0){
 
       	return 0;
