@@ -1346,6 +1346,9 @@ function set_session_form_submit($form, &$form_state) {
   variable_set('eduerp_current_session', $form_state['values']['eduerp_current_session']);
   variable_set('eduerp_current_semester', $form_state['values']['eduerp_current_semester']);
 
+  $text = preg_replace('#registering: [0-9]{4,4}/[0-9]{4,4}#', 'registering: ' . $form_state['values']['eduerp_current_session'], variable_get('user_registration_help', ''));
+  variable_set('user_registration_help', $text);
+
   // Check if the current session is in the session table
   $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['eduerp_current_session']);
   if (!db_result($session_rs)) {
