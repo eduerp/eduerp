@@ -409,7 +409,7 @@ function student_clearance() {
   $student_id = $_POST['student_uid'];
 
   $row = false;
-  $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+  $rs = db_query("SELECT cfs.nid FROM {content_field_student} cfs, {node} n WHERE field_student_uid=%d AND cfs.nid=n.nid AND n.type = 'student_clearance' ORDER BY nid DESC LIMIT 1", $student_id);
   if ($rs):
     $row = db_fetch_object($rs);
   endif;
@@ -810,7 +810,7 @@ function student_uncleared_get_reasons() {
  */
 function student_clearance_node_load($student_id) {
   $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
-  $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+  $rs = db_query("SELECT cfs.nid FROM {content_field_student} cfs, {node} n WHERE field_student_uid=%d AND cfs.nid=n.nid AND n.type = 'student_clearance' ORDER BY nid DESC LIMIT 1", $student_id);
   if ($rs):
     $row = db_fetch_object($rs);
   endif;
@@ -952,7 +952,7 @@ function student_views_post_render(&$view, &$output, &$cache) {
     $row = false;
     $verified = false;
     $cleared = false;
-    $rs = db_query("SELECT nid FROM {content_type_student_clearance} WHERE field_student_uid=%d ORDER BY nid DESC LIMIT 1", $student_id);
+    $rs = db_query("SELECT cfs.nid FROM {content_field_student} cfs, {node} n WHERE field_student_uid=%d AND cfs.nid=n.nid AND n.type = 'student_clearance' ORDER BY nid DESC LIMIT 1", $student_id);
     if ($rs):
       $row = db_fetch_object($rs);
     endif;
