@@ -396,7 +396,6 @@ class courseselectionsclass {
  * perform student clearance
  */
 function student_clearance() {
-  dsm($_POST);
   global $user;
   $student_id = $_POST['student_uid'];
 
@@ -411,7 +410,7 @@ function student_clearance() {
     $node = array();
     $node['type'] = 'student_clearance';
     $node['nid'] = $row->nid;
-    $student_clearance = node_load($node);dsm($student_clearance);
+    $student_clearance = node_load($node);
 
     if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']):
       $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
