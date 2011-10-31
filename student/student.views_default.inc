@@ -1459,10 +1459,10 @@ function student_views_default_views() {
   $handler = $view->new_display('page', 'Page', 'page_1');
   $handler->override_option('path', 'student/clearance');
   $handler->override_option('menu', array(
-    'type' => 'none',
-    'title' => '',
+    'type' => 'normal',
+    'title' => 'Student Clearance',
     'description' => '',
-    'weight' => 0,
+    'weight' => -33,
     'name' => 'navigation',
   ));
   $handler->override_option('tab_options', array(
