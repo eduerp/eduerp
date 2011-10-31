@@ -4,6 +4,7 @@
  */
 
 define("INVOICE_REGENERATE", "regenerate");
+define("STATUS_UPDATE", "status");
 define("UC_EDUPAY_BASIC_URL", 'http://banker:banker@127.0.0.1:8000/api/transaction/add'); // to be modified
 define("EDUPAY_REQUEST_TOKEN_URL", "http://127.0.0.1:8000/api/oauth/token_request");
 define("UC_EDUPAY_URL", 'http://127.0.0.1:8000/api/oauth/transaction/add');
@@ -276,7 +277,7 @@ function eduerp_transacton_token_ahah_callback() {
     if($response->status == 406){
       $result->code = 406;
     }
-    if($response->status == (401 or 403)){
+    if($response->status == 401 or $response->status == 403){
       $result->code = 401;
     }
   }
@@ -471,64 +472,4 @@ function eduerp_transaction_form_eduerp_transaction_edupay_token_request_alter(&
  * 
  */ 
 function eduerp_transaction_init(){
-  //$fee_items['item'] = get_fee_items(955);
-  $data = array(
-    'code' => 'UNIB',
-    'digest' => '9EF3FD4D2115DA62F0FA83F25E5F8A2F',
-    'amount' => 0.0,
-    'identifier' => '',
-    'fees' => array(
-      'fees' => array(
-        'status' => 'pending',
-        'timeout' => 10,
-        ),
-      'hostel' => array(
-        'status' => $arg1->order_status,
-        'timeout' => 20,
-      ),
-    )
-  );
-  
-  $uri = 'http://banker:banker@127.0.0.1:8000/api/transaction/add';
-          
-
-  
-  /*try {
-    $httpclient = new HttpClient();
-    $result = $httpclient->post($uri, $data);
-  }
-  catch(HttpClientException $httpException) {
-  }*/
-  
-  $uri['user'] = variable_get('edupay_user', '');
-  $uri['pass'] = variable_get('edupay_pass', '');
-  
-  //$header = drupal_set_header('Content-Type: application/json');
-  #$header = array('Content-Type' => 'application/x-www-form-urlencoded');
-  #$method = 'POST';
-  
-  //$result = drupal_http_request($uri, $header, $method, http_build_query($data, '', '&'));
-  
-  module_load_include('inc', 'eduerp', 'eduerp.admin');
-  $institution = eduerp_get_institution('name');
-  $header = array('Content-Type' => 'application/x-www-form-urlencoded');
-  $params = array(
-    'oauth_consumer_key' => variable_get('oauth_consumer_key', ''), 
-    'institution_name' => ucfirst(strtolower($institution->name)), 
-    'institution_code' => $institution->code
-  );
-  
-  //$result = OAuthRequest::from_request('GET', 'http://127.0.0.1:8000/api/oauth/token_request', $params);
-  //$result = drupal_http_request('http://127.0.0.1:8000/api/oauth/token_request', $header, 'POST', http_build_query($params, '', '&'));
-  //dsm($result);
-  /**$response = $result->data;
-  $code = $result->code;
-  
-  // parse the response
-  switch($code) {
-    case 200:
-      $token_access = $response->token_access;
-      $token_secret = $response->token_secret;
-  }*/
-            
 }

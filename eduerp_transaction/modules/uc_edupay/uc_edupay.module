@@ -195,10 +195,10 @@ function uc_edupay_fees_price_alter() {
 function uc_edupay_theme(){
   return array(
     'eduerp_fees_cart_title' => array(
-      'arguments' => array($title => NULL, $text => NULL),
+      'arguments' => array('title' => NULL, 'text' => NULL),
     ),
     'eduerp_cart_review_table' => array(
-      'arguments' => array($contents => NULL)
+      'arguments' => array('contents' => NULL)
     ),
   );
 }
@@ -649,33 +649,30 @@ function _uc_edupay_process_order_request($order) {
   if($data = module_invoke('uc_edupay', 'edupay', $order)) {
     //dsm(uc_order_load($_SESSION['cart_order']));
     $order->products = _uc_edupay_fees_order_items($order);
-    // @todo If scholarship is inclusive and hostel is not inclusive, don't send
-    // transaction to edupay.
-    // If scholarship is inclusive and hostel is inclusive, send only hostel
-    // values as items meant to be paid for to edupay
+    $products = $order->products;
+    
+    $response_data = new stdClass();
+    foreach($products['fees'] as $key => $product) {
+      // If scholarship is inclusive and hostel is not inclusive, don't send
+      // transaction to edupay. Mark item as paid for
+      if($product['scholarship'] == HAS_SCHOLARSHIP && !array_key_exists('hostel', $products)) {
+        $response_data = NULL;
+        return $response_data;
+      }
+      // If scholarship is inclusive and hostel is inclusive, send only hostel
+      // values as items meant to be paid for to edupay
+      if($product['scholarship'] == HAS_SCHOLARSHIP && array_key_exists('hostel', $products)){
+        $products = $products['hostel'];
+        continue;
+      }
+    }
     
     if(module_exists('oauth_common')) {
       $consumer = new stdClass();
       $consumer->key = variable_get('oauth_consumer_key', '');
       $consumer->secret = variable_get('oauth_consumer_secret', '');
       $token_request = variable_get('oauth_token', '');
-      //$signature_method = 'HMAC-SHA1';
       
-      /*$path = UC_EDUPAY_URL;
-        $options = array(
-          'token' => TRUE,
-          'params' => $order,
-          'realm' => NULL,
-          'get' => FALSE
-        );
-        
-      $header = array('Content-Type' => 'application/x-www-form-urlencoded');
-      $method = 'POST';
-    
-      $result = drupal_http_request($path, $header, $method, http_build_query($order, '', '&'));
-    
-      dsm($result);*/
-    
       // catch all necessary exceptions if edupay is down
       try {
         $oauthclient = new EdupayOauthClient($consumer, $token_request);
@@ -683,7 +680,7 @@ function _uc_edupay_process_order_request($order) {
         $path = variable_get('uc_edupay_config_host', TRUE) ? variable_get('uc_edupay_transaction_url', ''): UC_EDUPAY_URL;
         $options = array(
           'token' => TRUE, 
-          'params' => $order->products,
+          'params' => $products,
           'realm' => NULL,
           'get' => FALSE
         );
@@ -699,18 +696,20 @@ function _uc_edupay_process_order_request($order) {
         $code = $result->code;
         if($result->headers['Content-Type'] == 'application/json') {
           $response = json_decode($result->data);
+          $response_data = $response->data;
           if($response->status == 201){
             $result->code = 201;
           }
         }
+        //dsm($result);
         switch($code) {
           case 201:
             continue;
           case 200:
-            break;
+            return $response_data;
+            //break;
         }
         
-        dsm($result);
       } catch(Exception $e) {
         drupal_set_message($e->getMessage(), 'error');
         watchdog('uc_edupay', t('@uid cannot continue with order process due to @error', array('@uid' => $order->uid, '@error' => $e->getMessage())), WATCHDOG_SEVERE);
@@ -722,7 +721,7 @@ function _uc_edupay_process_order_request($order) {
         $_SESSION['do_review'] = FALSE;
         $_SESSION['checkout_valid'] = FALSE;
         $_SESSION['checkout-redirect'] = TRUE;
-        drupal_goto('cart/checkout'); // drupal_get_destination
+        drupal_goto('cart/checkout');
       }
     }
   }
@@ -802,6 +801,10 @@ class EdupayOauthClient extends DrupalOauthClient {
     //$result = drupal_http_request($url, $headers, $method, http_build_query($data, 'fees'));
     $result = drupal_http_request($url, $headers, $method, "fees=$data");
     
+    if ($result->code != 200) {
+      throw new Exception('Failed to fetch data from url "' . $path . '" (HTTP response code ' . $result->code . ' ' . $result->status_message . ')');
+    }
+    
     return $result;
     
     /*$ch = curl_init();
@@ -854,12 +857,31 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         // insert into eduerp_transaction the order_id and tpin
         
         if(variable_get('uc_edupay_auth_method_oauth', 1)) {
-          _uc_edupay_process_order_request($arg1);
+          $data = _uc_edupay_process_order_request($arg1);
+          // Handle a scholarship item which is not sent to edupay.
+          // Generate a special transaction for this case
+          if(is_null($data) && !isset($arg1->transaction_id)) {
+            $arg1->transaction_id = _uc_edupay_trans_id($arg1);
+              // Store the transaction_id in db
+              db_query("
+                  INSERT INTO {eduerp_transaction} (uid, transaction_id, order_id)
+                  VALUES(%d, '%s', %d)",
+                      $arg1->uid, $arg1->transaction_id, $arg1->order_id
+                      );
+              $success = TRUE;
+              if($success) {
+                  drupal_set_message("Order transaction Created Successfully");
+              } else {
+                  drupal_error_handler('IN81', 'Your new Order failed', 'uc_hostel_allocation', '81');
+              }
+          }
+          $arg1->tpin = $data;
         } else {
           // Make request to external payment gateway using basic auth
           _uc_edupay_process_order_request_basic($arg1);
         }
-        //dsm($arg1);    
+        //dsm($arg1); 
+        break;   
         // Occurs when Submit Order is clicked
         case 'submit':
           //dsm("OP IS SUBMIT");
@@ -888,6 +910,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               // from where he/she left off.
             }
           }
+          break;
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
@@ -896,16 +919,29 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           // Number as part of the data during save op.
           // retrieve the stored transaction_id and pass it to $arg1->data
 
-          if(!isset($arg1->transaction_id)) {
-              $arg1->transaction_id = _uc_edupay_load_transaction($arg1);
-          }
+          
           if ($arg1->payment_method == 'edupay') {
-            $edupay_data = array('transaction_id' => $arg1->transaction_id, 'order_id' => $arg1->order_id);
-            $data = $arg1->data;
-            $data->edupay_data = serialize($edupay_data);
-            //dsm($data);
-            //dsm(unserialize($data->edupay_data));
-            db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+            if(isset($arg1->tpin) && !is_null($arg1->tpin)) {
+              $edupay_data = array('tpin' => $arg1->tpin, 'order_id' => $arg1->order_id);
+              $data = $arg1->data;
+              $data->edupay_data = serialize($edupay_data);
+              //dsm($data);
+              //dsm(unserialize($data->edupay_data));
+              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+            }
+            else {
+              if(!isset($arg1->transaction_id)) {
+                $arg1->transaction_id = _uc_edupay_load_transaction($arg1);
+              }
+              $scholarship_items_data = array(
+                'description' => t('This is a fee item on scholarship'),
+                'transaction_id' => $arg1->transaction_id, 
+                'order_id' => $arg1->order_id
+                );
+              $data = $arg1->data;
+              $data->scholarship_items_data = serialize($scholarship_items_data);
+              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+            }
           }
           //db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
           /*if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
@@ -913,7 +949,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               ."WHERE order_id = %d AND uid = %d", $arg1->data,
                $arg1->order_id, $arg1->uid);
           }*/
-
+          break;
         // The real order object that will be put into $_SESSION['cart_order'].
         case 'load':
           //dsm("OP IS LOAD");
@@ -1134,7 +1170,7 @@ function _uc_edupay_fees_order_items($order) {
     $data[$key] = $fee['data'];
     $description[$key] = $fee['title'];
   }
-  dsm($item);
+  //dsm($item);
   $types = array();
   foreach($item as $key => $value) {
     $types[] = $value['data']['type'];
@@ -1155,6 +1191,7 @@ function _uc_edupay_fees_order_items($order) {
         'status' => $order->order_status,
         'email' => $order->primary_email,
         'order_id' => $order->order_id,
+        'scholarship' => $value['data']['has_scholarship'],
     );
     $all[] = $nid[$key];
     if($value['data']['type'] == 'fees') {
