@@ -9,7 +9,7 @@ include_once drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
 function eduerp_perms_initialize() {
   $permissions = array(
     'authenticated user' => array(
-      'create profile content',
+      // 'create profile content',
       'edit own profile content',
 
       // 'edit field_profile_country_name',
@@ -53,7 +53,7 @@ function eduerp_perms_initialize() {
     ),
 
     'anonymous user' => array(
-      'create profile content',
+      // 'create profile content',
 
       'edit field_profile_country_name',
       'edit field_profile_dob',
@@ -109,6 +109,7 @@ function eduerp_install() {
   db_query("INSERT INTO eduerp_roles VALUES (1, 1,  0, 0, 'Role Assigner')");
 
   variable_set('user_register', 1); // This a system setting (0 => no self registrations, 1 => yes, 2 => yes, admin approval needed)
+  variable_set('user_registration_help', '<b><br />IMPORTANT: When completing this form you must fill the compulsory fields that have * beside them. Your form will not be accepted if you do not fill these fields and you will be forced to fill any omitted fields.<br /><br />Session for which you are registering: 9999/9999</b>');
 
   drupal_set_message('eduerp module installed');
 }
