@@ -16,23 +16,26 @@ function eduerp_configure_institution(&$form_state) {
 		$institution = eduerp_get_institution();
 	}
 
-	$institution_names = eduerp_get_institution('name');
+	$institution_names = _eduerp_institution_names();
 
-	$form['eduerp_institution'] = array(
-		'#title' => 'Select the institution to make eduerp available for',
+  $form['eduerp_create_institution'] = array(
+    '#title' => 'Create a new institution',
+    '#type' => 'fieldset',
+    '#description' => t('Create a new institution')
+  );
+  $form['eduerp_create_institution']['eduerp_institution_current'] =  array(
+    '#title' => 'Enter institution name',
+		'#type' => 'textfield',
+		'#default_value' => variable_get('eduerp_institution_current', ''),
+  );
+
+	$form['eduerp_create_institution']['eduerp_institution'] = array(
+		'#title' => 'Alternatively, select from an existing one',
 		'#type' => 'select',
 		'#options' => $institution_names,
-		'#default_value' => variable_get('eduerp_institution', $_SESSION['eduerp_institution']),
-		'#required' => TRUE
+		'#default_value' => variable_get('eduerp_institution', ''),
 	);
-
-	//dsm($form);
-	//dsm($_POST);
-	//dsm($form_state['values']['eduerp_institution']);
-	//dsm($_SESSION['eduerp_institution']);
-	// retrieve the institution code based on the above insitution. variable_get the institution code
-	// automatically generate the in
-
+  
 	return system_settings_form($form);
 }
 

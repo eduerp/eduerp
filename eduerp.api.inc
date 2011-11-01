@@ -30,6 +30,14 @@ function eduerp_institution_read_sql() {
 *
 */
 function eduerp_institution_update() {
+}
 
-
+/**
+ * Generates institution code based on 
+ * institution name
+ */ 
+function eduerp_institution_generate() {
+  $rand = substr(strval(mt_rand(5, mt_getrandmax())), 0,4);
+  $institution_name = strtoupper(substr(variable_get('eduerp_institution_current', ''), 0, 4));
+  return $institution_name . $rand;
 }
