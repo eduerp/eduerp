@@ -45,3 +45,5 @@ INSERT INTO `webapp_institution` (`id`, `name`, `code`, `secret`) VALUES
 (1, 'UNIVERSITY A', 'UNIA', '2fd0bba6b1774ed391c1ff8467f52a5d'),
 (2, 'UNIVERSITY B', 'UNIB', 'ffaedcdf6cc045cfbb220299720a79d6'),
 (3, 'UNIVERSITY C', 'UNIC', '927a220e63cd42feb70ab03f43b727f3');
+
+ALTER TABLE `webapp_institution` CHANGE `secret` `secret` VARCHAR( 32 ) NULL;
