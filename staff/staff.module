@@ -89,7 +89,7 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
   $items['staff/studentprogress']=array(
-    'title'=>'Student Progress towards Qualification',
+    'title'=>'Student Progress towards Graduation',
     'page callback' => 'staff_student_progress_qualification',
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
@@ -1250,7 +1250,7 @@ function semester_admin() {
   echo '<a href="' . url('staff/missingcourses') . '">Check for Missing Courses for a Semester (no Lecturer or Timetable Assigned)</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/checkverifyprogmme') . '">Check have all existing Courses required for all Programmes been Verified (associated with the Programme)</a>';
+  echo '<a href="' . url('staff/checkverifyprogmme') . '">Check if all existing Courses required for all Programmes have been Verified (associated with the Programme)</a>';
   echo '<br /><br /><hr /><br />';
 
   //echo 'List the Fees for all Programmes by Level & Semester[Feature #444]';
@@ -1266,7 +1266,7 @@ function semester_admin() {
   echo '<a href="' . url('grading/statsuni') . '">Grading Statistics for University</a>';
   echo '<br /><br /><hr /><br />';
 
-  echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Qualification</a>';
+  echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Graduation</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
@@ -1345,6 +1345,9 @@ function set_session_form_submit($form, &$form_state) {
 
   variable_set('eduerp_current_session', $form_state['values']['eduerp_current_session']);
   variable_set('eduerp_current_semester', $form_state['values']['eduerp_current_semester']);
+
+  $text = preg_replace('#registering: [0-9]{4,4}/[0-9]{4,4}#', 'registering: ' . $form_state['values']['eduerp_current_session'], variable_get('user_registration_help', ''));
+  variable_set('user_registration_help', $text);
 
   // Check if the current session is in the session table
   $session_rs = db_query("SELECT sess_name FROM {session} WHERE sess_name = '%s'", $form_state['values']['eduerp_current_session']);
@@ -2759,7 +2762,7 @@ function staff_create_course_form_validate($form, $form_state) {
       form_set_error('course_code', Error_Types(108));
   }
   $form_state['values']['credit_load'] = (int) $form_state['values']['credit_load'];
-  if (! preg_match("/^[0-9]{1,3}$/", $form_state['values']['credit_load']) || $form_state['values']['credit_load'] <= 0)
+  if (! preg_match("/^[0-9]{1,3}$/", $form_state['values']['credit_load']) || $form_state['values']['credit_load'] < 0)
       form_set_error('credit_load', Error_Types(107));
 
   //make sure that no spaces in course code
@@ -4446,7 +4449,9 @@ function staff_assign_course_to_programme_form_submit($form, &$state) {
     $sql = "SELECT field_creditload_value FROM {content_type_course} WHERE nid=%d";
     $rows = db_query($sql, $values['course_id']);
     $row = db_fetch_object($rows);
-    $values['credit_load'] = $row->field_creditload_value;
+    if (!($values['credit_load'] === '0' || $values['credit_load'] === 0)) { // Allow a zero credit load if explicitly entered
+      $values['credit_load'] = $row->field_creditload_value;
+    }
   }
 
   $query = "SELECT program_course_id FROM {program_course} WHERE course_id=%d AND programme_id=%d AND level='%s' AND semester='%s'";
@@ -4717,7 +4722,7 @@ function staff_student_progress_qualification() {
   $str = "
   <br /><hr /><br />
 
-  <font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Qualification</b></font><br /><br />
+  <font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Graduation</b></font><br /><br />
   <br /><hr /><br />";
   //get faculty and department info of the programme
    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
@@ -4726,12 +4731,12 @@ function staff_student_progress_qualification() {
      staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) ||
      staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
 
-    $str .= "<b>Student Progress Towards Qualification</b> - Please fill the form as appropriate<br /><br />";
+    $str .= "<b>Student Progress Towards Graduation</b> - Please fill the form as appropriate<br /><br />";
     $str .= drupal_get_form('show_progress_qualification_form');
     $eduerp_programmeName = $eduerp_programmes[$_SESSION['eduerp_qualification']['programme_nid']];
     if (isset($_SESSION['eduerp_qualification'])) {
       $str .= "<br /><hr /><br />
-      Students' Progress Towards Qualification for <b>Session: ". $eduerp_sessions[$_SESSION['eduerp_qualification']['session']] ."</b> |  <b>Programme: ". $eduerp_programmeName ."</b>  |  <b>Student current level: ". $eduerp_levels[$_SESSION['eduerp_qualification']['level']] ."</b>
+      Students' Progress Towards Graduation for <b>Session: ". $eduerp_sessions[$_SESSION['eduerp_qualification']['session']] ."</b> |  <b>Programme: ". $eduerp_programmeName ."</b>  |  <b>Student current level: ". $eduerp_levels[$_SESSION['eduerp_qualification']['level']] ."</b>
       <br /><br />
       <div id='assigned_courses'>";
       $str .= get_progress_qualification_details();
@@ -6863,7 +6868,7 @@ function staff_school_fees_admin(){
     $html .= '<br />';
 
 
-    $html .= '<b>Authorise Scholarship</b> - Enable a Studnet as being sponsored via Scholarship for the Current Session only.<br />';
+    $html .= '<b>Authorise Scholarship</b> - Enable a Student as being sponsored via Scholarship for the Current Session only.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/scholarshippayment') . '">Authorise Scholarship</a><br />';
     $html .= '<br />';
 
@@ -9626,7 +9631,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       }
 
       //get the local country name from setting
-      $rs1 = db_query("SELECT country_id, country_name FROM {country} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
+      $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
       if(db_affected_rows($rs1) <= 0){
       	form_set_error('mat_number', Error_Types(143));
 
@@ -10461,7 +10466,7 @@ function delete_node($nodeID){
 
 function get_country_info($countryID=0){
 
-  $sql = "SELECT country_id, country_name FROM {country} ";
+  $sql = "SELECT country_id, country_name FROM {eduerp_countries} ";
   if($countryID != 0) $sql .= " WHERE country_id=%d ";
 
   $rs = db_query($sql, $countryID);
@@ -10553,7 +10558,7 @@ function fees_ini_student_profile($studentUID){
       }
 
       //get the local country name from setting
-      $rs1 = db_query("SELECT country_id, country_name FROM {country} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
+      $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
       if(db_affected_rows($rs1) <= 0){
 
       	return 0;

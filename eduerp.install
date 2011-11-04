@@ -9,7 +9,7 @@ include_once drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
 function eduerp_perms_initialize() {
   $permissions = array(
     'authenticated user' => array(
-      'create profile content',
+      // 'create profile content',
       'edit own profile content',
 
       // 'edit field_profile_country_name',
@@ -53,7 +53,7 @@ function eduerp_perms_initialize() {
     ),
 
     'anonymous user' => array(
-      'create profile content',
+      // 'create profile content',
 
       'edit field_profile_country_name',
       'edit field_profile_dob',
@@ -109,6 +109,12 @@ function eduerp_install() {
   db_query("INSERT INTO eduerp_roles VALUES (1, 1,  0, 0, 'Role Assigner')");
 
   variable_set('user_register', 1); // This a system setting (0 => no self registrations, 1 => yes, 2 => yes, admin approval needed)
+  variable_set('user_registration_help', '<b><br />IMPORTANT: When completing this form you must fill the compulsory fields that have * beside them. Your form will not be accepted if you do not fill these fields and you will be forced to fill any omitted fields.<br /><br />Session for which you are registering: 9999/9999</b>');
+
+  // For content_profile: Set weight, registration_use (Profile & Student) & admin_user_create_use (Profile & Staff) appropriately
+  variable_set('content_profile_profile', unserialize('a:8:{s:6:"weight";s:1:"0";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:1;s:21:"admin_user_create_use";i:1;s:17:"registration_hide";a:0:{}}'));
+  variable_set('content_profile_student_profile', unserialize('a:8:{s:6:"weight";s:1:"1";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:1;s:21:"admin_user_create_use";i:0;s:17:"registration_hide";a:0:{}}'));
+  variable_set('content_profile_staff_profile', unserialize('a:8:{s:6:"weight";s:1:"2";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:0;s:21:"admin_user_create_use";i:1;s:17:"registration_hide";a:0:{}}'));
 
   drupal_set_message('eduerp module installed');
 }
@@ -588,7 +594,6 @@ function eduerp_schema() {
 }
 
 /*
- *
  * @todo This is meant to be hook_update_N.
  * To be reviewed
  */
@@ -640,4 +645,10 @@ function install_other_content_type($filename, $content_type_name) {
     ),
   );
   drupal_execute('content_copy_import_form', $form_state);
+}
+
+function eduerp_update_6200() {
+  // No corresponding schema API for alter statements.
+  // Using raw SQL
+  db_query("ALTER TABLE {webapp_institution} CHANGE secret secret VARCHAR( 32 ) NULL");
 }

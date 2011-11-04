@@ -1,5 +1,6 @@
 <?php 
 
+
 /**
 * @file
 * Simpletest for uc_eduerp_fees module
@@ -14,7 +15,7 @@
 * And, of course, trying desperately to figure out why our test doesn't work the way we expect, and debugging the test (and perhaps the module)
 */
 
-class UCEduerpFeesTestCase extends DrupalWebTestCase {
+class UCEdupayTestCase extends DrupalWebTestCase {
   protected $privileged_user;
 
   /**
@@ -22,8 +23,8 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
    */
   public static function getInfo() {
     return array(
-      'name' => 'UCEduerpFees SimpleTest',
-      'description' => 'Ensures that fees are added to cart and orders are handled successfully.',
+      'name' => 'UCEdupay SimpleTest',
+      'description' => 'Ensures that fees are processed successfully by the payment gateway.',
       'group' => 'Eduerp',
     );
   }
@@ -33,7 +34,7 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
    */
   public function setUp() {
     // Enable any modules required for the test.
-    parent::setUp('uc_eduerp_fees, uc_cart, staff, uc_edupay');
+    parent::setUp('uc_edupay, uc_eduerp_fees, uc_cart, staff');
 
     // Create and log in our privileged user.
     $this->privileged_user = $this->drupalCreateUser( array(
@@ -42,26 +43,6 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
     $this->drupalLogin($this->privileged_user);
   }
   
-  /**
-   * Test loading of a fees item when status changes to 
-   * payment_received.
-   * 
-   * uc_eduerp_fees_update_load
-   */ 
-  public function testHookUpdateLoad(){
-    
+  public function testInvoicing() {
+    //dsm(views_get_view_result('pdf_invoice', 'pdf_1', 281));
   }
-  
-  /**
-   * Test update of a fees order when paid for in
-   * eduerp
-   * 
-   * uc_eduerp_fees_update_update function test
-   */ 
-  public function testHookUpdateUpdate() {
-    $result_value = uc_eduerp_fees_update_update(281, 'uc_orders', 'in_checkout');
-    
-	//db_query returns TRUE or FALSE on a query
-    $this->assertEqual($result_value, TRUE);
-  }
-}

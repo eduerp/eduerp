@@ -12,7 +12,7 @@ function eduerp_transaction_services_menu() {
   $items = array();
   $items['service/fees/%/%/%'] = array(
     'title' => t('Edupay fees service handler'),
-    'page callback' => 'do_callback',
+    'page callback' => 'handle_pay_gateway_request',
     'page arguments' => array(2,3,4),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
@@ -137,9 +137,11 @@ function eduerp_transaction_services_fees_paid_update() {
  * 
  * @todo: Allow requests through https only
  */ 
-function do_callback($uid, $service = 'status', $status, $updated = FALSE) {
+function handle_pay_gateway_request($uid, $service, $status, $updated = FALSE) {
   global $user;
-  drupal_set_header('Content-Type: application/json');
+  // drupal_set_header('Content-Type: application/json');
+  print $_POST;
+  $result = array();
   
   // Get the request POST data values
   $uid = $_POST['uid'];
@@ -147,13 +149,15 @@ function do_callback($uid, $service = 'status', $status, $updated = FALSE) {
   $type = $_POST['type'];
   $status = $_POST['status']; //type=status&status=paid
   $tpin = $_POST['tpin'];
+  $order_id = $_POST['order_id'];
   
   $values = array(
     'uid' => $uid,
     'service' => $service,
     'type' => $type,// fees or hostel
     'status' => $status,
-    'tpin' => $tpin
+    'tpin' => $tpin,
+    'order_id' => $order_id
   );
   $method = $_SERVER['REQUEST_METHOD'];
   
@@ -170,21 +174,29 @@ function do_callback($uid, $service = 'status', $status, $updated = FALSE) {
   
   // update the ubercart fees order based on $uid and $status values
   // using default service value of status
-  if(module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $values)) {
-    $updated = TRUE;
+  if($service == STATUS_UPDATE) {
+    foreach(module_implements('update_fees') as $module) {
+       if($result = module_invoke($module, 'update_fees', $values)) {
+        $updated = TRUE;
+       }
+    }
+    //eduerp_transaction_services_action_invoke('uc_eduerp_fees', 'update', 'fees', $values);
   }
-  
   // if service is invoice regeneration
   if($service == INVOICE_REGENERATE) {
     // run module_invoke invoice regenerate
     $product_attribute = $_POST['type'];
-    module_invoke('eduerp_transaction_services', 'include_invoke', 'uc_eduerp_fees', 'update', 'fees', $values);
+    foreach(module_implements('update_fees') as $module) {
+       if($result = module_invoke($module, 'update_fees', $values)) {
+        $updated = TRUE;
+       }
+    }
   }
   //$updated = TRUE;
   //print drupal_json($status); // get arguments passed to url
-  //return drupal_json('success');
   
-  return drupal_json(array($uid => array($status => $updated)));
+  //return drupal_json(array($uid => array($status => $updated)));
+  return drupal_json(array($service => array('updated' => $updated, 'result' => $result)));
 }
 
 /**
@@ -192,15 +204,15 @@ function do_callback($uid, $service = 'status', $status, $updated = FALSE) {
  * 
  * @see uc_eduerp_fees_update_fees for example
  */ 
-function eduerp_transaction_services_include_invoke() {
+function eduerp_transaction_services_action_invoke() {
   $args     = func_get_args();
   $module = array_shift($args); // first argument of the function
   $action  = array_shift($args); // 2nd argument of the function
   $hook     = array_shift($args); // 3rd argument of the function
   $function = $module .'_'. $action .'_'. $hook;
   //drupal_system_list($module, $action);
-  //return eduerp_include_hook($module, $action, $hook) ? call_user_func_array($function, $args) : NULL;
-  return function_exists($module, $action, $hook) ? call_user_func_array($function, $args) : NULL;
+  return eduerp_transaction_services_action_invoke($module, $action, $hook) ? call_user_func_array($function, $args) : NULL;
+  //return function_exists($module, $action, $hook) ? call_user_func_array($function, $args) : NULL;
 }
 /**
  * Callback for "recipe.all"

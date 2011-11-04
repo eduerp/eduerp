@@ -43,19 +43,18 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   }
   
   // A student need to be cleared to progress
-  /*if(!student_clearance_performed($student_id)) {
-    drupal_set_message(t('Sorry, you need to be cleared to progress'), 'error');
+  if(!student_clearance_performed($student_id)) {
     $fees = array();
-  }*/
+    drupal_set_message(t('Sorry, you need to be cleared to progress'), 'error');
+  }
 
   // test if student is still a student (graduated or expelled)
-  /*$session = variable_get('eduerp_current_session', '') ? variable_get('eduerp_current_session', '') : NULL;
+  $session = variable_get('eduerp_current_session', '') ? variable_get('eduerp_current_session', '') : NULL;
   if(!student_next_level($student_id, $session)){
     $fees = NULL;
     drupal_set_message(t('Sorry. Your student record is no longer eligible to pay fees'), 'error');
-  }*/
+  }
 
-  
   if(!is_reservation_existing($student_id)) {
     unset($fees['hostel']);
   }
@@ -126,7 +125,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         
         $form['eduerp_fees']["$type_$key"] = array(
           '#type' => 'checkbox',
-          '#title' => strip_tags($desc[$key]), // use check_plain
+          '#title' => strip_tags($desc[$key]),
           '#default_value' => TRUE,
           '#disabled' => TRUE //($type == 'fees')
         );
@@ -140,7 +139,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         );
       }
       foreach($items as $item) {
-        
         // Identify extras
         // foreach of the fees item description, parse it to extract the extras
         $key_search = $item['item_description'];
@@ -157,7 +155,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
             '#type' => 'hidden',
             '#value' => $item,
         );
-        //dsm($item);
         // get_fee_items reports 3 states of is_scholarship_applicable
         // @see staff_school_fees_create_modify_fee_item_form
         // NULL: Not set
@@ -230,7 +227,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   }
   //dsm($vkeys);
   //dsm($values);
-  // @todo: Rework regex to reflect no limit to digits
   $key_search = implode(',', array_values($vkeys));
   preg_match_all('/product_item_fees_\d+/', $key_search, $matches);
   // match options for fees option
@@ -530,7 +526,7 @@ function uc_eduerp_fees_update_load($value, $schema, $field_value) {
 }
 
 function uc_eduerp_fees_update_update($value, $schema, $field_value) {
-  return db_query("UPDATE {$schema} set order_status = $field_value WHERE order_id = %d", $value);
+  return db_query("UPDATE {$schema} set order_status = '$field_value' WHERE order_id = %d", $value);
 }
 
 function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
@@ -545,19 +541,21 @@ function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
  * @todo Convert this to rules and triggers
  */
 function uc_eduerp_fees_update_fees($values) {
-  $order_id = uc_eduerp_fees_update_invoke('load', $values['tpin']);
+  //$order_id = uc_eduerp_fees_update_invoke('load', 'uc_orders', $values['tpin']);
+  $order_id = $values['order_id'];
   $order = uc_order_load($order_id);
+  $data = unserialize($order->data);
   // If status == payment_received
   // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from 
   // edupay and update the ubercart order status to paid
   // run ubercart update query here to update an order
-  // db_query('UPDATE {uc_orders} set ')
   if($values['status'] == FEES_PAID) { //Payment received
     uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
     if(isset($_SESSION['eduerp_fees_in_cart'])){
       unset($_SESSION['eduerp_fees_in_cart']);
     }
-    //watchdog this
+    watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $values['uid'])));
+    return array('fees paid');
   }
   // If the fees paid for is of type hostel
   if($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
@@ -575,37 +573,54 @@ function uc_eduerp_fees_update_fees($values) {
     $order_status = $order->order_status;
     //$possible_statuses = array('canceled', 'pending', 'in_checkout');
     if((uc_order_status_data($order_status, 'state') == 'pending' or 'in_checkout')) {
-      $status = t('canceled');
+      $status = 'canceled';
       uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
-      // watchdog this
+      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $values['uid'])));
     }
+    
+    // @todo: Not sure about removing this item from cart yet
     if(uc_order_status_data($order_status, 'state') == 'canceled') {
       //remove the order item from cart and unset all other related SESSION variables
-      uc_eduerp_fees_update('delete', $order_id, 'uc_orders');
+      //uc_eduerp_fees_update('delete', $order_id, 'uc_orders');
       // watchdog this
     }
     // load and rebuild the user's order invoice
-    uc_eduerp_fees_invoice_regenerate();
+    uc_eduerp_fees_invoice_regenerate($order_id);
     
     // if the product_attribute sent from edupay is hostel, revoke hostel allocation
     if($values['type'] == EDUERP_FEES_HOSTEL) {
-      hostel_allocation_revoke_expired_reservation();
-      // watchdog this
+      // @todo check if there's hostel reservation for the user beore
+      // revoking the expiration
+      hostel_allocation_revoke_expired_reservation($values['uid'], True);
+      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id and a type of @type on user @uid', array('@order_id' => $order_id, '@type' => $values['type'], '@uid' => $values['uid'])));
     }
+    
+    // @todo send an email to user about all these actions
+    // A link to the regenerated invoice to the user can download
+    // 
   }
 }
 
-function uc_eduerp_fees_invoice_regenerate() {
-  return uc_eduerp_fees_invoice_rebuild();
+function uc_eduerp_fees_invoice_regenerate($order_id) {
+  return _uc_eduerp_fees_invoice_rebuild($order_id);
 }
 
-function uc_eduerp_fees_invoice_load() {
-  return 'loaded';
+/**
+ * load the invoice view (pdf_invoice)
+ * views_get_view (get it from default)
+ * reload the invoice at user's profile page
+ * clear the cache
+ * 
+ * Things to change on the invoice
+ *  - print status as Unpaid
+ */ 
+function _uc_eduerp_fees_invoice_load($order_id) {
+  $view = views_get_view_result('pdf_invoice', 'pdf_1', $order_id);
+  $view[0]->uc_orders_order_status = 'canceled';
 }
 
-function uc_eduerp_fees_invoice_rebuild() {
-  uc_eduerp_fees_invoice_load();
-  return;
+function _uc_eduerp_fees_invoice_rebuild($order_id) {
+  return _uc_eduerp_fees_invoice_load($order_id);
 }
 
 /**
@@ -665,7 +680,6 @@ function uc_eduerp_fees_load_fee_options($type) {
  *  fees or hostel
  */ 
 function uc_eduerp_fees_load_item_options($type){
-  
 }
 
 /**

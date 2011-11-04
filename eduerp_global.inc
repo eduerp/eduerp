@@ -105,4 +105,3 @@ function eduerp_set_role($account, $role) {
   return false;
 }
 
-?>

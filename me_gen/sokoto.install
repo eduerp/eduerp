@@ -8,6 +8,14 @@ function sokoto_install() {
   variable_set('RegisterAllCoursesatStartofSession', 1);
   variable_set('RegistrarApprovesGrades', 0);
 
+  include_once './'. drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
+  
+  if(variable_get('eduerp_institution_current', '')) {
+    // create new institution in webapp_institution
+    $institution_name = variable_get('eduerp_institution_current', '');
+    $code = eduerp_institution_generate();
+    db_query('INSERT INTO {webapp_institution) VALUES (%s, %s)', $institution_name, $code);
+  }
   drupal_set_message('sokoto module installed');
 }
 
