@@ -1,11 +1,11 @@
-<?php 
+<?php
 
 /**
  * @author Kayode Odeyemi (dreyemi@gmail.com)
- * 
+ *
  * @file
  * Ubercart integration of EduERP fees
- */ 
+ */
 
 define('EDUERP_FEES_NORMAL', 'fees');
 define('EDUERP_FEES_HOSTEL', 'hostel');
@@ -18,14 +18,14 @@ define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
 /**
  * Pay fees menu callback
- * 
+ *
  * @return
  *   - Drupal form
- */ 
+ */
 function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
-  
+
   if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     $fees = $fees_items;
   }
@@ -33,7 +33,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if (uc_cart_get_contents() == NULL) { // if cart is empty
     $_SESSION['eduerp_fees_in_cart'] = FALSE;
   }
-  
+
   // If the student have these items in the cart already, redirect
   // to the /cart to prevent increment in cart quantity.
   // Also handles irregularities when the item added to cart is incomplete
@@ -41,7 +41,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     drupal_goto('cart');
     drupal_set_message('Welcome back! Please continue from where you left off.');
   }
-  
+
   // A student need to be cleared to progress
   if(!student_clearance_performed($student_id)) {
     $fees = array();
@@ -58,7 +58,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if(!is_reservation_existing($student_id)) {
     unset($fees['hostel']);
   }
-  
+
   $form['eduerp_fees'] = array(
     '#type' => 'fieldset',
     '#title' => t('Pay fees'),
@@ -69,21 +69,21 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $description = $fee['description'];
     $options = $fee['options'];
     $options_nid = (string)$options['nid'];
-      
+
     // Add more user information since student has been cleared
     $profile = student_load_student_profile($student_id);
     $options['jambno'] = $profile->profile_jambno;
     $fullnames = array($profile->profile_first_name, $profile->profile_last_name);
     $options['fullnames'] = implode(' ', $fullnames);
-    
+
     // Add institution
     module_load_include('inc', 'eduerp', 'eduerp.admin');
     $institution = eduerp_get_institution('name');
     $options['institution'] = $institution->id;
-    
+
     // The paid fees items
     $paid_fees_items = uc_eduerp_fees_paid_items();
-    
+
     // if $fees is paid for break everything
     /*if(in_array($attr_obj->name, $paid_fees_items)) {
       //$fees = array();
@@ -94,12 +94,12 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     // Updates: late payment should still be allowed even after last_registration_date
     // So, these sort of fee items will not timeout. Reason, last_registration_date value
     // will be NULL or its date value will be in the past.
-    
-    // Israel statement: "Any transaction awaiting in the queue, for 
-    // current date > last_registration_date(not >=), without Late Registration Charge 
+
+    // Israel statement: "Any transaction awaiting in the queue, for
+    // current date > last_registration_date(not >=), without Late Registration Charge
     // included, must expire."
-    
-    // Payment must still be allowed even when last_registration_date is reached. The 
+
+    // Payment must still be allowed even when last_registration_date is reached. The
     // difference is that from the 1st day following last_registration_date, Late
     // Registration Charge must apply.
     // status: Needs work ()
@@ -122,14 +122,14 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         $nids[$key] = $value['product_nid'];
         $items[$key] = $value;
         $desc[$key] = $value['item_description'];
-        
+
         $form['eduerp_fees']["$type_$key"] = array(
           '#type' => 'checkbox',
           '#title' => strip_tags($desc[$key]),
           '#default_value' => TRUE,
           '#disabled' => TRUE //($type == 'fees')
         );
-        
+
       }
       // construct fees hidden fields separately
       foreach($nids as $nid) {
@@ -148,7 +148,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search);
         }
         // @todo
-        // Would be appropriate to use item_description here 
+        // Would be appropriate to use item_description here
         // but it is very unstructured and inconsistent
         $id = $item['product_nid'];
         $form['eduerp_fees']['product_item_' . $type . '_' . $id] = array(
@@ -177,7 +177,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     if($type == EDUERP_FEES_HOSTEL) {
       $item = $fee['item'];
       $nid = $fee['item']['product_nid'];
-      
+
       // Build a checkbox
       $form['eduerp_fees'][$type] = array(
         '#type' => 'checkbox',
@@ -185,7 +185,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         '#default_value' => TRUE,
         '#disabled' => TRUE //($type == 'fees')
       );
-      
+
       $form['eduerp_fees'][$nid] = array(
           '#type' => 'hidden',
           '#value' => $nid,
@@ -209,15 +209,15 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     '#value' => t('Pay Fees')
   );
   $form['#submit'][] = 'uc_eduerp_fees_pay_fees_form_submit';
-  
+
   return $form;
 }
 
 /**
- * 
+ *
  * @todo Write all modifications of uc_eduerp_fees_pay_fees to db
  *  for retrieval. uc_eduerp_fees_load_extras need this.
- */ 
+ */
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   $student_id = $form_state['values']['uid'];
   $values = array();
@@ -275,17 +275,17 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   }
   // subject = vkeys
   // for each of $vkeys that matches regex pattern
-  // put all 
+  // put all
   // $items = all of its values
   // @todo Move into a function and find alternative ways to get the
   // cart keys. Also get the quantity of each fee item to pass to uc_cart_add_item
   /*$cart_nids = array(
     $vkeys[2] => array(
-      'item' => $form_state['values'][$vkeys[2]], 
+      'item' => $form_state['values'][$vkeys[2]],
       'options' => $form_state['values'][$vkeys[3]]
     ),
     $vkeys[6] => array(
-      'item' => $form_state['values'][$vkeys[6]], 
+      'item' => $form_state['values'][$vkeys[6]],
       'options' => $form_state['values'][$vkeys[7]]
     ),
   );
@@ -344,24 +344,24 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
 /**
  * Implementation of hook_eduerp_fees
- * 
+ *
  * Fees with all necessary setup information included
  * Describes the fees structure.
- * 
- * @return 
+ *
+ * @return
  *   - $fees: The Fees object including it's type, setup
- * 
- * @todo 
+ *
+ * @todo
  *   - Write a fees plugin to define custom fees type
  *   - Introduce a 'callback' key to store in db this fees structure for
  *  every module that implements it
- */ 
+ */
 function uc_eduerp_fees_eduerp_fees($fees = array()) {
   global $user;
-  
+
   $type = '';
   $uid = user_load($user->uid);
-  
+
   static $fees_item;
   $fees_item = get_fee_items($uid->uid);
   if(!empty($fees_item)){
@@ -382,7 +382,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'session' => $fees_item['session_name'],
       'late_registration' => $fees_item['late_reg_info']
     );
-    
+
     // hostel
     $fees_item['hostel'] = $fees_item['hostel_info'];
     $fees_item['options']['hostel'] = array(
@@ -393,7 +393,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
   } else {
     $fees_item = array();
   }
-  
+
   $fees['fees'] = array(
     'item' => $fees_item['item'],
     //'description' => $fees_item['item']['item_description'],
@@ -416,10 +416,10 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 
 /**
  * Hook to define fees_structure
- * 
+ *
  * @param $fees
  *   - The fees
- */ 
+ */
 function uc_eduerp_fees_eduerp_fees_hook($fees) {
   foreach (module_implements('eduerp_fees') as $module) {
     $function = $module . '_eduerp_fees';
@@ -436,8 +436,8 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
 
 /**
  * Implements hook_eduerp_fees_eduerp_fees_alter
- * 
- */ 
+ *
+ */
 function uc_eduerp_fees_eduerp_fees_alter(&$items) {
   // array search the context value
   // when gotten, inject stuffs into $extras key
@@ -451,12 +451,12 @@ function uc_eduerp_fees_eduerp_fees_alter(&$items) {
 
 /**
  * All paid fees items gotten from EduPay
- * 
+ *
  * @params $items
  *  Paid items
- * 
+ *
  * @return array
- */ 
+ */
 function uc_eduerp_fees_paid_items() {
   //$items include product_nid, attribute_id and status
   $items = array();
@@ -464,13 +464,13 @@ function uc_eduerp_fees_paid_items() {
 }
 
 /**
- * Gets the fees attributes including 
+ * Gets the fees attributes including
  *   - product_nid
  *   - attribute_id
  *   - option_id
- * 
+ *
  * @todo Needs rework
- */ 
+ */
 function uc_eduerp_fees_fees_attributes($fees) {
   if(!empty($fees)) {
     foreach($fees as $fee) {
@@ -486,8 +486,8 @@ function uc_eduerp_fees_fees_attributes($fees) {
 /**
  * Load fees extras from the database. Accepts only
  * fees and hostel types as of writing
- * 
- */ 
+ *
+ */
 function uc_eduerp_fees_load_extras($uid, $type) {
   switch($type) {
     case 'fees':
@@ -509,7 +509,7 @@ function uc_eduerp_fees_load_extras($uid, $type) {
 
 /**
  * hook_update_invoke declaration
- */ 
+ */
 function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value = NULL) {
   foreach(module_list() as $module) {
     $function = $module . '_update';
@@ -536,8 +536,8 @@ function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
 /**
  * Implementation of hook_update_{hook}
  *
- * @see 
- * 
+ * @see
+ *
  * @todo Convert this to rules and triggers
  */
 function uc_eduerp_fees_update_fees($values) {
@@ -546,7 +546,7 @@ function uc_eduerp_fees_update_fees($values) {
   $order = uc_order_load($order_id);
   $data = unserialize($order->data);
   // If status == payment_received
-  // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from 
+  // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from
   // edupay and update the ubercart order status to paid
   // run ubercart update query here to update an order
   if($values['status'] == FEES_PAID) { //Payment received
@@ -560,7 +560,7 @@ function uc_eduerp_fees_update_fees($values) {
   // If the fees paid for is of type hostel
   if($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
     // allocate bedspace for this user
-    return allocate_bedspace($values['uid']);
+    return hostel_allocation_allocate_bedspace($values['uid']);
   }
   if($values['service'] == INVOICE_REGENERATE) {
     // Load the order_id by edupay tpin (query eduerp_trasaction table to get the pin )
@@ -577,7 +577,7 @@ function uc_eduerp_fees_update_fees($values) {
       uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
       watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $values['uid'])));
     }
-    
+
     // @todo: Not sure about removing this item from cart yet
     if(uc_order_status_data($order_status, 'state') == 'canceled') {
       //remove the order item from cart and unset all other related SESSION variables
@@ -586,7 +586,7 @@ function uc_eduerp_fees_update_fees($values) {
     }
     // load and rebuild the user's order invoice
     uc_eduerp_fees_invoice_regenerate($order_id);
-    
+
     // if the product_attribute sent from edupay is hostel, revoke hostel allocation
     if($values['type'] == EDUERP_FEES_HOSTEL) {
       // @todo check if there's hostel reservation for the user beore
@@ -594,10 +594,10 @@ function uc_eduerp_fees_update_fees($values) {
       hostel_allocation_revoke_expired_reservation($values['uid'], True);
       watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id and a type of @type on user @uid', array('@order_id' => $order_id, '@type' => $values['type'], '@uid' => $values['uid'])));
     }
-    
+
     // @todo send an email to user about all these actions
     // A link to the regenerated invoice to the user can download
-    // 
+    //
   }
 }
 
@@ -610,10 +610,10 @@ function uc_eduerp_fees_invoice_regenerate($order_id) {
  * views_get_view (get it from default)
  * reload the invoice at user's profile page
  * clear the cache
- * 
+ *
  * Things to change on the invoice
  *  - print status as Unpaid
- */ 
+ */
 function _uc_eduerp_fees_invoice_load($order_id) {
   $view = views_get_view_result('pdf_invoice', 'pdf_1', $order_id);
   $view[0]->uc_orders_order_status = 'canceled';
@@ -625,10 +625,10 @@ function _uc_eduerp_fees_invoice_rebuild($order_id) {
 
 /**
  * Get fees of type fees from the source
- * 
+ *
  * All modifications within uc_eduerp_fees_pay_fees are
  * not available to the return items in this function
- */ 
+ */
 function uc_eduerp_fees_get_fees($type = 'fees') {
   if($fees = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     foreach($fees as $fee){
@@ -641,10 +641,10 @@ function uc_eduerp_fees_get_fees($type = 'fees') {
 }
 
 /**
- * Get fees items when an order is made 
- * 
+ * Get fees items when an order is made
+ *
  * @todo test the order object to make sure it is of type fees
- */ 
+ */
 function uc_eduerp_fees_get_fees_order() {
   $order_id = intval($_SESSION['cart_order']);
   if($order_id > 0) {
@@ -655,13 +655,13 @@ function uc_eduerp_fees_get_fees_order() {
 
 /**
  * Loads a subset of fees by type
- * 
+ *
  * @param $type
  *   fees or hostel
- * 
- * @return 
+ *
+ * @return
  *   - array
- */  
+ */
 function uc_eduerp_fees_load_fee_options($type) {
   if(!is_null($type)){
     if($fees = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
@@ -675,41 +675,41 @@ function uc_eduerp_fees_load_fee_options($type) {
  * Orders are regarded as items in UC.
  * Provides extra access to data in the order throughout
  * the life time of the ordering process.
- * 
+ *
  * @param $type
  *  fees or hostel
- */ 
+ */
 function uc_eduerp_fees_load_item_options($type){
 }
 
 /**
  * Determines whether late registration period is reached
- * 
+ *
  * Since no info is given from get_fee_item about the timezone,
  * it defaults to Drupal's timezone
- * 
+ *
  * @return Bool
- * 
- */ 
+ *
+ */
 function uc_eduerp_fees_registration_is_late() {
   $late = uc_eduerp_fees_load_fee_options(EDUERP_FEES_NORMAL);
   $late_value = $late['late_registration'];
   $late_date = $late_value['last_registration_date'];
   if(!is_null($late_date)){
     $now = date('Y-m-d');
-    // if today's date == 
+    // if today's date ==
     return ($now >= $late_date) ? TRUE : FALSE;
   }
 }
 
 /**
  * Implements hook_form_ID_alter
- * 
- */ 
+ *
+ */
 function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) {
   // Remove hostel if no reservation exists
   if(!is_reservation_existing($form['uid']['#value'])) {
     // unsets from screen, doesn't get removed from from array
-    unset($form['eduerp_fees']['hostel']); 
+    unset($form['eduerp_fees']['hostel']);
   }
 }
