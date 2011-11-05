@@ -9,12 +9,21 @@ function sokoto_install() {
   variable_set('RegistrarApprovesGrades', 0);
 
   include_once './'. drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
-  
+
+  if (empty(variable_get('eduerp_institution_current', ''))) {
+    variable_set('eduerp_institution_current', 'Usmanu Dan Fodiyo University');
+    variable_set('eduerp_institution', 1);
+
+    // Keep compatible with Kayode's test values for now
+    db_query("INSERT INTO `webapp_institution` (`id`, `name`, `code`, `secret`) VALUES
+      (1, 'Usmanu Dan Fodiyo University', 'UNIA', '2fd0bba6b1774ed391c1ff8467f52a5d')");
+  }
+
   if(variable_get('eduerp_institution_current', '')) {
     // create new institution in webapp_institution
-    $institution_name = variable_get('eduerp_institution_current', '');
-    $code = eduerp_institution_generate();
-    db_query('INSERT INTO {webapp_institution) VALUES (%s, %s)', $institution_name, $code);
+    //$institution_name = variable_get('eduerp_institution_current', '');
+    //$code = eduerp_institution_generate();
+    //db_query('INSERT INTO {webapp_institution) VALUES (%s, %s)', $institution_name, $code);
   }
   drupal_set_message('sokoto module installed');
 }
