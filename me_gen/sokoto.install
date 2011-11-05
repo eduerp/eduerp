@@ -10,7 +10,8 @@ function sokoto_install() {
 
   include_once './'. drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
 
-  if (empty(variable_get('eduerp_institution_current', ''))) {
+  $inst = variable_get('eduerp_institution_current', '');
+  if (empty($inst)) {
     variable_set('eduerp_institution_current', 'Usmanu Dan Fodiyo University');
     variable_set('eduerp_institution', 1);
 
