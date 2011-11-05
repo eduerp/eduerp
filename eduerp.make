@@ -7,15 +7,19 @@ projects[] = drupal
 ; Projects
 
 ; EduERP 
-projects[eduerp][download][type] = "git"
-projects[eduerp][download][url] = "git@dev.datasphir.com:eduerp"
-projects[eduerp][type] = "module"
+;projects[eduerp][download][type] = "git"
+;projects[eduerp][download][url] = "git@dev.datasphir.com:eduerp"
+;projects[eduerp][type] = "module"
 
 ; EduERP - editablefields
-projects[editablefields][download][type] = "git"
-projects[editablefields][download][url] = "git@dev.datasphir.com:editablefields"
-projects[editablefields][type] = "module"
+;projects[editablefields][download][type] = "git"
+;projects[editablefields][download][url] = "git@dev.datasphir.com:editablefields"
+;projects[editablefields][type] = "module"
 
+; Drupal-Zimbra
+;projects[zimbra][download][type] = "git"
+;projects[zimbra][download][url] = "https://github.com/miglius/drupal-zimbra.git"
+;projects[zimbra][type] = "module"
 
 ; Admin
 projects[backup_migrate][subdir] = "contrib"
@@ -55,9 +59,6 @@ projects[imagecache][subdir] = "contrib"
 
 ; Paths
 projects[pathauto][subdir] = "contrib"
-
-; Performance
-projects[dbtuner][subdir] = "contrib"
 
 ; Services
 projects[services][subdir] = "contrib"
