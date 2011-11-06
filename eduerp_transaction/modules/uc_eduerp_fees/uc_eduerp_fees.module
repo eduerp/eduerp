@@ -30,22 +30,12 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $fees = $fees_items;
   }
   dsm($fees);
-  if (uc_cart_get_contents() == NULL) { // if cart is empty
-    $_SESSION['eduerp_fees_in_cart'] = FALSE;
-  }
-  
-  // If the student have these items in the cart already, redirect
-  // to the /cart to prevent increment in cart quantity.
-  // Also handles irregularities when the item added to cart is incomplete
-  if($_SESSION['eduerp_fees_in_cart'] == TRUE & uc_cart_get_contents() != NULL) {
-    drupal_goto('cart');
-    drupal_set_message('Welcome back! Please continue from where you left off.');
-  }
   
   // A student need to be cleared to progress
   if(!student_clearance_performed($student_id)) {
     $fees = array();
     drupal_set_message(t('Sorry, you need to be cleared to progress'), 'error');
+    return FALSE;
   }
 
   // test if student is still a student (graduated or expelled)
@@ -53,6 +43,44 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if(!student_next_level($student_id, $session)){
     $fees = NULL;
     drupal_set_message(t('Sorry. Your student record is no longer eligible to pay fees'), 'error');
+    return FALSE;
+  }
+  
+  if (uc_cart_get_contents() == NULL) { // if cart is empty
+    $_SESSION['eduerp_fees_in_cart'] = FALSE;
+  }
+  
+  // Make a case for when a student changes his mind to add
+  // to add his hostel reservation to cart
+  $cart_items = uc_cart_get_contents();
+  foreach($cart_items as $cart_item) {
+    if($cart_items != NULL && 
+      $cart_item->data['type'] == EDUERP_FEES_NORMAL &&
+      $cart_item->data['type'] != EDUERP_FEES_HOSTEL
+      && !is_null($fees['hostel']['item'])) {
+        // add to cart hostel
+        uc_cart_add_item($fees['hostel']['item']['product_nid'], 1, $fees['hostel']['options'], uc_cart_get_id(), $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+        drupal_goto('cart');
+    }
+  }
+  
+  // The paid fees items
+  foreach($fees as $fee) {
+    $paid_fees_items = uc_eduerp_fees_paid_items($student_id, $fee['item']['product_nid'], TRUE);
+    // if $fees is paid for break everything
+    if(in_array($fee['item']['product_nid'], $paid_fees_items)) {
+      $fees = array();
+      drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
+      return FALSE;
+    }
+  }
+    
+  // If the student have these items in the cart already, redirect
+  // to the /cart to prevent increment in cart quantity.
+  // Also handles irregularities when the item added to cart is incomplete
+  if($_SESSION['eduerp_fees_in_cart'] == TRUE | uc_cart_get_contents() != NULL) {
+    drupal_goto('cart');
+    drupal_set_message('Welcome back! Please continue from where you left off.');
   }
 
   if(!is_reservation_existing($student_id)) {
@@ -69,26 +97,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $description = $fee['description'];
     $options = $fee['options'];
     $options_nid = (string)$options['nid'];
-      
-    // Add more user information since student has been cleared
-    $profile = student_load_student_profile($student_id);
-    $options['jambno'] = $profile->profile_jambno;
-    $fullnames = array($profile->profile_first_name, $profile->profile_last_name);
-    $options['fullnames'] = implode(' ', $fullnames);
-    
-    // Add institution
-    module_load_include('inc', 'eduerp', 'eduerp.admin');
-    $institution = eduerp_get_institution('name');
-    $options['institution'] = $institution->id;
-    
-    // The paid fees items
-    $paid_fees_items = uc_eduerp_fees_paid_items();
-    
-    // if $fees is paid for break everything
-    /*if(in_array($attr_obj->name, $paid_fees_items)) {
-      //$fees = array();
-      //drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
-    }*/
 
     // Invalidate fee if value of last_registration_date is the last date
     // Updates: late payment should still be allowed even after last_registration_date
@@ -103,10 +111,10 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     // difference is that from the 1st day following last_registration_date, Late
     // Registration Charge must apply.
     // status: Needs work ()
-    if(uc_eduerp_fees_registration_is_late('fees')) {
+    /*if(uc_eduerp_fees_registration_is_late('fees')) {
       $fee = NULL;
       drupal_set_message(t('Student registration for this session is closed. Consult the registry'), 'error');
-    }
+    }*/
 
     // Before item is added to cart, check for hostel reservation value
     // if hostel reservation has expired, set fees to NULL
@@ -152,8 +160,8 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         // but it is very unstructured and inconsistent
         $id = $item['product_nid'];
         $form['eduerp_fees']['product_item_' . $type . '_' . $id] = array(
-            '#type' => 'hidden',
-            '#value' => $item,
+          '#type' => 'hidden',
+          '#value' => $item,
         );
         // get_fee_items reports 3 states of is_scholarship_applicable
         // @see staff_school_fees_create_modify_fee_item_form
@@ -371,6 +379,17 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       $description[$key] = $value['item_description'];
       $fees_item['item'][$key]['extras'] = array();
     }
+    // Add more user information since student has been cleared
+    $profile = student_load_student_profile($uid->uid);
+    //$options['jambno'] = $profile->profile_jambno;
+    $fullnames = array($profile->profile_first_name, $profile->profile_last_name);
+    //$options['fullnames'] = implode(' ', $fullnames);
+    
+    // Add institution
+    module_load_include('inc', 'eduerp', 'eduerp.admin');
+    $institution = eduerp_get_institution('name');
+    //$options['institution'] = $institution->id;
+    
     $fees_item['options'] = array(
       'type' => EDUERP_FEES_NORMAL,
       'nid' => $fees_item['studentFeeSetupNID'],
@@ -380,7 +399,10 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'scholarship' => $fees_item['is_student_on_scholarship'], // True or False
       'allow_instalment' => $fees_item['instalment_payment_authorised'], // True or False
       'session' => $fees_item['session_name'],
-      'late_registration' => $fees_item['late_reg_info']
+      'late_registration' => $fees_item['late_reg_info'],
+      'jambno' => $profile->profile_jambno,
+      'fullnames' => implode(' ', $fullnames),
+      'institution' => $institution->id
     );
     
     // hostel
@@ -388,7 +410,10 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
     $fees_item['options']['hostel'] = array(
       'nid' => $fees_item['hostel']['product_nid'],
       'type' => EDUERP_FEES_HOSTEL,
-      'expiry_date' => $fees_item['hostel']['expiry_date']
+      'expiry_date' => $fees_item['hostel']['expiry_date'],
+      'jambno' => $profile->profile_jambno,
+      'fullnames' => implode(' ', $fullnames),
+      'institution' => $institution->id
     );
   } else {
     $fees_item = array();
@@ -452,14 +477,32 @@ function uc_eduerp_fees_eduerp_fees_alter(&$items) {
 /**
  * All paid fees items gotten from EduPay
  * 
+ * Returns an array of all fees that are paid
+ * 
  * @params $items
  *  Paid items
  * 
  * @return array
  */ 
-function uc_eduerp_fees_paid_items() {
+function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
   //$items include product_nid, attribute_id and status
   $items = array();
+  $status = FEES_PAID;
+  $result = db_query("SELECT * FROM {uc_order_products} WHERE nid = %d ORDER BY nid", $nid);
+  $products = db_fetch_object($result);
+  
+  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status = '%s' and data IS NOT NULL", $uid, $status);
+  while($order = db_fetch_object($result)) {
+    if($subscript) {
+      $items[] = $products->nid;
+      break;
+    }
+    $order->nid = $products->nid;
+    $order->order_id = $order->order_id;
+    $order->data = unserialize($order->data);
+    $items[$order->nid] = $order;    
+  }
+  //dsm(uc_order_module_invoke('load', $order, NULL));
   return $items;
 }
 
@@ -712,4 +755,15 @@ function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) 
     // unsets from screen, doesn't get removed from from array
     unset($form['eduerp_fees']['hostel']); 
   }
+}
+
+/**
+ * Implementation of hook_views_api().
+ */
+function uc_eduerp_fees_views_api() {
+  return array(
+    'api' => 2,
+    //'path' => drupal_get_path('module', 'uc_eduerp_fees'),
+    'path' => drupal_get_path('module', 'uc_eduerp_fees') . '/includes',
+  );
 }

@@ -98,14 +98,38 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
           $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td></tr></table>';
         }
       }
+      break;
     case 'uc_cart_view_form':
-      // @todo
-      // if a fee of type fees is in the cart,
-      // disable it from edit
-      // foreach of the fees in the cart, loadup its nid
-      // dsm(uc_cart_get_contents());
-      //dsm($form);
+      break;
   }
+}
+
+/**
+ * Implements hook_tapir_table_alter
+ */ 
+function uc_edupay_tapir_table_alter(&$table, $table_id) {
+  if($table_id == 'uc_cart_view_table') {
+    // hook_cart_fees_type
+    foreach(module_implements('cart_fees_type') as $module) {
+      $types = module_invoke($module, 'cart_fees_type');
+    }
+    foreach($types as $type){
+      if($type == 'fees') {
+        $table['#columns']['remove']['access'] = FALSE;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_cart_fees_type
+ */ 
+function uc_edupay_cart_fees_type() {
+  $cart_items = uc_cart_get_contents();
+  foreach($cart_items as $key => $value) {
+    $types[$key] = $value->data['type'];
+  }
+  return $types;
 }
 
 /**
@@ -126,14 +150,16 @@ function uc_edupay_cart_item($op, &$item){
         $late_value = $late['late_registration'];
         
         # if late registration date value is set and its amount is not empty
-        if(!is_null($late_value['last_registration_date'])){
+        if(!is_null($late_value['last_registration_date']) and uc_eduerp_fees_registration_is_late()){
           # We need the date in UNIX timestamp and as integer
           $late_value['last_registration_date'] = intval(strtotime($late_value['last_registration_date']));
           
           # if a fees item recognized as Tuition (of Full Amount or Instalment1) 
           # is among the items in cart
           $extras = uc_eduerp_fees_load_extras($item->cart_id, 'fees');
-          if($item->title == 'tuition' and ($extras[$item->data['nid']]['fees_payment_format'] == FEES_FULL or FEES_FIRST_INSTALMENT)) {
+          $fees_format = array(FEES_FULL, FEES_FIRST_INSTALMENT);
+          //if($item->title == 'Tuition' and ($extras[$item->data['nid']]['fees_payment_format'] == FEES_FULL or FEES_FIRST_INSTALMENT)) {
+          if($item->title == 'Tuition' and in_array($extras[$item->data['nid']]['fees_payment_format'], $fees_format)) {
             $late_charges = $late_value['amount'];
             $price = $item->price;
             
@@ -150,16 +176,20 @@ function uc_edupay_cart_item($op, &$item){
         # Alter scholarship
         if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
           // round such fee item amount to zero
-          $price_info = array(
+          /*$price_info = array(
             'price' => 0
           );
           
           // Initialize the context.
           $context = array(
-            'revision' => 'altered',
+            'revision' => 'themed-original',
             'type' => 'amount',
-          );
-          $item->price = uc_price($price_info, $context);
+          );*/
+          
+          $options['price_options'] = $item;
+          
+          //$item->price = uc_price($price_info, $context);
+          //uc_price($price_info, $context, $options);
           
           // reflect change in cart
           $text = t('Scholarship Applicable');
@@ -167,9 +197,49 @@ function uc_edupay_cart_item($op, &$item){
           //$item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
         }
       }
+      break;
   }
 }
 
+function uc_edupay_uc_price_handler() {
+  return array(
+    'alter' => array(
+      'title' => t('Modify Scholarship price'),
+      'description' => t('Round the price to zero if Fees include Scholarship'),
+      'callback' => 'uc_edupay_fees_price_alter'
+    ),
+    'format' => array(
+      'title' => t('Modify Scholarship price'),
+      'description' => t('Alter the price in view based on Fees item options'),
+      'callback' => 'uc_edupay_fees_price_handler_format',
+    ),
+  );
+}
+
+/**
+ * Callback to modify the price of an item in cart
+ * 
+ */ 
+function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
+  $items = uc_cart_get_contents();
+  foreach ($items as $item) {
+    $options['price_options'] = $item;
+    if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
+      $price_info = array(
+        'price' => 0
+      );
+      
+      // Initialize the context.
+      $context = array(
+        'revision' => 'themed',
+        'type' => 'amount',
+      );
+    }
+  }
+}
+
+function uc_edupay_fees_price_handler_format($price, $options) {
+}
 /**
  * A hook to mark a fee item as an instalment
  * 
@@ -177,15 +247,6 @@ function uc_edupay_cart_item($op, &$item){
  * "Full Amount", "Instalment1" or "Instalment2" in its description
  */ 
 function uc_eduerp_fees_instalment() {
-  
-}
-
-/**
- * A hook to modify the price of an item in cart
- * 
- * 
- */ 
-function uc_edupay_fees_price_alter() {
   
 }
 

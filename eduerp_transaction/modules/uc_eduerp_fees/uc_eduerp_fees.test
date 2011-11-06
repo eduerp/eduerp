@@ -64,4 +64,17 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
 	//db_query returns TRUE or FALSE on a query
     $this->assertEqual($result_value, TRUE);
   }
+  
+  /**
+  * Test fees items that have been paid for
+  *
+  */
+  public function testPaidFeesItems() {
+    $paid = uc_eduerp_fees_paid_items(955, 5251, TRUE);
+    // if the value of array key nid is 5251
+    /*if(in_array(5251, $paid)){
+      dsm('yes');
+    }*/
+    $this->assertNull(5251, $paid);
+  }
 }

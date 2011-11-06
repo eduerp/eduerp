@@ -26,5 +26,35 @@ function uc_edupay_strongarm() {
   $strongarm->value = 0;
   $strongarms['uc_pane_billing_enabled'] = $strongarm;
 
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_price_caching';
+  $strongarm->value = 0;
+  $strongarms['uc_price_caching'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_price_format_callback';
+  $strongarm->value = 'uc_store_price_handler_format';
+  $strongarms['uc_price_format_callback'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_price_handler_config';
+  $strongarm->value = array(
+    'uc_store' => array(
+      'enabled' => 1,
+      'weight' => '-10',
+    ),
+    'uc_edupay' => array(
+      'enabled' => 1,
+      'weight' => '-9',
+    ),
+  );
+  $strongarms['uc_price_handler_config'] = $strongarm;
+  
   return $strongarms;
 }
