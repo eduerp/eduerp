@@ -603,7 +603,7 @@ function uc_eduerp_fees_update_fees($values) {
   // If the fees paid for is of type hostel
   if($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
     // allocate bedspace for this user
-    return allocate_bedspace($values['uid']);
+    return hostel_allocation_allocate_bedspace($values['uid']);
   }
   if($values['service'] == INVOICE_REGENERATE) {
     // Load the order_id by edupay tpin (query eduerp_trasaction table to get the pin )
