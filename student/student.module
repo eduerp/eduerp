@@ -523,7 +523,8 @@ function _perform_clearance($student_id) {
   $body .= "Please note this carefully as you will need it to access the university systems.\n";
   $body .= "In particular, you will need it as your new Username to login to the university computer system.\n";
   $body .= "You should continue to use the Password you entered when you Registered.\n\n";
-  $body .= "At a later stage, but not yet, your university e-mail will be: {$user_profile->university_email}\n\n";
+  $body .= "Your university e-mail is: {$user_profile->university_email}\n";
+  $body .= "This requires the same password\n\n";
   $body .= variable_get('site_name', '') . "\n";
 
   $message = drupal_mail('student', 'newmatnumber', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
