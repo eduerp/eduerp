@@ -68,6 +68,130 @@ function student_registration_content_default_fields() {
     ),
   );
 
+  // Exported field: field_profile_exam_number_1
+  $fields['student_profile-field_profile_exam_number_1'] = array(
+    'field_name' => 'field_profile_exam_number_1',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '40',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'text',
+    'required' => '1',
+    'multiple' => '0',
+    'module' => 'text',
+    'active' => '1',
+    'text_processing' => '0',
+    'max_length' => '60',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'widget' => array(
+      'rows' => 5,
+      'size' => '60',
+      'default_value' => NULL,
+      'default_value_php' => NULL,
+      'label' => 'Examination Number',
+      'weight' => '32',
+      'description' => '',
+      'type' => 'text_textfield',
+      'module' => 'text',
+    ),
+  );
+
+  // Exported field: field_profile_exam_number_2
+  $fields['student_profile-field_profile_exam_number_2'] = array(
+    'field_name' => 'field_profile_exam_number_2',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '41',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'text',
+    'required' => '0',
+    'multiple' => '0',
+    'module' => 'text',
+    'active' => '1',
+    'text_processing' => '0',
+    'max_length' => '60',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'widget' => array(
+      'rows' => 5,
+      'size' => '60',
+      'default_value' => NULL,
+      'default_value_php' => NULL,
+      'label' => 'Examination Number',
+      'weight' => '38',
+      'description' => '',
+      'type' => 'text_textfield',
+      'module' => 'text',
+    ),
+  );
+
   // Exported field: field_profile_first_choice
   $fields['student_profile-field_profile_first_choice'] = array(
     'field_name' => 'field_profile_first_choice',
@@ -1089,10 +1213,51 @@ Part_Time',
     'module' => 'student',
     'active' => '1',
     'subjects_allowed_values' => '|
-Mathematics
-Physics
+Agricultural Science
+Applied Electricity
+Auto Mechanics
+Biology
+Building Construction
+Business Management
 Chemistry
-Biology',
+Christian Religious Studies
+Clerical Office Duties
+Clothing and textiles
+Commerce
+Cover
+Economics
+Electronics
+Engineering Science
+English Language
+English Language Balance
+Financial Accounting
+Food and Nutrition
+French
+Further Maths
+Geography
+Government
+Health Science
+History
+Home Management
+Introduction
+Islamic Religious Studies
+Literature in English
+Management Living
+Mathematics
+Metalwork
+Music
+Nigerian Languages
+Physical Education
+Physics
+Principles of Cost Accounting
+Science (core)
+Shorthand
+Sierra Leone Languages
+Sierra Leone studies
+Technical Drawing
+Typewriting
+Visual Art
+Woodwork',
     'grades_allowed_values' => '|
 A1
 B2
@@ -1102,7 +1267,18 @@ C5
 C6
 D7
 E8
-F9',
+F9
+Distinction
+Upper Credit
+Lower Credit
+Pass
+Fail
+A
+B
+C
+D
+E
+F',
     'widget' => array(
       'default_value' => array(
         '0' => array(
@@ -1113,7 +1289,7 @@ F9',
       ),
       'default_value_php' => NULL,
       'label' => 'Examination Records',
-      'weight' => '32',
+      'weight' => '34',
       'description' => '',
       'type' => 'exam_record_exam_record',
       'module' => 'student',
@@ -1162,10 +1338,51 @@ F9',
     'module' => 'student',
     'active' => '1',
     'subjects_allowed_values' => '|
-Mathematics
-Physics
+Agricultural Science
+Applied Electricity
+Auto Mechanics
+Biology
+Building Construction
+Business Management
 Chemistry
-Biology',
+Christian Religious Studies
+Clerical Office Duties
+Clothing and textiles
+Commerce
+Cover
+Economics
+Electronics
+Engineering Science
+English Language
+English Language Balance
+Financial Accounting
+Food and Nutrition
+French
+Further Maths
+Geography
+Government
+Health Science
+History
+Home Management
+Introduction
+Islamic Religious Studies
+Literature in English
+Management Living
+Mathematics
+Metalwork
+Music
+Nigerian Languages
+Physical Education
+Physics
+Principles of Cost Accounting
+Science (core)
+Shorthand
+Sierra Leone Languages
+Sierra Leone studies
+Technical Drawing
+Typewriting
+Visual Art
+Woodwork',
     'grades_allowed_values' => '|
 A1
 B2
@@ -1175,7 +1392,18 @@ C5
 C6
 D7
 E8
-F9',
+F9
+Distinction
+Upper Credit
+Lower Credit
+Pass
+Fail
+A
+B
+C
+D
+E
+F',
     'widget' => array(
       'default_value' => array(
         '0' => array(
@@ -1186,7 +1414,7 @@ F9',
       ),
       'default_value_php' => NULL,
       'label' => 'Examination Records',
-      'weight' => '38',
+      'weight' => '40',
       'description' => '',
       'type' => 'exam_record_exam_record',
       'module' => 'student',
@@ -1351,17 +1579,18 @@ F9',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '30',
     'allowed_values' => 'GCE
 GCENECO
+NCE
 NECO
+OND
 WAEC',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
         '0' => array(
           'value' => '',
-          '_error_element' => 'default_value_widget][field_profile_olevel_qual_1][0][value',
         ),
       ),
       'default_value_php' => NULL,
@@ -1415,17 +1644,18 @@ WAEC',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '30',
     'allowed_values' => 'GCE
 GCENECO
+NCE
 NECO
+OND
 WAEC',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
         '0' => array(
           'value' => '',
-          '_error_element' => 'default_value_widget][field_profile_olevel_qual_2][0][value',
         ),
       ),
       'default_value_php' => NULL,
@@ -1610,12 +1840,12 @@ return $rows;',
     ),
     'widget_active' => '1',
     'type' => 'text',
-    'required' => '1',
+    'required' => '0',
     'multiple' => '0',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '255',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
@@ -1629,7 +1859,7 @@ return $rows;',
       ),
       'default_value_php' => NULL,
       'label' => 'Sponsor\'s Address',
-      'weight' => '12',
+      'weight' => '46',
       'description' => '',
       'type' => 'text_textarea',
       'module' => 'text',
@@ -1673,12 +1903,79 @@ return $rows;',
     ),
     'widget_active' => '1',
     'type' => 'text',
-    'required' => '1',
+    'required' => '0',
     'multiple' => '0',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '60',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'widget' => array(
+      'rows' => 5,
+      'size' => '60',
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_city][0][value',
+        ),
+      ),
+      'default_value_php' => NULL,
+      'label' => 'Sponsor\'s Address City',
+      'weight' => '47',
+      'description' => '',
+      'type' => 'text_textfield',
+      'module' => 'text',
+    ),
+  );
+
+  // Exported field: field_profile_sponsor_email
+  $fields['student_profile-field_profile_sponsor_email'] = array(
+    'field_name' => 'field_profile_sponsor_email',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '39',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'text',
+    'required' => '0',
+    'multiple' => '0',
+    'module' => 'text',
+    'active' => '1',
+    'text_processing' => '0',
+    'max_length' => '60',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
@@ -1686,8 +1983,8 @@ return $rows;',
       'size' => '60',
       'default_value' => NULL,
       'default_value_php' => NULL,
-      'label' => 'Sponsor\'s Address City',
-      'weight' => '13',
+      'label' => 'Sponsor\'s e-mail',
+      'weight' => '51',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -1736,16 +2033,21 @@ return $rows;',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '60',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_mobile][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Sponsor\'s Mobile No.',
-      'weight' => '16',
+      'weight' => '50',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -1789,21 +2091,26 @@ return $rows;',
     ),
     'widget_active' => '1',
     'type' => 'text',
-    'required' => '1',
+    'required' => '0',
     'multiple' => '0',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '60',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_name][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
-      'label' => 'Sponsor\'s Name',
-      'weight' => '11',
+      'label' => 'Sponsor\'s Name (Sponsor data must be entered if there is no State Sponsor!)',
+      'weight' => '45',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -1852,16 +2159,21 @@ return $rows;',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '60',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_phone][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Sponsor\'s Telephone No.',
-      'weight' => '15',
+      'weight' => '49',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -1905,24 +2217,240 @@ return $rows;',
     ),
     'widget_active' => '1',
     'type' => 'text',
-    'required' => '1',
+    'required' => '0',
     'multiple' => '0',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '60',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_sponsor_state][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Sponsor\'s Address State',
-      'weight' => '14',
+      'weight' => '48',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
+    ),
+  );
+
+  // Exported field: field_profile_state_sponsor
+  $fields['student_profile-field_profile_state_sponsor'] = array(
+    'field_name' => 'field_profile_state_sponsor',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '44',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'text',
+    'required' => '0',
+    'multiple' => '0',
+    'module' => 'text',
+    'active' => '1',
+    'text_processing' => '0',
+    'max_length' => '50',
+    'allowed_values' => '',
+    'allowed_values_php' => '$list = array();
+$rs = db_query(\'SELECT * FROM {eduerp_states} ORDER BY state_name\');
+while ($row = db_fetch_object($rs)) $list[$row->state_name] = $row->state_name;
+return $list;',
+    'widget' => array(
+      'default_value' => NULL,
+      'default_value_php' => NULL,
+      'label' => 'State Sponsor (if any)',
+      'weight' => '44',
+      'description' => '',
+      'type' => 'optionwidgets_select',
+      'module' => 'optionwidgets',
+    ),
+  );
+
+  // Exported field: field_profile_year_exam_taken_1
+  $fields['student_profile-field_profile_year_exam_taken_1'] = array(
+    'field_name' => 'field_profile_year_exam_taken_1',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '42',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'date',
+    'required' => '1',
+    'multiple' => '0',
+    'module' => 'date',
+    'active' => '1',
+    'granularity' => array(
+      'year' => 'year',
+      'month' => 'month',
+    ),
+    'timezone_db' => '',
+    'tz_handling' => 'none',
+    'todate' => '',
+    'repeat' => 0,
+    'repeat_collapsed' => '',
+    'default_format' => 'medium',
+    'widget' => array(
+      'default_value' => 'blank',
+      'default_value_code' => '',
+      'default_value2' => 'same',
+      'default_value_code2' => '',
+      'input_format' => 'Y-m-d H:i:s',
+      'input_format_custom' => '',
+      'increment' => '1',
+      'text_parts' => array(),
+      'year_range' => '-50:+0',
+      'label_position' => 'within',
+      'label' => 'Year & Month Exam Taken',
+      'weight' => '33',
+      'description' => '',
+      'type' => 'date_select',
+      'module' => 'date',
+    ),
+  );
+
+  // Exported field: field_profile_year_exam_taken_2
+  $fields['student_profile-field_profile_year_exam_taken_2'] = array(
+    'field_name' => 'field_profile_year_exam_taken_2',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '43',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'date',
+    'required' => '0',
+    'multiple' => '0',
+    'module' => 'date',
+    'active' => '1',
+    'granularity' => array(
+      'year' => 'year',
+      'month' => 'month',
+    ),
+    'timezone_db' => '',
+    'tz_handling' => 'none',
+    'todate' => '',
+    'repeat' => 0,
+    'repeat_collapsed' => '',
+    'default_format' => 'medium',
+    'widget' => array(
+      'default_value' => 'blank',
+      'default_value_code' => '',
+      'default_value2' => 'same',
+      'default_value_code2' => '',
+      'input_format' => 'Y-m-d H:i:s',
+      'input_format_custom' => '',
+      'increment' => '1',
+      'text_parts' => array(),
+      'year_range' => '-50:+0',
+      'label_position' => 'within',
+      'label' => 'Year & Month Exam Taken',
+      'weight' => '39',
+      'description' => '',
+      'type' => 'date_select',
+      'module' => 'date',
     ),
   );
 
@@ -2061,6 +2589,7 @@ return $rows;',
   // Translatables
   // Included for use with string extractors like potx.
   t('Disabilities');
+  t('Examination Number');
   t('Examination Records');
   t('Health Status');
   t('Hobbies');
@@ -2087,8 +2616,11 @@ return $rows;',
   t('Sponsor\'s Address City');
   t('Sponsor\'s Address State');
   t('Sponsor\'s Mobile No.');
-  t('Sponsor\'s Name');
+  t('Sponsor\'s Name (Sponsor data must be entered if there is no State Sponsor!)');
   t('Sponsor\'s Telephone No.');
+  t('Sponsor\'s e-mail');
+  t('State Sponsor (if any)');
+  t('Year & Month Exam Taken');
   t('Year of Entry');
 
   return $fields;

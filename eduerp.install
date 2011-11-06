@@ -101,15 +101,15 @@ function eduerp_install() {
 
   db_query("INSERT INTO `gen_fee_item_sku` (`id`, `sku_name`, `next_num`) VALUES (1, 'PRODUCT-FEE-ITEM', 001)");
 
-  db_query("INSERT INTO `webapp_institution` (`id`, `name`, `code`, `secret`) VALUES
-    (1, 'UNIVERSITY A', 'UNIA', '2fd0bba6b1774ed391c1ff8467f52a5d'),
-    (2, 'UNIVERSITY B', 'UNIB', 'ffaedcdf6cc045cfbb220299720a79d6'),
-    (3, 'UNIVERSITY C', 'UNIC', '927a220e63cd42feb70ab03f43b727f3')");
-
   db_query("INSERT INTO eduerp_roles VALUES (1, 1,  0, 0, 'Role Assigner')");
 
   variable_set('user_register', 1); // This a system setting (0 => no self registrations, 1 => yes, 2 => yes, admin approval needed)
   variable_set('user_registration_help', '<b><br />IMPORTANT: When completing this form you must fill the compulsory fields that have * beside them. Your form will not be accepted if you do not fill these fields and you will be forced to fill any omitted fields.<br /><br />Session for which you are registering: 9999/9999</b>');
+
+  // For content_profile: Set weight, registration_use (Profile & Student) & admin_user_create_use (Profile & Staff) appropriately
+  variable_set('content_profile_profile', unserialize('a:8:{s:6:"weight";s:1:"0";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:1;s:21:"admin_user_create_use";i:1;s:17:"registration_hide";a:0:{}}'));
+  variable_set('content_profile_student_profile', unserialize('a:8:{s:6:"weight";s:1:"1";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:1;s:21:"admin_user_create_use";i:0;s:17:"registration_hide";a:0:{}}'));
+  variable_set('content_profile_staff_profile', unserialize('a:8:{s:6:"weight";s:1:"2";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:0;s:21:"admin_user_create_use";i:1;s:17:"registration_hide";a:0:{}}'));
 
   drupal_set_message('eduerp module installed');
 }

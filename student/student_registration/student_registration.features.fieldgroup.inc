@@ -119,15 +119,14 @@ function student_registration_fieldgroup_default_groups() {
   $groups['student_profile-group_olevels_first'] = array(
     'type_name' => 'student_profile',
     'group_name' => 'group_olevels_first',
-    'label' => 'O Level Results (First Sitting)',
+    'label' => 'Examination Results (First Sitting)',
     'settings' => array(
       'form' => array(
         'style' => 'fieldset',
         'description' => '',
       ),
       'display' => array(
-        'weight' => '15',
-        'label' => 'above',
+        'description' => '',
         'teaser' => array(
           'format' => 'fieldset',
           'exclude' => 0,
@@ -136,7 +135,6 @@ function student_registration_fieldgroup_default_groups() {
           'format' => 'fieldset',
           'exclude' => 0,
         ),
-        'description' => '',
         '4' => array(
           'format' => 'fieldset',
           'exclude' => 0,
@@ -157,6 +155,7 @@ function student_registration_fieldgroup_default_groups() {
           'format' => 'fieldset',
           'exclude' => 0,
         ),
+        'label' => 'above',
       ),
     ),
     'weight' => '15',
@@ -164,7 +163,9 @@ function student_registration_fieldgroup_default_groups() {
     'fields' => array(
       '0' => 'field_profile_olevel_qual_1',
       '1' => 'field_profile_olevel_insti1',
-      '2' => 'field_profile_olevel_exams_1',
+      '2' => 'field_profile_exam_number_1',
+      '3' => 'field_profile_year_exam_taken_1',
+      '4' => 'field_profile_olevel_exams_1',
     ),
   );
 
@@ -172,15 +173,14 @@ function student_registration_fieldgroup_default_groups() {
   $groups['student_profile-group_olevels_second'] = array(
     'type_name' => 'student_profile',
     'group_name' => 'group_olevels_second',
-    'label' => 'O Level Results (Second Sitting)',
+    'label' => 'Examination Results (Second Sitting)',
     'settings' => array(
       'form' => array(
         'style' => 'fieldset',
         'description' => '',
       ),
       'display' => array(
-        'weight' => '16',
-        'label' => 'above',
+        'description' => '',
         'teaser' => array(
           'format' => 'fieldset',
           'exclude' => 0,
@@ -189,7 +189,6 @@ function student_registration_fieldgroup_default_groups() {
           'format' => 'fieldset',
           'exclude' => 0,
         ),
-        'description' => '',
         '4' => array(
           'format' => 'fieldset',
           'exclude' => 0,
@@ -210,6 +209,7 @@ function student_registration_fieldgroup_default_groups() {
           'format' => 'fieldset',
           'exclude' => 0,
         ),
+        'label' => 'above',
       ),
     ),
     'weight' => '16',
@@ -217,7 +217,9 @@ function student_registration_fieldgroup_default_groups() {
     'fields' => array(
       '0' => 'field_profile_olevel_qual_2',
       '1' => 'field_profile_olevel_insti2',
-      '2' => 'field_profile_olevel_exams_2',
+      '2' => 'field_profile_exam_number_2',
+      '3' => 'field_profile_year_exam_taken_2',
+      '4' => 'field_profile_olevel_exams_2',
     ),
   );
 
@@ -268,21 +270,23 @@ function student_registration_fieldgroup_default_groups() {
     'weight' => '10',
     'group_type' => 'standard',
     'fields' => array(
-      '0' => 'field_profile_sponsor_name',
-      '1' => 'field_profile_sponsor_address',
-      '2' => 'field_profile_sponsor_city',
-      '3' => 'field_profile_sponsor_state',
-      '4' => 'field_profile_sponsor_phone',
-      '5' => 'field_profile_sponsor_mobile',
+      '0' => 'field_profile_state_sponsor',
+      '1' => 'field_profile_sponsor_name',
+      '2' => 'field_profile_sponsor_address',
+      '3' => 'field_profile_sponsor_city',
+      '4' => 'field_profile_sponsor_state',
+      '5' => 'field_profile_sponsor_phone',
+      '6' => 'field_profile_sponsor_mobile',
+      '7' => 'field_profile_sponsor_email',
     ),
   );
 
   // Translatables
   // Included for use with string extractors like potx.
+  t('Examination Results (First Sitting)');
+  t('Examination Results (Second Sitting)');
   t('Health Information');
   t('Next of Kin Information');
-  t('O Level Results (First Sitting)');
-  t('O Level Results (Second Sitting)');
   t('Sponsor\'s Information');
 
   return $groups;
