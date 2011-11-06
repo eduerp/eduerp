@@ -41,8 +41,13 @@ function sokoto_enable(){
   */
   //populate email_institution_choice
   db_query('TRUNCATE TABLE email_institution_choice');
-  db_query("INSERT INTO `email_institution_choice` (`email_domain_format_id`, `email_user_format_id`) VALUES (2, 1) ");
+  db_query("INSERT INTO `email_institution_choice` (`email_domain_format_id`, `email_user_format_id`) VALUES (1, 1) ");
+  //Sokoto is now single domain for e-mail (1)
+  //db_query("INSERT INTO `email_institution_choice` (`email_domain_format_id`, `email_user_format_id`) VALUES (2, 1) ");
 
+  //populate email_general_domain_description
+  db_query("TRUNCATE TABLE email_general_domain_description");
+  db_query("REPLACE INTO `email_general_domain_description` (`email_general_domain_description_id`, `email_domain`) VALUES (1, 'udusok.edu.ng') ");
 
   /**
   For mat num
@@ -50,7 +55,6 @@ function sokoto_enable(){
   //populate mat_num_institution_choice
   db_query('TRUNCATE TABLE mat_num_institution_choice');
   db_query("INSERT INTO `mat_num_institution_choice` (`mat_num_format_id`, `mat_num_serial_gen_type_id`) VALUES (2, 2) ");
-
 
   //populate both email and mat num faculty tables
 
@@ -66,9 +70,7 @@ function sokoto_enable(){
         //we need to create the new faculty
         $sql = "INSERT INTO mat_num_faculty_serial (faculty_nid, session_name) VALUES (%d, '%s') ";
         db_query($sql, $row->nid, variable_get('eduerp_current_session', ''));
-
       }
-
 
       //make sure it does not exist first
       $sql = "SELECT faculty_nid FROM email_faculty_subdomain_description WHERE faculty_nid=%d";
@@ -77,13 +79,8 @@ function sokoto_enable(){
         //we need to create the new faculty
         $sql = "INSERT INTO email_faculty_subdomain_description (faculty_nid, email_subdomain) VALUES (%d, '%s') ";
         $r = db_query($sql, $row->nid, $row->subdomain);
-
       }
     }
-
   }
-
-
 }
-
 ?>
