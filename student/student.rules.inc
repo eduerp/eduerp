@@ -42,8 +42,11 @@ function student_rules_condition_info() {
 function student_clearance_performed($student_id) {
   global $user;
   $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
-  
+
   $user_profile = new UserProfile($student_id);
+
+$st = eduerp_has_role($user, 'Student');
+drupal_set_message("Debug ID($student_id) ST($st) $user_profile->profile_matno, $user_profile->profile_first_name, $user_profile->profile_last_name" 'error');
 
   if((!empty($user_profile->profile_matno) &&
     eduerp_has_role($user, 'Student') && !empty($user_profile->profile_first_name)
@@ -117,7 +120,7 @@ function student_action_create_agreement($author, $title, $student_id, $settings
 
     $node = (object)array('type' => $settings['type']);
     node_object_prepare($node);
-		
+
     $node->is_new = 1;
     $node->author = $author->name;
     $node->author = $author->uid;
