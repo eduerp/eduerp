@@ -45,9 +45,6 @@ function student_clearance_performed($student_id) {
 
   $user_profile = new UserProfile($student_id);
 
-$st = (int)(eduerp_has_role($user, 'Student'));
-drupal_set_message("Debug ID($student_id) ST($st) $user_profile->profile_matno, $user_profile->profile_first_name, $user_profile->profile_last_name", 'error');
-
   if((!empty($user_profile->profile_matno) &&
     eduerp_has_role($user, 'Student') && !empty($user_profile->profile_first_name)
       && !empty($user_profile->profile_last_name))) {
