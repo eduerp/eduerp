@@ -422,13 +422,18 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     $student = user_load($studUID);
     if (module_exists('zimbra')) {
       $zimbra = new ZimbraSoapClient(variable_get('zimbra_soap_url', ''));
-      if (zimbra_login($zimbra) && ($id = zimbra_get_id($zimbra, $student->mail)) && ($result = zimbra_rename($zimbra, $id, $student->mail, $userEmail))) {
+
+      $oldZimbraMail = $student->name;
+      $oldUserEmail = $oldZimbraMail . '@' . variable_get('zimbra_domain', '');
+      $newZimbraMail = substr($userEmail, 0, strpos($userEmail, '@'));
+
+      if (zimbra_login($zimbra) && ($id = zimbra_get_id($zimbra, $oldZimbraMail)) && ($result = zimbra_rename($zimbra, $id, $oldZimbraMail, $newZimbraMail))) {
         user_save($student, array('mail' => $userEmail));
-        watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $student->mail, '%name_new' => $userEmail));
+        watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail));
       }
       else {
-        watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $student->mail, '%name_new' => $userEmail), WATCHDOG_ERROR);
-        drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $student->mail, '%name_new' => $userEmail)), 'error');
+        watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail), WATCHDOG_ERROR);
+        drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $oldUserEmail, '%name_new' => $userEmail)), 'error');
       }
     }
     else drupal_set_message('Zimbra module is not loaded so Student e-mail cannot be assigned');
