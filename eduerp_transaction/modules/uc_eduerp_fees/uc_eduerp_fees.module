@@ -732,7 +732,6 @@ function uc_eduerp_fees_load_item_options($type){
  */
 function uc_eduerp_fees_registration_is_late() {
   $late = uc_eduerp_fees_load_fee_options(EDUERP_FEES_NORMAL);
-  dsm($late);
   $late_value = $late['late_registration'];
   $late_date = $late_value['last_registration_date'];
   return (!is_null($late_date) && isset($late_value['amount'])) ? TRUE : FALSE;
