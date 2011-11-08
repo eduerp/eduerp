@@ -50,22 +50,13 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     return FALSE;
   }
 
+  // forcefully clear the cart if it is not empty
+  if(uc_cart_get_contents() != NULL) {
+    uc_cart_empty($student_id);
+  }
+  
   if (uc_cart_get_contents() == NULL) { // if cart is empty
     $_SESSION['eduerp_fees_in_cart'] = FALSE;
-  }
-
-  // Make a case for when a student changes his mind to add
-  // to add his hostel reservation to cart
-  $cart_items = uc_cart_get_contents();
-  foreach($cart_items as $cart_item) {
-    if($cart_items != NULL &&
-      $cart_item->data['type'] == EDUERP_FEES_NORMAL &&
-      $cart_item->data['type'] != EDUERP_FEES_HOSTEL
-      && !is_null($fees['hostel']['item'])) {
-        // add to cart hostel
-        uc_cart_add_item($fees['hostel']['item']['product_nid'], 1, $fees['hostel']['options'], uc_cart_get_id(), $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
-        drupal_goto('cart');
-    }
   }
 
   // The paid fees items
@@ -741,9 +732,10 @@ function uc_eduerp_fees_load_item_options($type){
  */
 function uc_eduerp_fees_registration_is_late() {
   $late = uc_eduerp_fees_load_fee_options(EDUERP_FEES_NORMAL);
+  dsm($late);
   $late_value = $late['late_registration'];
   $late_date = $late_value['last_registration_date'];
-  return (!is_null($late_date) && isset($late_date['amount'])) ? TRUE : FALSE;
+  return (!is_null($late_date) && isset($late_value['amount'])) ? TRUE : FALSE;
 }
 
 /**
