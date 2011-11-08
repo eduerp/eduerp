@@ -1,7 +1,7 @@
 <?php
 
 function hostel_allocation_menu() {
-  $items['hostel_allocation/alloc_admin'] = array(
+  $items['staff/alloc_admin'] = array(
     'title' => 'Hostel Administration',
     'page callback' => 'hostel_admin',
     'access arguments' => array('hostel_allocation admin'),
@@ -79,7 +79,7 @@ function hostel_admin() {
 
   echo '<br /><hr /><br />';
 
-  echo drupal_get_form('set_session_form');
+  echo 'The current Session is: ' . variable_get('eduerp_current_session', '') . ' and current Semester is: ' . variable_get('eduerp_current_semester', '');
   echo '<br /><hr /><br />';
 
   echo '<a href="' . url('hostel_allocation/create_modify_hostel') . '">Create or Modify Hostel</a>';
@@ -126,7 +126,7 @@ function hostel_allocation_create_modify_hostel() {
 
   echo '<br /><hr /><br />';
 
-  echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
+  echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
 
 
   if (! $isAuthorized) {
@@ -394,7 +394,7 @@ function hostel_allocation_create_modify_block() {
 
   echo '<br /><hr /><br />';
 
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -821,7 +821,7 @@ function hostel_allocation_create_modify_room() {
 
   echo '<br /><hr /><br />';
 
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Room</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Room</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1226,7 +1226,7 @@ function hostel_allocation_create_modify_category() {
 
 
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1568,9 +1568,9 @@ function hostel_allocation_create_modify_allocation_rules() {
 
   echo '<br /><hr /><br />';
   if(! $blockSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
   else
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1948,9 +1948,9 @@ function hostel_allocation_modify_global_settings(){
 
   echo '<br /><hr /><br />';
   if(! $settingSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
   else
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -2490,7 +2490,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
 
   echo '<br /><hr /><br />';
   //if(! $settingSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Direct Room Reservation</b></font>";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Direct Room Reservation</b></font>";
   //else
   //  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   //$navi .= '<br /><hr /><br />';
@@ -2541,7 +2541,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
         */
       case '2':
       	if( ! $studentInitiated)
-        echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
+        echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
 
 	echo hostel_allocation_show_student_info();
         echo '<br /><hr /><br />';
@@ -3262,7 +3262,7 @@ function hostel_allocation_reports(){
   $isAuthorized = true;
 
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Hostel Allocation / Reservation Reports</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Hostel Allocation / Reservation Reports</b></font><br /><br />";
   echo $navi;
   echo '<br /><hr /><br />';
 
