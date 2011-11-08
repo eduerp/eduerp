@@ -10,6 +10,7 @@
 define('EDUERP_FEES_NORMAL', 'fees');
 define('EDUERP_FEES_HOSTEL', 'hostel');
 define('FEES_PAID', 'payment_received');
+define('FEES_PENDING', 'pending');
 define('HAS_SCHOLARSHIP', 1);
 define('FEES_FULL', 'Full Amount');
 define('FEES_FIRST_INSTALMENT', 'Instalment1');
@@ -32,7 +33,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     $fees = $fees_items;
   }
-  dsm($fees);
+  //dsm($fees);
 
   // A student need to be cleared to progress
   if(!student_clearance_performed($student_id)) {
@@ -71,7 +72,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   foreach($fees as $fee) {
     $paid_fees_items = uc_eduerp_fees_paid_items($student_id, $fee['item']['product_nid'], TRUE);
     // if $fees is paid for break everything
-    if(in_array($fee['item']['product_nid'], $paid_fees_items)) {
+    if(in_array($fee['item']['product_nid'], $paid_fees_items) && $session) {
       $fees = array();
       drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
       return FALSE;
@@ -490,11 +491,12 @@ function uc_eduerp_fees_eduerp_fees_alter(&$items) {
 function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
   //$items include product_nid, attribute_id and status
   $items = array();
-  $status = FEES_PAID;
+  $status_paid = FEES_PAID;
+  $status_pending = FEES_PENDING;
   $result = db_query("SELECT * FROM {uc_order_products} WHERE nid = %d ORDER BY nid", $nid);
   $products = db_fetch_object($result);
 
-  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status = '%s' and data IS NOT NULL", $uid, $status);
+  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status = '%s' or '%s' and data IS NOT NULL", $uid, $status_paid, $status_pending);
   while($order = db_fetch_object($result)) {
     if($subscript) {
       $items[] = $products->nid;
@@ -741,11 +743,7 @@ function uc_eduerp_fees_registration_is_late() {
   $late = uc_eduerp_fees_load_fee_options(EDUERP_FEES_NORMAL);
   $late_value = $late['late_registration'];
   $late_date = $late_value['last_registration_date'];
-  if(!is_null($late_date)){
-    $now = date('Y-m-d');
-    // if today's date ==
-    return ($now >= $late_date) ? TRUE : FALSE;
-  }
+  return (!is_null($late_date) && isset($late_date['amount'])) ? TRUE : FALSE;
 }
 
 /**
