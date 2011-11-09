@@ -161,7 +161,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         if(array_key_exists('is_scholarship_applicable', $item) && !is_null($scholarship)) { // We only care about when it is set
           // add a new item to $options
           if(!isset($options['has_scholarship'])) {
-            $options['has_scholarship'] = $scholarship;
+            //$options['has_scholarship'] = $scholarship;
+            //$options[$item['product_nid']]['has_scholarship'] = $scholarship;
+            $options['has_scholarship'] = $options['scholarship'];
           }
         }
       }
