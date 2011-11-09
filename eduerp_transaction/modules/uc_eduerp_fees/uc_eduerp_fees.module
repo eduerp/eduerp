@@ -49,11 +49,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     return FALSE;
   }
 
-  // forcefully clear the cart if it is not empty
-  if(uc_cart_get_contents() != NULL) {
-    uc_cart_empty($student_id);
-  }
-  
   if (uc_cart_get_contents() == NULL) { // if cart is empty
     $_SESSION['eduerp_fees_in_cart'] = FALSE;
   }
@@ -73,8 +68,8 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   // to the /cart to prevent increment in cart quantity.
   // Also handles irregularities when the item added to cart is incomplete
   if($_SESSION['eduerp_fees_in_cart'] == TRUE | uc_cart_get_contents() != NULL) {
-    drupal_goto('cart');
     drupal_set_message('Welcome back! Please continue from where you left off.');
+    drupal_goto('cart');
   }
 
   if(!is_reservation_existing($student_id)) {
