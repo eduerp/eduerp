@@ -33,7 +33,9 @@ function eduerp_transaction_menu() {
         'description' => t('Pay all type of fees'),
         'page callback' => 'drupal_get_form',
         'page arguments' => array('uc_eduerp_fees_pay_fees', $uid),
-        'access arguments' => array('student course'),
+        'access callback' => 'user_access',
+        'access arguments' => array('access content'),
+        //'access arguments' => array('student course'),
         'type' => MENU_CALLBACK
       );
       $items['admin/settings/eduerp/transaction'] = array (
