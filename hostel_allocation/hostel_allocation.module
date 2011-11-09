@@ -1,7 +1,7 @@
 <?php
 
 function hostel_allocation_menu() {
-  $items['hostel_allocation/alloc_admin'] = array(
+  $items['staff/alloc_admin'] = array(
     'title' => 'Hostel Administration',
     'page callback' => 'hostel_admin',
     'access arguments' => array('hostel_allocation admin'),
@@ -79,8 +79,8 @@ function hostel_admin() {
 
   echo '<br /><hr /><br />';
 
-  echo drupal_get_form('set_session_form');
-  echo '<br /><hr /><br />';
+  echo 'The current Session is: ' . variable_get('eduerp_current_session', '') . ' and current Semester is: ' . variable_get('eduerp_current_semester', '');
+  echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('hostel_allocation/create_modify_hostel') . '">Create or Modify Hostel</a>';
   echo '<br /><br /><hr /><br />';
@@ -126,7 +126,7 @@ function hostel_allocation_create_modify_hostel() {
 
   echo '<br /><hr /><br />';
 
-  echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
+  echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Hostel</b></font><br /><br />";
 
 
   if (! $isAuthorized) {
@@ -394,7 +394,7 @@ function hostel_allocation_create_modify_block() {
 
   echo '<br /><hr /><br />';
 
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Block</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -821,7 +821,7 @@ function hostel_allocation_create_modify_room() {
 
   echo '<br /><hr /><br />';
 
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Room</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Room</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -913,14 +913,15 @@ function hostel_allocation_create_edit_room_form() {
     '#type' => 'select',
     '#options' => get_blocks($room_edit_record->block_nid, true),
     '#required' => TRUE,
-    '#value' => $room_edit_record->block_nid
+    '#value' => $room_edit_record->block_nid,
+    '#disabled' => FALSE,
     );
 
   }
 
 
   $form['room_name'] = array(
-    '#title' => 'Room Name',
+    '#title' => "Room Name - Use ',' to specify multiple rooms",
     '#type' => 'textfield',
     '#size' => 40,
     '#required' => TRUE
@@ -1062,13 +1063,34 @@ function get_rooms($room_nid = 0, $forCombo = true, $activeOnly=false) {
 function hostel_allocation_create_edit_room_form_validate($form, &$form_state){
 
   if(arg(2) && is_valid_room(arg(2))) {//validate MODIFY
-    if (is_Room_Name_Existing($form_state['values']['room_name'], $form_state['values']['hostel_nid'], arg(2)))
-      form_set_error('room_name', Error_Types(132));
-
+    if (is_Room_Name_Existing($form_state['values']['room_name'], $form_state['values']['block_nid'], arg(2)))
+      form_set_error('room_name', Error_Types(133));
+    
+    //make sure that multiple room names is not specified during edit
+    if ( strpos($form_state['values']['room_name'], ",")) 
+      form_set_error('room_name', Error_Types(169));	    
   }
   else {//validate CREATE
-    if(is_Block_Name_Existing($form_state['values']['room_name'], $form_state['values']['hostel_nid']))
-      form_set_error('room_name', Error_Types(132));
+    
+      $bits = explode(",", $form_state['values']['room_name']);
+      if (is_array($bits) && sizeof($bits)) {
+        //looks like he entered more than one room name
+        foreach ($bits as $v) {
+          $v = trim($v);
+          if(! empty($v)){
+            //the data is single now so check if room name is existing
+            if (is_Room_Name_Existing($v, $form_state['values']['block_nid']))
+              form_set_error('room_name', Error_Types(133));
+    
+          }
+             
+        }
+      }
+      else {//seems he entered only one course code. well lets see
+        //check if room name is existing
+        if (is_Room_Name_Existing($form_state['values']['room_name'], $form_state['values']['block_nid']))
+            form_set_error('room_name', Error_Types(133));
+      }
   }
 
   if(! preg_match("/^[0-9]{1,4}$/", $form_state['values']['room_capacity'])) {
@@ -1097,32 +1119,63 @@ function hostel_allocation_create_edit_room_form_submit($form, &$form_state) {
     //print_r($node);
     //echo $form_state['values']['room_capacity'];
     $node->title                             = $form_state['values']['room_name'];
-    $node->field_block_id[0][nid] 	         = $form_state['values']['block_nid'];
-	$node->field_room_name[0]['value'] 	     = $form_state['values']['room_name'];
-	$node->field_room_capacity[0]['value'] 	 = $form_state['values']['room_capacity'];
+    $node->field_block_id[0]['nid'] 	         = $form_state['values']['block_nid'];
+    $node->field_room_name[0]['value'] 	     = $form_state['values']['room_name'];
+    $node->field_room_capacity[0]['value'] 	 = $form_state['values']['room_capacity'];
     $node->field_room_status[0]['value'] 	 = $form_state['values']['room_status'];
     node_save($node);
-    drupal_set_message($form_state['values']['room_name'] . ' Room was modified successfully!<br />');
+    drupal_set_message('Room ' . $form_state['values']['room_name'] . ' was modified successfully!<br />');
 
     drupal_goto("hostel_allocation/create_modify_room");
 
   }
   else {
-    $node = new stdClass();
-    $node->type                              = 'rooms';
-    $node->uid                               = 1;  // Admin
-    $node->status                            = 1;  // Published
-    $node->promote                           = 0;
-    $node->sticky                            = 0;
-    $node->comment                           = 0;
-    $node->title                             = $form_state['values']['room_name'];
-    $node->field_block_id[0][nid] 	         = $form_state['values']['block_nid'];
-	$node->field_room_name[0]['value'] 	     = $form_state['values']['room_name'];
-	$node->field_room_capacity[0]['value'] 	 = $form_state['values']['room_capacity'];
-    $node->field_room_status[0]['value'] 	 = $form_state['values']['room_status'];
+  	  
+    $bits = explode(",", $form_state['values']['room_name']);
+    if (is_array($bits) && sizeof($bits)) {
+      //looks like he entered more than one room name
+      foreach ($bits as $v) {
+      	$v = trim($v);
+        if(! empty($v)){
+          $node = new stdClass();
+          $node->type                              = 'rooms';
+          $node->uid                               = 1;  // Admin
+          $node->status                            = 1;  // Published
+          $node->promote                           = 0;
+          $node->sticky                            = 0;
+          $node->comment                           = 0;
+          $node->title                             = $v; //$form_state['values']['room_name'];
+          $node->field_block_id[0]['nid'] 	 = $form_state['values']['block_nid'];
+          $node->field_room_name[0]['value'] 	 = $v; //$form_state['values']['room_name'];
+          $node->field_room_capacity[0]['value']   = $form_state['values']['room_capacity'];
+          $node->field_room_status[0]['value']     = $form_state['values']['room_status'];
 
-    drupal_set_message($form_state['values']['room_name'] . ' Room has been created!<br />');
-    node_save($node);
+    
+          node_save($node);  	
+        }
+        	
+      }
+        
+    }
+    else { //single room name was specified
+      $node = new stdClass();
+      $node->type                              = 'rooms';
+      $node->uid                               = 1;  // Admin
+      $node->status                            = 1;  // Published
+      $node->promote                           = 0;
+      $node->sticky                            = 0;
+      $node->comment                           = 0;
+      $node->title                             = $form_state['values']['room_name'];
+      $node->field_block_id[0]['nid'] 	       = $form_state['values']['block_nid'];
+      $node->field_room_name[0]['value']       = $form_state['values']['room_name'];
+      $node->field_room_capacity[0]['value']   = $form_state['values']['room_capacity'];
+      $node->field_room_status[0]['value']     = $form_state['values']['room_status'];
+
+    
+      node_save($node);
+    }
+    
+    drupal_set_message('Room(s) '. $form_state['values']['room_name'] . ' has been created!<br />');
   }
 
 }
@@ -1226,7 +1279,7 @@ function hostel_allocation_create_modify_category() {
 
 
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1568,9 +1621,9 @@ function hostel_allocation_create_modify_allocation_rules() {
 
   echo '<br /><hr /><br />';
   if(! $blockSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Create or Modify Allocation Rules</b></font><br /><br />";
   else
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/create_modify_allocation_rules") ."'>Create or Modify Allocation Rules</a>&nbsp; &raquo; &nbsp;<b>Allocation Rules Setup</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -1948,9 +2001,9 @@ function hostel_allocation_modify_global_settings(){
 
   echo '<br /><hr /><br />';
   if(! $settingSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Global Settings</b></font><br /><br />";
   else
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
   echo $navi;
 
@@ -2490,7 +2543,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
 
   echo '<br /><hr /><br />';
   //if(! $settingSelected)
-    $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Direct Room Reservation</b></font>";
+    $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Direct Room Reservation</b></font>";
   //else
   //  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/modify_global_settings") ."'>Modify Global Settings</a>&nbsp; &raquo; &nbsp;<b>Modify Setting</b></font><br /><br />";
   //$navi .= '<br /><hr /><br />';
@@ -2541,7 +2594,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
         */
       case '2':
       	if( ! $studentInitiated)
-        echo $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
+        echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
 
 	echo hostel_allocation_show_student_info();
         echo '<br /><hr /><br />';
@@ -3262,7 +3315,7 @@ function hostel_allocation_reports(){
   $isAuthorized = true;
 
   echo '<br /><hr /><br />';
-  $navi = "<font size = '1px'><a href = '". url("hostel_allocation/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Hostel Allocation / Reservation Reports</b></font><br /><br />";
+  $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Hostel Allocation / Reservation Reports</b></font><br /><br />";
   echo $navi;
   echo '<br /><hr /><br />';
 
