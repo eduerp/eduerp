@@ -193,7 +193,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         '#disabled' => FALSE //($type == 'fees')
       );
 
-      $form['eduerp_fees'][$type . '_' . $nid] = array(
+      $form['eduerp_fees'][$nid] = array(
           '#type' => 'hidden',
           '#value' => $nid,
       );
@@ -205,6 +205,8 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           '#type' => 'hidden',
           '#value' => $options,
       );
+      
+      print_r($form);
     }
   }
   $form['eduerp_fees']['uid'] = array(
