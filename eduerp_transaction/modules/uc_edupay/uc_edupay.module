@@ -1115,7 +1115,7 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
-  dsm($items);
+  //dsm($items);
   switch ($op) {
     case 'view':
       // if item in the cart is of type fees
@@ -1179,6 +1179,15 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   }
 }
 
+/**
+ * Passing $contents by reference here won't work
+ * because of a PHP bug. Occurs only in php 5.3.1+
+ * 
+ * @see 
+ *  - http://stackoverflow.com/questions/2045875/pass-by-reference-problem-with-php-5-3-1
+ *  - http://bugs.php.net/bug.php?id=50394
+ * 
+ */ 
 function theme_eduerp_cart_review_table($contents) {
   //dsm($contents);
   $contents = uc_cart_get_contents();
