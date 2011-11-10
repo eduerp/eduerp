@@ -26,6 +26,13 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   global $user;
   $student_id = $user->uid;
 
+  // forcefully clear the cart if it is not empty
+  if($form_state['submitted'] == FALSE) {
+    if(uc_cart_get_contents() != NULL) {
+      uc_cart_empty($student_id);
+    }
+  }
+
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
 
