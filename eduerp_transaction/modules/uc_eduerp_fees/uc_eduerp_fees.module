@@ -181,19 +181,19 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     }
     // Do the rest of the things for hostel
     if($type == EDUERP_FEES_HOSTEL) {
-      dsm($type);
+      //dsm($type);
       $item = $fee['item'];
       $nid = $fee['item']['product_nid'];
 
       // Build a checkbox
-      $form['eduerp_fees']["$type"] = array(
+      $form['eduerp_fees'][$type] = array(
         '#type' => 'checkbox',
         '#title' => strip_tags($description),
         '#default_value' => TRUE,
         '#disabled' => FALSE //($type == 'fees')
       );
 
-      $form['eduerp_fees'][$nid] = array(
+      $form['eduerp_fees'][$type . '_' . $nid] = array(
           '#type' => 'hidden',
           '#value' => $nid,
       );
@@ -206,7 +206,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           '#value' => $options,
       );
       
-      print_r($form);
+      //print_r($form);
     }
   }
   $form['eduerp_fees']['uid'] = array(
