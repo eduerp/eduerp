@@ -27,11 +27,11 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   $student_id = $user->uid;
 
   // forcefully clear the cart if it is not empty
-  /*if($form_state['submitted'] == FALSE) {
+  if($form_state['submitted'] == FALSE) {
     if(uc_cart_get_contents() != NULL) {
       uc_cart_empty($student_id);
     }
-  }*/
+  }
 
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
@@ -307,7 +307,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       if(array_key_exists('attribute_id', $product[$key])){
         $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
         //array_push($option, $product_attribute);
-        $options = $cart_item['options'] + $product_attribute;
+        $options[] = $cart_item['options'] + $product_attribute;
       }
     //dsm($options);
     // only if it's a product
