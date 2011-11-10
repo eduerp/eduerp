@@ -307,7 +307,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       if(array_key_exists('attribute_id', $product[$key])){
         $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
         //array_push($option, $product_attribute);
-        $options[] = $cart_item['options'] + $product_attribute;
+        $options = $cart_item['options'] + $product_attribute;
       }
     //dsm($options);
     // only if it's a product
