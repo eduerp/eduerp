@@ -80,7 +80,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   }
 
   if(!is_reservation_existing($student_id)) {
-    dsm('it is reserved');
     unset($fees['hostel']);
   }
 
@@ -197,11 +196,11 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           '#type' => 'hidden',
           '#value' => $nid,
       );
-      $form['eduerp_fees']["product_item_$type"] = array(
+      $form['eduerp_fees']['product_item_' . $type] = array(
           '#type' => 'hidden',
           '#value' => $item,
       );
-      $form['eduerp_fees']["options_$type_" . $options_nid] = array(
+      $form['eduerp_fees']['options_' . $type. '_' . $options_nid] = array(
           '#type' => 'hidden',
           '#value' => $options,
       );
