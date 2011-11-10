@@ -79,6 +79,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     drupal_goto('cart');
   }
 
+  if(!is_reservation_existing($student_id)) {
+    unset($fees['hostel']);
+  }
 
   $form['eduerp_fees'] = array(
     '#type' => 'fieldset',
@@ -457,12 +460,21 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
 /**
  * Implements hook_eduerp_fees_eduerp_fees_alter
  *
+ * Passing $items by reference here won't work
+ * because of a PHP bug. Occurs only in php 5.3.1+
+ * 
+ * @see 
+ *  - http://stackoverflow.com/questions/2045875/pass-by-reference-problem-with-php-5-3-1
+ *  - http://bugs.php.net/bug.php?id=50394
+ * 
+ * A temporary solution is to modify the values in the array 
+ * to be referenced
  */
-function uc_eduerp_fees_eduerp_fees_alter(&$items) {
+function uc_eduerp_fees_eduerp_fees_alter($items) {
   // array search the context value
   // when gotten, inject stuffs into $extras key
   if(!empty($items)) {
-    preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
+    preg_match_all('/Full Amount|Instalment1|Instalment2/', &$items, $matches);
     foreach($matches as $key => $value) {
       return $value;
     }
