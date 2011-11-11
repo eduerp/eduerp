@@ -40,13 +40,22 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $fees = $fees_items;
   }
   dsm($fees);
+  
+  // @todo
+  // Check if the current user has an existing fees setup
+  // This need to be added to the speak as it is throwing
+  // errors if a student doesn't a fees setup
+  /*if(is_null($fees['fees']['item'])) {
+    drupal_set_message(t('Sorry, you not have a valid fees setup. Please contact bursary'), 'error');
+    return FALSE;
+  }*/
 
   // A student need to be cleared to progress
-  if(!student_clearance_performed($student_id)) {
+  /*if(!student_clearance_performed($student_id)) {
     $fees = array();
     drupal_set_message(t('Sorry, you need to be cleared to progress'), 'error');
     return FALSE;
-  }
+  }*/
 
   // test if student is still a student (graduated or expelled)
   $session = variable_get('eduerp_current_session', '') ? variable_get('eduerp_current_session', '') : NULL;
@@ -87,6 +96,10 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     '#type' => 'fieldset',
     '#title' => t('Pay fees'),
     '#collapsible' => TRUE,
+  );
+  $form['eduerp_fees']['uid'] = array(
+    '#type' => 'hidden',
+    '#value' => $student_id
   );
   foreach($fees as $fee){
     $type = $fee['type'];
@@ -181,7 +194,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     }
     // Do the rest of the things for hostel
     if($type == EDUERP_FEES_HOSTEL) {
-      dsm($type);
       $item = $fee['item'];
       $nid = $fee['item']['product_nid'];
 
@@ -193,7 +205,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         '#disabled' => FALSE //($type == 'fees')
       );
 
-      $form['eduerp_fees'][$nid] = array(
+      $form['eduerp_fees'][$type . '_' .$nid] = array(
           '#type' => 'hidden',
           '#value' => $nid,
       );
@@ -207,10 +219,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
       );
     }
   }
-  $form['eduerp_fees']['uid'] = array(
-    '#type' => 'hidden',
-    '#value' => $student_id
-  );
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Pay Fees')
@@ -239,15 +247,15 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   // match options for fees option
   preg_match_all('/options_fees_\d+/', $key_search, $fees_option_matches);
   // find all hostel keys if it exists
-  if(array_key_exists('hostel', $vkeys)) {
-    preg_match_all('/product_item_hostel_\d+/', $key_search, $hostel_matches);
+  if(in_array('hostel', $vkeys)) {
+    preg_match_all('/product_item_hostel/', $key_search, $hostel_matches);
     preg_match_all('/options_hostel_\d+/', $key_search, $hostel_option_matches);
   }
   $matchs = array(
     'fees' => array_shift($matches),
     'fees_options' => array_shift($fees_option_matches),
-    'hostel' => array_key_exists('hostel', $vkeys) ? array_shift($hostel_matches) : array(),
-    'hostel_options' => array_key_exists('hostel', $vkeys) ? array_shift($hostel_option_matches) : array()
+    'hostel' => in_array('hostel', $vkeys) ? array_shift($hostel_matches) : array(),
+    'hostel_options' => in_array('hostel', $vkeys) ? array_shift($hostel_option_matches) : array()
   );
   //$matchs['fees'] = array_shift($matches);
   /*$func = function($item, &$item_value) {
@@ -256,12 +264,16 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     return $fees_items;
   };*/
   $product_fees = array();
+  $product_hostel_fees = array();
   foreach($matchs['fees'] as $key => $value){
     $product_fees[$key] = $form_state['values'][$value];
     //$items = array_map($func, $match, $values);
   }
   foreach($matchs['fees_options'] as $key => $value) {
     $fees_options['options'] = $form_state['values'][$value];
+  }
+  foreach($matchs['hostel'] as $key => $value){
+    $product_hostel_fees[$key] = $form_state['values'][$value];
   }
   foreach($matchs['hostel_options'] as $key => $value) {
     $hostel_options['options'] = $form_state['values'][$value];
@@ -272,12 +284,12 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       'options' => $fees_options['options']
     ),
     'hostel_item_fees' => array(
-      'item' => $matchs['hostel'],
-      'options' => array_key_exists('hostel', $vkeys)? $hostel_options['options'] : array()
+      'item' => $product_hostel_fees,
+      'options' => in_array('hostel', $vkeys)? $hostel_options['options'] : array()
     )
   );
   // remove all traces of hostel if it's not available
-  if(!array_key_exists('hostel', $vkeys)) {
+  if(!in_array('hostel', $vkeys)) {
     unset($cart_items['hostel_item_fees']);
   }
   // subject = vkeys
@@ -753,12 +765,16 @@ function uc_eduerp_fees_registration_is_late() {
 /**
  * Implements hook_form_ID_alter
  *
+ * Bug: this form alter is getting called before the check
+ * for is_reservation_existing. The implication of this is that
+ * the hostel form gets removed before a check for whether hostel 
+ * exists or not.
  */
 function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) {
   // Remove hostel if no reservation exists
   if(!is_reservation_existing($form['uid']['#value'])) {
     // unsets from screen, doesn't get removed from from array
-    unset($form['eduerp_fees']['hostel']);
+    //unset($form['eduerp_fees']['hostel']);
   }
 }
 
