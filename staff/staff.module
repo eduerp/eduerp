@@ -6946,6 +6946,7 @@ function staff_school_fees_create_modify_school_fee_setup(){
   //echo "<pre>";
   //$a = print_r($sf);
   //echo "</pre>";
+  //if(is_fee_setup_existing_for_student(954)) drupal_set_message('Yes'); else drupal_set_message('No');
 
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
   if (! staff_has_eduerp_role($user->uid, 0, 0, array('Bursar'))) $isAuthorized = false; else $isAuthorized = true;
@@ -10609,7 +10610,7 @@ function fees_ini_student_profile($studentUID){
 }
 
 
-function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType){
+function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $checkFeesOnly=false){
   //return;
   $feeOption = array();
   $feeStudentOption = array();
@@ -10656,6 +10657,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   else
     $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ", $nationalityType, $levelType, $id, variable_get('eduerp_current_session', ''));
 
+  if(db_affected_rows($rs) <=0) return array();
+  
   $feeSetup = db_fetch_object($rs);
   $setupNID = $feeSetup->nid;
 
@@ -10669,7 +10672,9 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //echo "<pre>";
   //print_r($feeOption);
   //echo "</pre>";
-
+  
+  
+  
   $feeStudentOption['studentFeeSetupNID'] = $setupNID;
   $feeStudentOption['nationality_name'] = $feeOption[$setupNID]['nationality_name'];
   $feeStudentOption['fee_structure_name'] = $feeOption[$setupNID]['fee_structure_name'];
@@ -10687,8 +10692,9 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
 
   $details = get_fee_setup_item_details($setupNID);
-
-
+  if(db_affected_rows($details) <=0) return array();
+  
+  
   $i=0;
   while($r = db_fetch_object($details)){
 
@@ -10700,6 +10706,17 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
       $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+      
+      //now make sure that each fee product returned has attribute and option (no more asumptions!)
+      if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
+      
+      //make sure attribute and option is attached to the product
+      $aInfo['productNID'] = $r->product_nid;;
+      $aInfo['aid'] = $attributeOptionInfo['aid'];
+      $aInfo['oid'] = $attributeOptionInfo['oid'];
+      $aInfo['label'] = "Fee Structure";
+      if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
+      
 
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
@@ -10714,7 +10731,18 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
         $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
         $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
-
+      
+        //now make sure that each fee product returned has attribute and option (no more asumptions!)
+        if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
+      
+        //make sure attribute and option is attached to the product
+        $aInfo['productNID'] = $r->product_nid;;
+      	$aInfo['aid'] = $attributeOptionInfo['aid'];
+      	$aInfo['oid'] = $attributeOptionInfo['oid'];
+      	$aInfo['label'] = "Fee Structure";
+      	if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
+        
+        
         $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
         $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
@@ -10729,7 +10757,17 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
       $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
-
+      
+      //now make sure that each fee product returned has attribute and option (no more asumptions!)
+      if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
+      
+      //make sure attribute and option is attached to the product
+      $aInfo['productNID'] = $r->product_nid;;
+      $aInfo['aid'] = $attributeOptionInfo['aid'];
+      $aInfo['oid'] = $attributeOptionInfo['oid'];
+      $aInfo['label'] = "Fee Structure";
+      if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
+      
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
@@ -10740,41 +10778,46 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     $i++;
   }
 
-  //now check for late registration info
+  
+  //now if this is to check fees only then do not check for late reg
+  if(! $checkFeesOnly){
+    //now check for late registration info
 
-  $ucLateRegInfo = get_uc_late_registration_info("Late Registration Charges");
+    $ucLateRegInfo = get_uc_late_registration_info("Late Registration Charges");
 
-  $lateRegInfo = get_late_registration_info();
+    $lateRegInfo = get_late_registration_info();
 
-  //echo "<pre>";
-  //print_r($lateRegInfo);
-  //echo "</pre>";
+    //echo "<pre>";
+    //print_r($lateRegInfo);
+    //echo "</pre>";
 
-  $feeStudentOption['late_reg_info']['last_registration_date'] = $lateRegInfo['last_date'];
-  if( Date('Y-m-d') > $lateRegInfo['last_date']){
+    $feeStudentOption['late_reg_info']['last_registration_date'] = $lateRegInfo['last_date'];
+    if( Date('Y-m-d') > $lateRegInfo['last_date']){
 
-    $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
-    $feeStudentOption['late_reg_info']['product_nid'] = $ucLateRegInfo['product_nid'];
-    $feeStudentOption['late_reg_info']['product_description'] = $ucLateRegInfo['name'];
+      $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
+      $feeStudentOption['late_reg_info']['product_nid'] = $ucLateRegInfo['product_nid'];
+      $feeStudentOption['late_reg_info']['product_description'] = $ucLateRegInfo['name'];
+    }
   }
 
+  //now if this is to check fees only then do not check for hostel
+  if(! $checkFeesOnly){
+    //now check for hostel
+    if(is_reservation_existing($studentUID)){
+      $ri = get_reservation_info($studentUID);
+      $reservationInfo = db_fetch_object($ri);
 
-  //now check for hostel
-  if(is_reservation_existing($studentUID)){
-   $ri = get_reservation_info($studentUID);
-   $reservationInfo = db_fetch_object($ri);
+      $hostelDescription = "Room: ". $reservationInfo->room_name ."<br />";
+      $hostelDescription .= "Block: ". $reservationInfo->block_name ."<br />";
+      $hostelDescription .= "Hostel: ". $reservationInfo->hostel_name;
 
-   $hostelDescription = "Room: ". $reservationInfo->room_name ."<br />";
-   $hostelDescription .= "Block: ". $reservationInfo->block_name ."<br />";
-   $hostelDescription .= "Hostel: ". $reservationInfo->hostel_name;
+      $feeStudentOption['hostel_info']['product_nid'] = $reservationInfo->product_nid;
+      $feeStudentOption['hostel_info']['hostel_description'] = $hostelDescription;
+      $feeStudentOption['hostel_info']['expiry_date'] = $reservationInfo->normal_expiry_date;
+      $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
 
-   $feeStudentOption['hostel_info']['product_nid'] = $reservationInfo->product_nid;
-   $feeStudentOption['hostel_info']['hostel_description'] = $hostelDescription;
-   $feeStudentOption['hostel_info']['expiry_date'] = $reservationInfo->normal_expiry_date;
-   $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
-
+    }
   }
-
   return $feeStudentOption;
 }
 
@@ -10797,6 +10840,19 @@ function get_fee_items($studentUID){
   //echo "</pre>";
 
   return $feeItem;
+}
+
+
+function is_fee_setup_existing_for_student($studentUID){
+	
+  $studentFeeProfile = fees_ini_student_profile($studentUID);
+  if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return false;
+  
+  $studentFeeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], True);
+  
+  if(! is_array($studentFeeItem) || ! sizeof($studentFeeItem)) return false;
+  
+  return true;
 }
 
 
