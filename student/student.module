@@ -41,7 +41,7 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => -26,
   );
-
+  /*
   $items['student/hostelreservation/cart'] = array(
         'title' => t('Confirm reservation'),
         'description' => 'Display confirmation about allocation and perform checkout',
@@ -51,7 +51,7 @@ function student_menu() {
         'access arguments' => array('access cart items'),
         'type' => MENU_CALLBACK,
     );
-
+  */
   return $items;
 }
 
@@ -1677,14 +1677,14 @@ function student_hostel_reservation(){
   elseif(is_reservation_existing($user->uid)) {//make sure no reservation exists for the student
     //drupal_set_message('Hostel Reservation already exists!');
     echo '<br /><hr /><br /><br />';
-    $html .= "<div><b>Please perform any of the following action on your Reserved Room:</b></div><br /><br />";
+    $html .= "<div><b>Below is the details of your Reserved Room, you may proceed to make payments:</b></div><br /><br />";
     $html .= hostel_allocation_show_reserved_room($user->uid);
     //$html .= drupal_get_form('save_reservation');
-    $html .= "<br /><hr /><br />";
-    $html .= "<b>Pay for Accomodation</b><br /><br />Please click <a href='../cart'><b>Here</b></a> to <a href='../cart'><b>Pay for your Reserved Room</b></a>.<br />";
+    //$html .= "<br /><hr /><br />";
+    //$html .= "<b>Pay for Accomodation</b><br /><br />Please click <a href='../cart'><b>Here</b></a> to <a href='../cart'><b>Pay for your Reserved Room</b></a>.<br />";
     $html .= "<br /><hr /><br /><br />";
-    $html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
-    $html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
+    //$html .= "<b>Revoke Room Reservation</b> - Please click on the button below to Revoke your room reservation.<br />";
+    //$html .= drupal_get_form('hostel_allocation_revoke_expired_reservation_form');
 
   }
   else {
