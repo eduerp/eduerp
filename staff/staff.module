@@ -2800,7 +2800,7 @@ function staff_create_course_form_validate($form, $form_state) {
       form_set_error('credit_load', Error_Types(107));
 
   //make sure that no spaces in course code
-  if (strpos($form_state['values']['course_code'], " "))
+  if (strpos($form_state['values']['course_code'], " ") !== FALSE)
     form_set_error('course_code', Error_Types(109));
 
   // Security checks
@@ -2860,17 +2860,14 @@ function staff_create_course_form_validate($form, $form_state) {
             elseif ($v == $form_state['values']['course_code'])
               form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
           }
-
         }
-
-
       }
     }
     else {//seems he entered only one course code. well lets see
       //check for valid course code
-      if (! is_valid_course_code($form_state['values']['prerequisites_codes']))
+      if (! is_valid_course_code(trim($form_state['values']['prerequisites_codes'])))
         form_set_error('prerequisites_codes', Error_Types(110));
-      elseif ($form_state['values']['prerequisites_codes'] == $form_state['values']['course_code'])
+      elseif (trim($form_state['values']['prerequisites_codes']) == $form_state['values']['course_code'])
         form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
     }
 
