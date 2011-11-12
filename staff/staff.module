@@ -2843,7 +2843,7 @@ function staff_create_course_form_validate($form, $form_state) {
                   //the data is single so check for valid course code
                   if (! is_valid_course_code($h)) //$h == $form_state['values']['course_code'] means do not allow prereqisite to reference itself
                     form_set_error('prerequisites_codes', Error_Types(110));
-                  elseif ($h == $form_state['values']['course_code'])
+                  elseif (strtolower($h) == strtolower($form_state['values']['course_code']))
                     form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
                 }
               }
@@ -2857,7 +2857,7 @@ function staff_create_course_form_validate($form, $form_state) {
             //the data is single so check for valid course code
             if (! is_valid_course_code($v))
               form_set_error('prerequisites_codes', Error_Types(110));
-            elseif ($v == $form_state['values']['course_code'])
+            elseif (strtolower($v) == strtolower($form_state['values']['course_code']))
               form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
           }
         }
@@ -2867,7 +2867,7 @@ function staff_create_course_form_validate($form, $form_state) {
       //check for valid course code
       if (! is_valid_course_code(trim($form_state['values']['prerequisites_codes'])))
         form_set_error('prerequisites_codes', Error_Types(110));
-      elseif (trim($form_state['values']['prerequisites_codes']) == $form_state['values']['course_code'])
+      elseif (trim(strtolower($form_state['values']['prerequisites_codes'])) == strtolower($form_state['values']['course_code']))
         form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
     }
 
