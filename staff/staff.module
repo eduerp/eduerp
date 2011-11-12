@@ -842,6 +842,7 @@ function staff_course_list() {
     $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
       FROM
         (SELECT
+          c.field_code_value AS code,
           c.field_coursetitle_value AS course_title,
           ci.field_lecturer_uid AS uid
         FROM {content_type_course} c, {content_type_course_instance} ci
@@ -851,16 +852,18 @@ function staff_course_list() {
           ci.field_semester_name_value='{$i}'
         ) AS courses
       LEFT JOIN {node} npro ON courses.uid=npro.uid AND npro.type='profile'
-      LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid";
+      LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
+      ORDER by code";
     $result = db_query($query, arg(2));
     echo "<b><br />Courses Running in Current Session, Semester {$i}...</b>";
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
 <?php
     while ($f = db_fetch_object($result)) {
 ?>
       <tr>
+      <td><? echo $f->code; ?></td>
       <td><a href="view/<?php echo $f->uid?>"><? echo $f->staff_name; ?></a></td>
       <td><? echo $f->course_title; ?></td>
       </tr>
@@ -871,12 +874,12 @@ function staff_course_list() {
 <?php
   }
 
-  $query = "SELECT c.field_code_value AS code, c.field_coursetitle_value AS course_title FROM {content_type_course} c WHERE c.field_department_nid_nid=%d";
+  $query = "SELECT c.field_code_value AS code, c.field_coursetitle_value AS course_title FROM {content_type_course} c WHERE c.field_department_nid_nid=%d ORDER by code";
   $result = db_query($query, arg(2));
   echo "<b><br />All Courses In this Department...</b>";
 ?>
   <table border='1' align='center'  cellpadding="5" cellspacing="5">
-  <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Title</b></td></tr>
+  <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Course</b></td></tr>
 <?php
   while ($f = db_fetch_object($result)) {
 ?>
