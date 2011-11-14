@@ -1267,15 +1267,6 @@ function student_course_form_validate($form, &$form_state) {
   if (empty($cis1)) $cis1 = '0';
 
   $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
-    FROM {content_type_course_instance} ci, {program_course} pc
-    WHERE
-      ci.nid IN(%s) AND
-      ci.nid IN(%s) AND
-      ci.field_course_id_nid=pc.course_id AND
-      pc.programme_id=%d AND
-      pc.level='%s' AND
-      pc.semester='1'";
-  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
     FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
     WHERE
       ci.nid IN(%s) AND
@@ -1321,22 +1312,13 @@ function student_course_form_validate($form, &$form_state) {
     if (empty($cis2)) $cis2 = '0';
 
     $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
-      FROM {content_type_course_instance} ci, {program_course} pc
-      WHERE
-        ci.nid IN(%s) AND
-        ci.nid IN(%s) AND
-        ci.field_course_id_nid=pc.course_id AND
-        pc.programme_id=%d AND
-        pc.level='%s' AND
-        pc.semester='2'";
-    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
       FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
       WHERE
         ci.nid IN(%s) AND
         ci.field_course_id_nid=pc.course_id AND
         pc.programme_id=%d AND
         pc.level='%s' AND
-        pc.semester='1' AND
+        pc.semester='2' AND
         ci.field_course_id_nid=c.nid AND
         c.field_code_value NOT IN(
           SELECT DISTINCT
@@ -1363,14 +1345,6 @@ function student_course_form_validate($form, &$form_state) {
             nsprox.vid=sprox.vid
           )";
     $result = db_query($sql, $cis2, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '2');
-$ar['cis2'] = $cis2;
-$ar['profile_first_choice'] = $user_profile->profile_first_choice;
-$ar['profile_level_name'] = $user_profile->profile_level_name;
-$ar['uid'] = $user->uid;
-$ar['eduerp_current_session'] = variable_get('eduerp_current_session', '');
-$ar['min_credit_load2'] = $form['#min_credit_load2'];
-$ar['max_credit_load2'] = $form['#max_credit_load2'];
-dsm($ar);
     $row = db_fetch_object($result);
     if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
     if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
