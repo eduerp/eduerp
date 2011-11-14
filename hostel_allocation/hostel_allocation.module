@@ -3998,7 +3998,8 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
     FROM {content_type_room_reservations} ctrr, {content_type_rooms} ctr, {content_type_blocks} ctb
     WHERE ctrr.field_room_id_nid=ctr.nid
       AND ctr.field_block_id_nid=ctb.nid
-      AND ctrr.field_expiry_date_value < NOW() ";
+      AND DATE_ADD(SUBSTRING(ctrr.field_expiry_date_value,1,10),INTERVAL 1 DAY)  < NOW() ";
+      //AND DATE_ADD(ctrr.field_expiry_date_value,INTERVAL 1 DAY)  < NOW()
     $rs = db_query($sql);
 
     if(db_affected_rows($rs) <= 0) return;
@@ -4025,7 +4026,7 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
 
       if(! $allocated) {
         //reverse block statistics entry
-        $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
+        $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' FOR UPDATE ";
         db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
 
         $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' AND alloted_number > 0 ";
@@ -4057,13 +4058,14 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
       if (function_exists('search_wipe')) {
         search_wipe($node->nid, 'node');
       }
+      /*
       if(! $allocated) {
         //now remove the cart info from the student's profile
         //get the product nid
         //$sql = "SELECT field_uc_product_id_nid FROM {content_type_blocks} ctb, content_type_rooms ctr";
         uc_cart_remove_item($productNID, $studentUID, $data = array('cart_type' => 'hostel_bedspace', 'module'=>'uc_product'));
       }
-
+      */
 
     }
 
@@ -4135,7 +4137,7 @@ function hostel_allocation_order($op, &$order, $arg2) {
 
 
 //allocate bedspace starts here
-function hostel_allocation_allocate_bedspace($studentUID, $orderNID){
+function hostel_allocation_allocate_bedspace($studentUID, $orderNID=0){
 
   //get the reservation info
   $reservationInfo = db_fetch_object(get_reservation_info($studentUID));
@@ -4163,7 +4165,10 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID){
         $reserveRoomNID = $reservationInfo->room_nid; //$rooms[0];
 
         //update room statistics
-        $sql = "UPDATE allocation_room_statistics SET allocation_count = allocation_count + 1 WHERE room_nid=%d AND session_name='%s' ";
+        $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
+        db_query($sql, $reserveRoomNID, variable_get('eduerp_current_session', ''));
+      
+        $sql = "UPDATE {allocation_room_statistics} SET allocation_count = allocation_count + 1 WHERE room_nid=%d AND session_name='%s' ";
         $val = db_query($sql, $reserveRoomNID, variable_get('eduerp_current_session', ''));
 
         //update block statistics
@@ -4214,12 +4219,12 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID){
 }
 //allocate bedspace ends here
 
-/*
+
 //cron jobs
 function hostel_allocation_cron(){
-  hostel_allocation_revoke_expired_reservation(0, true);
+  hostel_allocation_revoke_expired_reservation(0, false);
 }
-*/
+
 
 //end of cron job
 
