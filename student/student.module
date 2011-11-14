@@ -103,12 +103,15 @@ class courseselectionsclass {
   private function blockingprerequisites($prerequisite_codes) {
     $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
     foreach ($prerequisite_codes as $prerequisite_code) {
-      $alternatives = explode('/', $prerequisite_code);
-      $foundone = FALSE;
-      foreach ($alternatives as $alternative) {
-        if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+      $prerequisite_code = trim($prerequisite_code);
+      if (!empty($prerequisite_code)) {
+        $alternatives = explode('/', $prerequisite_code);
+        $foundone = FALSE;
+        foreach ($alternatives as $alternative) {
+          if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+        }
+        if (!$foundone) return $prerequisite_code;
       }
-      if (!$foundone) return $prerequisite_code;
     }
     return FALSE;
   }
