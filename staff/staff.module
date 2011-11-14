@@ -838,33 +838,61 @@ function search_staff_list() {
 
 function staff_course_list() {
   ob_start();
-  $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
-    FROM
-      (SELECT
-        c.field_coursetitle_value AS course_title,
-        ci.field_lecturer_uid AS uid
-      FROM {content_type_course} c, {content_type_course_instance} ci
-      WHERE
-        c.field_department_nid_nid=%d AND c.nid=ci.field_course_id_nid
-      ) AS courses
-    LEFT JOIN {node} npro ON courses.uid=npro.uid AND npro.type='profile'
-    LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid";
-  $result = db_query($query, arg(2));
+  for ($i = 1; $i <= 3; $i++) {
+    $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
+      FROM
+        (SELECT
+          c.field_code_value AS code,
+          c.field_coursetitle_value AS course_title,
+          ci.field_lecturer_uid AS uid
+        FROM {content_type_course} c, {content_type_course_instance} ci
+        WHERE
+          c.field_department_nid_nid=%d AND c.nid=ci.field_course_id_nid AND
+          ci.field_sess_name_value='" .  variable_get('eduerp_current_session', '')  . "' AND
+          ci.field_semester_name_value='{$i}'
+        ) AS courses
+      LEFT JOIN {node} npro ON courses.uid=npro.uid AND npro.type='profile'
+      LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
+      ORDER by code";
+    $result = db_query($query, arg(2));
+    echo "<b><br />Courses Running in Current Session, Semester {$i}...</b>";
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
 <?php
-  while ($f=db_fetch_object($result)) {
+    while ($f = db_fetch_object($result)) {
 ?>
       <tr>
+      <td><? echo $f->code; ?></td>
       <td><a href="view/<?php echo $f->uid?>"><? echo $f->staff_name; ?></a></td>
       <td><? echo $f->course_title; ?></td>
       </tr>
 <?php
-  }
+    }
 ?>
     </table>
 <?php
+  }
+
+  $query = "SELECT c.field_code_value AS code, c.field_coursetitle_value AS course_title FROM {content_type_course} c WHERE c.field_department_nid_nid=%d ORDER by code";
+  $result = db_query($query, arg(2));
+  echo "<b><br />All Courses In this Department...</b>";
+?>
+  <table border='1' align='center'  cellpadding="5" cellspacing="5">
+  <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Course</b></td></tr>
+<?php
+  while ($f = db_fetch_object($result)) {
+?>
+    <tr>
+    <td><? echo $f->code; ?></td>
+    <td><? echo $f->course_title; ?></td>
+    </tr>
+<?php
+    }
+?>
+    </table>
+<?php
+
   return ob_get_clean();
 }
 
@@ -2772,7 +2800,7 @@ function staff_create_course_form_validate($form, $form_state) {
       form_set_error('credit_load', Error_Types(107));
 
   //make sure that no spaces in course code
-  if (strpos($form_state['values']['course_code'], " "))
+  if (strpos($form_state['values']['course_code'], " ") !== FALSE)
     form_set_error('course_code', Error_Types(109));
 
   // Security checks
@@ -2815,7 +2843,7 @@ function staff_create_course_form_validate($form, $form_state) {
                   //the data is single so check for valid course code
                   if (! is_valid_course_code($h)) //$h == $form_state['values']['course_code'] means do not allow prereqisite to reference itself
                     form_set_error('prerequisites_codes', Error_Types(110));
-                  elseif ($h == $form_state['values']['course_code'])
+                  elseif (strtolower($h) == strtolower($form_state['values']['course_code']))
                     form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
                 }
               }
@@ -2829,20 +2857,17 @@ function staff_create_course_form_validate($form, $form_state) {
             //the data is single so check for valid course code
             if (! is_valid_course_code($v))
               form_set_error('prerequisites_codes', Error_Types(110));
-            elseif ($v == $form_state['values']['course_code'])
+            elseif (strtolower($v) == strtolower($form_state['values']['course_code']))
               form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
           }
-
         }
-
-
       }
     }
     else {//seems he entered only one course code. well lets see
       //check for valid course code
-      if (! is_valid_course_code($form_state['values']['prerequisites_codes']))
+      if (! is_valid_course_code(trim($form_state['values']['prerequisites_codes'])))
         form_set_error('prerequisites_codes', Error_Types(110));
-      elseif ($form_state['values']['prerequisites_codes'] == $form_state['values']['course_code'])
+      elseif (trim(strtolower($form_state['values']['prerequisites_codes'])) == strtolower($form_state['values']['course_code']))
         form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
     }
 
@@ -2896,8 +2921,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ''; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : '';
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
     node_save($node);
@@ -2925,8 +2950,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ''; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : '';
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
 
@@ -10658,7 +10683,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d AND field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ", $nationalityType, $levelType, $id, variable_get('eduerp_current_session', ''));
 
   if(db_affected_rows($rs) <=0) return array();
-  
+
   $feeSetup = db_fetch_object($rs);
   $setupNID = $feeSetup->nid;
 
@@ -10672,9 +10697,9 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //echo "<pre>";
   //print_r($feeOption);
   //echo "</pre>";
-  
-  
-  
+
+
+
   $feeStudentOption['studentFeeSetupNID'] = $setupNID;
   $feeStudentOption['nationality_name'] = $feeOption[$setupNID]['nationality_name'];
   $feeStudentOption['fee_structure_name'] = $feeOption[$setupNID]['fee_structure_name'];
@@ -10693,8 +10718,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
   $details = get_fee_setup_item_details($setupNID);
   if(db_affected_rows($details) <=0) return array();
-  
-  
+
+
   $i=0;
   while($r = db_fetch_object($details)){
 
@@ -10706,17 +10731,17 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
       $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
-      
+
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-      
+
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
       $aInfo['aid'] = $attributeOptionInfo['aid'];
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
       if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
-      
+
 
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
@@ -10731,18 +10756,18 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
         $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
         $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
-      
+
         //now make sure that each fee product returned has attribute and option (no more asumptions!)
         if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-      
+
         //make sure attribute and option is attached to the product
         $aInfo['productNID'] = $r->product_nid;;
       	$aInfo['aid'] = $attributeOptionInfo['aid'];
       	$aInfo['oid'] = $attributeOptionInfo['oid'];
       	$aInfo['label'] = "Fee Structure";
       	if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
-        
-        
+
+
         $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
         $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
@@ -10757,17 +10782,17 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
       $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
-      
+
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-      
+
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
       $aInfo['aid'] = $attributeOptionInfo['aid'];
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
       if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
-      
+
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
@@ -10778,7 +10803,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     $i++;
   }
 
-  
+
   //now if this is to check fees only then do not check for late reg
   if(! $checkFeesOnly){
     //now check for late registration info
@@ -10844,14 +10869,14 @@ function get_fee_items($studentUID){
 
 
 function is_fee_setup_existing_for_student($studentUID){
-	
+
   $studentFeeProfile = fees_ini_student_profile($studentUID);
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return false;
-  
+
   $studentFeeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], True);
-  
+
   if(! is_array($studentFeeItem) || ! sizeof($studentFeeItem)) return false;
-  
+
   return true;
 }
 
