@@ -131,9 +131,9 @@ function hostel_allocation_create_modify_hostel() {
 
   if (! $isAuthorized) {
     if(arg(2))
-      drupal_set_message(Error_Types(105));
+      drupal_set_message(Error_Types(105), 'error');
     else
-      drupal_set_message(Error_Types(104));
+      drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -399,7 +399,8 @@ function hostel_allocation_create_modify_block() {
   echo $navi;
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -826,7 +827,8 @@ function hostel_allocation_create_modify_room() {
   echo $navi;
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -1284,7 +1286,8 @@ function hostel_allocation_create_modify_category() {
   echo $navi;
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -1628,7 +1631,8 @@ function hostel_allocation_create_modify_allocation_rules() {
   echo $navi;
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -2008,7 +2012,8 @@ function hostel_allocation_modify_global_settings(){
   echo $navi;
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -2562,7 +2567,8 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
 
   if (! $isAuthorized) {//Israel pls remember to take into account students that are coming
     echo $navi;
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -2905,7 +2911,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
     $studCate[] = "freshmen";
   }elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE"){
-    $studCate[] = "freshman";
+    $studCate[] = "freshmen";
   }
 
     /*
@@ -3007,7 +3013,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   }
   else { //no reservation was made
 
-    drupal_set_message(Error_Types(140));
+    drupal_set_message(Error_Types(140), 'error');
     //drupal_set_message(implode(",", $studCate));
   }
 }
@@ -3320,7 +3326,8 @@ function hostel_allocation_reports(){
   echo '<br /><hr /><br />';
 
   if (! $isAuthorized) {
-    echo Error_Types(104);
+    //echo Error_Types(104);
+    drupal_set_message(Error_Types(104), 'error');
 
   }
   else {
@@ -4155,10 +4162,11 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID=0){
         AND abs.allocation_rules_description_nid = %d
         AND abs.session_name = '%s'
 
-        AND (ars.reservation_count + ars.allocation_count) < ars.room_capacity
-	AND abs.alloted_number < abs.allocation_number
+        
 	AND abs.allocation_number > 0
 	FOR UPDATE ";
+	//AND (ars.reservation_count + ars.allocation_count) < ars.room_capacity
+	//AND abs.alloted_number < abs.allocation_number
       $rs1 = db_query($sql, $reservationInfo->room_nid, $reservationInfo->block_nid, $reservationInfo->category_nid, variable_get('eduerp_current_session', ''));
       if(db_affected_rows($rs1) > 0 ) { //proceed with allocation
         //now pick the first room
