@@ -103,12 +103,15 @@ class courseselectionsclass {
   private function blockingprerequisites($prerequisite_codes) {
     $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
     foreach ($prerequisite_codes as $prerequisite_code) {
-      $alternatives = explode('/', $prerequisite_code);
-      $foundone = FALSE;
-      foreach ($alternatives as $alternative) {
-        if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+      $prerequisite_code = trim($prerequisite_code);
+      if (!empty($prerequisite_code)) {
+        $alternatives = explode('/', $prerequisite_code);
+        $foundone = FALSE;
+        foreach ($alternatives as $alternative) {
+          if (in_array(trim($alternative), $this->passedcodes)) $foundone = TRUE;
+        }
+        if (!$foundone) return $prerequisite_code;
       }
-      if (!$foundone) return $prerequisite_code;
     }
     return FALSE;
   }
@@ -1264,15 +1267,6 @@ function student_course_form_validate($form, &$form_state) {
   if (empty($cis1)) $cis1 = '0';
 
   $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
-    FROM {content_type_course_instance} ci, {program_course} pc
-    WHERE
-      ci.nid IN(%s) AND
-      ci.nid IN(%s) AND
-      ci.field_course_id_nid=pc.course_id AND
-      pc.programme_id=%d AND
-      pc.level='%s' AND
-      pc.semester='1'";
-  $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
     FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
     WHERE
       ci.nid IN(%s) AND
@@ -1318,22 +1312,13 @@ function student_course_form_validate($form, &$form_state) {
     if (empty($cis2)) $cis2 = '0';
 
     $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
-      FROM {content_type_course_instance} ci, {program_course} pc
-      WHERE
-        ci.nid IN(%s) AND
-        ci.nid IN(%s) AND
-        ci.field_course_id_nid=pc.course_id AND
-        pc.programme_id=%d AND
-        pc.level='%s' AND
-        pc.semester='2'";
-    $sql = "SELECT IFNULL(SUM(pc.credit_load), 0) AS tload
       FROM {content_type_course_instance} ci, {program_course} pc, {content_type_course} c
       WHERE
         ci.nid IN(%s) AND
         ci.field_course_id_nid=pc.course_id AND
         pc.programme_id=%d AND
         pc.level='%s' AND
-        pc.semester='1' AND
+        pc.semester='2' AND
         ci.field_course_id_nid=c.nid AND
         c.field_code_value NOT IN(
           SELECT DISTINCT

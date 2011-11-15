@@ -1215,6 +1215,7 @@ Part_Time',
     'subjects_allowed_values' => '|
 Agricultural Science
 Applied Electricity
+Arabic
 Auto Mechanics
 Biology
 Building Construction
@@ -1236,6 +1237,7 @@ French
 Further Maths
 Geography
 Government
+Hausa Language
 Health Science
 History
 Home Management
@@ -1340,6 +1342,7 @@ F',
     'subjects_allowed_values' => '|
 Agricultural Science
 Applied Electricity
+Arabic
 Auto Mechanics
 Biology
 Building Construction
@@ -1361,6 +1364,7 @@ French
 Further Maths
 Geography
 Government
+Hausa Language
 Health Science
 History
 Home Management
