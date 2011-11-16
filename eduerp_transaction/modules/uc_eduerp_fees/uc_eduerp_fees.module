@@ -40,7 +40,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $fees = $fees_items;
   }
   dsm($fees);
-  
+
   // @todo
   // Check if the current user has an existing fees setup
   // This need to be added to the speak as it is throwing
@@ -192,7 +192,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         '#value' => $options,
       );
     }
-    
+
     // Do the rest of the things for hostel
     if($type == EDUERP_FEES_HOSTEL) {
       $item = $fee['item'];
@@ -218,7 +218,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           '#type' => 'hidden',
           '#value' => $options,
       );
-      
+
     }
   }
   $form['submit'] = array(
@@ -477,12 +477,12 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
  *
  * Passing $items by reference here won't work
  * because of a PHP bug. Occurs only in php 5.3.1+
- * 
- * @see 
+ *
+ * @see
  *  - http://stackoverflow.com/questions/2045875/pass-by-reference-problem-with-php-5-3-1
  *  - http://bugs.php.net/bug.php?id=50394
- * 
- * A temporary solution is to modify the values in the array 
+ *
+ * A temporary solution is to modify the values in the array
  * to be referenced
  */
 function uc_eduerp_fees_eduerp_fees_alter($items) {
@@ -657,7 +657,7 @@ function uc_eduerp_fees_update_fees($values) {
     if($values['type'] == EDUERP_FEES_HOSTEL) {
       // @todo check if there's hostel reservation for the user beore
       // revoking the expiration
-      hostel_allocation_revoke_expired_reservation($values['uid'], True);
+      hostel_allocation_revoke_expired_reservation($values['uid']);
       watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id and a type of @type on user @uid', array('@order_id' => $order_id, '@type' => $values['type'], '@uid' => $values['uid'])));
     }
 
@@ -769,7 +769,7 @@ function uc_eduerp_fees_registration_is_late() {
  *
  * Bug: this form alter is getting called before the check
  * for is_reservation_existing. The implication of this is that
- * the hostel form gets removed before a check for whether hostel 
+ * the hostel form gets removed before a check for whether hostel
  * exists or not.
  */
 function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) {
