@@ -1067,13 +1067,13 @@ function hostel_allocation_create_edit_room_form_validate($form, &$form_state){
   if(arg(2) && is_valid_room(arg(2))) {//validate MODIFY
     if (is_Room_Name_Existing($form_state['values']['room_name'], $form_state['values']['block_nid'], arg(2)))
       form_set_error('room_name', Error_Types(133));
-    
+
     //make sure that multiple room names is not specified during edit
-    if ( strpos($form_state['values']['room_name'], ",")) 
-      form_set_error('room_name', Error_Types(169));	    
+    if ( strpos($form_state['values']['room_name'], ","))
+      form_set_error('room_name', Error_Types(169));
   }
   else {//validate CREATE
-    
+
       $bits = explode(",", $form_state['values']['room_name']);
       if (is_array($bits) && sizeof($bits)) {
         //looks like he entered more than one room name
@@ -1083,9 +1083,9 @@ function hostel_allocation_create_edit_room_form_validate($form, &$form_state){
             //the data is single now so check if room name is existing
             if (is_Room_Name_Existing($v, $form_state['values']['block_nid']))
               form_set_error('room_name', Error_Types(133));
-    
+
           }
-             
+
         }
       }
       else {//seems he entered only one course code. well lets see
@@ -1132,7 +1132,7 @@ function hostel_allocation_create_edit_room_form_submit($form, &$form_state) {
 
   }
   else {
-  	  
+
     $bits = explode(",", $form_state['values']['room_name']);
     if (is_array($bits) && sizeof($bits)) {
       //looks like he entered more than one room name
@@ -1152,12 +1152,12 @@ function hostel_allocation_create_edit_room_form_submit($form, &$form_state) {
           $node->field_room_capacity[0]['value']   = $form_state['values']['room_capacity'];
           $node->field_room_status[0]['value']     = $form_state['values']['room_status'];
 
-    
-          node_save($node);  	
+
+          node_save($node);
         }
-        	
+
       }
-        
+
     }
     else { //single room name was specified
       $node = new stdClass();
@@ -1173,10 +1173,10 @@ function hostel_allocation_create_edit_room_form_submit($form, &$form_state) {
       $node->field_room_capacity[0]['value']   = $form_state['values']['room_capacity'];
       $node->field_room_status[0]['value']     = $form_state['values']['room_status'];
 
-    
+
       node_save($node);
     }
-    
+
     drupal_set_message('Room(s) '. $form_state['values']['room_name'] . ' has been created!<br />');
   }
 
@@ -3071,11 +3071,6 @@ function reserve_bedspace(&$reservationInfo){
   if($_SESSION['eduerp_reserve_room']['reservation_type'] == 'single') //take care of direct reservation
   $sql .= " AND ctr.nid = '". $_SESSION['eduerp_reserve_room']['room_nid'] ."' ";
 
-
-  //$sql .="
-  //LIMIT 5
-  //FOR UPDATE ";
-
   $rs = db_query($sql, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
 
   if(db_affected_rows($rs) <= 0 ) {
@@ -3083,12 +3078,7 @@ function reserve_bedspace(&$reservationInfo){
   }
 
     //ok gr8 we have available bed spaces
-    //now we need to randomize the at most five records returned in order to pick one.
     while($row = db_fetch_object($rs)){
-      //$rooms[] = $row->room_nid;
-
-    //}
-    //shuffle($rooms);
       $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs
         WHERE ars.room_nid=%d
         AND abs.block_nid = %d
@@ -4023,25 +4013,14 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
       $roomInfo = get_rooms($row->field_room_id_nid, false);
 
       //reverse room statistics entry
-      $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
-      db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
-
       $sql = "UPDATE {allocation_room_statistics} SET reservation_count = reservation_count - 1 WHERE room_nid=%d AND session_name='%s' AND reservation_count > 0 ";
       db_query($sql, $row->field_room_id_nid, variable_get('eduerp_current_session', ''));
 
-      //db_query('COMMIT');
-
       if(! $allocated) {
         //reverse block statistics entry
-        $sql = "SELECT block_nid FROM {allocation_block_statistics} WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' FOR UPDATE ";
-        db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
-
         $sql = "UPDATE {allocation_block_statistics} SET alloted_number = alloted_number - 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' AND alloted_number > 0 ";
         db_query($sql, $roomInfo[$row->field_room_id_nid]['block_nid'], $row->field_reservation_category_id_nid, variable_get('eduerp_current_session', ''));
       }
-
-      db_query('COMMIT');
-
 
       //reverse room room reservations
       //$sql = "DELETE FROM content_type_room_reservations WHERE nid=%d";
@@ -4073,11 +4052,7 @@ function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=
         uc_cart_remove_item($productNID, $studentUID, $data = array('cart_type' => 'hostel_bedspace', 'module'=>'uc_product'));
       }
       */
-
     }
-
-
-
 }
 
 
@@ -4142,40 +4117,24 @@ function hostel_allocation_order($op, &$order, $arg2) {
 //reservation payment ends here
 
 
-
 //allocate bedspace starts here
 function hostel_allocation_allocate_bedspace($studentUID, $orderNID=0){
 
   //get the reservation info
   $reservationInfo = db_fetch_object(get_reservation_info($studentUID));
 
-    //ok gr8 we have available bed spaces
-    //now we need to randomize the at most five records returned in order to pick one.
-    //while($row = db_fetch_object($rs)){
-      //$rooms[] = $row->room_nid;
-
-    //}
-    //shuffle($rooms);
       $sql = "SELECT ars.room_nid, ars.reservation_count, ars.allocation_count FROM {allocation_room_statistics} ars, {allocation_block_statistics} abs
         WHERE ars.room_nid=%d
         AND abs.block_nid = %d
         AND abs.allocation_rules_description_nid = %d
         AND abs.session_name = '%s'
-
-        
-	AND abs.allocation_number > 0
-	FOR UPDATE ";
-	//AND (ars.reservation_count + ars.allocation_count) < ars.room_capacity
-	//AND abs.alloted_number < abs.allocation_number
+        AND abs.allocation_number > 0";
       $rs1 = db_query($sql, $reservationInfo->room_nid, $reservationInfo->block_nid, $reservationInfo->category_nid, variable_get('eduerp_current_session', ''));
       if(db_affected_rows($rs1) > 0 ) { //proceed with allocation
         //now pick the first room
         $reserveRoomNID = $reservationInfo->room_nid; //$rooms[0];
 
         //update room statistics
-        $sql = "SELECT room_nid FROM {allocation_room_statistics} WHERE room_nid=%d AND session_name='%s' FOR UPDATE ";
-        db_query($sql, $reserveRoomNID, variable_get('eduerp_current_session', ''));
-      
         $sql = "UPDATE {allocation_room_statistics} SET allocation_count = allocation_count + 1 WHERE room_nid=%d AND session_name='%s' ";
         $val = db_query($sql, $reserveRoomNID, variable_get('eduerp_current_session', ''));
 
@@ -4183,12 +4142,8 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID=0){
         //$sql = "UPDATE allocation_block_statistics SET alloted_number = alloted_number + 1 WHERE block_nid=%d AND allocation_rules_description_nid=%d AND session_name='%s' ";
         //$val = db_query($sql, $reservationInfo['block_nid'], $reservationInfo['category_nid'], variable_get('eduerp_current_session', ''));
 
-        db_query('COMMIT');
-
         //get max reservation duration
         //$resDuration = db_fetch_object(db_query("SELECT field_settings_value_value duration FROM content_type_allocation_settings WHERE field_settings_name_value LIKE '%Reservation Duration%' LIMIT 1 "));
-
-
 
         $resDate = date('Y-m-d h:m:s');
 
@@ -4215,13 +4170,6 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID=0){
 
         return true;
       }
-      else {
-         db_query('COMMIT'); //free all locks
-      }
-
-    //}
-  //}
-
 
   return false;
 }
@@ -4232,9 +4180,8 @@ function hostel_allocation_allocate_bedspace($studentUID, $orderNID=0){
 function hostel_allocation_cron(){
   hostel_allocation_revoke_expired_reservation(0, false);
 }
-
-
 //end of cron job
+
 
 //show allocated room
 function get_allocation_info($studentUID, $session){
@@ -4330,6 +4277,4 @@ function hostel_allocation_show_allocated_room($studentUID, $session){
 
   return $html;
 }
-
-
 ?>
