@@ -1103,7 +1103,7 @@ return $rows;',
     'active' => '1',
     'text_processing' => '0',
     'max_length' => '30',
-    'allowed_values' => 'UME
+    'allowed_values' => 'UTME
 DE
 MATRIC',
     'allowed_values_php' => '',
