@@ -842,6 +842,7 @@ function staff_course_list() {
     $query = "SELECT courses.*, CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name
       FROM
         (SELECT
+          c.field_code_value AS code,
           c.field_coursetitle_value AS course_title,
           ci.field_lecturer_uid AS uid
         FROM {content_type_course} c, {content_type_course_instance} ci
@@ -851,16 +852,18 @@ function staff_course_list() {
           ci.field_semester_name_value='{$i}'
         ) AS courses
       LEFT JOIN {node} npro ON courses.uid=npro.uid AND npro.type='profile'
-      LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid";
+      LEFT JOIN {content_type_profile} pro ON npro.vid=pro.vid
+      ORDER by code";
     $result = db_query($query, arg(2));
     echo "<b><br />Courses Running in Current Session, Semester {$i}...</b>";
 ?>
     <table border='1' align='center'  cellpadding="5" cellspacing="5">
-    <tr bgcolor='#ACCFCC'><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
+    <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Lecturer</b></td><td><b>Course</b></td></tr>
 <?php
     while ($f = db_fetch_object($result)) {
 ?>
       <tr>
+      <td><? echo $f->code; ?></td>
       <td><a href="view/<?php echo $f->uid?>"><? echo $f->staff_name; ?></a></td>
       <td><? echo $f->course_title; ?></td>
       </tr>
@@ -871,12 +874,12 @@ function staff_course_list() {
 <?php
   }
 
-  $query = "SELECT c.field_code_value AS code, c.field_coursetitle_value AS course_title FROM {content_type_course} c WHERE c.field_department_nid_nid=%d";
+  $query = "SELECT c.field_code_value AS code, c.field_coursetitle_value AS course_title FROM {content_type_course} c WHERE c.field_department_nid_nid=%d ORDER by code";
   $result = db_query($query, arg(2));
   echo "<b><br />All Courses In this Department...</b>";
 ?>
   <table border='1' align='center'  cellpadding="5" cellspacing="5">
-  <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Title</b></td></tr>
+  <tr bgcolor='#ACCFCC'><td><b>Code</b></td><td><b>Course</b></td></tr>
 <?php
   while ($f = db_fetch_object($result)) {
 ?>
@@ -1912,7 +1915,7 @@ function staff_create_edit_faculty_form() {
   if ($fac_edit_record) $form['faculty_name']['#value'] = $fac_edit_record->name;
 
   $form['faculty_abbreviation'] = array(
-    '#title' => 'Faculty Abbreviation',
+    '#title' => 'Faculty Code',
     '#type' => 'textfield',
     '#size' => 6,
     '#required' => TRUE
@@ -2351,7 +2354,7 @@ function staff_display_available_faculties() {
     <tr>
       <td><b>#</b></td>
       <td><b>Faculty Name</b></td>
-      <td><b>Faculty Abbreviation</b></td>
+      <td><b>Faculty Code</b></td>
       <td><b>Faculty E-mail Subdomain</b></td>
     </tr>";$i = 1;$color = 0;
     $faculties = get_faculties();
@@ -2386,7 +2389,7 @@ function staff_display_available_departments() {
     <tr>
       <th><b>#</b></th>
       <th><b>Faculty Name</b></th>
-      <th><b>Faculty Abbreviation</b></th>
+      <th><b>Faculty Code</b></th>
       <th><b>Department Name</b></th>
       <th><b>Department Code</b></th>
     </tr>";$i = 1;
@@ -2494,7 +2497,7 @@ function Error_Types($num = 0) {
   $prifix1 = "Sorry, "; $prifix2 = "Warning! "; $prifix3 = "Test failed! ";
   switch($num){
   case '101': $msg = $prifix1 . 'Faculty Name already exists!<br />'; break;
-  case '102': $msg = $prifix1 . 'Faculty Abbreviation already exists!<br />'; break;
+  case '102': $msg = $prifix1 . 'Faculty Code already exists!<br />'; break;
   case '103': $msg = $prifix1 . 'Department Name already exists!<br />'; break;
   case '104': $msg = $prifix1 . 'You do not have permission to Create new Records!<br />'; break;
   case '105': $msg = $prifix1 . 'You do not have permission to Modify Records!<br /><br /><br />'; break;
@@ -2797,7 +2800,7 @@ function staff_create_course_form_validate($form, $form_state) {
       form_set_error('credit_load', Error_Types(107));
 
   //make sure that no spaces in course code
-  if (strpos($form_state['values']['course_code'], " "))
+  if (strpos($form_state['values']['course_code'], " ") !== FALSE)
     form_set_error('course_code', Error_Types(109));
 
   // Security checks
@@ -2840,7 +2843,7 @@ function staff_create_course_form_validate($form, $form_state) {
                   //the data is single so check for valid course code
                   if (! is_valid_course_code($h)) //$h == $form_state['values']['course_code'] means do not allow prereqisite to reference itself
                     form_set_error('prerequisites_codes', Error_Types(110));
-                  elseif ($h == $form_state['values']['course_code'])
+                  elseif (strtolower($h) == strtolower($form_state['values']['course_code']))
                     form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
                 }
               }
@@ -2854,20 +2857,17 @@ function staff_create_course_form_validate($form, $form_state) {
             //the data is single so check for valid course code
             if (! is_valid_course_code($v))
               form_set_error('prerequisites_codes', Error_Types(110));
-            elseif ($v == $form_state['values']['course_code'])
+            elseif (strtolower($v) == strtolower($form_state['values']['course_code']))
               form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
           }
-
         }
-
-
       }
     }
     else {//seems he entered only one course code. well lets see
       //check for valid course code
-      if (! is_valid_course_code($form_state['values']['prerequisites_codes']))
+      if (! is_valid_course_code(trim($form_state['values']['prerequisites_codes'])))
         form_set_error('prerequisites_codes', Error_Types(110));
-      elseif ($form_state['values']['prerequisites_codes'] == $form_state['values']['course_code'])
+      elseif (trim(strtolower($form_state['values']['prerequisites_codes'])) == strtolower($form_state['values']['course_code']))
         form_set_error('prerequisites_codes', Error_Types(111));//cannot reference self
     }
 
@@ -2921,8 +2921,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ''; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : '';
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
     node_save($node);
@@ -2950,8 +2950,8 @@ function staff_create_course_form_submit($form, &$form_state){
     $node->field_coursetitle[0]['value']        = $form_state['values']['course_title'];
     $node->field_course_description[0]['value'] = $form_state['values']['course_description'];
     $node->field_creditload[0]['value']         = $form_state['values']['credit_load'];
-    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ''; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
-    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : '';
+    $node->field_prerequisite_codes[0]['value'] = ( ! empty($form_state['values']['prerequisites_codes'])) ? $form_state['values']['prerequisites_codes'] : ' '; //List of Course code(s), comma separated that have to be completed before this course, code1/code2/code3 will be alternatives, one of which must be completed
+    $node->field_prerequisite[0]['value']       = ( ! empty($form_state['values']['prerequisite_desc'])) ? $form_state['values']['prerequisite_desc'] : ' ';
     $node->field_level[0]['value']              = $form_state['values']['course_level'];
     $node->field_semester[0]['value']           = $form_state['values']['course_semester'];
 
@@ -9683,17 +9683,19 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       $localCountry = db_fetch_object($rs1);
 
       while($r = db_fetch_object($rs)){
-      	if(trim($student_profile->profile_country_name) == trim($localCountry->country_name)){
+      	if(trim(strtolower(strtoupper($student_profile->profile_country_name))) == trim(strtolower(strtoupper($localCountry->country_name)))){
       	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'local'){
       	    $_SESSION[$varName]['nationalityType'] = $r->nid;
-      	    return;
+      	    //return;
+      	    break;
       	  }
 
       	}
       	if(trim($student_profile->profile_country_name) != trim($localCountry->country_name)){
       	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'international'){
       	    $_SESSION[$varName]['nationalityType'] = $r->nid;
-      	    return;
+      	    //return;
+      	    break;
       	  }
 
       	}
