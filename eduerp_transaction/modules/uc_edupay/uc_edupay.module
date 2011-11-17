@@ -710,8 +710,9 @@ function _uc_edupay_process_order_request($order) {
   if($data = module_invoke('uc_edupay', 'edupay', $order)) {
     //dsm(uc_order_load($_SESSION['cart_order']));
     $order->products = _uc_edupay_fees_order_items($order);
-    $products = $order->products;
-    
+    $products = $order->products;;
+    $_SESSION['eduerp_fees_order'] = $products['fees'];
+    //dsm($products);
     $response_data = new stdClass();
     foreach($products['fees'] as $key => $product) {
       // If scholarship is inclusive and hostel is not inclusive, don't send
@@ -856,6 +857,8 @@ class EdupayOauthClient extends DrupalOauthClient {
     $method = 'POST';
     // convert the data to json
     $data = json_encode($params);
+    // log what is been sent
+    watchdog('uc_edupay', t('New Order! A user with @uid has just made a new order. Order data is @data', array('@uid' => $order->uid, '@data' => $data)));
     //$result = drupal_http_request($url, $headers, $method, http_build_query($data, '', '&'));
     //$result = drupal_http_request($url, $headers, $method, http_build_query($params, 'fees'));
     //$result = drupal_http_request($url, $headers, $method, http_build_query($params, 'fees', ';'));
@@ -984,11 +987,13 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           if ($arg1->payment_method == 'edupay') {
             if(isset($arg1->tpin) && !is_null($arg1->tpin)) {
               $edupay_data = array('tpin' => $arg1->tpin, 'order_id' => $arg1->order_id);
-              $data = $arg1->data;
-              $data->edupay_data = serialize($edupay_data);
+              $order_data = $_SESSION['eduerp_fees_order'];
+              foreach($order_data as $key => $value) {
+                $order_data[$key]['edupay_data'] = serialize($edupay_data);
+              }
               //dsm($data);
               //dsm(unserialize($data->edupay_data));
-              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($order_data), $arg1->order_id);
             }
             else {
               if(!isset($arg1->transaction_id)) {
@@ -999,10 +1004,59 @@ function uc_edupay_order($op, &$arg1, $arg2) {
                 'transaction_id' => $arg1->transaction_id, 
                 'order_id' => $arg1->order_id
                 );
-              $data = $arg1->data;
-              $data->scholarship_items_data = serialize($scholarship_items_data);
-              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($data), $arg1->order_id);
+              $order_data = $arg1->data;
+              $order_data->scholarship_items_data = serialize($scholarship_items_data);
+              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($order_data), $arg1->order_id);
             }
+            //dsm($arg1);
+            $fees = $arg1->products;
+              $field = array();
+              $fields = array();
+              // @todo Break this all into API functions
+              foreach ($fees as $key => $product) {
+                $fields = $product->data;
+                $field['type'] = $fields['type'];
+                $field['nid'] = $fields['nid'];
+                $field['nationality'] = $fields['nationality'];
+                $field['programme'] = $fields['programme'];
+                $field['level_name'] = $fields['level_name'];
+                $field['scholarship'] = $fields['scholarship'];
+                $field['allow_instalment'] = $fields['allow_instalment'];
+                $field['session'] = $fields['session'];
+                if(array_key_exists('late_registration', $fields) && !is_null($fields['late_registration'])) {
+                  list(
+                    $field['late_registration_date'],
+                    $field['late_registration_amount'],
+                    $field['late_registration_nid'],
+                    $field['late_registration_description'],                    
+                    ) = array_values($fields['late_registration']);
+                }
+                if(array_key_exists('hostel', $fields) && !is_null($fields['hostel'])) {
+                  list(
+                    $field['hostel_nid'],
+                    $field['hostel_type'],
+                    $field['expiry_date'],               
+                    ) = array_values($fields['hostel']);
+                }
+                if(array_key_exists('attributes', $fields) && !is_null($fields['attributes'])) {
+                  $field['attributes'] = $fields['attributes']['Fee Structure'][0];
+                }
+                $field['jambno'] = $fields['jambno'];
+                $field['fullnames'] = $fields['fullnames'];
+                $field['institution'] = $fields['institution'];
+                $field['module'] = $fields['module'];
+                $field['cart_item_id'] = $product->cart_item_id;
+                $field['title'] = $product->title;
+                $field['price'] = $product->price;
+                $field['status'] = $arg1->order_status;
+                $field['email'] = $arg1->primary_email;
+                $field['order_id'] = $product->order_id;
+                $field['uid'] = $arg1->uid;
+                $field['product_nid'] = $product->nid;
+                //$fields = $product + $items;
+                unset($fields['has_scholarship']);
+                uc_edupay_save($arg1->order_id, $field);
+              }
           }
           //db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($arg1->data), $arg1->order_id);
           /*if (!empty($arg1->data) && $arg1->order_status == 'in_checkout') {
@@ -1014,15 +1068,26 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         // The real order object that will be put into $_SESSION['cart_order'].
         case 'load':
           //dsm("OP IS LOAD");
-          //$data = hostel_allocation_reserved_data();
-          //$data = uc_cart_get_contents();
-          //$arg1->data = $data;
-          //$arg1->studentid = $data->studentid;
           if(isset($_SESSION['transaction_id'])) {
             unset($_SESSION['transaction_id']);
           }
           break;
     }
+}
+
+/**
+ * Save a product to an order.
+ * 
+ * This is a replica of uc_order_product_save
+ */
+function uc_edupay_save($order_id, $product) {
+  //$key = empty($product['order_id']) ? NULL : 'fees_order_id';
+   if(db_result(db_query("SELECT product_nid from {fees_order} WHERE product_nid = %d", $product['product_nid']))) {
+    drupal_write_record('fees_order', $product, 'fees_order_id');
+  }else {
+    // do an insert
+    drupal_write_record('fees_order', $product);
+  }
 }
 
 /**

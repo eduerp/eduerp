@@ -4,11 +4,191 @@
  * Installs uc_edupay
  */
 
+ function uc_edupay_schema() {
+  $schema['fees_order'] = array(
+  'description' => t('Eduerp Fees orders'),
+  'fields' => array(
+    'fees_order_id' => array(
+      'description' => t('Fees orders serial field'),
+      'type' => 'serial',
+      'not null' => TRUE,
+    ),
+    'product_nid' => array(
+      'description' => t('The product node id'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'nid' => array(
+      'description' => t('The product attribute node id. E.g Fee Structure. This is different from the product node id'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'type' => array(
+      'description' => t('The fees type. Fees or hostel'),
+      'type' => 'varchar',
+      'length' => '10',
+      'not null' => FALSE,
+    ),
+    'cart_item_id' => array(
+      'description' => t('The ubercart cart item id'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'title' => array(
+      'description' => t('The fees order product node title. E.g Tuition, Medical fees'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'price' => array(
+      'description' => t('The fees order price'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'nationality' => array(
+      'description' => t('Part of the fees structure setup field to record nationality'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'programme' => array(
+      'description' => t('Part of the fees structure setup field to record student programme or course'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'level_name' => array(
+      'description' => t('Part of the fees structure setup field to record student level. Freshman or returning'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'session' => array(
+      'description' => t('Part of the fees structure setup field to record the current session a student is paying fees for'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'late_registration_date' => array(
+      'description' => t('Part of the fees structure setup field to record a late registration date value'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'late_registration_amount' => array(
+      'description' => t('Part of the fees structure setup field to record a late registration date amount'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'late_registration_nid' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'late_registration_description' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '225',
+      'not null' => FALSE,
+    ),
+    'uid' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'jambno' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'fullnames' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'institution' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'status' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'email' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '96',
+      'not null' => FALSE,
+    ),
+    'order_id' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'scholarship' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'allow_instalment' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'size' => 'medium',
+      'not null' => FALSE,
+    ),
+    'hostel_nid' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'int',
+      'not null' => FALSE,
+    ),
+    'hostel_type' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '20',
+      'not null' => FALSE,
+    ),
+    'expiry_date' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'attributes' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    ),
+    'module' => array(
+      'description' => t('TODO: please describe this field!'),
+      'type' => 'varchar',
+      'length' => '15',
+      'not null' => FALSE,
+    ),
+  ),
+  'primary key' => array('fees_order_id'),
+  'unique keys' => array(
+    'product_nid' => array('product_nid')
+  ),
+  'indexes' => array(
+    'uid' => array('uid', 'status'),
+  ),
+);
+  return $schema;
+}
+
 /**
  * Implememntation of hook_install
  */
 function uc_edupay_install() {
-
+  drupal_install_schema('uc_edupay');
 }
 
 /**

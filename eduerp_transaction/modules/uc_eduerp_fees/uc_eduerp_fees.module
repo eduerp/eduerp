@@ -41,14 +41,11 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   }
   dsm($fees);
   
-  // @todo
   // Check if the current user has an existing fees setup
-  // This need to be added to the speak as it is throwing
-  // errors if a student doesn't a fees setup
-  /*if(is_null($fees['fees']['item'])) {
-    drupal_set_message(t('Sorry, you not have a valid fees setup. Please contact bursary'), 'error');
+  if(!is_fee_setup_existing_for_student($student_id)) {
+    drupal_set_message(t("Sorry, you don't have a valid fees setup. Please contact bursary"), 'error');
     return FALSE;
-  }*/
+  }
 
   // A student need to be cleared to progress
   /*if(!student_clearance_performed($student_id)) {
