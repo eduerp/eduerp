@@ -1081,6 +1081,12 @@ function uc_edupay_order($op, &$arg1, $arg2) {
  * This is a replica of uc_order_product_save
  */
 function uc_edupay_save($order_id, $product) {
+  // if fees_order does not exist
+  $ret = array();
+  if(!db_table_exists('fees_order')) {
+    $table = drupal_get_schema('fees_order');
+    db_create_table($ret, 'fees_order', $table);
+  }
   //$key = empty($product['order_id']) ? NULL : 'fees_order_id';
    if(db_result(db_query("SELECT product_nid from {fees_order} WHERE product_nid = %d", $product['product_nid']))) {
     drupal_write_record('fees_order', $product, 'fees_order_id');
