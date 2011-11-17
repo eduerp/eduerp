@@ -3152,14 +3152,16 @@ function staff_assign_course_form() {
    }
   }
 
-  if(! isset($courses))
-  $courses = course(arg(2), $_SESSION['eduerp_assign_course_semester']);
+  if(! isset($courses)) {
+    $courses = course(arg(2), $_SESSION['eduerp_assign_course_semester']);
+    $courses = array(0 => '') + $courses
+  }
 
   $form['#title'] = 'Assign Lecturers and Timetable for Course';
 
   $form['course_nid'] = array(
   '#type' => 'select',
-  '#options' => array(0 => '') + $courses,
+  '#options' => $courses,
   '#title' => 'Course Code',
   '#ahah' => array('path' => 'staff/ajax/getdeflecturer', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'getdeflecturerz'),
   '#required'  => TRUE
