@@ -9683,17 +9683,19 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       $localCountry = db_fetch_object($rs1);
 
       while($r = db_fetch_object($rs)){
-      	if(trim($student_profile->profile_country_name) == trim($localCountry->country_name)){
+      	if(trim(strtolower(strtoupper($student_profile->profile_country_name))) == trim(strtolower(strtoupper($localCountry->country_name)))){
       	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'local'){
       	    $_SESSION[$varName]['nationalityType'] = $r->nid;
-      	    return;
+      	    //return;
+      	    break;
       	  }
 
       	}
       	if(trim($student_profile->profile_country_name) != trim($localCountry->country_name)){
       	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'international'){
       	    $_SESSION[$varName]['nationalityType'] = $r->nid;
-      	    return;
+      	    //return;
+      	    break;
       	  }
 
       	}

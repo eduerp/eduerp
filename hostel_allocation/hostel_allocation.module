@@ -1254,10 +1254,11 @@ function ini_hostel_variables(){
 	array('name' => 'Medical', 'value' => '2'),
 	array('name' => 'Physically Challenged', 'value' => '3'),
 	array('name' => 'Final Year Students', 'value' => '4'),
-	array('name' => 'Other Students', 'value' => '5'),
-	array('name' => 'Security', 'value' => '6'),
-	array('name' => 'Porters', 'value' => '7'),
-	array('name' => 'Special', 'value' => '8')
+	array('name' => 'International Students', 'value' => '5'),
+	array('name' => 'Other Students', 'value' => '6'),
+	array('name' => 'Security', 'value' => '7'),
+	array('name' => 'Porters', 'value' => '8'),
+	array('name' => 'Special', 'value' => '9')
 
   );
 
@@ -1280,6 +1281,10 @@ function hostel_allocation_create_modify_category() {
   if(is_allocation_rules_table_empty()) pre_populate_allocation_category();
 
 
+  //this code should be removed before going live
+  add_international_student_category_to_allocation_category();
+  
+  
   echo '<br /><hr /><br />';
   $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
@@ -2902,7 +2907,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   }
 
     /*
-    ! isset($_SESSION['eduerp_reserve_room']['mat_num']) ||
+    ! isset($_SESSION['eduerp_reserve_room']['mat_num']) || 
   	  $_SESSION['eduerp_reserve_room']['mat_num'] == "" ||
 
     */
@@ -2924,9 +2929,22 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
     $studCate[] = "final year students";
 
 
+  //check for international students
+  $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
+  if(db_affected_rows($rs1) > 0){
+   
+    $localCountry = db_fetch_object($rs1);
+    if(trim(strtolower(strtoupper($student_profile->profile_country_name))) != trim(strtolower(strtoupper($localCountry->country_name)))){
+      //international student
+      $studCate[] = "international students";
+    
+    }
+  }
+  
+
   //test for other students
-  if(! sizeof($studCate) )
-    $studCate[] = "other students";
+  if(! sizeof($studCate)) $studCate[] = "other students";
+  
 
 
 
@@ -4263,5 +4281,32 @@ function hostel_allocation_show_allocated_room($studentUID, $session){
   }
 
   return $html;
+}
+
+function add_international_student_category_to_allocation_category(){
+  //global $EDUERPallocationCategory;
+  /**
+    This code is for temporary purposes only to create the new allocation category.
+    It should be removed before going live
+  
+  */
+  //check if it exists
+  $rs = db_query("SELECT nid FROM {content_type_allocation_rules_description} WHERE field_category_name_value='%s'", "international students");
+  if(db_affected_rows($rs) <=0){
+    $node = new stdClass();
+    $node->type                              = 'allocation_rules_description';
+    $node->uid                               = 1;  // Admin
+    $node->status                            = 1;  // Published
+    $node->promote                           = 0;
+    $node->sticky                            = 0;
+    $node->comment                           = 0;
+    $node->title                             = 'International Students';
+    $node->field_category_name[0]['value']   = 'International Students';
+    $node->field_priority[0]['value']        = 9;
+
+    //drupal_set_message($form_state['values']['category_name'] . ' Category has been created!<br />');
+    node_save($node);
+  }
+  
 }
 ?>
