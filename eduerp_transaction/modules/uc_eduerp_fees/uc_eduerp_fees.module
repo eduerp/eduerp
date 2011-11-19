@@ -614,7 +614,6 @@ function uc_eduerp_fees_update_fees($values) {
   //$order_id = uc_eduerp_fees_update_invoke('load', 'uc_orders', $values['tpin']);
   $order_id = $values['order_id'];
   $order = uc_order_load($order_id);
-  $data = unserialize($order->data);
   // If status == payment_received
   // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from
   // edupay and update the ubercart order status to paid
