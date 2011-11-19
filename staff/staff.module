@@ -3152,8 +3152,10 @@ function staff_assign_course_form() {
    }
   }
 
-  if(! isset($courses))
-  $courses = course(arg(2), $_SESSION['eduerp_assign_course_semester']);
+  if(! isset($courses)) {
+    $courses = course(arg(2), $_SESSION['eduerp_assign_course_semester']);
+    $courses = array(0 => '') + $courses;
+  }
 
   $form['#title'] = 'Assign Lecturers and Timetable for Course';
 
@@ -3248,13 +3250,13 @@ function staff_assign_course_proceed_form_submit($form, &$state) {
 
 
 function staff_assign_course_form_validate($form, &$form_state) {
-  //make sure it is unique for course/semester/session
+  if ($form_state['values']['course_nid'] == 0) form_set_error('course_nid', 'Course Code is required.');
 
+  //make sure it is unique for course/semester/session
   if (arg(3)) {//validate EDIT variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
     }
-
   }
   else {
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'])) {
