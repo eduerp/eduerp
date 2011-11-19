@@ -66,6 +66,31 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
   }
   
   /**
+   * uc_eduerp_fees_update_fees function test
+   */ 
+  public function testUpdateFeesPaidOperation() {
+    $values = array(
+      'uid' => 955,
+      'service' => 'status',
+      'type' => 'fees',// fees or hostel
+      'status' => 'payment_received',
+      'tpin' => '3810f5f5a8b14fc99ea9ac45cabceb2f',
+      'order_id' => 388
+    );
+    
+    $result = uc_eduerp_fees_update_fees($values);
+    $this->assertEqual($result, t('fees paid'));
+  }
+  
+  /**
+   * uc_eduerp_fees_update_invoke function test
+   */ 
+  public function testHookUpdateInvoke() {
+    $result = uc_eduerp_fees_update_invoke('update', 388, 'uc_orders', 'payment_received');
+    $this->assertTrue($result, t('fees order updated successfully'));
+  }
+  
+  /**
   * Test fees items that have been paid for
   *
   */

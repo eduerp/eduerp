@@ -159,6 +159,8 @@ function handle_pay_gateway_request($uid, $service, $status, $updated = FALSE) {
     'tpin' => $tpin,
     'order_id' => $order_id
   );
+  
+  watchdog('eduerp_services', t('A new service has been initiated from Edupay. Values are @values', array('@values' => json_encode($values))));
   $method = $_SERVER['REQUEST_METHOD'];
   
   switch($method) {

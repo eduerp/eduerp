@@ -316,10 +316,15 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       $product[$key] = $fees_values;
       $cartId = uc_cart_get_id();
       $nid = $product[$key]['product_nid'];
-      if(array_key_exists('attribute_id', $product[$key])){
-        $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
-        //array_push($option, $product_attribute);
-        $options = $cart_item['options'] + $product_attribute;
+      if($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
+        if(array_key_exists('attribute_id', $product[$key])){
+          $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
+          //array_push($option, $product_attribute);
+          $options = $cart_item['options'] + $product_attribute;
+        }
+      }
+      if($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
+        $options = $cart_item['options'];
       }
     //dsm($options);
     // only if it's a product
@@ -575,9 +580,9 @@ function uc_eduerp_fees_load_extras($uid, $type) {
  */
 function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value = NULL) {
   foreach(module_list() as $module) {
-    $function = $module . '_update';
+    $function = $module . '_update_'.$op;
     if(function_exists($function)) {
-      $function($op, $value, $schema, $field_value);
+      $function($value, $schema, $field_value);
     }
   }
 }
@@ -589,7 +594,9 @@ function uc_eduerp_fees_update_load($value, $schema, $field_value) {
 }
 
 function uc_eduerp_fees_update_update($value, $schema, $field_value) {
-  return db_query("UPDATE {$schema} set order_status = '$field_value' WHERE order_id = %d", $value);
+  if(db_query("UPDATE {$schema} set order_status = '$field_value' WHERE order_id = %d", $value)) {
+    return TRUE;
+  }
 }
 
 function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
@@ -613,12 +620,15 @@ function uc_eduerp_fees_update_fees($values) {
   // edupay and update the ubercart order status to paid
   // run ubercart update query here to update an order
   if($values['status'] == FEES_PAID) { //Payment received
-    uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
-    if(isset($_SESSION['eduerp_fees_in_cart'])){
-      unset($_SESSION['eduerp_fees_in_cart']);
+    $order_updated = uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
+    if($order_updated) {
+      if(isset($_SESSION['eduerp_fees_in_cart'])){
+        unset($_SESSION['eduerp_fees_in_cart']);
+      }
+      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $values['uid'])));
+      $result = array('fees paid');
     }
-    watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $values['uid'])));
-    return array('fees paid');
+    return $result;
   }
   // If the fees paid for is of type hostel
   if($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
