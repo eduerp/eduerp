@@ -175,26 +175,17 @@ function uc_edupay_cart_item($op, &$item){
         
         # Alter scholarship
         if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
-          // round such fee item amount to zero
-          /*$price_info = array(
-            'price' => 0
-          );
-          
-          // Initialize the context.
-          $context = array(
-            'revision' => 'themed-original',
-            'type' => 'amount',
-          );*/
-          
-          $options['price_options'] = $item;
-          
-          //$item->price = uc_price($price_info, $context);
-          //uc_price($price_info, $context, $options);
-          
-          // reflect change in cart
-          $text = t('Scholarship Applicable');
-          $item->title = $item->title . ' ' . $text;
-          //$item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
+          if($item->data['type'] == EDUERP_FEES_NORMAL) {
+            $options['price_options'] = $item;
+            
+            //$item->price = uc_price($price_info, $context);
+            //uc_price($price_info, $context, $options);
+            
+            // reflect change in cart
+            $text = t('Scholarship Applicable');
+            $item->title = $item->title . ' ' . $text;
+            //$item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
+          }
         }
       }
       break;
@@ -225,15 +216,17 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
   foreach ($items as $item) {
     $options['price_options'] = $item;
     if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
-      $price_info = array(
-        'price' => 0
-      );
-      
-      // Initialize the context.
-      $context = array(
-        'revision' => 'themed',
-        'type' => 'amount',
-      );
+      if($item->data['type'] == EDUERP_FEES_NORMAL) {
+        $price_info = array(
+          'price' => 0
+        );
+        
+        // Initialize the context.
+        $context = array(
+          'revision' => 'themed',
+          'type' => 'amount',
+        );
+      }
     }
   }
 }
