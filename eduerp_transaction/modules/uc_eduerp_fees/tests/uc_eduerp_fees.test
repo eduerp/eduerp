@@ -1,5 +1,7 @@
 <?php 
 
+require_once drupal_get_path('module', 'uc_eduerp_fees') . '/includes/utils.inc';
+
 /**
 * @file
 * Simpletest for uc_eduerp_fees module
@@ -108,5 +110,13 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
       unset($fees['hostel']);
     }*/
     //$this->assertTrue(5251, $paid);
+  }
+  
+  public function testArrayInArrayUtil() {
+    $types_arr = array('fees', 'hostel');
+    $data = array('fees', 'fees', 'hostel');
+    
+    $result = array_in_array($types_arr, $data);
+    $this->assertTrue($types_arr, $result);
   }
 }

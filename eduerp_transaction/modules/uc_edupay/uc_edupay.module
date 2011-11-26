@@ -142,7 +142,7 @@ function uc_edupay_cart_fees_type() {
 function uc_edupay_cart_item($op, &$item){
   switch($op) {
     case 'load':
-    //dsm($item);
+    dsm($item);
       $fees_type = EDUERP_FEES_NORMAL;
       if($item->data['type'] == $fees_type){
         // load registration
@@ -968,8 +968,10 @@ function uc_edupay_order($op, &$arg1, $arg2) {
                 'transaction_id' => $arg1->transaction_id, 
                 'order_id' => $arg1->order_id
                 );
-              $order_data = $arg1->data;
-              $order_data->scholarship_items_data = serialize($scholarship_items_data);
+              //$order_data = $arg1->data;
+              $order_data = array($arg1->data);
+              //$order_data->scholarship_items_data = serialize($scholarship_items_data);
+              $order_data['scholarship_items_data'] = serialize($scholarship_items_data);
               db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($order_data), $arg1->order_id);
             }
             //dsm($arg1);

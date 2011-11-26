@@ -16,6 +16,90 @@ define('FEES_FULL', 'Full Amount');
 define('FEES_FIRST_INSTALMENT', 'Instalment1');
 define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
+require_once drupal_get_path('module', 'uc_eduerp_fees') . '/includes/utils.inc';
+
+/**
+ * Rebuild the fees items based on order state
+ * of payment_received or pending
+ * 
+ * @deprecated
+ */ 
+function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys = TRUE) {
+  foreach($fees as $fee) {
+    if($fee['type'] == 'fees') {
+      foreach($fee['item'] as $key => $value){
+        //$paid_fees_items[$fee['item']['product_nid']];
+        if($paid_nid == $fee['item'][$key]['product_nid']) {
+          unset($fee['item'][$key]);
+          //if all fees items have been paid for
+          if(is_null($fee['item'])){
+            unset($fees['fees']);
+          }
+        }
+      }
+    }
+    if($fee['type'] == 'hostel') {
+      if($paid_nid == $fee['item']['product_nid']) {
+        unset($fees['hostel']);
+      }
+    }
+  }
+  return ($preserve_keys === TRUE) ? $fees : array_shift($fees);
+}
+
+/**
+ * returns fees object based on order status of pending
+ * and payment_received
+ */ 
+function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
+  $items = array();
+  $fees = array();
+  if(is_null($student_id)) return FALSE;
+  
+  $status_paid = FEES_PAID;
+  $status_pending = FEES_PENDING;
+  $status = array(FEES_PAID, FEES_PENDING);
+  $result = db_query("SELECT data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $student_id, $status_paid, $status_pending);
+  while($order = db_fetch_array($result)) {
+    $order['data'] = unserialize($order['data']);
+    $items[] = $order;
+  }
+  if(is_null($items)) {
+    return $fees;
+  }
+  $types_arr = array('fees', 'hostel');
+  foreach($items as $key => $item) {
+    if(is_array($item['data'])){
+      foreach($item['data'] as $data) {
+        $types[] = $data['type'];
+        // if all values are fees and hostel is not there
+        // $fees = $fee_items['hostel']
+        if(!in_array('hostel', $types)) {
+          $fees = $fee_items['hostel'];
+        }
+        // if all values are hostel and fees is not in there.
+        // $fees = $fee_items['fees'];
+        if(!in_array('fees', $types)) {
+          $fees = $fee_items['fees'];
+        }
+        // if both items of type fees and hostel exists
+        if(array_in_array($types_arr, $types)) {
+          $fees = NULL;
+        }
+      }
+    }
+  }
+  return $fees;
+}
+
+function user_has_completed_order_items($student_id) {
+  $status_paid = FEES_PAID;
+  $status_pending = FEES_PENDING;
+  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $student_id, $status_paid, $status_pending);
+  //db_affected_rows is unreliable. see: http://api.drupal.org/api/drupal/includes--database.pgsql.inc/function/db_affected_rows/6
+  return (db_affected_rows() > 0)? TRUE : FALSE;
+ }
+ 
 /**
  * Pay fees menu callback
  *
@@ -48,11 +132,11 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   }
 
   // A student need to be cleared to progress
-  /*if(!student_clearance_performed($student_id)) {
+  if(!student_clearance_performed($student_id)) {
     $fees = array();
     drupal_set_message(t('Sorry, you need to be cleared to progress'), 'error');
     return FALSE;
-  }*/
+  }
 
   // test if student is still a student (graduated or expelled)
   $session = variable_get('eduerp_current_session', '') ? variable_get('eduerp_current_session', '') : NULL;
@@ -66,15 +150,18 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $_SESSION['eduerp_fees_in_cart'] = FALSE;
   }
 
-  // The paid fees items
-  foreach($fees as $fee) {
-    $paid_fees_items = uc_eduerp_fees_paid_items($student_id, $fee['item']['product_nid'], TRUE);
-    // if $fees is paid for break everything
-    if(in_array($fee['item']['product_nid'], $paid_fees_items) && $session) {
-      $fees = array();
-      drupal_set_message('You have already paid for this item. Consult the bursary', 'error');
-      return FALSE;
-    }
+  // paid fees
+  if(user_has_completed_order_items($student_id)) {
+    $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
+    $reprocessed = TRUE;
+  }
+  if($reprocessed && !is_null($fees)) {
+    drupal_set_message('Your fees items have been updated to reflect only items you are about to pay for.');
+    continue;
+  }
+  if($reprocessed && is_null($fees)) {
+    drupal_set_message('All your fees items are currently in process or already paid for. Consult the bursary', 'error');
+    return FALSE;
   }
 
   // If the student have these items in the cart already, redirect
@@ -505,18 +592,20 @@ function uc_eduerp_fees_eduerp_fees_alter($items) {
  *
  * @params $items
  *  Paid items
- *
+ * 
+ * @todo Lookup should be done fees_order table
+ * and not uc_orders
+ * 
  * @return array
  */
 function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
-  //$items include product_nid, attribute_id and status
   $items = array();
   $status_paid = FEES_PAID;
   $status_pending = FEES_PENDING;
   $result = db_query("SELECT * FROM {uc_order_products} WHERE nid = %d ORDER BY nid", $nid);
   $products = db_fetch_object($result);
 
-  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status = '%s' or '%s' and data IS NOT NULL", $uid, $status_paid, $status_pending);
+  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $uid, $status_paid, $status_pending);
   while($order = db_fetch_object($result)) {
     if($subscript) {
       $items[] = $products->nid;
@@ -644,7 +733,8 @@ function uc_eduerp_fees_update_fees($values) {
     // set it to canceled
     $order_status = $order->order_status;
     //$possible_statuses = array('canceled', 'pending', 'in_checkout');
-    if((uc_order_status_data($order_status, 'state') == 'pending' or 'in_checkout')) {
+    if((uc_order_status_data($order_status, 'state') == 'pending' or 
+     uc_order_status_data($order_status, 'state') == 'in_checkout')) {
       $status = 'canceled';
       uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
       watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $values['uid'])));
