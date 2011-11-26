@@ -359,7 +359,7 @@ function _staff_ajax() {
   	$form['chief_staff_nid'] = array(
       '#type' => 'select',
       '#options' => array(''=>'') + get_Staff_in_Department(),
-      '#title' => 'Chief Lecturer',
+      '#title' => 'First Lecturer',
       '#required'  => TRUE,
       '#default_value' => $id
         );
@@ -1656,7 +1656,7 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
         <th><b>#</b></th>";
         if ($type == 3)
           $str .="
-          <th><b>Chief Lecturer</b></th>";
+          <th><b>First Lecturer</b></th>";
         if ($type != 0)
           $str .="
         <th><b>Programme Name</b></th>";
@@ -3172,7 +3172,7 @@ function staff_assign_course_form() {
   $form['chief_staff_nid'] = array(
       '#type' => 'select',
       '#options' => array(''=>'') + get_Staff_in_Department(), //arg(2)),
-      '#title' => 'Chief Lecturer',
+      '#title' => 'First Lecturer',
       '#attributes' => array(
       'style' => 'width:100px'),
       '#prefix' => "<div id='getdeflecturerz'>",
@@ -3186,7 +3186,7 @@ function staff_assign_course_form() {
   $form['assist_staff_nid'] = array(
       '#type' => 'select',
       '#options' => array(0=>'N/A') + get_Staff_in_Department(), //arg(2)),
-      '#title' => 'Assistant Lecturer'
+      '#title' => 'Second Lecturer'
 
       );
   if ($course_instance) $form['assist_staff_nid']['#default_value'] = (int) $course_instance->field_lecturer_alternate_uid ;
