@@ -256,20 +256,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           '#type' => 'hidden',
           '#value' => $item,
         );
-        // get_fee_items reports 3 states of is_scholarship_applicable
-        // @see staff_school_fees_create_modify_fee_item_form
-        // NULL: Not set
-        // 1: Yes - Scholarship is applicable
-        // 2: No - Scholarship is not applicable
-        $scholarship = $item['is_scholarship_applicable'];
-        if(array_key_exists('is_scholarship_applicable', $item) && !is_null($scholarship)) { // We only care about when it is set
-          // add a new item to $options
-          if(!isset($options['has_scholarship'])) {
-            //$options['has_scholarship'] = $scholarship;
-            //$options[$item['product_nid']]['has_scholarship'] = $scholarship;
-            $options['has_scholarship'] = $options['scholarship'];
-          }
-        }
       }
       $form['eduerp_fees']['options_' . $type. '_' . $options_nid] = array(
         '#type' => 'hidden',
@@ -408,6 +394,18 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
           $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
           //array_push($option, $product_attribute);
           $options = $cart_item['options'] + $product_attribute;
+        }
+        // get_fee_items reports 3 states of is_scholarship_applicable
+        // @see staff_school_fees_create_modify_fee_item_form
+        // NULL: Not set
+        // 1: Yes - Scholarship is applicable
+        // 2: No - Scholarship is not applicable
+        $scholarship = $product[$key]['is_scholarship_applicable'];
+        if(array_key_exists('is_scholarship_applicable', $product[$key]) && !is_null($scholarship)) { // We only care about when it is set
+          // add a new item to $options
+          if(!isset($options['has_scholarship'])) {
+            $options['has_scholarship'] = $options['scholarship'];
+          }
         }
       }
       if($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
