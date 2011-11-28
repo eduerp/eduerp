@@ -158,11 +158,11 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $reprocessed = TRUE;
   }
   //uc_eduerp_fees_verify_fees_order($reprocessed, $fees);
-  if($reprocessed && !is_null($fees)) {
+  if($reprocessed && !is_null($fees['items'])) {
     drupal_set_message('Your fees items have been updated to reflect only items you are about to pay for.');
     //continue;
   }
-  elseif($reprocessed && is_null($fees)) {
+  if($reprocessed && is_null($fees['items'])) {
     drupal_set_message('All your fees items are currently in process or already paid for. Consult the bursary', 'error');
     return FALSE;
   }
