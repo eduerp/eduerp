@@ -1283,8 +1283,7 @@ function hostel_allocation_create_modify_category() {
 
   //this code should be removed before going live
   add_international_student_category_to_allocation_category();
-  
-  
+
   echo '<br /><hr /><br />';
   $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin/") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Re-order Allocation Category</b></font><br /><br />";
   $navi .= '<br /><hr /><br />';
@@ -2907,7 +2906,7 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   }
 
     /*
-    ! isset($_SESSION['eduerp_reserve_room']['mat_num']) || 
+    ! isset($_SESSION['eduerp_reserve_room']['mat_num']) ||
   	  $_SESSION['eduerp_reserve_room']['mat_num'] == "" ||
 
     */
@@ -2932,19 +2931,19 @@ function hostel_allocation_select_block_form_validate($form, &$form_state){
   //check for international students
   $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
   if(db_affected_rows($rs1) > 0){
-   
+
     $localCountry = db_fetch_object($rs1);
     if(trim(strtolower(strtoupper($student_profile->profile_country_name))) != trim(strtolower(strtoupper($localCountry->country_name)))){
       //international student
       $studCate[] = "international students";
-    
+
     }
   }
-  
+
 
   //test for other students
   if(! sizeof($studCate)) $studCate[] = "other students";
-  
+
 
 
 
@@ -3112,9 +3111,7 @@ function reserve_bedspace(&$reservationInfo){
         //get max reservation duration
         $resDuration = db_fetch_object(db_query("SELECT field_settings_value_value duration FROM content_type_allocation_settings WHERE field_settings_name_value LIKE '%Reservation Duration%' LIMIT 1 "));
 
-
-
-        $resDate = date('Y-m-d h:m:s');
+        $resDate = date('Y-m-d') . ' 23:57:00'; // Just before midnight
 
         //now reserve this room
         $node = new stdClass();
@@ -4288,7 +4285,7 @@ function add_international_student_category_to_allocation_category(){
   /**
     This code is for temporary purposes only to create the new allocation category.
     It should be removed before going live
-  
+
   */
   //check if it exists
   $rs = db_query("SELECT nid FROM {content_type_allocation_rules_description} WHERE field_category_name_value='%s'", "international students");
@@ -4307,6 +4304,5 @@ function add_international_student_category_to_allocation_category(){
     //drupal_set_message($form_state['values']['category_name'] . ' Category has been created!<br />');
     node_save($node);
   }
-  
 }
 ?>

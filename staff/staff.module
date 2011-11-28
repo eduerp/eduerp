@@ -10820,9 +10820,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     //print_r($lateRegInfo);
     //echo "</pre>";
 
-    $feeStudentOption['late_reg_info']['last_registration_date'] = $lateRegInfo['last_date'];
+    $feeStudentOption['late_reg_info']['last_registration_date'] = $lateRegInfo['last_date'] . ' 23:58:00'; // Just before midnight
     if( Date('Y-m-d') > $lateRegInfo['last_date']){
-
       $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
       $feeStudentOption['late_reg_info']['product_nid'] = $ucLateRegInfo['product_nid'];
       $feeStudentOption['late_reg_info']['product_description'] = $ucLateRegInfo['name'];
