@@ -64,7 +64,6 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
     $order['data'] = unserialize($order['data']);
     $items[] = $order;
   }
-  dsm($items);
   if(is_null($items)) {
     return $fees;
   }
@@ -154,7 +153,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   // paid fees
   if(user_has_completed_order_items($student_id)) {
     $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
-    dsm($fees);
     $reprocessed = TRUE;
   }
   //uc_eduerp_fees_verify_fees_order($reprocessed, $fees);
