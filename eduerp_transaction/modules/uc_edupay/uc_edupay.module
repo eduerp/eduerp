@@ -142,8 +142,9 @@ function uc_edupay_cart_fees_type() {
 function uc_edupay_cart_item($op, &$item){
   switch($op) {
     case 'load':
-    dsm($item);
+    //dsm($item);
       $fees_type = EDUERP_FEES_NORMAL;
+      $fees_format = array(FEES_FULL, FEES_FIRST_INSTALMENT);
       if($item->data['type'] == $fees_type){
         // load registration
         $late = uc_eduerp_fees_load_fee_options($fees_type);
@@ -157,35 +158,31 @@ function uc_edupay_cart_item($op, &$item){
           # if a fees item recognized as Tuition (of Full Amount or Instalment1) 
           # is among the items in cart
           $extras = uc_eduerp_fees_load_extras($item->cart_id, 'fees');
-          $fees_format = array(FEES_FULL, FEES_FIRST_INSTALMENT);
+          
           //if($item->title == 'Tuition' and ($extras[$item->data['nid']]['fees_payment_format'] == FEES_FULL or FEES_FIRST_INSTALMENT)) {
-          if($item->title == 'Tuition' and in_array($extras[$item->data['nid']]['fees_payment_format'], $fees_format)) {
-            $late_charges = $late_value['amount'];
-            $price = $item->price;
-            
-            # add to the pprice
-            $price += $late_charges;
-            
-            // modify title to read [title] + (Late registration included)
-            $text = t('Late Registration Included');
-            $item->title = $item->title . ' ' . $text;
-            //$item->title  = theme('eduerp_fees_cart_title', $item->title, $text);
+          if($item->title == 'Tuition') {
+            $format = _uc_edupay_load_fee_format($item->nid);
+            if(in_array($format, $fees_format)) {
+              // price alteration only works in price alteration
+              // callback. @see: uc_edupay_fees_price_alter
+              
+              // modify title to read [title] + (Late registration included)
+              $text = t('Late Registration Included');
+              $item->title = $item->title . ' ' . $text;
+              //$item->title  = theme('eduerp_fees_cart_title', $item->title, $text);
+            }
           }
         }
         
         # Alter scholarship
-        if($item->data['type'] == EDUERP_FEES_NORMAL) {
-          if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
-            $options['price_options'] = $item;
-            
-            //$item->price = uc_price($price_info, $context);
-            //uc_price($price_info, $context, $options);
-            
-            // reflect change in cart
-            $text = t('Scholarship Applicable');
-            $item->title = $item->title . ' ' . $text;
-            //$item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
-          }
+        if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
+          $options['price_options'] = $item;
+          //$item->price = uc_price($price_info, $context);
+          //uc_price($price_info, $context, $options);
+          // reflect change in cart
+          $text = t('Scholarship Applicable');
+          $item->title = $item->title . ' ' . $text;
+          //$item->title = theme('eduerp_fees_cart_title', $item->title, $text, $context = 'scholarship');
         }
       }
       break;
@@ -213,22 +210,41 @@ function uc_edupay_uc_price_handler() {
  */ 
 function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
   $items = uc_cart_get_contents();
-  foreach ($items as $item) {
-    $options['price_options'] = $item;
+  // load registration
+  $late = uc_eduerp_fees_load_fee_options($fees_type);
+  $late_value = $late['late_registration'];
+  $fees_format = array(FEES_FULL, FEES_FIRST_INSTALMENT);
+  foreach ($items as $key => $item) {
+    //$options['price_options'] = $item;
     if($item->data['type'] == EDUERP_FEES_NORMAL) {
+      # if late registration date value is set and its amount is not empty
+      if(!is_null($late_value['last_registration_date']) and uc_eduerp_fees_registration_is_late()){
+        # if a fees item recognized as Tuition (of Full Amount or Instalment1) 
+        # is among the items in cart
+        $extras = uc_eduerp_fees_load_extras($item->cart_id, 'fees');
+        if($item->title == 'Tuition') {
+          $format = _uc_edupay_load_fee_format($item->nid);
+          if(in_array($format, $fees_format)) {
+            $late_charges = $late_value['amount'];
+            $item->price += $late_charges;
+          }
+        }
+      }
       if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
-        $price_info = array(
-          'price' => 0
-        );
-        
-        // Initialize the context.
-        $context = array(
-          'revision' => 'themed',
-          'type' => 'amount',
-        );
+        $item->price = $item->price * 0;
       }
     }
   }
+}
+
+/**
+ * Load a fee format
+ *  - Instalment1, Instalment2 or Full Amount
+ */ 
+function _uc_edupay_load_fee_format($nid) {
+  $result = db_fetch_object(db_query("SELECT * FROM {fees} WHERE nid = %d", $nid));
+  $fee_format = unserialize($result->extras);
+  return array_shift($fee_format['fees_payment_format']);
 }
 
 function uc_edupay_fees_price_handler_format($price, $options) {
@@ -299,7 +315,6 @@ function uc_edupay_cart_pane($items) {
  *  in uc_cart_view_form
  */ 
 function uc_edupay_product_description($product) {
-  //dsm($product);
 }
 /**
  * Implements hook_payment_method
@@ -837,9 +852,6 @@ class EdupayOauthClient extends DrupalOauthClient {
         $params[$param_key] = $param_value;
       }
     }
-    /*if (!empty($params)) {
-      $url .= '?' . http_build_query($params);
-    }*/
 
     $headers = array(
       //'Accept: application/x-www-form-urlencoded',
@@ -973,6 +985,8 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               //$order_data->scholarship_items_data = serialize($scholarship_items_data);
               $order_data['scholarship_items_data'] = serialize($scholarship_items_data);
               db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($order_data), $arg1->order_id);
+              // @todo 
+              // Update uc_orders status to payment_received if at least 
             }
             //dsm($arg1);
             $fees = $arg1->products;

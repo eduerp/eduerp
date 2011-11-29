@@ -119,4 +119,14 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
     $result = array_in_array($types_arr, $data);
     $this->assertTrue($types_arr, $result);
   }
+  
+  /**
+   * Functional test of uc_eduerp_fees_load_extras
+   */ 
+  public function testFeesExtras() {
+    $fees_format = array(FEES_FULL, FEES_FIRST_INSTALMENT);
+    $extras = uc_eduerp_fees_load_extras(955, 'fees');
+    $result = in_array($extras[5233]['fees_payment_format'], $fees_format);
+    $this->assertTrue($fees_format, $result);
+  }
 }

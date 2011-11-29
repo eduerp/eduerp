@@ -75,12 +75,12 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
         // if all values are fees and hostel is not there
         // $fees = $fee_items['hostel']
         if(!in_array('hostel', $types)) {
-          $fees = $fee_items['hostel'];
+          $fees['hostel'] = $fee_items['hostel'];
         }
         // if all values are hostel and fees is not in there.
         // $fees = $fee_items['fees'];
         if(!in_array('fees', $types)) {
-          $fees = $fee_items['fees'];
+          $fees['fees'] = $fee_items['fees'];
         }
         // if both items of type fees and hostel exists
         if(array_in_array($types_arr, $types)) {
@@ -155,7 +155,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
     $reprocessed = TRUE;
   }
-  //uc_eduerp_fees_verify_fees_order($reprocessed, $fees);
   if($reprocessed && !is_null($fees['items'])) {
     drupal_set_message('Your fees items have been updated to reflect only items you are about to pay for.');
     //continue;
@@ -719,7 +718,7 @@ function uc_eduerp_fees_update_fees($values) {
     return $result;
   }
   // If the fees paid for is of type hostel
-  if($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
+  elseif($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
     // allocate bedspace for this user
     return hostel_allocation_allocate_bedspace($values['uid']);
   }
