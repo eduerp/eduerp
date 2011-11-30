@@ -21,9 +21,9 @@ require_once drupal_get_path('module', 'uc_eduerp_fees') . '/includes/utils.inc'
 /**
  * Rebuild the fees items based on order state
  * of payment_received or pending
- * 
+ *
  * @deprecated
- */ 
+ */
 function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys = TRUE) {
   foreach($fees as $fee) {
     if($fee['type'] == 'fees') {
@@ -50,12 +50,12 @@ function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys
 /**
  * returns fees object based on order status of pending
  * and payment_received
- */ 
+ */
 function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
   $items = array();
   $fees = array();
   if(is_null($student_id)) return FALSE;
-  
+
   $status_paid = FEES_PAID;
   $status_pending = FEES_PENDING;
   $status = array(FEES_PAID, FEES_PENDING);
@@ -99,7 +99,7 @@ function user_has_completed_order_items($student_id) {
   //db_affected_rows is unreliable. see: http://api.drupal.org/api/drupal/includes--database.pgsql.inc/function/db_affected_rows/6
   return (db_affected_rows() > 0)? TRUE : FALSE;
  }
- 
+
 /**
  * Pay fees menu callback
  *
@@ -591,10 +591,10 @@ function uc_eduerp_fees_eduerp_fees_alter($items) {
  *
  * @params $items
  *  Paid items
- * 
+ *
  * @todo Lookup should be done fees_order table
  * and not uc_orders
- * 
+ *
  * @return array
  */
 function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
@@ -702,11 +702,31 @@ function uc_eduerp_fees_update_fees($values) {
   //$order_id = uc_eduerp_fees_update_invoke('load', 'uc_orders', $values['tpin']);
   $order_id = $values['order_id'];
   $order = uc_order_load($order_id);
+
+  $sql = "SELECT ctb.field_uc_product_id_nid, op.title
+    FROM {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr, {uc_order_products} op
+    WHERE
+      ctb.nid=ctr.field_block_id_nid AND
+      ctr.nid=ctrr.field_room_id_nid AND
+      ctrr.field_student_id_uid=%d AND
+      ctb.field_uc_product_id_nid=op.nid AND
+      op.order_id=%d";
+  $query_result = db_query($sql, $values['uid'], $order_id);
+  if (db_fetch_array($query_result)) {
+    $hostel_in_order = TRUE; // Found a hostel reservation which has a product in this order
+  }
+  else {
+    $hostel_in_order = FALSE;
+  }
+
   // If status == payment_received
   // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from
   // edupay and update the ubercart order status to paid
   // run ubercart update query here to update an order
   if($values['status'] == FEES_PAID) { //Payment received
+
+    if ($hostel_in_order) hostel_allocation_allocate_bedspace($values['uid']);
+
     $order_updated = uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
     if($order_updated) {
       if(isset($_SESSION['eduerp_fees_in_cart'])){
@@ -717,11 +737,7 @@ function uc_eduerp_fees_update_fees($values) {
     }
     return $result;
   }
-  // If the fees paid for is of type hostel
-  elseif($values['status'] == FEES_PAID && $values['type'] == EDUERP_FEES_HOSTEL) {
-    // allocate bedspace for this user
-    return hostel_allocation_allocate_bedspace($values['uid']);
-  }
+
   if($values['service'] == INVOICE_REGENERATE) {
     // Load the order_id by edupay tpin (query eduerp_trasaction table to get the pin )
     // uc_eduerp_fees_update_invoke('load', $values['tpin'], 'eduerp_transaction');
@@ -732,7 +748,7 @@ function uc_eduerp_fees_update_fees($values) {
     // set it to canceled
     $order_status = $order->order_status;
     //$possible_statuses = array('canceled', 'pending', 'in_checkout');
-    if((uc_order_status_data($order_status, 'state') == 'pending' or 
+    if((uc_order_status_data($order_status, 'state') == 'pending' or
      uc_order_status_data($order_status, 'state') == 'in_checkout')) {
       $status = 'canceled';
       uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
@@ -748,10 +764,7 @@ function uc_eduerp_fees_update_fees($values) {
     // load and rebuild the user's order invoice
     uc_eduerp_fees_invoice_regenerate($order_id);
 
-    // if the product_attribute sent from edupay is hostel, revoke hostel allocation
-    if($values['type'] == EDUERP_FEES_HOSTEL) {
-      // @todo check if there's hostel reservation for the user beore
-      // revoking the expiration
+    if ($hostel_in_order) {
       hostel_allocation_revoke_expired_reservation($values['uid']);
       watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id and a type of @type on user @uid', array('@order_id' => $order_id, '@type' => $values['type'], '@uid' => $values['uid'])));
     }
