@@ -10719,10 +10719,11 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //get session name
   $feeStudentOption['session_name'] = variable_get('eduerp_current_session', '');
 
+  $feeStudentOption['amount_payable'] = 0.0;
+  $feeStudentOption['student_has_paid_or_pendingpaid_fees'] = _student_has_paid_or_pendingpaid_fees($studentUID);
 
   $details = get_fee_setup_item_details($setupNID);
   if(db_affected_rows($details) <=0) return array();
-
 
   $i=0;
   while($r = db_fetch_object($details)){
@@ -10799,14 +10800,16 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
-
-
-      //;
     }
 
     $i++;
   }
 
+  $amount_payable = 0.0;
+  foreach ($feeStudentOption['fee_item_details'] as $fee_amount) {
+    if (!$feeStudentOption['is_student_on_scholarship'] || $fee_amount['is_scholarship_applicable'] != 1) $amount_payable += $fee_amount['amount'];
+  }
+  $feeStudentOption['amount_payable'] = $amount_payable;
 
   //now if this is to check fees only then do not check for late reg
   if(! $checkFeesOnly){
@@ -10816,15 +10819,24 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
     $lateRegInfo = get_late_registration_info();
 
-    //echo "<pre>";
-    //print_r($lateRegInfo);
-    //echo "</pre>";
-
-    $feeStudentOption['late_reg_info']['last_registration_date'] = $lateRegInfo['last_date'] . ' 23:58:00'; // Just before midnight
     if( Date('Y-m-d') > $lateRegInfo['last_date']){
+      $payment_due_date = '2099-12-31 23:59:59'; // Date is passed, so use future date
+      $feeStudentOption['late_reg_info']['last_registration_date'] = $payment_due_date;
       $feeStudentOption['late_reg_info']['amount'] = $lateRegInfo['late_reg_amount'];
       $feeStudentOption['late_reg_info']['product_nid'] = $ucLateRegInfo['product_nid'];
       $feeStudentOption['late_reg_info']['product_description'] = $ucLateRegInfo['name'];
+
+      if ($amount_payable > 0.0 && !$feeStudentOption['student_has_paid_or_pendingpaid_fees']) {
+        // Add Late Registration Charge
+        $feeStudentOption['fee_item_details'][$i]['item_description'] = $ucLateRegInfo['name'];
+        $feeStudentOption['fee_item_details'][$i]['amount'] = $lateRegInfo['late_reg_amount'];
+        $feeStudentOption['fee_item_details'][$i]['product_nid'] = $ucLateRegInfo['product_nid'];
+        $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = 2;
+      }
+    }
+    else { // Date is not passed, so use it as the date by which payment must be made
+      $payment_due_date = $lateRegInfo['last_date'] . ' 23:58:00'; // Just before midnight
+      $feeStudentOption['late_reg_info']['last_registration_date'] = $payment_due_date;
     }
   }
 
@@ -10841,17 +10853,40 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
       $feeStudentOption['hostel_info']['product_nid'] = $reservationInfo->product_nid;
       $feeStudentOption['hostel_info']['hostel_description'] = $hostelDescription;
-      $feeStudentOption['hostel_info']['expiry_date'] = $reservationInfo->normal_expiry_date;
-      $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
 
+      if ($reservationInfo->normal_expiry_date < $payment_due_date) {
+        $payment_due_date = $reservationInfo->normal_expiry_date; // Hostel booking expiry date is earlier so use it
+      }
+      $feeStudentOption['hostel_info']['expiry_date'] = $payment_due_date;
+      $feeStudentOption['late_reg_info']['last_registration_date'] = $payment_due_date; // both timeout dates should be the same
+
+      $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
     }
   }
+dsm($feeStudentOption);
   return $feeStudentOption;
 }
 
 
-function get_fee_items($studentUID){
+function _student_has_paid_or_pendingpaid_fees($student_id) {
+  $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
+    WHERE
+      o.uid=%d AND
+      o.order_status IN ('payment_received', 'pending') AND
+      o.order_id=op.order_id AND
+      SUBSTRING(op.model, 1, 16)='PRODUCT-FEE-ITEM'";
+  $result = db_query($sql, $student_id);
+  $paid = FALSE;
+  while ($order = db_fetch_array($result)) {
+    $data = unserialize($order['data']);
+    if ($data['session'] == variable_get('eduerp_current_session', '')) $paid = TRUE;
+  }
+  return $paid;
+}
 
+
+function get_fee_items($studentUID){
+dsm(array('get_fee_items'));
   //ini student profile
   $studentFeeProfile = fees_ini_student_profile($studentUID);
 
@@ -10872,7 +10907,7 @@ function get_fee_items($studentUID){
 
 
 function is_fee_setup_existing_for_student($studentUID){
-
+dsm(array('is_fee_setup_existing_for_student'));
   $studentFeeProfile = fees_ini_student_profile($studentUID);
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return false;
 
