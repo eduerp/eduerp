@@ -509,6 +509,175 @@ function uc_eduerp_fees_views_default_views() {
     'weight' => 0,
     'name' => 'navigation',
   ));
+  
+  $views[$view->name] = $view;
+   
+  /**
+   * Fees summary
+   */ 
+  $view = new view;
+  $view->name = 'fees_summary';
+  $view->description = 'Fees reporting as a summary';
+  $view->tag = 'eduerp';
+  $view->view_php = '';
+  $view->base_table = 'node';
+  $view->is_cacheable = FALSE;
+  $view->api_version = 2;
+  $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
+  $handler = $view->new_display('default', 'Defaults', 'default');
+  $handler->override_option('fields', array(
+    'order_id' => array(
+      'label' => 'Order Id',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 0,
+      'id' => 'order_id',
+      'table' => 'fees_order',
+      'field' => 'order_id',
+      'relationship' => 'none',
+    ),
+    'title' => array(
+      'label' => 'Fees title',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 0,
+      'id' => 'title',
+      'table' => 'fees_order',
+      'field' => 'title',
+      'relationship' => 'none',
+    ),
+    'expiry_date' => array(
+      'label' => 'Hostel expiry date',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'date_format' => 'small',
+      'custom_date_format' => '',
+      'exclude' => 0,
+      'id' => 'expiry_date',
+      'table' => 'fees_order',
+      'field' => 'expiry_date',
+      'relationship' => 'none',
+    ),
+  ));
+  $handler->override_option('filters', array(
+    'status' => array(
+      'operator' => 'in',
+      'value' => array(
+        'in_checkout' => 'in_checkout',
+      ),
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'id' => 'status',
+      'table' => 'fees_order',
+      'field' => 'status',
+      'relationship' => 'none',
+    ),
+    'fullnames' => array(
+      'operator' => '=',
+      'value' => 'Kayode Bakare',
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'case' => 0,
+      'id' => 'fullnames',
+      'table' => 'fees_order',
+      'field' => 'fullnames',
+      'relationship' => 'none',
+    ),
+  ));
+  $handler->override_option('access', array(
+    'type' => 'none',
+  ));
+  $handler->override_option('cache', array(
+    'type' => 'none',
+  ));
+  $handler->override_option('style_plugin', 'table');
+  $handler->override_option('style_options', array(
+    'grouping' => '',
+    'override' => 1,
+    'sticky' => 0,
+    'order' => 'asc',
+    'columns' => array(
+      'order_id' => 'order_id',
+      'title' => 'title',
+    ),
+    'info' => array(
+      'order_id' => array(
+        'sortable' => 0,
+        'separator' => '',
+      ),
+      'title' => array(
+        'sortable' => 0,
+        'separator' => '',
+      ),
+    ),
+    'default' => '-1',
+  ));
+
   $views[$view->name] = $view;
 
   return $views;
