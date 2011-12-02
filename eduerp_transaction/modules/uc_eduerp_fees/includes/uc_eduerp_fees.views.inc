@@ -388,7 +388,7 @@ function uc_eduerp_fees_views_data() {
   
   // hostel_type
   $data['fees_order']['hostel_type'] = array(
-    'title' => t('Fees type'), 
+    'title' => t('Hostel type'), 
     'help' => $order_products['fields']['hostel_type']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
@@ -525,7 +525,7 @@ function uc_eduerp_fees_views_handlers() {
      'uc_eduerp_fees_handler_field_email' => array(
         'parent' => 'views_handler_field_user_email',
       ),
-     'uc_eduerp_fees_handler_field_fees_order_order_id' => array(
+     'uc_eduerp_fees_handler_field_order_id' => array(
         'parent' => 'views_handler_field',
       ),
      'uc_eduerp_fees_handler_field_scholarship' => array(
