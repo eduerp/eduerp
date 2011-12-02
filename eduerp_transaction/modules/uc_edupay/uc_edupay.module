@@ -189,6 +189,15 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
   }
 }
 
+/**
+ * Load a fee format by nid
+ *  - Instalment1, Instalment2 or Full Amount
+ */
+function _uc_edupay_load_fee_format($nid) {
+  $result = db_fetch_object(db_query("SELECT * FROM {fees} WHERE nid = %d", $nid));
+  $fee_format = unserialize($result->extras);
+  return array_shift($fee_format['fees_payment_format']);
+}
 
 function uc_edupay_fees_price_handler_format($price, $options) {
 }
@@ -978,6 +987,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
                 $field['product_nid'] = $product->nid;
                 //$fields = $product + $items;
                 unset($fields['has_scholarship']);
+                // alter fees_order
                 uc_edupay_save($arg1->order_id, $field);
               }
           }
