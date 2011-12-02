@@ -191,33 +191,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $options = $fee['options'];
     $options_nid = (string)$options['nid'];
 
-    // Invalidate fee if value of last_registration_date is the last date
-    // Updates: late payment should still be allowed even after last_registration_date
-    // So, these sort of fee items will not timeout. Reason, last_registration_date value
-    // will be NULL or its date value will be in the past.
-
-    // Israel statement: "Any transaction awaiting in the queue, for
-    // current date > last_registration_date(not >=), without Late Registration Charge
-    // included, must expire."
-
-    // Payment must still be allowed even when last_registration_date is reached. The
-    // difference is that from the 1st day following last_registration_date, Late
-    // Registration Charge must apply.
-    // status: Needs work ()
-    /*if(uc_eduerp_fees_registration_is_late('fees')) {
-      $fee = NULL;
-      drupal_set_message(t('Student registration for this session is closed. Consult the registry'), 'error');
-    }*/
-
-    // Before item is added to cart, check for hostel reservation value
-    // if hostel reservation has expired, set fees to NULL
-    // if the fees record contains hostel key(hostel attribute id), check for expiration
-    // status: Needs work
-    /*if(array_key_exists('hostel', $fees) && $fees->hostel_reservation_expired) {
-      $fees = NULL;
-      drupal_set_message('Your hostel reservation has expired. Please consult the registry', 'error');
-    }*/
-
     if($type == EDUERP_FEES_NORMAL) {
       foreach($fee['item'] as $key => $value){
         $nids[$key] = $value['product_nid'];
@@ -505,6 +478,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'fullnames' => implode(' ', $fullnames),
       'institution' => $institution->id
     );
+    $fees_item['options']['late_registration']['last_registration_date'] = intval(strtotime($fees_item['options']['late_registration']['last_registration_date']));
 
     // hostel
     $fees_item['hostel'] = $fees_item['hostel_info'];
@@ -642,6 +616,7 @@ function uc_eduerp_fees_fees_attributes($fees) {
 /**
  * Load fees extras from the database. Accepts only
  * fees and hostel types as of writing
+ * NOT USED
  *
  */
 function uc_eduerp_fees_load_extras($uid, $type) {
@@ -835,6 +810,7 @@ function uc_eduerp_fees_get_fees_order() {
  *
  * @return
  *   - array
+ * NOT USED
  */
 function uc_eduerp_fees_load_fee_options($type) {
   if(!is_null($type)){
@@ -854,22 +830,6 @@ function uc_eduerp_fees_load_fee_options($type) {
  *  fees or hostel
  */
 function uc_eduerp_fees_load_item_options($type){
-}
-
-/**
- * Determines whether late registration period is reached
- *
- * Since no info is given from get_fee_item about the timezone,
- * it defaults to Drupal's timezone
- *
- * @return Bool
- *
- */
-function uc_eduerp_fees_registration_is_late() {
-  $late = uc_eduerp_fees_load_fee_options(EDUERP_FEES_NORMAL);
-  $late_value = $late['late_registration'];
-  $late_date = $late_value['last_registration_date'];
-  return (!is_null($late_date) && isset($late_value['amount'])) ? TRUE : FALSE;
 }
 
 /**
