@@ -3621,6 +3621,7 @@ function staff_create_programme_form() {
         $programme = $programmeInfo; //$_SESSION['eduerp_bkinfo']; //$programmeInfo;
       //ok fine we need to get the previous start_level that was set
 
+      unset($programmeInfo->start_level);
       $result = db_query("SELECT * FROM {program_level_semester} WHERE programme_id = %d ORDER BY level ",arg(2));
       if (db_affected_rows($result) > 0) {
         $row = db_fetch_object($result);
@@ -3696,8 +3697,7 @@ function staff_create_programme_form() {
     '#options' => array(100 => '100', 1 => '1'),
     '#title' => 'Start Level',
     '#required' => TRUE);
-  if ($programme) $form['start_level']['#default_value'] = $programme->start_level;
-
+  if (isset($programmeInfo->start_level)) $form['start_level']['#default_value'] = $programmeInfo->start_level;
 
   $form['submit'] = array(
     '#value' => 'Continue',
