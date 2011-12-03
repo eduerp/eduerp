@@ -1014,17 +1014,14 @@ function uc_edupay_save($order_id, $product) {
     $table = drupal_get_schema('fees_order');
     db_create_table($ret, 'fees_order', $table);
   }
-  //$key = empty($product['order_id']) ? NULL : 'fees_order_id';
+
   if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid = %d AND uid = %d AND session = '%s'", $product['product_nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
     $product['fees_order_id'] = $result->fees_order_id;
     drupal_write_record('fees_order', $product, 'fees_order_id');
-dsm(array('UPDATE fees_order_id' => $product['fees_order_id'], 'product_nid' => $product['product_nid'], 'order_id' => $order_id));//ab
   }else {
     // do an insert
     drupal_write_record('fees_order', $product);
-dsm(array('INSERT fees_order_id' => $product['fees_order_id'], 'product_nid' => $product['product_nid'], 'order_id' => $order_id));//ab
   }
-dsm($product);//AB
 }
 
 /**
@@ -1295,6 +1292,8 @@ function _uc_edupay_fees_order_items($order) {
     }
   }
   return $products;
+dsm($products);//ab
+dsm(array('lrd' => $value['data']['late_registration_date']);//ab
 }
 
 /**
