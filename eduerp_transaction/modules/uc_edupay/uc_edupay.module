@@ -1232,6 +1232,7 @@ function _uc_edupay_fees_order_items($order) {
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
+dsm($items);//ab
   $data = array();
   $description = array();
   foreach($items as $key => $fee){
@@ -1239,9 +1240,11 @@ function _uc_edupay_fees_order_items($order) {
     $data[$key] = $fee['data'];
     $description[$key] = $fee['title'];
   }
+dsm($item);//ab
   //dsm($item);
   $types = array();
   foreach($item as $key => $value) {
+dsm($value);//ab
     $types[] = $value['data']['type'];
     $nid[$key] = array(
         'nid' => $value['nid'],
@@ -1289,6 +1292,7 @@ function _uc_edupay_fees_order_items($order) {
       );
       // @todo: go through drupal_alter once we have a hook of this function
       array_push($products, $hostel);
+//$all[] = $hostel['hostel'] NO ABOVE;
     }
   }
 dsm(array('lrd' => $value['data']['late_registration_date']));//ab
