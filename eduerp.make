@@ -73,6 +73,7 @@ projects[rules][subdir] = "contrib"
 projects[google_analytics][subdir] = "contrib"
 projects[token][subdir] = "contrib"
 projects[transliteration][subdir] = "contrib"
+projects[menu_item_container][subdir] = "contrib]"
 
 ; Ubercart
 projects[ubercart][subdir] = "contrib"
@@ -95,5 +96,9 @@ libraries[ckeditor][directory_name] = "ckeditor"
 libraries[ckeditor][destination] = "libraries"
 
 
+; Profiler
+libraries[profiler][download][type] = "get"
+libraries[profiler][download][url] = "http://ftp.drupal.org/files/projects/profiler-6.x-2.0-beta1.tar.gz"
+projects[profiler_builder][location] = https://drupal.psu.edu/fserver
 
 
