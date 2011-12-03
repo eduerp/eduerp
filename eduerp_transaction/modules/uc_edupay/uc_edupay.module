@@ -1017,9 +1017,11 @@ function uc_edupay_save($order_id, $product) {
   //$key = empty($product['order_id']) ? NULL : 'fees_order_id';
    if(db_result(db_query("SELECT product_nid from {fees_order} WHERE product_nid = %d", $product['product_nid']))) {
     drupal_write_record('fees_order', $product, 'fees_order_id');
+dsm(array('UPDATE fees_order_id' => $product['fees_order_id'], 'product_nid' => $product['product_nid']));//ab
   }else {
     // do an insert
     drupal_write_record('fees_order', $product);
+dsm(array('INSERT fees_order_id' => $product['fees_order_id'], 'product_nid' => $product['product_nid']));//ab
   }
 dsm($product);//AB
 }
