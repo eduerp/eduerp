@@ -673,21 +673,16 @@ function _uc_edupay_process_order_request($order) {
     $_SESSION['eduerp_fees_order'] = $products['fees'];
     dsm($products);
     $response_data = new stdClass();
-    foreach($products['fees'] as $key => $product) {
-      // If scholarship is inclusive and hostel is not inclusive, don't send
-      // transaction to edupay. Mark item as paid for
-      //if($product['scholarship'] == HAS_SCHOLARSHIP && !array_key_exists('hostel', $products)) {
-      if($product['scholarship'] == HAS_SCHOLARSHIP && $product['type'] != EDUERP_FEES_HOSTEL) {
-        $response_data = NULL;
-        return $response_data;
-      }
-      // If scholarship is inclusive and hostel is inclusive, send only hostel
-      // values as items meant to be paid for to edupay
-      if($product['scholarship'] == HAS_SCHOLARSHIP && array_key_exists('hostel', $products)){
-        $products = $products['hostel'];
-        continue;
-      }
+
+    $total = 0.0;
+    foreach($products['fees'] as $product) {
+      $total += $product['amount'];
     }
+    if ($total <= 0.0) {
+      $response_data = NULL;
+      return $response_data;
+    }
+dsm(array('total' => $total);//ab
 
     if(module_exists('oauth_common')) {
       $consumer = new stdClass();
