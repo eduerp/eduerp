@@ -1270,7 +1270,8 @@ function _uc_edupay_fees_order_items($order) {
     if($value['data']['type'] == EDUERP_FEES_HOSTEL) {
       $hostel['hostel'] = array(
         'nid' => $value['nid'],
-        'type' => $value['data']['type'], // get from the array
+        //'type' => $value['data']['type'], // get from the array
+        'type' => EDUERP_FEES_NORMAL, // Treat all items as 'fees'
         'cart_item_id' => $value['cart_item_id'],
         'title' => $value['title'],
         'amount' => $value['price'], // or 'amount' => $value['data']['amount']
