@@ -1232,7 +1232,6 @@ function _uc_edupay_fees_order_items($order) {
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
-dsm($items);//ab
   $data = array();
   $description = array();
   foreach($items as $key => $fee){
@@ -1240,13 +1239,13 @@ dsm($items);//ab
     $data[$key] = $fee['data'];
     $description[$key] = $fee['title'];
   }
-dsm($item);//ab
   //dsm($item);
   $types = array();
   foreach($item as $key => $value) {
-dsm($value);//ab
     $types[] = $value['data']['type'];
-    $nid[$key] = array(
+
+    if($value['data']['type'] == EDUERP_FEES_NORMAL) {
+      $nid[$key] = array(
         'nid' => $value['nid'],
         'type' => $value['data']['type'],
         'cart_item_id' => $value['cart_item_id'],
@@ -1264,23 +1263,20 @@ dsm($value);//ab
         'email' => $order->primary_email,
         'order_id' => $order->order_id,
         'scholarship' => $value['data']['has_scholarship'],
-    );
-    $all[] = $nid[$key];
-    if($value['data']['type'] == EDUERP_FEES_NORMAL) {
-      $products[$value['data']['type']] = $all;
-      /*$products[$value['data']['type']]['timeout'] = $value['data']['late_registration_date'];
-      $products[$value['data']['type']]['uid'] = $order->uid;
-      $products[$value['data']['type']]['status'] = $order->order_status;
-      $products[$value['data']['type']]['email'] = $order->primary_email;
-      $products[$value['data']['type']]['order_id'] = $order->order_id;*/
+      );
+      $all[] = $nid[$key];
     }
-    if(in_array('hostel', $types) && $value['data']['type'] == EDUERP_FEES_HOSTEL) {
+
+    if($value['data']['type'] == EDUERP_FEES_HOSTEL) {
       $hostel['hostel'] = array(
         'nid' => $value['nid'],
         'type' => $value['data']['type'], // get from the array
         'cart_item_id' => $value['cart_item_id'],
         'title' => $value['title'],
         'amount' => $value['price'], // or 'amount' => $value['data']['amount']
+        'programme' => 'none',
+        'level' => 'none',
+        'session' => variable_get('eduerp_current_session', ''),
         'timeout' => $value['data']['expiry_date'],
         'uid' => $order->uid,
         'jamb_no' => $value['data']['jambno'],
@@ -1289,13 +1285,16 @@ dsm($value);//ab
         'status' => $order->order_status,
         'email' => $order->primary_email,
         'order_id' => $order->order_id,
+        'scholarship' => '2',
       );
       // @todo: go through drupal_alter once we have a hook of this function
-      array_push($products, $hostel);
-//$all[] = $hostel['hostel'] NO ABOVE;
+
+      $all[] = $hostel['hostel'];
     }
   }
-dsm(array('lrd' => $value['data']['late_registration']['last_registration_date']));//ab
+
+  $products[EDUERP_FEES_NORMAL] = $all; // Treat all items as 'fees'
+
   return $products;
 }
 
