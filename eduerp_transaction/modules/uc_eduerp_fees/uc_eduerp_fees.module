@@ -116,7 +116,7 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
     }
   }
 
-//if (empty($fee_items['fees']['item'])) unset($fee_items['fees']);
+  if (empty($fee_items['fees']['item'])) unset($fee_items['fees']);
 
   $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
     WHERE
