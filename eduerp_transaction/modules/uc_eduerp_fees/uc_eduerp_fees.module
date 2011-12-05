@@ -53,43 +53,7 @@ function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys
  * and payment_received
  */
 function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
-  $items = array();
-  $fees = array();
   if(is_null($student_id)) return FALSE;
-
-  $status_paid = FEES_PAID;
-  $status_pending = FEES_PENDING;
-  $status = array(FEES_PAID, FEES_PENDING);
-  $result = db_query("SELECT data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $student_id, $status_paid, $status_pending);
-  while($order = db_fetch_array($result)) {
-    $order['data'] = unserialize($order['data']);
-    $items[] = $order;
-  }
-  if(is_null($items)) {
-    return $fees;
-  }
-  $types_arr = array('fees', 'hostel');
-  foreach($items as $key => $item) {
-    if(is_array($item['data'])){
-      foreach($item['data'] as $data) {
-        $types[] = $data['type'];
-        // if all values are fees and hostel is not there
-        // $fees = $fee_items['hostel']
-        if(!in_array('hostel', $types)) {
-          $fees['hostel'] = $fee_items['hostel'];
-        }
-        // if all values are hostel and fees is not in there.
-        // $fees = $fee_items['fees'];
-        if(!in_array('fees', $types)) {
-          $fees['fees'] = $fee_items['fees'];
-        }
-        // if both items of type fees and hostel exists
-        if(array_in_array($types_arr, $types)) {
-          $fees = NULL;
-        }
-      }
-    }
-  }
 
   foreach ($fee_items['fees']['item'] as $i => $item) {
     $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
@@ -131,9 +95,8 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
       unset($fee_items['hostel']);
     }
   }
-dsm($fee_items);
 
-  return $fees;
+  return $fee_items;
 }
 
 
