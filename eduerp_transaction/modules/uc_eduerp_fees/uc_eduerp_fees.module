@@ -106,9 +106,9 @@ dsm(array('uid' => $student_id, 'nid' => $item['product_nid']));
     while ($order = db_fetch_array($result)) {
       $data = unserialize($order['data']);
       if ($data['session'] == variable_get('eduerp_current_session', '')) {
-dsm(array('option_id' => $item['option_id'], 'item_description' => $item['item_description'], 'Fee Structure' => $data['attributes']['Fee Structure']));
+dsm(array('option_id' => $item['option_id'], 'item_description' => $item['item_description'], 'Fee Structure' => $data['attributes']['Fee Structure'][0]));
         if (isset($item['option_id'])) {
-          if ($item['item_description'] == $data['attributes']['Fee Structure']) {
+          if ($item['item_description'] == $data['attributes']['Fee Structure'][0]) {
             unset($fee_items['fees']['item'][$i]);
           }
         }
