@@ -101,6 +101,7 @@ dsm($fee_items);
         o.order_status IN ('payment_received', 'pending') AND
         o.order_id=op.order_id AND
         op.nid=%d";
+dsm(array('uid' => $student_id, 'nid' => $item['product_nid']));
     $result = db_query($sql, $student_id, $item['product_nid']);
     while ($order = db_fetch_array($result)) {
       $data = unserialize($order['data']);
