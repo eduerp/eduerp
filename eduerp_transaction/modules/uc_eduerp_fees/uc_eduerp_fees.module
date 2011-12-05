@@ -91,9 +91,6 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
     }
   }
 
-
-dsm($fees);
-dsm($fee_items);
   foreach ($fee_items['fees']['item'] as $i => $item) {
     $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
       WHERE
@@ -101,7 +98,6 @@ dsm($fee_items);
         o.order_status IN ('payment_received', 'pending') AND
         o.order_id=op.order_id AND
         op.nid=%d";
-dsm(array('uid' => $student_id, 'nid' => $item['product_nid']));
     $result = db_query($sql, $student_id, $item['product_nid']);
     while ($order = db_fetch_array($result)) {
       $data = unserialize($order['data']);
@@ -109,15 +105,18 @@ dsm(array('uid' => $student_id, 'nid' => $item['product_nid']));
         if (isset($item['option_id'])) {
           if ($item['item_description'] == $data['attributes']['Fee Structure'][0]) {
             unset($fee_items['fees']['item'][$i]);
+            unset($fee_items['fees']['description'][$i]);
           }
         }
         else {
-dsm(array('no option i' => $i));
           unset($fee_items['fees']['item'][$i]);
+          unset($fee_items['fees']['description'][$i]);
         }
       }
     }
   }
+
+//if (empty($fee_items['fees']['item'])) unset($fee_items['fees']);
 
   $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
     WHERE
@@ -129,13 +128,9 @@ dsm(array('no option i' => $i));
   while ($order = db_fetch_array($result)) {
     $data = unserialize($order['data']);
     if ($data['session'] == variable_get('eduerp_current_session', '')) {
-dsm(array('unset hostel' => 0));
       unset($fee_items['hostel']);
     }
   }
-//$fee_items['fees']['item'][i]['product_nid']
-//                             ['item_description']General Fee Structure - Freshman - Local (Student Union - Full Amount)
-//$fee_items['hostel']['item']['product_nid']
 dsm($fee_items);
 
   return $fees;
