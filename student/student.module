@@ -1130,7 +1130,25 @@ function student_next_level($uid, $session) {
 
 
 function student_meets_fee_requirements($uid) {
-  return TRUE;
+
+  $fees = get_fee_items($uid);
+  if (!empty($fees)) {
+    if ($fees['amount_payable'] <= 0.0) return TRUE; // The Student is on a full Scholarship with no extras to pay
+
+    $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
+      WHERE
+        o.uid=%d AND
+        o.order_status IN ('payment_received') AND
+        o.order_id=op.order_id AND
+        SUBSTRING(op.model, 1, 16)='PRODUCT-FEE-ITEM'";
+    $result = db_query($sql, $uid);
+    while ($order = db_fetch_array($result)) {
+      $data = unserialize($order['data']);
+      if ($data['session'] == variable_get('eduerp_current_session', '')) return TRUE;
+    }
+  }
+
+  return FALSE;
 }
 
 
@@ -1220,7 +1238,8 @@ function student_course_form(&$obj) {
     $courseselections->finishform();
   }
   else {
-    drupal_goto('student/payment');
+    drupal_set_message('You must pay your Tuition Fees before registering courses!');
+    drupal_goto("user/$user->uid/fees/pay");
   }
 
   return $courseselections->form;

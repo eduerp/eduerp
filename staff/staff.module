@@ -3621,6 +3621,7 @@ function staff_create_programme_form() {
         $programme = $programmeInfo; //$_SESSION['eduerp_bkinfo']; //$programmeInfo;
       //ok fine we need to get the previous start_level that was set
 
+      unset($programmeInfo->start_level);
       $result = db_query("SELECT * FROM {program_level_semester} WHERE programme_id = %d ORDER BY level ",arg(2));
       if (db_affected_rows($result) > 0) {
         $row = db_fetch_object($result);
@@ -3696,8 +3697,7 @@ function staff_create_programme_form() {
     '#options' => array(100 => '100', 1 => '1'),
     '#title' => 'Start Level',
     '#required' => TRUE);
-  if ($programme) $form['start_level']['#default_value'] = $programme->start_level;
-
+  if (isset($programmeInfo->start_level)) $form['start_level']['#default_value'] = $programmeInfo->start_level;
 
   $form['submit'] = array(
     '#value' => 'Continue',
@@ -10831,7 +10831,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
         $feeStudentOption['fee_item_details'][$i]['item_description'] = $ucLateRegInfo['name'];
         $feeStudentOption['fee_item_details'][$i]['amount'] = $lateRegInfo['late_reg_amount'];
         $feeStudentOption['fee_item_details'][$i]['product_nid'] = $ucLateRegInfo['product_nid'];
-        $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = 2;
+        $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = '2';
       }
     }
     else { // Date is not passed, so use it as the date by which payment must be made
@@ -10905,7 +10905,6 @@ function get_fee_items($studentUID){
 
 
 function is_fee_setup_existing_for_student($studentUID){
-dsm(array('is_fee_setup_existing_for_student'));
   $studentFeeProfile = fees_ini_student_profile($studentUID);
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return false;
 
