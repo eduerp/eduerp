@@ -23,6 +23,7 @@ require_once drupal_get_path('module', 'uc_eduerp_fees') . '/includes/utils.inc'
  * of payment_received or pending
  *
  * @deprecated
+ * Not used
  */
 function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys = TRUE) {
   foreach($fees as $fee) {
@@ -138,6 +139,8 @@ dsm($fee_items);
   return $fees;
 }
 
+
+// Not Used
 function user_has_completed_order_items($student_id) {
   $status_paid = FEES_PAID;
   $status_pending = FEES_PENDING;
@@ -196,16 +199,10 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $_SESSION['eduerp_fees_in_cart'] = FALSE;
   }
 
-  // paid fees
-  if(user_has_completed_order_items($student_id)) {
-    $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
-    $reprocessed = TRUE;
-  }
-  if($reprocessed && !is_null($fees['items'])) {
-    drupal_set_message('Your fees items have been updated to reflect only items you are about to pay for.');
-    //continue;
-  }
-  if($reprocessed && is_null($fees['items'])) {
+  // Remove any pending or paid fees...
+  $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
+
+  if (empty($fees['fees']['item']) && empty($fees['hostel'])) {
     drupal_set_message('All your fees items are currently in process or already paid for. Consult the bursary', 'error');
     return FALSE;
   }
@@ -617,6 +614,7 @@ function uc_eduerp_fees_eduerp_fees_alter($items) {
  * and not uc_orders
  *
  * @return array
+ * Not used (except by test)
  */
 function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
   $items = array();
