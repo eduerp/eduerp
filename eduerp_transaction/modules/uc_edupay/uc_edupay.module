@@ -942,54 +942,58 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             }
             //dsm($arg1);
             $fees = $arg1->products;
-              $field = array();
-              $fields = array();
-              // @todo Break this all into API functions
-              foreach ($fees as $key => $product) {
-                $fields = $product->data;
-                $field['type'] = $fields['type'];
-                $field['nid'] = $fields['nid'];
-                $field['nationality'] = $fields['nationality'];
-                $field['programme'] = $fields['programme'];
-                $field['level_name'] = $fields['level_name'];
-                $field['scholarship'] = $fields['scholarship'];
-                $field['allow_instalment'] = $fields['allow_instalment'];
-                $field['session'] = $fields['session'];
-                if(array_key_exists('late_registration', $fields) && !is_null($fields['late_registration'])) {
-                  list(
-                    $field['late_registration_date'],
-                    $field['late_registration_amount'],
-                    $field['late_registration_nid'],
-                    $field['late_registration_description'],
-                    ) = array_values($fields['late_registration']);
-                }
-                if(array_key_exists('hostel', $fields) && !is_null($fields['hostel'])) {
-                  list(
-                    $field['hostel_nid'],
-                    $field['hostel_type'],
-                    $field['expiry_date'],
-                    ) = array_values($fields['hostel']);
-                }
-                if(array_key_exists('attributes', $fields) && !is_null($fields['attributes'])) {
-                  $field['attributes'] = $fields['attributes']['Fee Structure'][0];
-                }
-                $field['jambno'] = $fields['jambno'];
-                $field['fullnames'] = $fields['fullnames'];
-                $field['institution'] = $fields['institution'];
-                $field['module'] = $fields['module'];
-                $field['cart_item_id'] = $product->cart_item_id;
-                $field['title'] = $product->title;
-                $field['price'] = $product->price;
-                $field['status'] = $arg1->order_status;
-                $field['email'] = $arg1->primary_email;
-                $field['order_id'] = $product->order_id;
-                $field['uid'] = $arg1->uid;
-                $field['product_nid'] = $product->nid;
-                //$fields = $product + $items;
-                unset($fields['has_scholarship']);
-                // alter fees_order
-                uc_edupay_save($arg1->order_id, $field);
+            $field = array();
+            $fields = array();
+            $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
+            // @todo Break this all into API functions
+            foreach ($fees as $key => $product) {
+              $fields = $product->data;
+              $field['type'] = $fields['type'];
+              $field['nid'] = $fields['nid'];
+              $field['nationality'] = $fields['nationality'];
+              $field['programme'] = $fields['programme'];
+              $field['level_name'] = $fields['level_name'];
+              $field['scholarship'] = $fields['scholarship'];
+              $field['allow_instalment'] = $fields['allow_instalment'];
+              $field['session'] = $fields['session'];
+              if(array_key_exists('late_registration', $fields) && !is_null($fields['late_registration'])) {
+                list(
+                  $field['late_registration_date'],
+                  $field['late_registration_amount'],
+                  $field['late_registration_nid'],
+                  $field['late_registration_description'],
+                  ) = array_values($fields['late_registration']);
               }
+              if(array_key_exists('hostel', $fields) && !is_null($fields['hostel'])) {
+                list(
+                  $field['hostel_nid'],
+                  $field['hostel_type'],
+                  $field['expiry_date'],
+                  ) = array_values($fields['hostel']);
+              }
+              if(array_key_exists('attributes', $fields) && !is_null($fields['attributes'])) {
+                $field['attributes'] = $fields['attributes']['Fee Structure'][0];
+              }
+              $field['jambno'] = $fields['jambno'];
+              $field['fullnames'] = $fields['fullnames'];
+              $field['institution'] = $fields['institution'];
+              $field['module'] = $fields['module'];
+              $field['cart_item_id'] = $product->cart_item_id;
+              $field['title'] = $product->title;
+              $field['price'] = $product->price;
+              $field['status'] = $arg1->order_status;
+              $field['email'] = $arg1->primary_email;
+              $field['order_id'] = $product->order_id;
+              $field['uid'] = $arg1->uid;
+              $field['product_nid'] = $product->nid;
+              //$fields = $product + $items;
+              unset($fields['has_scholarship']);
+              // alter fees_order
+              foreach(module_implements('fees_order_alter') as $module) {
+                $field = module_invoke($module, 'fees_order_alter', $field, $field['uid'], $field['product_nid'], $new_fields);
+              }
+              uc_edupay_save($arg1->order_id, $field);
+            }
           }
           break;
         // The real order object that will be put into $_SESSION['cart_order'].
@@ -1014,6 +1018,10 @@ function uc_edupay_save($order_id, $product) {
     $table = drupal_get_schema('fees_order');
     db_create_table($ret, 'fees_order', $table);
   }
+  // the schema need to be rebuilt for schema_alter to work
+  $schema = drupal_get_schema('fees_order', TRUE);
+  module_invoke('uc_edupay', 'schema_alter', $schema);
+  
   //$key = empty($product['order_id']) ? NULL : 'fees_order_id';
    if(db_result(db_query("SELECT product_nid from {fees_order} WHERE product_nid = %d", $product['product_nid']))) {
     drupal_write_record('fees_order', $product, 'fees_order_id');
@@ -1021,6 +1029,51 @@ function uc_edupay_save($order_id, $product) {
     // do an insert
     drupal_write_record('fees_order', $product);
   }
+}
+
+/**
+ * Implements hook_fees_order_field_info
+ */ 
+function uc_edupay_fees_order_field_info() {
+  $field['fees_format'] = array(
+    'description' => t('The Fees format. E.g Instalment1, Instalment2 or Full Amount. This is very case sensitive'),
+    'type' => 'varchar',
+    'length' => '20',
+    'not null' => FALSE,
+    //'default' => ''
+  );
+  return $field;
+}
+
+/**
+ * Implements hook_fees_order_alter
+ */ 
+function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
+	// if new field doesn't exist
+	// fill new_field with whatever you want
+  $formats = uc_eduerp_fees_load_extras($uid, 'fees');
+  if(!is_null($new_field)){
+    foreach($new_field as $key => $value) {
+      $result = db_query("SHOW COLUMNS FROM {fees_order} LIKE '%s'", $key);
+      $exists = (db_affected_rows() > 0)? TRUE : FALSE;
+      if(!$exists) {
+        $ret = array();
+        $schema['fees_order']['fields'][$key] = $value;
+        //$spec = module_invoke('uc_edupay', 'schema_alter', $schema);
+        db_add_field($ret, 'fees_order', $key, $value);
+        module_invoke('uc_edupay', 'schema_alter', $schema);
+      }
+      switch($key) {
+        case 'fees_format':
+          // use the product_nid to find a corresponding fees_format
+          if(array_key_exists($product_nid, $formats)) {
+            $fields[$key] = $formats[$product_nid]['fees_payment_format'][0];
+          }
+      }
+    }
+  }
+	
+	return $fields;
 }
 
 /**
@@ -1346,4 +1399,14 @@ function _edupay_digest($code, $key, $valid_institution) {
         $key;
   }
   return strtoupper(hash("md5", $text));
+}
+
+/**
+ * Implements hook_schema_alter
+ */ 
+function uc_edupay_schema_alter(&$schema) {
+  foreach(module_invoke_all('fees_order_field_info') as $key => $value) {
+    $schema['fees_order']['fields'][$key] = $value;
+  }
+  //dsm($schema);
 }
