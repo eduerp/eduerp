@@ -67,7 +67,9 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
       $data = unserialize($order['data']);
       if ($data['session'] == variable_get('eduerp_current_session', '')) {
         if (isset($item['option_id'])) {
-          if ($item['item_description'] == $data['attributes']['Fee Structure'][0]) {
+dsm(array('attribute_id' => $item['attribute_id'], 'attribute_id' => $data['attribute_id'], 'option_id' => $item['option_id'], 'option_id' => $data['option_id']));
+          if ($item['attribute_id'] == $data['attribute_id'] && $item['option_id'] == $data['option_id']) {
+dsm(array('removed' => 'removed'));
             unset($fee_items['fees']['item'][$i]);
             unset($fee_items['fees']['description'][$i]);
           }
