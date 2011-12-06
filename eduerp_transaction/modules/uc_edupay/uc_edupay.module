@@ -988,6 +988,9 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               }
               uc_edupay_save($arg1->order_id, $field);
             }
+
+            $_SESSION['do_complete'] = TRUE;
+            drupal_goto('cart/checkout/complete');
           }
           break;
         // The real order object that will be put into $_SESSION['cart_order'].
@@ -1027,7 +1030,7 @@ function uc_edupay_save($order_id, $product) {
 
 /**
  * Implements hook_fees_order_field_info
- */ 
+ */
 function uc_edupay_fees_order_field_info() {
   $field['fees_format'] = array(
     'description' => t('The Fees format. E.g Instalment1, Instalment2 or Full Amount. This is very case sensitive'),
@@ -1041,7 +1044,7 @@ function uc_edupay_fees_order_field_info() {
 
 /**
  * Implements hook_fees_order_alter
- */ 
+ */
 function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
 	// if new field doesn't exist
 	// fill new_field with whatever you want
@@ -1066,7 +1069,7 @@ function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
       }
     }
   }
-	
+
 	return $fields;
 }
 
@@ -1403,7 +1406,7 @@ function _edupay_digest($code, $key, $valid_institution) {
 
 /**
  * Implements hook_schema_alter
- */ 
+ */
 function uc_edupay_schema_alter(&$schema) {
   foreach(module_invoke_all('fees_order_field_info') as $key => $value) {
     $schema['fees_order']['fields'][$key] = $value;
