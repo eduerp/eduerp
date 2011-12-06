@@ -368,7 +368,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
       if($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
         if(array_key_exists('attribute_id', $product[$key])){
-          $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
+          $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']), 'attribute_id' => $product[$key]['attribute_id'], 'option_id' => $product[$key]['option_id']);
           //array_push($option, $product_attribute);
           $options = $cart_item['options'] + $product_attribute;
         }
