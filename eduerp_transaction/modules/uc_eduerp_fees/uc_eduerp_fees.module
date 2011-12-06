@@ -89,6 +89,7 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
       o.order_id=op.order_id AND
       op.nid=%d";
   $result = db_query($sql, $student_id, $fee_items['hostel']['item']['product_nid']);
+dsm($fee_items['hostel']);
   while ($order = db_fetch_array($result)) {
     $data = unserialize($order['data']);
     if ($data['session'] == variable_get('eduerp_current_session', '')) {
