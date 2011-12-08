@@ -12,6 +12,7 @@ function uc_eduerp_fees_views_data() {
     'title' => t('Eduerp fees order'),
     'help' => t("Fees that have been ordered."),
   );
+  
   $data['fees_order']['table']['join']['node'] = array(
     'left_field' => 'nid',
     'field' => 'nid',
@@ -20,6 +21,14 @@ function uc_eduerp_fees_views_data() {
   $data['fees_order']['table']['join']['uc_orders'] = array(
     'left_field' => 'order_id',
     'field' => 'order_id',
+  );
+  
+  // This table references the {content_type_program} table.
+  // This creates an 'implicit' relationship to the content_type_program table, so that when 'Node'
+  // is the base table, the fields are automatically available.
+  $data['fees_order']['table']['join']['content_type_program'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
   );
   
   // product_nid field.
@@ -105,7 +114,7 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   // price field
-  $data['uc_order_products']['price'] = array(
+  $data['fees_order']['price'] = array(
     'title' => t('Fee Cost'),
     'help' => $order_products['fields']['price']['description'],
     'field' => array(
@@ -151,7 +160,19 @@ function uc_eduerp_fees_views_data() {
     'filter' => array(
       'handler' => 'views_handler_filter_string',
     ),
-  );
+    /*'relationship' => array(
+      'base' => 'content_type_program',
+      'field' => 'nid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Program'),
+    ),*/
+    'relationship' => array(
+      'base' => 'content_type_student_profile',
+      'field' => 'field_profile_first_choice_nid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Program'),
+    ),
+  );  
   
   // level_nane field.
   $data['fees_order']['level_name'] = array(
