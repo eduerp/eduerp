@@ -748,13 +748,14 @@ function _uc_edupay_process_order_request($order) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
     $data = drupal_to_js(array('order' => $order, 'fees' => $fees, 'callback_data' => $callback_data));
-    dsm(array('data' => $data));
 
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
-    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
-
+dsm(array('data' => $data));//ab
+dsm(array('headers' => $headers));//ab
+//ab    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
+$result->code = 200;//ab
     if ($result->code != 200) {
       drupal_set_message('Cannot communicate with Bank. Please try again later.');
 
