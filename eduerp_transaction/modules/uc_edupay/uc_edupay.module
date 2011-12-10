@@ -715,7 +715,7 @@ dsm(array('products' => $products));//ab
     $total_amount += $product['amount'];
 
     if ($first) {
-      $order = array(
+      $order_parm = array(
         'order_id' => (int)$product['order_id'],
         'transaction_token' => $product['transaction_token'],
         'fullnames' => $product['fullnames'],
@@ -744,12 +744,12 @@ dsm(array('products' => $products));//ab
       'currency' => 'NGN'
     );
   }
-  $order['total_amount'] = $total_amount;
+  $order_parm['total_amount'] = $total_amount;
 
   if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
-    $data = drupal_to_js(array('order' => $order, 'fees' => $fees, 'callback_data' => $callback_data));
+    $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));
 
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
