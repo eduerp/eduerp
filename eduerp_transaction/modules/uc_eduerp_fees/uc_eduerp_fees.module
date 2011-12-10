@@ -208,6 +208,11 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   global $user;
   $student_id = $user->uid;
 
+  if ($_SESSION['edupay_communication_failure']) {
+    drupal_set_message('Cannot communicate with Bank. Please try again later.');
+    unset($_SESSION['edupay_communication_failure']);
+  }
+
   // forcefully clear the cart if it is not empty
   if($form_state['submitted'] == FALSE) {
     if(uc_cart_get_contents() != NULL) {

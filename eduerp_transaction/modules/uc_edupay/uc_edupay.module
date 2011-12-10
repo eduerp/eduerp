@@ -759,16 +759,16 @@ dsm(array('headers' => $headers));//ab
 //ab    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 $result->code = 400;//ab
     if ($result->code != 200) {
+      $_SESSION['edupay_communication_failure'] = TRUE;
       drupal_set_message('Cannot communicate with Bank. Please try again later.');
 
-dsm(array('order_id' => $order->order_id, 'Cannot communicate'));//ab
       db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
 
       unset($_SESSION['cart_order']);
       unset($_SESSION['do_review']);
       unset($_SESSION['checkout-redirect']);
 
-//ab      drupal_goto("user/{$user->uid}/fees/pay");
+      drupal_goto("user/{$user->uid}/fees/pay");
     }
   }
   else {
