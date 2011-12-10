@@ -746,7 +746,6 @@ dsm(array('products' => $products));//ab
   }
   $order['total_amount'] = $total_amount;
 
-$total_amount = 0.0;//ab
   if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
@@ -758,7 +757,7 @@ $total_amount = 0.0;//ab
 dsm(array('data' => $data));//ab
 dsm(array('headers' => $headers));//ab
 //ab    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
-$result->code = 200;//ab
+$result->code = 400;//ab
     if ($result->code != 200) {
       drupal_set_message('Cannot communicate with Bank. Please try again later.');
 
