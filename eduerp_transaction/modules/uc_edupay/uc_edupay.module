@@ -700,9 +700,11 @@ function _uc_edupay_process_order_request_basic(&$order) {
  */
 function _uc_edupay_process_order_request($order) {
   global $user;
+dsm(array('order' => $order));//ab
 
   $order->products = _uc_edupay_fees_order_items($order);
   $products = $order->products;
+dsm(array('products' => $products));//ab
   $_SESSION['eduerp_fees_order'] = $products['fees'];
 
   $first = TRUE;
@@ -717,7 +719,7 @@ function _uc_edupay_process_order_request($order) {
         'order_id' => (int)$product['order_id'],
         'transaction_token' => $product['transaction_token'],
         'fullnames' => $product['fullnames'],
-        'matriculation_number' => $product['matriculation_number'],
+        'matriculation_number' => $user->name,
         'jamb_no' => $product['jamb_no'],
         'total_amount' => 0.0,
         'email' => $product['email'],
