@@ -752,10 +752,10 @@ function _uc_edupay_process_order_request($order) {
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
-//ab    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
-$result->code = 400;//ab
+    //ab$result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
+    $result = drupal_http_request('https://abcsdldfjf.com/asd/ddd', ''), $headers, 'POST', $data);
+
     if ($result->code != 200) {
-      $_SESSION['edupay_communication_failure'] = TRUE;
       drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
 
       db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
