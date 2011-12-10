@@ -477,8 +477,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
       $options['transaction_token'] = $transaction_token;
 
-    //dsm($options);
-    // only if it's a product
+    dsm(array('options' => $options, 'product' => $product, 'type' => $cart_item['options']['type']));//ab
     if(!empty($product)){
       uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
       $added = TRUE;
