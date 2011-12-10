@@ -761,6 +761,7 @@ $result->code = 400;//ab
     if ($result->code != 200) {
       drupal_set_message('Cannot communicate with Bank. Please try again later.');
 
+dsm(array('order_id' => $order->order_id, 'Cannot communicate'));//ab
       db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
 
       unset($_SESSION['cart_order']);
