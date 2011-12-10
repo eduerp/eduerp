@@ -700,11 +700,9 @@ function _uc_edupay_process_order_request_basic(&$order) {
  */
 function _uc_edupay_process_order_request($order) {
   global $user;
-dsm(array('order' => $order));//ab
 
   $order->products = _uc_edupay_fees_order_items($order);
   $products = $order->products;
-dsm(array('products' => $products));//ab
   $_SESSION['eduerp_fees_order'] = $products['fees'];
 
   $first = TRUE;
@@ -754,13 +752,11 @@ dsm(array('products' => $products));//ab
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
-dsm(array('data' => $data));//ab
-dsm(array('headers' => $headers));//ab
 //ab    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 $result->code = 400;//ab
     if ($result->code != 200) {
       $_SESSION['edupay_communication_failure'] = TRUE;
-      drupal_set_message('Cannot communicate with Bank. Please try again later.');
+      drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
 
       db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
 
@@ -1256,7 +1252,6 @@ function theme_eduerp_cart_review_table($contents) {
  */
 function _uc_edupay_fees_order_items($order) {
   $zz = uc_cart_get_contents();
-dsm(array('uc_cart_get_contents' => $zz));//ab
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
