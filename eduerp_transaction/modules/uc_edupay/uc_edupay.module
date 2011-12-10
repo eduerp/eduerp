@@ -30,6 +30,7 @@ function uc_edupay_config_form($form_state) {
     '#type' => 'fieldset',
     '#title' => t('Edupay remote site settings'),
   );
+/*
   $form['uc_edupay_config']['uc_edupay_token_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Edupay Token Endpoint'),
@@ -37,6 +38,7 @@ function uc_edupay_config_form($form_state) {
     '#default_value' => variable_get('uc_edupay_token_url', ''),
     '#required' => TRUE
   );
+*/
   $form['uc_edupay_config']['uc_edupay_transaction_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Edupay Transaction Endpoint'),
@@ -44,6 +46,7 @@ function uc_edupay_config_form($form_state) {
     '#default_value' => variable_get('uc_edupay_transaction_url', ''),
     '#required' => TRUE
   );
+/*
   $form['uc_edupay_config']['uc_edupay_config_host'] = array(
     '#type' => 'radios',
     '#title' => t('Host configuration'),
@@ -51,8 +54,27 @@ function uc_edupay_config_form($form_state) {
     '#options' => array(t('Local'), t('Remote')),
     '#description' => t('Set whether to communicate to Edupay locally or remotely')
   );
-  return system_settings_form($form);
+*/
+  $form['uc_edupay_username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Edupay username'),
+    '#description' => t('Enter the Edupay User Name.'),
+    '#default_value' => variable_get('uc_edupay_username', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Edupay password'),
+    '#description' => t('Enter the Edupay Password.'),
+    '#default_value' => variable_get('uc_edupay_password', ''),
+    '#required' => TRUE
+  );
+  $form['submit'] = array('#type' => 'submit', '#value' => 'Submit');
+  //return system_settings_form($form);
+
+  return $form;
 }
+
 
 function uc_edupay_config_form_validate($form, &$form_state) {
   if(isset($form_state['values']['token_url'])) {
@@ -67,6 +89,16 @@ function uc_edupay_config_form_validate($form, &$form_state) {
   }
   return $form;
 }
+
+
+function uc_edupay_config_form_submit($form, &$form_state) {
+  variable_set('uc_edupay_transaction_url', $form_state['values']['uc_edupay_transaction_url']);
+  variable_set('uc_edupay_username', $form_state['values']['uc_edupay_username']);
+  variable_set('uc_edupay_password', $form_state['values']['uc_edupay_password']);
+  variable_set('uc_edupay_password_md5', md5($form_state['values']['uc_edupay_password']));
+}
+
+
 /**
  * Implements hook_form_alter()
  *
