@@ -900,41 +900,14 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
-          //dsm("OP IS SAVE");
-          //store hostel data object in uc_order. Also store the generated transaction id and JAMB
-          // Number as part of the data during save op.
-          // retrieve the stored transaction_id and pass it to $arg1->data
-
-
           if ($arg1->payment_method == 'edupay') {
-            if(isset($arg1->tpin) && !is_null($arg1->tpin)) {
-              $edupay_data = array('tpin' => $arg1->tpin, 'order_id' => $arg1->order_id);
-              $order_data = $_SESSION['eduerp_fees_order'];
-              foreach($order_data as $key => $value) {
-                $order_data[$key]['edupay_data'] = serialize($edupay_data);
-              }
-              //dsm($data);
-              //dsm(unserialize($data->edupay_data));
-              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($order_data), $arg1->order_id);
+
+            db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($_SESSION['eduerp_fees_order']), $arg1->order_id);
+
+            if ($_SESSION['edupay_total_amount_zero']) {
+              db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $arg1->order_id);
             }
-            else {
-              if(!isset($arg1->transaction_id)) {
-                $arg1->transaction_id = _uc_edupay_load_transaction($arg1);
-              }
-              $scholarship_items_data = array(
-                'description' => t('This is a fee item on scholarship'),
-                'transaction_id' => $arg1->transaction_id,
-                'order_id' => $arg1->order_id
-                );
-              //$order_data = $arg1->data;
-              $order_data = array($arg1->data);
-              //$order_data->scholarship_items_data = serialize($scholarship_items_data);
-              $order_data['scholarship_items_data'] = serialize($scholarship_items_data);
-              db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($order_data), $arg1->order_id);
-              // @todo
-              // Update uc_orders status to payment_received if at least
-            }
-            //dsm($arg1);
+
             $fees = $arg1->products;
             $field = array();
             $fields = array();
