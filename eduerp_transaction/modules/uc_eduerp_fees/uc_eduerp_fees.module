@@ -48,7 +48,7 @@ echo "$order_id;$status;$uid;$transaction_token;";//ab
   $transaction_token_found = FALSE;
   $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
     WHERE
-      o.order_id=%d
+      o.order_id=%d AND
       o.order_status IN ('pending') AND
       o.order_id=op.order_id";
   $result = db_query($sql, $order_id);
