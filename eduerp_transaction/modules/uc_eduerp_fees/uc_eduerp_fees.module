@@ -16,7 +16,88 @@ define('FEES_FULL', 'Full Amount');
 define('FEES_FIRST_INSTALMENT', 'Instalment1');
 define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
-require_once drupal_get_path('module', 'uc_eduerp_fees') . '/includes/utils.inc';
+
+function staff_menu() {
+  $items['edupay/callback'] = array(
+    'title' => 'Process EduPay Callback',
+    'page callback' => 'uc_eduerp_fees_update_fees',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+
+/**
+ * Handle Call Back from EduPay
+ *
+ */
+function uc_eduerp_fees_update_fees() {
+  $order_id = $_POST['order_id'];
+  $status = $_POST['status'];
+  $uid = $_POST['uid'];
+  $transaction_token = $_POST['transaction_token'];
+
+  if ($_SERVER['REQUEST_METHOD'] != 'POST' || empty($order_id) || empty($status) || empty($uid) || empty($transaction_token) || ($status != 'payment_received' && $status != 'canceled')) {
+    drupal_set_header('HTTP/1.1 404 Not Found');
+    echo "Incorrect Parameters\n";
+    exit();
+  }
+
+  $transaction_token_found = FALSE;
+  $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
+    WHERE
+      o.order_id=%d
+      o.order_status IN ('pending') AND
+      o.order_id=op.order_id";
+  $result = db_query($sql, $order_id);
+  if ($order = db_fetch_array($result)) { // Only need to look at one uc_order_products, transaction_token is in them all
+    $data = unserialize($order['data']);
+    if ($data['transaction_token'] == $transaction_token) $transaction_token_found = TRUE;
+  }
+
+  if (!$transaction_token_found) {
+    drupal_set_header('HTTP/1.1 404 Not Found');
+    echo "Incorrect Parameters\n";
+    exit();
+  }
+
+  $sql = "SELECT ctb.field_uc_product_id_nid, op.title
+    FROM {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr, {uc_order_products} op
+    WHERE
+      ctb.nid=ctr.field_block_id_nid AND
+      ctr.nid=ctrr.field_room_id_nid AND
+      ctrr.field_student_id_uid=%d AND
+      ctb.field_uc_product_id_nid=op.nid AND
+      op.order_id=%d";
+  $query_result = db_query($sql, $uid, $order_id);
+  if (db_fetch_array($query_result)) {
+    $hostel_in_order = TRUE; // Found a hostel reservation which has a product in this order
+  }
+  else {
+    $hostel_in_order = FALSE;
+  }
+
+  if ($status == 'payment_received') {
+    if ($hostel_in_order) hostel_allocation_allocate_bedspace($uid);
+
+    db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
+    watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $uid)));
+  }
+
+  if ($status == 'canceled') {
+    if ($hostel_in_order) hostel_allocation_revoke_expired_reservation($uid);
+
+    db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
+    watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $uid)));
+  }
+
+  $content = new stdClass();
+  $content->status = 'success';
+  drupal_json($content);
+  exit();
+}
+
 
 /**
  * Rebuild the fees items based on order state
@@ -664,12 +745,6 @@ function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value 
   }
 }
 
-function uc_eduerp_fees_update_load($value, $schema, $field_value) {
-  // $value should remain the same. Shouldn't be passed by reference
-  $order_id = db_fetch_object(db_query("SELECT order_id FROM {$schema} WHERE tpin = '%s'", $value));
-  return $order_id;
-}
-
 function uc_eduerp_fees_update_update($value, $schema, $field_value) {
   if(db_query("UPDATE {$schema} set order_status = '$field_value' WHERE order_id = %d", $value)) {
     return TRUE;
@@ -678,90 +753,6 @@ function uc_eduerp_fees_update_update($value, $schema, $field_value) {
 
 function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
   return db_query("DELETE FROM {$schema} WHERE order_id = %d", $value);
-}
-
-/**
- * Implementation of hook_update_{hook}
- *
- * @see
- *
- * @todo Convert this to rules and triggers
- */
-function uc_eduerp_fees_update_fees($values) {
-  //$order_id = uc_eduerp_fees_update_invoke('load', 'uc_orders', $values['tpin']);
-  $order_id = $values['order_id'];
-  $order = uc_order_load($order_id);
-
-  $sql = "SELECT ctb.field_uc_product_id_nid, op.title
-    FROM {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr, {uc_order_products} op
-    WHERE
-      ctb.nid=ctr.field_block_id_nid AND
-      ctr.nid=ctrr.field_room_id_nid AND
-      ctrr.field_student_id_uid=%d AND
-      ctb.field_uc_product_id_nid=op.nid AND
-      op.order_id=%d";
-  $query_result = db_query($sql, $values['uid'], $order_id);
-  if (db_fetch_array($query_result)) {
-    $hostel_in_order = TRUE; // Found a hostel reservation which has a product in this order
-  }
-  else {
-    $hostel_in_order = FALSE;
-  }
-
-  // If status == payment_received
-  // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from
-  // edupay and update the ubercart order status to paid
-  // run ubercart update query here to update an order
-  if($values['status'] == FEES_PAID) { //Payment received
-
-    if ($hostel_in_order) hostel_allocation_allocate_bedspace($values['uid']);
-
-    $order_updated = uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
-    if($order_updated) {
-      if(isset($_SESSION['eduerp_fees_in_cart'])){
-        unset($_SESSION['eduerp_fees_in_cart']);
-      }
-      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $values['uid'])));
-      $result = array('fees paid');
-    }
-    return $result;
-  }
-
-  if($values['service'] == INVOICE_REGENERATE) {
-    // Load the order_id by edupay tpin (query eduerp_trasaction table to get the pin )
-    // uc_eduerp_fees_update_invoke('load', $values['tpin'], 'eduerp_transaction');
-    // set the order to unpaid. Parameters: uid and order id. Ubercart prefers canceled
-    // db_query('UPDATE {uc_orders} set ')
-    // get the status of the order
-    // if it is not set to cancelled or is pending or in_checkout
-    // set it to canceled
-    $order_status = $order->order_status;
-    //$possible_statuses = array('canceled', 'pending', 'in_checkout');
-    if((uc_order_status_data($order_status, 'state') == 'pending' or
-     uc_order_status_data($order_status, 'state') == 'in_checkout')) {
-      $status = 'canceled';
-      uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
-      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $values['uid'])));
-    }
-
-    // @todo: Not sure about removing this item from cart yet
-    if(uc_order_status_data($order_status, 'state') == 'canceled') {
-      //remove the order item from cart and unset all other related SESSION variables
-      //uc_eduerp_fees_update('delete', $order_id, 'uc_orders');
-      // watchdog this
-    }
-    // load and rebuild the user's order invoice
-    uc_eduerp_fees_invoice_regenerate($order_id);
-
-    if ($hostel_in_order) {
-      hostel_allocation_revoke_expired_reservation($values['uid']);
-      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id and a type of @type on user @uid', array('@order_id' => $order_id, '@type' => $values['type'], '@uid' => $values['uid'])));
-    }
-
-    // @todo send an email to user about all these actions
-    // A link to the regenerated invoice to the user can download
-    //
-  }
 }
 
 function uc_eduerp_fees_invoice_regenerate($order_id) {
