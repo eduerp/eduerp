@@ -166,17 +166,22 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
 
   if (empty($fee_items['fees']['item'])) unset($fee_items['fees']);
 
-  $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
-    WHERE
-      o.uid=%d AND
-      o.order_status IN ('payment_received', 'pending') AND
-      o.order_id=op.order_id AND
-      op.nid=%d";
-  $result = db_query($sql, $student_id, $fee_items['hostel']['item']['product_nid']);
-  while ($order = db_fetch_array($result)) {
-    $data = unserialize($order['data']);
-    if ($data['session'] == variable_get('eduerp_current_session', '')) {
-      unset($fee_items['hostel']);
+  if (empty($fee_items['hostel']['item'])) {
+    unset($fee_items['hostel']);
+  }
+  else {
+    $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
+      WHERE
+        o.uid=%d AND
+        o.order_status IN ('payment_received', 'pending') AND
+        o.order_id=op.order_id AND
+        op.nid=%d";
+    $result = db_query($sql, $student_id, $fee_items['hostel']['item']['product_nid']);
+    while ($order = db_fetch_array($result)) {
+      $data = unserialize($order['data']);
+      if ($data['session'] == variable_get('eduerp_current_session', '')) {
+        unset($fee_items['hostel']);
+      }
     }
   }
 
