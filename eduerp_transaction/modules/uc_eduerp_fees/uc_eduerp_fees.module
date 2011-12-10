@@ -38,6 +38,7 @@ function uc_eduerp_fees_update_fees() {
   $uid = $_POST['uid'];
   $transaction_token = $_POST['transaction_token'];
 
+echo "$order_id;$status;$uid;$transaction_token;";//ab
   if ($_SERVER['REQUEST_METHOD'] != 'POST' || empty($order_id) || empty($status) || empty($uid) || empty($transaction_token) || ($status != 'payment_received' && $status != 'canceled')) {
     drupal_set_header('HTTP/1.1 404 Not Found');
     echo "Incorrect Parameters\n";
@@ -52,11 +53,13 @@ function uc_eduerp_fees_update_fees() {
       o.order_id=op.order_id";
   $result = db_query($sql, $order_id);
   if ($order = db_fetch_array($result)) { // Only need to look at one uc_order_products, transaction_token is in them all
+echo $order['data'];//ab
     $data = unserialize($order['data']);
     if ($data['transaction_token'] == $transaction_token) $transaction_token_found = TRUE;
   }
 
   if (!$transaction_token_found) {
+echo 'not transaction_token_found';//ab
     drupal_set_header('HTTP/1.1 404 Not Found');
     echo "Incorrect Parameters\n";
     exit();
