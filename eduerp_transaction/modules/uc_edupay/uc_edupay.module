@@ -87,7 +87,8 @@ function uc_edupay_config_form_validate($form, &$form_state) {
       form_error($form['uc_edupay_config']['transaction_url'], t('The transaction endpoint url is invalid.'));
     }
   }
-  if (empty(variable_get('uc_edupay_password_md5', '')) && $form_state['values']['uc_edupay_password'] == '*******') {
+  $pwmd5 = variable_get('uc_edupay_password_md5', '');
+  if (empty($pwmd5) && $form_state['values']['uc_edupay_password'] == '*******') {
     form_error($form['uc_edupay_config']['uc_edupay_password'], t('You must enter a password.'));
   }
 
