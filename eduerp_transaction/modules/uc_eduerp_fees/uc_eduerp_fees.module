@@ -448,11 +448,13 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   );
   */
   //dsm($cart_items);
+
+  $transaction_token = uniqid();
+
   $added = FALSE;
   foreach($cart_items as $product_item){
     $cart_item = $product_item;
 
-    $transaction_token = uniqid();
     foreach($product_item['item'] as $key => $fees_values) {
       $product[$key] = $fees_values;
       $cartId = uc_cart_get_id();
@@ -519,7 +521,9 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   }
   if($added){
     $_SESSION['eduerp_fees_in_cart'] = TRUE;
-    $form_state['redirect'] = 'cart';
+    //$form_state['redirect'] = 'cart';
+    unset($_SESSION['cart_order']);
+    drupal_goto('cart/checkout');
   }
 }
 
