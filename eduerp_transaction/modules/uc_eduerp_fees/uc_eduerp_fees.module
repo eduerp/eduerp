@@ -206,6 +206,7 @@ function user_has_completed_order_items($student_id) {
  *   - Drupal form
  */
 function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
+dsm(array('uc_eduerp_fees_pay_fees' => 'uc_eduerp_fees_pay_fees', 'submitted' => $form_state['submitted']));//ab
   global $user;
   $student_id = $user->uid;
 
@@ -372,6 +373,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
  *  for retrieval. uc_eduerp_fees_load_extras need this.
  */
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
+dsm(array('uc_eduerp_fees_pay_fees_form_submit' => 'uc_eduerp_fees_pay_fees_form_submit'));//ab
   $student_id = $form_state['values']['uid'];
   $values = array();
   foreach($form_state['values'] as $key => $value) {
