@@ -736,7 +736,6 @@ function _uc_edupay_process_order_request($order) {
         'timeout' => (int)$product['timeout'],
         'programme' => $product['programme'],
         'session' => $product['session'],
-        'institution' => (int)$product['institution']
       );
 
       $callback_data = array(
@@ -757,6 +756,7 @@ function _uc_edupay_process_order_request($order) {
   if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
+    dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));//ab
     $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));
 
     $headers = array(
@@ -1110,6 +1110,7 @@ function _uc_edupay_trans_id($order) {
  * Implements hook_checkout_pane
  *
  */
+/*
 function uc_edupay_checkout_pane() {
   //$fees = uc_eduerp_fees_get_fees_order();
   $items = uc_cart_get_contents();
@@ -1127,6 +1128,7 @@ function uc_edupay_checkout_pane() {
   }
   return $panes;
 }
+*/
 
 /**
  * A single callback to display all fees in the cart
@@ -1399,6 +1401,6 @@ function uc_edupay_schema_alter(&$schema) {
 
 /**
  * Alter all views exposed filters
- */ 
+ */
 function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
 }
