@@ -210,12 +210,7 @@ dsm(array('uc_eduerp_fees_pay_fees' => 'uc_eduerp_fees_pay_fees', 'submitted' =>
   global $user;
   $student_id = $user->uid;
 
-  // forcefully clear the cart if it is not empty
-  if($form_state['submitted'] == FALSE) {
-    if(uc_cart_get_contents() != NULL) {
-      uc_cart_empty($student_id);
-    }
-  }
+  uc_cart_empty($student_id);
 
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
@@ -246,24 +241,12 @@ dsm(array('uc_eduerp_fees_pay_fees' => 'uc_eduerp_fees_pay_fees', 'submitted' =>
     return FALSE;
   }
 
-  if (uc_cart_get_contents() == NULL) { // if cart is empty
-    $_SESSION['eduerp_fees_in_cart'] = FALSE;
-  }
-
   // Remove any pending or paid fees...
   $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
 
   if (empty($fees['fees']['item']) && empty($fees['hostel'])) {
     drupal_set_message('All your fees items are currently in process or already paid for. Consult the bursary', 'error');
     return FALSE;
-  }
-
-  // If the student have these items in the cart already, redirect
-  // to the /cart to prevent increment in cart quantity.
-  // Also handles irregularities when the item added to cart is incomplete
-  if($_SESSION['eduerp_fees_in_cart'] == TRUE | uc_cart_get_contents() != NULL) {
-    drupal_set_message('Welcome back! Please continue from where you left off.');
-    drupal_goto('cart');
   }
 
   if(!is_reservation_existing($student_id)) {
@@ -522,8 +505,6 @@ dsm(array('uc_eduerp_fees_pay_fees_form_submit' => 'uc_eduerp_fees_pay_fees_form
     }
   }
   if($added){
-    $_SESSION['eduerp_fees_in_cart'] = TRUE;
-    //$form_state['redirect'] = 'cart';
     unset($_SESSION['cart_order']);
     drupal_goto('cart/checkout');
   }
