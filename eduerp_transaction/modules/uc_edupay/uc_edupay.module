@@ -222,6 +222,9 @@ function uc_edupay_theme(){
     'eduerp_cart_review_table' => array(
       'arguments' => array('contents' => NULL)
     ),
+    'eduerp_fees_price_symbol' => array(
+      'arguments' => array('item' => NULL)
+    ),
   );
 }
 
@@ -238,6 +241,11 @@ function theme_eduerp_fees_cart_title($title, $text, $context = NULL) {
   else {
     $output = $title . ' ' . "<span style='color:#CE1B0F'><strong>$text</strong></span>";
   }
+  return $output;
+}
+
+function theme_eduerp_fees_price_symbol($item) {
+  $output = "<span><strikethrough>N<strikethrough></span>" + $item;
   return $output;
 }
 
@@ -1046,8 +1054,8 @@ function uc_edupay_fees_order_field_info() {
  * Implements hook_fees_order_alter
  */
 function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
-	// if new field doesn't exist
-	// fill new_field with whatever you want
+  // if new field doesn't exist
+  // fill new_field with whatever you want
   $formats = uc_eduerp_fees_load_extras($uid, 'fees');
   if(!is_null($new_field)){
     foreach($new_field as $key => $value) {
@@ -1070,7 +1078,7 @@ function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
     }
   }
 
-	return $fields;
+  return $fields;
 }
 
 
@@ -1411,4 +1419,10 @@ function uc_edupay_schema_alter(&$schema) {
   foreach(module_invoke_all('fees_order_field_info') as $key => $value) {
     $schema['fees_order']['fields'][$key] = $value;
   };
+}
+
+/**
+ * Alter all views exposed filters
+ */ 
+function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
 }

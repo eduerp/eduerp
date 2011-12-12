@@ -26,10 +26,15 @@ function uc_eduerp_fees_views_data() {
   // This table references the {content_type_program} table.
   // This creates an 'implicit' relationship to the content_type_program table, so that when 'Node'
   // is the base table, the fields are automatically available.
-  $data['fees_order']['table']['join']['content_type_program'] = array(
+  /*$data['fees_order']['table']['join']['content_type_program'] = array(
     'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
     'field' => 'vid', # 'field' is the foreign key in this table.
   );
+  
+  $data['fees_order']['table']['join']['content_type_student_profile'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
+  );*/
   
   // product_nid field.
   $data['fees_order']['product_nid'] = array(
@@ -166,12 +171,12 @@ function uc_eduerp_fees_views_data() {
       'handler' => 'views_handler_relationship',
       'label' => t('Program'),
     ),*/
-    'relationship' => array(
+    /*'relationship' => array(
       'base' => 'content_type_student_profile',
       'field' => 'field_profile_first_choice_nid',
       'handler' => 'views_handler_relationship',
       'label' => t('Program'),
-    ),
+    ),*/
   );  
   
   // level_nane field.
@@ -471,6 +476,18 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   
+  // total
+  $data['fees_order']['total'] = array(
+    'title' => t('Order total'),
+    'help' => t('Display order total from an existing fees order views result.'),
+    'field' => array(
+      //'handler' => 'views_customfield_handler_field_phpcode',
+      'handler' => 'uc_eduerp_fees_handler_field_total',
+      'click sortable' => FALSE,
+      'notafield' => TRUE,
+    ),
+  );
+  
   return $data;
 }
 
@@ -569,6 +586,9 @@ function uc_eduerp_fees_views_handlers() {
       ),
      'uc_eduerp_fees_handler_field_module' => array(
         'parent' => 'views_handler_field',
+      ),
+      'uc_eduerp_fees_handler_field_total' => array(
+        'parent' => 'views_handler_field'
       ),
     ),
   );
