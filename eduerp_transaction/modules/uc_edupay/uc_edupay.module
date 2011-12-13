@@ -69,6 +69,28 @@ function uc_edupay_config_form($form_state) {
     '#default_value' => '*******',
     '#required' => TRUE
   );
+  $form['uc_edupay_config']['eduerp_institution_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('University Address'),
+    '#description' => t('Enter the Universities Postal Address.'),
+    '#default_value' => variable_get('eduerp_institution_address', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_list'] = array(
+    '#type' => 'textfield',
+    '#title' => t('List of Banks'),
+    '#description' => t('Enter the List of Banks where payment can be made (put an "or" between them).'),
+    '#default_value' => variable_get('eduerp_institution_bank_list', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_details'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank Account Names & Numbers'),
+    '#description' => t('Enter the Bank account Names & Numbers for each Bank.'),
+    '#default_value' => variable_get('eduerp_institution_bank_details', ''),
+    '#required' => TRUE
+  );
+
   $form['submit'] = array('#type' => 'submit', '#value' => 'Submit');
   //return system_settings_form($form);
 
@@ -102,6 +124,9 @@ function uc_edupay_config_form_submit($form, &$form_state) {
   if ($form_state['values']['uc_edupay_password'] != '*******') {
     variable_set('uc_edupay_password_md5', md5($form_state['values']['uc_edupay_password']));
   }
+  variable_set('eduerp_institution_address', $form_state['values']['eduerp_institution_address']);
+  variable_set('eduerp_institution_bank_list', $form_state['values']['eduerp_institution_bank_list']);
+  variable_set('eduerp_institution_bank_details', $form_state['values']['eduerp_institution_bank_details']);
 }
 
 
