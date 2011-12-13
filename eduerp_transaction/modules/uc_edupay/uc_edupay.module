@@ -995,10 +995,8 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
-dsm(array('save' => 'save', 'arg1' => $arg1));//ab
           if ($arg1->payment_method == 'edupay') {
 
-dsm(array('2save' => '2save'));//ab
             db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($_SESSION['eduerp_fees_order']), $arg1->order_id);
 
             if ($_SESSION['edupay_total_amount_zero']) {
@@ -1008,9 +1006,7 @@ dsm(array('2save' => '2save'));//ab
             $fees = $arg1->products;
             $field = array();
             $fields = array();
-dsm(array('3save' => '3save'));//ab
             $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
-dsm(array('4save' => '4save'));//ab
             // @todo Break this all into API functions
             foreach ($fees as $key => $product) {
               $fields = $product->data;
@@ -1056,18 +1052,12 @@ dsm(array('4save' => '4save'));//ab
               unset($fields['has_scholarship']);
               // alter fees_order
               foreach(module_implements('fees_order_alter') as $module) {
-dsm(array('5save' => '5save'));//ab
                 $field = module_invoke($module, 'fees_order_alter', $field, $field['uid'], $field['product_nid'], $new_fields);
-dsm(array('6save' => '6save'));//ab
               }
               uc_edupay_save($arg1->order_id, $field);
-dsm(array('7save' => '7save'));//ab
             }
 
-            unset($_SESSION['do_review']);
-            unset($_SESSION['checkout-redirect']);
             $_SESSION['do_complete'] = TRUE;
-dsm(array('finalsave' => 'finalsave'));//ab
             drupal_goto('cart/checkout/complete');
           }
           break;
