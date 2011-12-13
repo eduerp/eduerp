@@ -818,7 +818,7 @@ function _uc_edupay_process_order_request($order) {
           array(
             'name' => variable_get('eduerp_institution_bank_2_name', ''),
             'account_name' => variable_get('eduerp_institution_bank_2_account_name', ''),
-            'account_name' => variable_get('eduerp_institution_bank_2_account_number', ''),
+            'account_number' => variable_get('eduerp_institution_bank_2_account_number', ''),
           ),
         ),
       );
@@ -1057,6 +1057,8 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               uc_edupay_save($arg1->order_id, $field);
             }
 
+            unset($_SESSION['do_review']);
+            unset($_SESSION['checkout-redirect']);
             $_SESSION['do_complete'] = TRUE;
             drupal_goto('cart/checkout/complete');
           }
