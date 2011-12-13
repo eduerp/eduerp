@@ -995,6 +995,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 
         // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
+dsm(array('save' => 'save'));//ab
           if ($arg1->payment_method == 'edupay') {
 
             db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($_SESSION['eduerp_fees_order']), $arg1->order_id);
