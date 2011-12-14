@@ -934,6 +934,7 @@ function student_form_alter(&$form, $form_state, $form_id) {
       if ($student) {
         $form['account']['mail']['#disabled'] = TRUE;
         $form['account']['mail']['#required'] = FALSE;
+        $form['account']['mail']['#value'] = $form['account']['mail']['#default_value'];
       }
       dsm(array('form' => $form, 'student' => $student));//ab
       break;
