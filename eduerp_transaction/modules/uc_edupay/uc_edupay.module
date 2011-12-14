@@ -69,6 +69,67 @@ function uc_edupay_config_form($form_state) {
     '#default_value' => '*******',
     '#required' => TRUE
   );
+  $form['uc_edupay_config']['eduerp_institution_address'] = array(
+    '#type' => 'textfield',
+    '#title' => t('University Address'),
+    '#description' => t('Enter the Universities Postal Address.'),
+    '#default_value' => variable_get('eduerp_institution_address', ''),
+    '#required' => TRUE
+  );
+
+  $form['uc_edupay_config']['eduerp_institution_bank_list'] = array(
+    '#type' => 'textfield',
+    '#title' => t('List of Banks'),
+    '#description' => t('Enter the List of Banks where payment can be made (put an "or" between them).'),
+    '#default_value' => variable_get('eduerp_institution_bank_list', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_details'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank Account Names & Numbers'),
+    '#description' => t('Enter the Bank account Names & Numbers for each Bank (for invoices).'),
+    '#default_value' => variable_get('eduerp_institution_bank_details', ''),
+    '#required' => TRUE
+  );
+
+  $form['uc_edupay_config']['eduerp_institution_bank_1_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank 1 Name'),
+    '#default_value' => variable_get('eduerp_institution_bank_1_name', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_1_account_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank 1 Account Name'),
+    '#default_value' => variable_get('eduerp_institution_bank_1_account_name', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_1_account_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank 1 Account Number'),
+    '#default_value' => variable_get('eduerp_institution_bank_1_account_number', ''),
+    '#required' => TRUE
+  );
+
+  $form['uc_edupay_config']['eduerp_institution_bank_2_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank 2 Name'),
+    '#default_value' => variable_get('eduerp_institution_bank_2_name', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_2_account_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank 2 Account Name'),
+    '#default_value' => variable_get('eduerp_institution_bank_2_account_name', ''),
+    '#required' => TRUE
+  );
+  $form['uc_edupay_config']['eduerp_institution_bank_2_account_number'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank 2 Account Number'),
+    '#default_value' => variable_get('eduerp_institution_bank_2_account_number', ''),
+    '#required' => TRUE
+  );
+
   $form['submit'] = array('#type' => 'submit', '#value' => 'Submit');
   //return system_settings_form($form);
 
@@ -102,6 +163,18 @@ function uc_edupay_config_form_submit($form, &$form_state) {
   if ($form_state['values']['uc_edupay_password'] != '*******') {
     variable_set('uc_edupay_password_md5', md5($form_state['values']['uc_edupay_password']));
   }
+  variable_set('eduerp_institution_address', $form_state['values']['eduerp_institution_address']);
+
+  variable_set('eduerp_institution_bank_list', $form_state['values']['eduerp_institution_bank_list']);
+  variable_set('eduerp_institution_bank_details', $form_state['values']['eduerp_institution_bank_details']);
+
+  variable_set('eduerp_institution_bank_1_name', $form_state['values']['eduerp_institution_bank_1_name']);
+  variable_set('eduerp_institution_bank_1_account_name', $form_state['values']['eduerp_institution_bank_1_account_name']);
+  variable_set('eduerp_institution_bank_1_account_number', $form_state['values']['eduerp_institution_bank_1_account_number']);
+
+  variable_set('eduerp_institution_bank_2_name', $form_state['values']['eduerp_institution_bank_2_name']);
+  variable_set('eduerp_institution_bank_2_account_name', $form_state['values']['eduerp_institution_bank_2_account_name']);
+  variable_set('eduerp_institution_bank_2_account_number', $form_state['values']['eduerp_institution_bank_2_account_number']);
 }
 
 
@@ -736,7 +809,18 @@ function _uc_edupay_process_order_request($order) {
         'timeout' => (int)$product['timeout'],
         'programme' => $product['programme'],
         'session' => $product['session'],
-        'institution' => (int)$product['institution']
+        'banks' => array(
+          array(
+            'name' => variable_get('eduerp_institution_bank_1_name', ''),
+            'account_name' => variable_get('eduerp_institution_bank_1_account_name', ''),
+            'account_number' => variable_get('eduerp_institution_bank_1_account_number', ''),
+          ),
+          array(
+            'name' => variable_get('eduerp_institution_bank_2_name', ''),
+            'account_name' => variable_get('eduerp_institution_bank_2_account_name', ''),
+            'account_number' => variable_get('eduerp_institution_bank_2_account_number', ''),
+          ),
+        ),
       );
 
       $callback_data = array(
@@ -754,7 +838,9 @@ function _uc_edupay_process_order_request($order) {
   }
   $order_parm['total_amount'] = $total_amount;
 
-  if ($total_amount > 0.0) {
+dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));//ab
+if (FALSE) {//ab
+//ab  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
     $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));
@@ -1110,6 +1196,7 @@ function _uc_edupay_trans_id($order) {
  * Implements hook_checkout_pane
  *
  */
+/*
 function uc_edupay_checkout_pane() {
   //$fees = uc_eduerp_fees_get_fees_order();
   $items = uc_cart_get_contents();
@@ -1127,6 +1214,7 @@ function uc_edupay_checkout_pane() {
   }
   return $panes;
 }
+*/
 
 /**
  * A single callback to display all fees in the cart
@@ -1399,6 +1487,6 @@ function uc_edupay_schema_alter(&$schema) {
 
 /**
  * Alter all views exposed filters
- */ 
+ */
 function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
 }

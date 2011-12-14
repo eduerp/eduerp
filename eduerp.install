@@ -111,6 +111,14 @@ function eduerp_install() {
   variable_set('content_profile_student_profile', unserialize('a:8:{s:6:"weight";s:1:"1";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:1;s:21:"admin_user_create_use";i:0;s:17:"registration_hide";a:0:{}}'));
   variable_set('content_profile_staff_profile', unserialize('a:8:{s:6:"weight";s:1:"2";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:0;s:21:"admin_user_create_use";i:1;s:17:"registration_hide";a:0:{}}'));
 
+  // Wording for Ubercart cart/checkout or any other required "Translations"
+  $text = array(
+    'Order information will be sent to your account e-mail listed below.'
+      => 'After you have clicked <b>Send Fee Details to Bank</b> below you will be brought to a page that explains next steps.<br /><br />Please note that all payments made at the bank will incur an additional NGN 500 transaction charge.<br /><br />Order information will be sent to your University e-mail account (you will not be able to change this).',
+    'Review order' => 'Send Fee Details to Bank',
+  );
+  variable_set('locale_custom_strings_en', $text);
+
   drupal_set_message('eduerp module installed');
 }
 

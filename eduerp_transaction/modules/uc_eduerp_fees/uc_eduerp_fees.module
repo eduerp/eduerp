@@ -209,12 +209,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   global $user;
   $student_id = $user->uid;
 
-  // forcefully clear the cart if it is not empty
-  if($form_state['submitted'] == FALSE) {
-    if(uc_cart_get_contents() != NULL) {
-      uc_cart_empty($student_id);
-    }
-  }
+  uc_cart_empty($student_id);
 
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
@@ -245,24 +240,12 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     return FALSE;
   }
 
-  if (uc_cart_get_contents() == NULL) { // if cart is empty
-    $_SESSION['eduerp_fees_in_cart'] = FALSE;
-  }
-
   // Remove any pending or paid fees...
   $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
 
   if (empty($fees['fees']['item']) && empty($fees['hostel'])) {
     drupal_set_message('All your fees items are currently in process or already paid for. Consult the bursary', 'error');
     return FALSE;
-  }
-
-  // If the student have these items in the cart already, redirect
-  // to the /cart to prevent increment in cart quantity.
-  // Also handles irregularities when the item added to cart is incomplete
-  if($_SESSION['eduerp_fees_in_cart'] == TRUE | uc_cart_get_contents() != NULL) {
-    drupal_set_message('Welcome back! Please continue from where you left off.');
-    drupal_goto('cart');
   }
 
   if(!is_reservation_existing($student_id)) {
@@ -448,11 +431,13 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   );
   */
   //dsm($cart_items);
+
+  $transaction_token = uniqid();
+
   $added = FALSE;
   foreach($cart_items as $product_item){
     $cart_item = $product_item;
 
-    $transaction_token = uniqid();
     foreach($product_item['item'] as $key => $fees_values) {
       $product[$key] = $fees_values;
       $cartId = uc_cart_get_id();
@@ -518,8 +503,8 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     }
   }
   if($added){
-    $_SESSION['eduerp_fees_in_cart'] = TRUE;
-    $form_state['redirect'] = 'cart';
+    unset($_SESSION['cart_order']);
+    drupal_goto('cart/checkout');
   }
 }
 
