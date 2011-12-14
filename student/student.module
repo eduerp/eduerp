@@ -920,6 +920,8 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
 }
 
 function student_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
   // change the button title to display "Search" instead of "Apply" (improves user experience)
   if ($form_state['view']->name == "student_clearance") {
     $form['submit']['#value'] = t('Search');
@@ -927,7 +929,10 @@ function student_form_alter(&$form, $form_state, $form_id) {
 
   switch ($form_id) {
     case 'user_profile_form':
-      dsm($form);
+
+      $student = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name IN ('Student', 'Applicant') LIMIT 1", $user->uid));
+      if ($student) $form['account']['mail']['#disabled'] = TRUE;
+      dsm(array('form' => $form, 'student' => $student));//ab
       break;
   }
 }
