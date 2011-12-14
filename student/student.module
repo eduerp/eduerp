@@ -537,6 +537,18 @@ function _perform_clearance($student_id) {
 }
 
 /**
+ * A reverse implementation of _perform_clearance
+ * 
+ */ 
+function remove_clearance($student_id) {
+  // delete student program
+  // unset matriculation number_format
+  //$student = user_load($student_id);
+  //eduerp_set_role($student, 'Applicant');
+  // send a mail that the student has been uncleared
+  
+}
+/**
  * Logs clearance information
  * @global  $user
  * @param <type> $student_id
@@ -553,7 +565,7 @@ function student_log_clearance($student_id, $clearance_date, $user) {
 
   $student = $user_profile->profile_first_name . ' ' . $user_profile->profile_last_name;
 
-  watchdog('Clearance', t('New clearance was successfully created by email, on studentid.'), array('email' => $user->mail, 'studentid' => $student));
+  watchdog('Clearance', t('New clearance was successfully created by @email, on @studentid.'), array('@email' => $user->mail, '@studentid' => $student));
 
 }
 
