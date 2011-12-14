@@ -538,15 +538,15 @@ function _perform_clearance($student_id) {
 
 /**
  * A reverse implementation of _perform_clearance
- * 
- */ 
+ *
+ */
 function remove_clearance($student_id) {
   // delete student program
   // unset matriculation number_format
   //$student = user_load($student_id);
   //eduerp_set_role($student, 'Applicant');
   // send a mail that the student has been uncleared
-  
+
 }
 /**
  * Logs clearance information
@@ -923,6 +923,12 @@ function student_form_alter(&$form, $form_state, $form_id) {
   // change the button title to display "Search" instead of "Apply" (improves user experience)
   if ($form_state['view']->name == "student_clearance") {
     $form['submit']['#value'] = t('Search');
+  }
+
+  switch ($form_id) {
+    case 'user_profile_form':
+      dsm($form);
+      break;
   }
 }
 
