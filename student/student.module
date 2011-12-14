@@ -931,7 +931,10 @@ function student_form_alter(&$form, $form_state, $form_id) {
     case 'user_profile_form':
 
       $student = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name IN ('Student', 'Applicant') LIMIT 1", $user->uid));
-      if ($student) $form['account']['mail']['#disabled'] = TRUE;
+      if ($student) {
+        $form['account']['mail']['#disabled'] = TRUE;
+        $form['account']['mail']['#required'] = FALSE;
+      }
       dsm(array('form' => $form, 'student' => $student));//ab
       break;
   }
