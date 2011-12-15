@@ -1046,7 +1046,7 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
       case 'presave':
         if (empty($node->nid)) {
           // A new student profile is being created
-          $node->field_profile_yearofentry[0]['value'] = date('Y');
+          $node->field_profile_yearofentry[0]['value'] = substr(variable_get('eduerp_current_session', ''), 0, 4);
           $node->field_profile_reg_session[0]['value'] = '';
           $node->field_profile_reg_semester[0]['value'] = '';
         }
