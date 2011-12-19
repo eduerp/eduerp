@@ -297,7 +297,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           // can be altered with multiple items
           $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search, 'extras');
         }
-        
+
         // @todo
         // Would be appropriate to use item_description here
         // but it is very unstructured and inconsistent
@@ -535,6 +535,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 
   static $fees_item;
   $fees_item = get_fee_items($uid->uid);
+dsm($fees_item);//ab
   if(!empty($fees_item)){
     // Fees
     $fees_item['item'] = $fees_item['fee_item_details'];
@@ -654,7 +655,7 @@ function uc_eduerp_fees_eduerp_fees_alter($items = NULL, $context = 'extras') {
       return $items;
     }
     if(is_array($items)) {
-      return $items; 
+      return $items;
     }
   }
 }
@@ -873,34 +874,34 @@ function uc_eduerp_fees_views_api() {
 
 /**
  * Get student profile items related to fees
- */ 
+ */
 function uc_eduerp_fees_get_profile_items($uid) {
   $student_profile = content_profile_load('student_profile', $uid);
   $program = $student_profile->field_profile_first_choice;
   $program_nid = $program[0]['nid'];
-  
-  $program_obj = db_fetch_object(db_query("SELECT field_programme_name_value, 
+
+  $program_obj = db_fetch_object(db_query("SELECT field_programme_name_value,
     field_department_id_nid FROM {content_type_program} p
     WHERE p.nid = %d", $program_nid));
-    
+
   if($program_obj) {
     $dept_nid = $program_obj->field_department_id_nid;
-    $dept_result = db_result(db_query("SELECT field_college_id_nid 
-      FROM {content_type_department} d 
+    $dept_result = db_result(db_query("SELECT field_college_id_nid
+      FROM {content_type_department} d
       WHERE d.nid = %d", $dept_nid));
-      
+
     if($dept_result) {
       $college_nid = $dept_result;
-      $college = db_result(db_query("SELECT field_college_name_value 
-        FROM {content_type_college} c 
+      $college = db_result(db_query("SELECT field_college_name_value
+        FROM {content_type_college} c
         WHERE c.nid = %d", $college_nid));
     }
   }
-  
+
   $profile_items = array(
     'course' => $program_obj->field_programme_name_value,
     'college' => $college
   );
-  
+
   return $profile_items;
 }
