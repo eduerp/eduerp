@@ -1022,11 +1022,12 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $arg1->order_id);
             }
 
+            $level_name = student_next_level($user->uid, variable_get('eduerp_current_session', ''));
+
             $fees = $arg1->products;
             $field = array();
             $fields = array();
             $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
-            //uc_edupay_fees_order_unique_items($fees);
             // @todo Break this all into API functions
             foreach ($fees as $key => $product) {
               $fields = $product->data;
@@ -1034,7 +1035,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               $field['nid'] = $fields['nid'];
               $field['nationality'] = $fields['nationality'];
               $field['programme'] = $fields['programme'];
-              $field['level_name'] = $fields['level_name'];
+              $field['level_name'] = $level_name;
               $field['scholarship'] = $fields['scholarship'];
               $field['allow_instalment'] = $fields['allow_instalment'];
               $field['session'] = $fields['session'];
@@ -1055,6 +1056,9 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               }
               if(array_key_exists('attributes', $fields) && !is_null($fields['attributes'])) {
                 $field['attributes'] = $fields['attributes']['Fee Structure'][0];
+              }
+              else {
+                unset($field['attributes']);
               }
               $field['jambno'] = $fields['jambno'];
               $field['fullnames'] = $fields['fullnames'];
@@ -1107,10 +1111,28 @@ function uc_edupay_save($order_id, $product) {
   $schema = drupal_get_schema('fees_order', TRUE);
   module_invoke('uc_edupay', 'schema_alter', $schema);
 
-  if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid = %d AND uid = %d AND session = '%s'", $product['product_nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
+  if (!empty($product['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $product['attributes'], $matches)) {
+    $format_sql = "AND fees_format='" . $matches[0] . "'";
+    $product['fees_format'] = $matches[0];
+  }
+  else {
+    $format_sql = '';
+    unset($product['fees_format']);
+  }
+
+  if ($_SESSION['edupay_total_amount_zero']) {
+    $product['status'] = 'payment_received';
+  }
+  else {
+    $product['status'] = 'pending';
+  }
+
+  if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid = %d AND uid = %d AND session = '%s' $format_sql", $product['product_nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
     $product['fees_order_id'] = $result->fees_order_id;
+dsm(array('product' => $product, 'format_sql' => $format_sql, 'UPDATE' => 'UPDATE'));//ab
     drupal_write_record('fees_order', $product, 'fees_order_id');
   }else {
+dsm(array('product' => $product, 'format_sql' => $format_sql, 'INSERT' => 'INSERT'));//ab
     // do an insert
     drupal_write_record('fees_order', $product);
   }
@@ -1474,7 +1496,7 @@ function _uc_edupay_fees_order_items($order) {
       $hostel['hostel'] = array(
         'nid' => $value['nid'],
         //'type' => $value['data']['type'], // get from the array
-        'type' => EDUERP_FEES_NORMAL, // Treat all items as 'fees'
+        'type' => EDUERP_FEES_HOSTEL,
         'cart_item_id' => $value['cart_item_id'],
         'title' => $value['title'],
         'amount' => $value['price'], // or 'amount' => $value['data']['amount']

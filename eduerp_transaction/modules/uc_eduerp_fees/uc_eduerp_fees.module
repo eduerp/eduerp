@@ -86,6 +86,7 @@ function uc_eduerp_fees_update_fees() {
     if ($hostel_in_order) hostel_allocation_allocate_bedspace($uid);
 
     db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
+    db_query("UPDATE {fees_order} SET status = '$status' WHERE order_id = %d", $order_id);
     watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $uid)));
   }
 
@@ -93,6 +94,7 @@ function uc_eduerp_fees_update_fees() {
     if ($hostel_in_order) hostel_allocation_revoke_expired_reservation($uid);
 
     db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
+    db_query("UPDATE {fees_order} SET status = '$status' WHERE order_id = %d", $order_id);
     watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $uid)));
   }
 
@@ -471,6 +473,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       }
 
       $options['transaction_token'] = $transaction_token;
+
       $profile_items = uc_eduerp_fees_get_profile_items($cartId);
       foreach($profile_items as $k => $v) {
         $options[$k] = module_invoke('uc_eduerp_fees', 'eduerp_fees_alter', $v, 'options');
@@ -535,7 +538,6 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 
   static $fees_item;
   $fees_item = get_fee_items($uid->uid);
-dsm($fees_item);//ab
   if(!empty($fees_item)){
     // Fees
     $fees_item['item'] = $fees_item['fee_item_details'];
@@ -543,11 +545,14 @@ dsm($fees_item);//ab
       $description[$key] = $value['item_description'];
       $fees_item['item'][$key]['extras'] = array();
     }
-    // Add more user information since student has been cleared
+
     $profile = student_load_student_profile($uid->uid);
-    //$options['jambno'] = $profile->profile_jambno;
-    $fullnames = array($profile->profile_first_name, $profile->profile_last_name);
-    //$options['fullnames'] = implode(' ', $fullnames);
+    $fullnames = '';
+    if (!empty($profile->profile_first_name) && !empty($profile->profile_last_name)) {
+      $middle = '';
+      if (!empty($profile->profile_middle_name)) $middle = ' ' . $profile->profile_middle_name;
+      $fullnames = "$profile->profile_last_name, $profile->profile_first_name{$middle}";
+    }
 
     // Add institution
     module_load_include('inc', 'eduerp', 'eduerp.admin');
@@ -565,7 +570,7 @@ dsm($fees_item);//ab
       'session' => $fees_item['session_name'],
       'late_registration' => $fees_item['late_reg_info'],
       'jambno' => $profile->profile_jambno,
-      'fullnames' => implode(' ', $fullnames),
+      'fullnames' => $fullnames,
       'institution' => $institution->id
     );
     // Late registration added by Alan
@@ -579,7 +584,7 @@ dsm($fees_item);//ab
       'session' => $fees_item['session_name'],
       'expiry_date' => intval(strtotime($fees_item['hostel']['expiry_date'])),
       'jambno' => $profile->profile_jambno,
-      'fullnames' => implode(' ', $fullnames),
+      'fullnames' => $fullnames,
       'institution' => $institution->id
     );
   } else {
