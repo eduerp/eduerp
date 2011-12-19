@@ -39,7 +39,7 @@
 
             <?php if ($thank_you_message) { ?>
             <p><b><?php echo t('Thanks for your order, !order_first_name!', array('!order_first_name' => $order_first_name)); ?></b></p>
-
+            <?php echo $fees_message ?>
             <?php if (isset($_SESSION['new_user'])) { ?>
             <p><b><?php echo t('An account has been created for you with the following details:'); ?></b></p>
             <p><b><?php echo t('Username:'); ?></b> <?php echo $new_username; ?><br />
@@ -96,7 +96,7 @@
                   <b><?php echo t('Order Grand Total:'); ?></b>
                 </td>
                 <td width="98%">
-                  <b><?php echo $order_total; ?></b>
+                  <b><?php echo $order_total; ?></b>  
                 </td>
               </tr>
               <tr>

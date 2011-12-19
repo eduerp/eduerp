@@ -8,9 +8,10 @@
 
 require_once drupal_get_path('module', 'oauth_common') . '/includes/DrupalOAuthClient.inc';
 
+module_load_include('inc', 'uc_edupay', 'includes/uc_edupay_rules_default');
 /**
 *
-* @todo Build a menu system for uc_edupay if required
+* Implements hook_menu
 */
 function uc_edupay_menu() {
   $items = array();
@@ -20,7 +21,25 @@ function uc_edupay_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('uc_edupay_config_form'), # the form_id
     'access arguments' => array('administer site configuration'),
+    'weight' => -2,
     'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/settings/eduerp/transaction/edupay/basic'] = array(
+    'title' => t('Settings'),
+    'description' => 'Edit settings.',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/settings/eduerp/transaction/edupay/invoice-settings'] = array(
+    'title' => 'Invoice settings',
+    'description' => 'Configure settings for Edupay invoice',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_edupay_invoice_settings_form'), // missing?
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+    'file' => 'uc_edupay.admin.inc',
   );
   return $items;
 }
@@ -1007,6 +1026,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             $field = array();
             $fields = array();
             $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
+            //uc_edupay_fees_order_unique_items($fees);
             // @todo Break this all into API functions
             foreach ($fees as $key => $product) {
               $fields = $product->data;
@@ -1052,7 +1072,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               unset($fields['has_scholarship']);
               // alter fees_order
               foreach(module_implements('fees_order_alter') as $module) {
-                $field = module_invoke($module, 'fees_order_alter', $field, $field['uid'], $field['product_nid'], $new_fields);
+                $field = module_invoke($module, 'fees_order_alter', $field, $fields, $field['uid'], $field['product_nid'], $new_fields);
               }
               uc_edupay_save($arg1->order_id, $field);
             }
@@ -1107,13 +1127,27 @@ function uc_edupay_fees_order_field_info() {
     'not null' => FALSE,
     //'default' => ''
   );
+  $field['college'] = array(
+    'description' => t("The college the student's programme belongs to"),
+    'type' => 'varchar',
+    'length' => '225',
+    'not null' => FALSE,
+    //'default' => ''
+  );
+  $field['course'] = array(
+    'description' => t("The student course as registered in student profile"),
+    'type' => 'varchar',
+    'length' => '225',
+    'not null' => FALSE,
+    //'default' => ''
+  );
   return $field;
 }
 
 /**
  * Implements hook_fees_order_alter
  */
-function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
+function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_field) {
   // if new field doesn't exist
   // fill new_field with whatever you want
   $formats = uc_eduerp_fees_load_extras($uid, 'fees');
@@ -1134,6 +1168,13 @@ function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
           if(array_key_exists($product_nid, $formats)) {
             $fields[$key] = $formats[$product_nid]['fees_payment_format'][0];
           }
+          break;
+         case 'course':
+          $fields[$key] = $data['course'];
+          break;
+         case 'college':
+          $fields[$key] = $data['college'];
+          break;
       }
     }
   }
@@ -1141,6 +1182,47 @@ function uc_edupay_fees_order_alter($fields, $uid, $product_nid, $new_field) {
   return $fields;
 }
 
+/**
+ * Implementation of hook_token_values(). (token.module)
+ */
+function uc_edupay_token_values($type, $object = NULL) {
+  $values = array();
+  switch ($type) {
+    case 'order':
+      $order = $object;
+      foreach($order->data as $key => $value) {
+        $programme[] = $value['programme'];
+        $fullnames[] = $value['fullnames'];
+        $timeout[] = $value['timeout'];
+        if($value['title'] == 'Late Registration Charges') {
+          $late_charges = $value['amount'];
+        }
+      }
+      $values['programme'] = array_shift(array_unique($programme));
+      $values['fullnames'] = array_shift(array_unique($fullnames));
+      $values['late_registration_date'] = array_shift(array_unique($timeout));
+      $values['late_registration_fee'] = $late_charges;
+      break;
+    case 'fees_order':
+      $fees_order = $object;
+      break;
+  }
+  return $values;
+}
+      
+/**
+ * Implementation of hook_token_list(). (token.module)
+ */
+function uc_edupay_token_list($type = 'all') {
+  $tokens = array();
+  if ($type == 'order' || $type == 'ubercart' || $type == 'all') {
+    $tokens['order']['programme'] = t('The ordered programme by a student');
+    $tokens['order']['fullnames'] = t('Full names of the student who made an order');
+    $tokens['order']['late_registration_date'] = t('The timeout value of a specific order');
+    $tokens['order']['late_registration_fee'] = t('The late registration amount applicable to a fee order');
+  }
+  return $tokens;
+}
 
 /**
  * Load Transaction
@@ -1489,4 +1571,62 @@ function uc_edupay_schema_alter(&$schema) {
  * Alter all views exposed filters
  */
 function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
+  if($form['#id'] == 'views-exposed-form-fees-summary-page-1') {
+    //drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
+    $form['college']['#default_value'] = 'All';
+  }
 }
+
+/**
+ * Implements hook_uc_invoice_templates().
+ */
+function uc_edupay_uc_invoice_templates() {
+  return array('student', 'test');
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function uc_edupay_theme_registry_alter(&$theme_registry) {
+  // This will allow Ubercart invoice templates to be searched in this module's directory.
+ $theme_registry['uc_order']['theme paths'][] = drupal_get_path('module', 'uc_edupay');
+}
+
+/**
+ * Preparatory stuff for the Ubercart invoice template.
+ */
+function uc_edupay_preprocess_uc_order(&$vars) {
+  $invoice_vars = array();
+  $date = new DateTime($vars['order_date_created']);
+  
+  foreach($vars['order']->data as $key => $value) {
+    $programme[] = $value['programme'];
+    $fullnames[] = $value['fullnames'];
+    $timeout[] = $value['timeout'];
+    if($value['title'] == 'Late Registration Charges') {
+      $late_charges = $value['amount'];
+    }
+  }
+  
+  // fees related variables
+  $vars['programme'] = array_shift(array_unique($programme));
+  $vars['fullnames'] = array_shift(array_unique($fullnames));
+  $vars['late_registration_date'] = format_date(array_shift(array_unique($timeout)), 'custom', 'Y-m-d H:i');
+  //$vars['late_registration_date'] = date('Y-m-d H:i', array_shift(array_unique($timeout)));
+  $vars['late_registration_fee'] = $late_charges;
+  $vars['fees_order_date'] = $date->format('j F Y');
+  
+  $vars['invoice_note'] = t("Pay this invoice at: Intercontinental Bank or Zenith Bank. Present this invoice number to pay at the bank. You must make this payment before @late_registration_date otherwise you will have to pay the late registration fee of NGN@late_registration_fee. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.", array('@late_registration_date' => $vars['late_registration_date'], '@late_registration_fee' => $vars['late_registration_fee']));
+  $vars['invoice_number'] = t('invoice no: UDUS/00012');
+  
+  // @todo Leave this for Alan to fix
+  $vars['institution_name'] = t('Usman Danfodiyo University');
+  $vars['institution_address'] = t('PMB 2346 Sokoto');
+  $vars['bank_account1'] = t('First bank Account Number: 123456789');
+  $vars['bank_account2'] = t('Zenith Account Number: 987654321');
+  
+  $vars['user_label'] = t('Customer');
+  $vars['invoice_title'] = t('Invoice');
+  
+}
+

@@ -9,6 +9,11 @@
  * Field handler to provide simple renderer that allows linking to the order adminstration page.
  */
 class uc_eduerp_fees_handler_field_fees_order_order_id extends views_handler_field {
+  
+  function query() {
+    $this->ensure_my_table();
+  }
+  
   function option_definition() {
     $options = parent::option_definition();
     $options['link_to_order'] = array('default' => FALSE);

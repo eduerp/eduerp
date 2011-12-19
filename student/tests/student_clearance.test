@@ -1,0 +1,109 @@
+<?php 
+
+/**
+* @file
+* Simpletest for uc_eduerp_fees module
+*/
+
+/**
+* There are four basic steps involved in building a test:
+*
+* Creating the structure (just creating a class that inherits from DrupalWebTestCase)
+* Initializing the test case with whatever user creation or configuration needs to be done
+* Creating actual tests within the test case
+* And, of course, trying desperately to figure out why our test doesn't work the way we expect, and debugging the test (and perhaps the module)
+*/
+
+class StudentClearanceTestCase extends DrupalWebTestCase {
+  protected $privileged_user;
+
+  /**
+   * getInfo() returns properties that are displayed in the test selection form.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'StudentClearance SimpleTest',
+      'description' => 'Ensures that a student is cleared and a clearance agreement is created.',
+      'group' => 'Eduerp',
+    );
+  }
+  
+  /**
+   * setUp() performs any pre-requisite tasks that need to happen. 
+   */
+  public function setUp() {
+    // Enable any modules required for the test.
+    parent::setUp(
+      'student', 
+      'rules', 
+      'userreference', 
+      'student_clearance',
+      'content',
+      'views',
+      'features',
+      'token',
+      'views_pdf'
+    );
+
+    // Create and log in our privileged user.
+    $this->privileged_user = $this->drupalCreateUser( array(
+      'administer site configuration',
+      'administer content types',
+      'administer nodes',
+      'access content',
+      'create clearance_agreement content',
+      'create student_clearance content')
+    );
+    $this->drupalLogin($this->privileged_user);
+  }
+  
+  /**
+   * Test _preform_clearance 
+   * 
+   */ 
+  public function testStudentClearance(){
+    $student_id = 953;
+    $node = new stdClass;
+    $node->is_new = 1;
+    $node->uid = 955;
+    $node->type = 'student_clearance';
+    $node->field_student[0]['uid'] = $student_id;
+    // add clearance as part of the POST data
+    $post_data = array('jambno' => '1010102AA');
+    $options['query'] = $post_data;
+    $extra_post = http_build_query($post_data, '', '&');
+    $edit = array(
+      'jambno' => '1010102AA',
+    );
+    $this->drupalPost('student/clearance', $edit, t('Search'), $options, array(), NULL, $extra_post);
+    $edit = array(
+      'verify' => TRUE,
+      'clearance' => TRUE,
+    );
+    $post_data = array('jambno' => '1010102AA', 'verify' => TRUE, 'clearance' => TRUE);
+    //$options['query'] = $post_data;
+    $extra_post = http_build_query($post_data, '', '&');
+    $this->drupalPost('student/clearance/post', $edit, t('Submit'), $options, array(), NULL, $extra_post);
+    $node->field_staff_clearance[0]['uid'] = 955;
+    $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+    _perform_clearance($student_id);
+    /*$settings = array(
+      'uid' => 955,
+      'is_new' => 1,
+      'type' => 'student_clearance',
+      '' => 
+    );*/
+    $settings = (array) $node;
+    $this->drupalCreateNode($settings);
+    rules_invoke_event('student_cleared',  $settings['uid'], $student_id, $settings);
+    $error = FALSE;
+    $this->assertFalse($error, 'Student was not cleared successfully');
+  }
+  
+  /**
+   * Test remove clearance for a student who is cleared
+   */ 
+  public function testRemoveClearance() {
+    
+  }
+}

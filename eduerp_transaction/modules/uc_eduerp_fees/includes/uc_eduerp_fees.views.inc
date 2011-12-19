@@ -18,6 +18,18 @@ function uc_eduerp_fees_views_data() {
     'field' => 'nid',
   );
   
+  $data['fees_order']['table']['content_type_school_fee_item_setup'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    //'field' => 'field_fee_setup_program_nid_value', # 'field' is the foreign key in this table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
+  );
+  
+  $data['fees_order']['table']['content_type_student_profile'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    //'field' => 'field_fee_setup_program_nid_value', # 'field' is the foreign key in this table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
+  );
+  
   $data['fees_order']['table']['join']['uc_orders'] = array(
     'left_field' => 'order_id',
     'field' => 'order_id',
@@ -26,15 +38,20 @@ function uc_eduerp_fees_views_data() {
   // This table references the {content_type_program} table.
   // This creates an 'implicit' relationship to the content_type_program table, so that when 'Node'
   // is the base table, the fields are automatically available.
-  /*$data['fees_order']['table']['join']['content_type_program'] = array(
+  $data['fees_order']['table']['content_type_program'] = array(
+    'left_field' => 'nid', # 'left_field' is the primary key in the referenced table.
+    'field' => 'nid', # 'field' is the foreign key in this table.
+  );
+  
+  $data['fees_order']['table']['join']['content_type_department'] = array(
     'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
     'field' => 'vid', # 'field' is the foreign key in this table.
   );
   
-  $data['fees_order']['table']['join']['content_type_student_profile'] = array(
+  $data['fees_order']['table']['join']['content_type_college'] = array(
     'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
     'field' => 'vid', # 'field' is the foreign key in this table.
-  );*/
+  );
   
   // product_nid field.
   $data['fees_order']['product_nid'] = array(
@@ -488,6 +505,52 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   
+  // fees_format
+  $data['fees_order']['fees_format'] = array(
+    'title' => t('Fees Order fees format'), 
+    'help' => $order_products['fields']['fees_format']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+  );
+  // course
+  $data['fees_order']['course'] = array(
+    'title' => t('Fees Order course'), 
+    'help' => $order_products['fields']['course']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+  );
+  // college
+  $data['fees_order']['college'] = array(
+    'title' => t('Fees order college'), 
+    'help' => $order_products['fields']['college']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_college',
+    ),
+  );
+  
   return $data;
 }
 
@@ -590,6 +653,16 @@ function uc_eduerp_fees_views_handlers() {
       'uc_eduerp_fees_handler_field_total' => array(
         'parent' => 'views_handler_field'
       ),
+      'uc_eduerp_fees_handler_field_fees_format' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_course' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_college' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'views_handler_filter_college' => array('parent' => 'views_handler_filter_many_to_one',),
     ),
   );
 }

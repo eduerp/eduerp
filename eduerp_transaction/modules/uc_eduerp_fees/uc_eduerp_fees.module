@@ -295,8 +295,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         foreach(module_implements('eduerp_fees_alter') as $module) {
           // @todo - Make hook_eduerp_fees_alter argument to be options so that extras
           // can be altered with multiple items
-          $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search);
+          $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search, 'extras');
         }
+        
         // @todo
         // Would be appropriate to use item_description here
         // but it is very unstructured and inconsistent
@@ -470,6 +471,10 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       }
 
       $options['transaction_token'] = $transaction_token;
+      $profile_items = uc_eduerp_fees_get_profile_items($cartId);
+      foreach($profile_items as $k => $v) {
+        $options[$k] = module_invoke('uc_eduerp_fees', 'eduerp_fees_alter', $v, 'options');
+      }
 
     if(!empty($product)){
       uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
@@ -633,13 +638,23 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
  * A temporary solution is to modify the values in the array
  * to be referenced
  */
-function uc_eduerp_fees_eduerp_fees_alter($items) {
+function uc_eduerp_fees_eduerp_fees_alter($items = NULL, $context = 'extras') {
   // array search the context value
   // when gotten, inject stuffs into $extras key
-  if(!empty($items)) {
-    preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
-    foreach($matches as $key => $value) {
-      return $value;
+  if($context == 'extras') {
+    if(!is_null($items)) {
+      preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
+      foreach($matches as $key => $value) {
+        return $value;
+      }
+    }
+  }
+  if($context == 'options') {
+    if(is_string($items)) {
+      return $items;
+    }
+    if(is_array($items)) {
+      return $items; 
     }
   }
 }
@@ -854,4 +869,38 @@ function uc_eduerp_fees_views_api() {
     //'path' => drupal_get_path('module', 'uc_eduerp_fees'),
     'path' => drupal_get_path('module', 'uc_eduerp_fees') . '/includes',
   );
+}
+
+/**
+ * Get student profile items related to fees
+ */ 
+function uc_eduerp_fees_get_profile_items($uid) {
+  $student_profile = content_profile_load('student_profile', $uid);
+  $program = $student_profile->field_profile_first_choice;
+  $program_nid = $program[0]['nid'];
+  
+  $program_obj = db_fetch_object(db_query("SELECT field_programme_name_value, 
+    field_department_id_nid FROM {content_type_program} p
+    WHERE p.nid = %d", $program_nid));
+    
+  if($program_obj) {
+    $dept_nid = $program_obj->field_department_id_nid;
+    $dept_result = db_result(db_query("SELECT field_college_id_nid 
+      FROM {content_type_department} d 
+      WHERE d.nid = %d", $dept_nid));
+      
+    if($dept_result) {
+      $college_nid = $dept_result;
+      $college = db_result(db_query("SELECT field_college_name_value 
+        FROM {content_type_college} c 
+        WHERE c.nid = %d", $college_nid));
+    }
+  }
+  
+  $profile_items = array(
+    'course' => $program_obj->field_programme_name_value,
+    'college' => $college
+  );
+  
+  return $profile_items;
 }

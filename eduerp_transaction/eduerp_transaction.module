@@ -51,7 +51,6 @@ function eduerp_transaction_menu() {
         'access arguments' => array('administer site configuration'),
         'weight' => -10,
         'type' => MENU_DEFAULT_LOCAL_TASK,
-        //'file' => 'uc_store.admin.inc',
       );
       $items['admin/settings/eduerp/transaction/auth/basic'] = array(
         'title' => t('Edupay Basic Auth'),
@@ -59,6 +58,7 @@ function eduerp_transaction_menu() {
         'page callback' => 'drupal_get_form',
         'page arguments' => array('eduerp_transaction_edupay_basic_auth'),
         'access arguments' => array('administer site configuration'),
+        'weight' => -5,
         'type' => MENU_LOCAL_TASK,
         #'file' => 'eduerp_transaction.admin.inc'
       );
@@ -68,6 +68,7 @@ function eduerp_transaction_menu() {
         'page callback' => 'drupal_get_form',
         'page arguments' => array('eduerp_transaction_edupay_auth_consumer'),
         'access arguments' => array('administer site configuration'),
+        'weight' => -4,
         'type' => MENU_LOCAL_TASK,
         #'file' => 'eduerp_transaction.admin.inc'
       );
@@ -77,6 +78,7 @@ function eduerp_transaction_menu() {
         'page callback' => 'drupal_get_form',
         'page arguments' => array('eduerp_transaction_edupay_token_request'),
         'access arguments' => array('administer site configuration'),
+        'weight' => -3,
         'type' => MENU_LOCAL_TASK,
         #'file' => 'eduerp_transaction.admin.inc'
       );
@@ -157,22 +159,6 @@ function eduerp_transaction_edupay_token_request(&$form_state) {
     '#collapsible' => TRUE
   );
   $form['edupay_oauth_token']['token_buttons'] = array();
-  /*$form['edupay_oauth_token']['token_buttons']['eduerp_transaction_generate_token_key'] = array(
-    '#type' => 'button',
-    '#value' => t('Generate token key'),
-    '#submit' => array('eduerp_transaction_generate_token_key_submit'),
-  );
-  $form['edupay_oauth_token']['token_buttons']['eduerp_transaction_generate_token_secret'] = array(
-    '#type' => 'button',
-    '#value' => t('Generate token secret'),
-    '#submit' => array('eduerp_transaction_generate_token_key_submit'),
-  );
-  $form['edupay_oauth_token']['markup'] = array(
-    '#type' => 'markup',
-    '#value' => t('Alternatively, get both at once'),
-    '#prefix' => '<div class="eduerp-transaction-span">',
-    '#suffix' => '</div>'
-  );*/
   $form['edupay_oauth_token']['token_buttons']['eduerp_transaction_generate_token'] = array(
     '#type' => 'button',
     '#value' => t('Generate token'),
