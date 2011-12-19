@@ -1231,7 +1231,7 @@ function uc_edupay_token_values($type, $object = NULL) {
   }
   return $values;
 }
-      
+
 /**
  * Implementation of hook_token_list(). (token.module)
  */
@@ -1488,6 +1488,7 @@ function _uc_edupay_fees_order_items($order) {
         'order_id' => $order->order_id,
         'scholarship' => $value['data']['has_scholarship'],
         'transaction_token' => $value['data']['transaction_token'],
+        'original_amount' = $value['data']['original_amount'],
       );
       $all[] = $nid[$key];
     }
@@ -1513,6 +1514,7 @@ function _uc_edupay_fees_order_items($order) {
         'order_id' => $order->order_id,
         'scholarship' => '2',
         'transaction_token' => $value['data']['transaction_token'],
+        'original_amount' = $value['data']['original_amount'],
       );
       // @todo: go through drupal_alter once we have a hook of this function
 
@@ -1620,7 +1622,7 @@ function uc_edupay_theme_registry_alter(&$theme_registry) {
 function uc_edupay_preprocess_uc_order(&$vars) {
   $invoice_vars = array();
   $date = new DateTime($vars['order_date_created']);
-  
+
   foreach($vars['order']->data as $key => $value) {
     $programme[] = $value['programme'];
     $fullnames[] = $value['fullnames'];
@@ -1629,7 +1631,7 @@ function uc_edupay_preprocess_uc_order(&$vars) {
       $late_charges = $value['amount'];
     }
   }
-  
+
   // fees related variables
   $vars['programme'] = array_shift(array_unique($programme));
   $vars['fullnames'] = array_shift(array_unique($fullnames));
@@ -1637,18 +1639,18 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   //$vars['late_registration_date'] = date('Y-m-d H:i', array_shift(array_unique($timeout)));
   $vars['late_registration_fee'] = $late_charges;
   $vars['fees_order_date'] = $date->format('j F Y');
-  
+
   $vars['invoice_note'] = t("Pay this invoice at: Intercontinental Bank or Zenith Bank. Present this invoice number to pay at the bank. You must make this payment before @late_registration_date otherwise you will have to pay the late registration fee of NGN@late_registration_fee. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.", array('@late_registration_date' => $vars['late_registration_date'], '@late_registration_fee' => $vars['late_registration_fee']));
   $vars['invoice_number'] = t('invoice no: UDUS/00012');
-  
+
   // @todo Leave this for Alan to fix
   $vars['institution_name'] = t('Usman Danfodiyo University');
   $vars['institution_address'] = t('PMB 2346 Sokoto');
   $vars['bank_account1'] = t('First bank Account Number: 123456789');
   $vars['bank_account2'] = t('Zenith Account Number: 987654321');
-  
+
   $vars['user_label'] = t('Customer');
   $vars['invoice_title'] = t('Invoice');
-  
+
 }
 
