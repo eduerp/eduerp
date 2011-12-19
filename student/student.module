@@ -538,15 +538,15 @@ function _perform_clearance($student_id) {
 
 /**
  * A reverse implementation of _perform_clearance
- * 
- */ 
+ *
+ */
 function remove_clearance($student_id) {
   // delete student program
   // unset matriculation number_format
   //$student = user_load($student_id);
   //eduerp_set_role($student, 'Applicant');
   // send a mail that the student has been uncleared
-  
+
 }
 /**
  * Logs clearance information
@@ -920,9 +920,23 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
 }
 
 function student_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
   // change the button title to display "Search" instead of "Apply" (improves user experience)
   if ($form_state['view']->name == "student_clearance") {
     $form['submit']['#value'] = t('Search');
+  }
+
+  switch ($form_id) {
+    case 'user_profile_form':
+
+      $student = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name IN ('Student', 'Applicant') LIMIT 1", $user->uid));
+      if ($student) {
+        $form['account']['mail']['#disabled'] = TRUE;
+        $form['account']['mail']['#required'] = FALSE;
+        $form['account']['mail']['#value'] = $form['account']['mail']['#default_value'];
+      }
+      break;
   }
 }
 
@@ -1032,7 +1046,7 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
       case 'presave':
         if (empty($node->nid)) {
           // A new student profile is being created
-          $node->field_profile_yearofentry[0]['value'] = date('Y');
+          $node->field_profile_yearofentry[0]['value'] = substr(variable_get('eduerp_current_session', ''), 0, 4);
           $node->field_profile_reg_session[0]['value'] = '';
           $node->field_profile_reg_semester[0]['value'] = '';
         }
