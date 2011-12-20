@@ -1029,6 +1029,11 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
       if (!empty($text) && !preg_match('/^[A-Z]/', $text)) {
         form_set_error('field_profile_maiden_name', 'First letter must be in Upper case, rest in lower case. Example John');
       }
+
+      $text = $node->field_profile_first_choice[0]['value'];
+      if (empty($text)) {
+        form_set_error('field_profile_first_choice', 'You must choose a Programme.');
+      }
     }
   }
   elseif ($node->type == 'staff_profile') {
