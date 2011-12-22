@@ -4099,29 +4099,22 @@ EOD;
     $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/createmodifyprog') ."'>Create/Modify a Programme</a>&nbsp; &raquo; &nbsp;Specify Course(s): <b>". $programmeInfo->programme_name ."</b> Programme</font><br /><br />";
     $navi .= '<br /><hr /><br />';
     echo $navi;
-    echo "<b>Specify Course(s) for Programme</b> | Programme: <b>". $programmeInfo->programme_name ."</b><br /><br />"; // variable_get('eduerp_current_session', '') ."</b> | Semester: <b>". variable_get('eduerp_current_semester', '') ."</b><br /><br />";
-
+    echo "<b>Specify Course(s) for Programme</b> | Programme: <b>". $programmeInfo->programme_name ."</b><br /><br />";
   }
-
-  //echo "Below is a list of all availabel Course(s) that belong to <b>". $programmeInfo->department_name ."</b> Department.<br /><br />";
 
   if ($canCreateModify)
     echo drupal_get_form('staff_assign_course_to_programme_form');
-  else{
-    //echo Error_Types(104);
+  else {
     drupal_set_message(Error_Types(104), 'error');
   }
 
-
   if(! arg(3)) {
+    $runningCourse = get_programme_running_courses_all_semesters($programmeInfo->programme_nid, variable_get('eduerp_current_session', ''));
 
-    $runningCourse = get_programme_running_courses ($programmeInfo->programme_nid, variable_get('eduerp_current_session', ''), variable_get('eduerp_current_semester', '') );
     echo '<br /><hr /><br />';
-    echo "<b>List of courses that need to be run this semester for ". $programmeInfo->programme_name  ." Programme</b><br/><br />";
+    echo "<b>List of courses that need to be run this session for ". $programmeInfo->programme_name  ." Programme</b><br/><br />";
+
     echo "<div id='assigned_courses'>";
-    //show_running_courses($runningCourse);
-    //drupal_set_message($programmeInfo->programme_nid);
-    //course_specify_list($programmeInfo->programme_nid);
     course_specify_list($runningCourse);
     echo "</div>";
 
@@ -4273,6 +4266,40 @@ function get_programme_running_courses ($programme_nid, $session, $semester) {
       ORDER BY co.field_college_name_value, d.field_department_name_value, c.field_code_value, p.field_programme_name_value, pc.level";
     $result = db_query($sql, $session, $semester, $programme_nid);
     //drupal_set_message($param['session']);
+  return $result;
+}
+
+
+function get_programme_running_courses_all_semesters($programme_nid, $session) {
+   $sql = "SELECT DISTINCT
+        pc.level,
+        c.field_code_value course_code,
+        p.field_programme_name_value programme_name,
+        d.field_department_name_value department_name,
+        co.field_college_name_value faculty_name,
+        pc.semester AS semester,
+        pc.course_type,
+        CONCAT( c.field_coursetitle_value, ' (', field_code_value  ,')') AS course_title,
+        pc.credit_load AS credit_load,
+        field_creditload_value old_credit_load,
+        field_course_description_value course_description,
+        field_prerequisite_codes_value prerequisites_codes,
+        field_prerequisite_value prerequisites_description,
+        pc.program_course_id,
+        if(ci.nid IS NULL, NULL, 1) AS clean_nid
+      FROM {program_course} pc
+      INNER JOIN {content_type_course} c ON pc.course_id=c.nid AND pc.historical=0
+      LEFT JOIN {content_type_course_instance} ci
+      ON
+        c.nid=ci.field_course_id_nid AND
+        pc.semester=ci.field_semester_name_value AND
+        ci.field_sess_name_value='%s'
+      INNER JOIN {content_type_program} p ON pc.programme_id=p.nid
+      INNER JOIN {content_type_department} d ON c.field_department_nid_nid=d.nid
+      INNER JOIN {content_type_college} co ON d.field_college_id_nid=co.nid
+      WHERE p.nid=%d
+      ORDER BY pc.level, pc.semester, c.field_code_value";
+    $result = db_query($sql, $session, $programme_nid);
   return $result;
 }
 
