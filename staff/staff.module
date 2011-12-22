@@ -4435,7 +4435,7 @@ function staff_assign_course_to_programme_form() {
     '#form_panel_col' => 4,
     '#form_panel_row' => 2);
   if(isset($prog_course)) {$form['course_id']['#default_value'] = $prog_course->course_id; $form['course_id']['#disabled'] = FALSE; }
-  if (arg(3)) $form['course_id']['#options'] = array($progCourse->course_id => $progCourse->course_id); // If Edit(Update) don't allow Course change
+  if (arg(3)) $form['course_id']['#options'] = array($progCourse->course_id => $form['course_id']['#options'][$progCourse->course_id]); // If Edit(Update) don't allow Course change
 
   $form['course_type_id'] = array(
     '#type' => 'select',
