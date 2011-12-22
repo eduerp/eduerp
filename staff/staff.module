@@ -4410,6 +4410,7 @@ function staff_assign_course_to_programme_form() {
     '#form_panel_col' => 2,
     '#form_panel_row' => 2);
   if(isset($prog_course)) $form['level']['#default_value'] = $prog_course->level;
+  if (arg(3)) $form['level']['#options'] = array($progCourse->level => $progCourse->level); // If Edit(Update) don't allow Level change
 
   $form['semester'] = array(
     '#type' => 'select',
@@ -4419,6 +4420,7 @@ function staff_assign_course_to_programme_form() {
     '#form_panel_col' => 3,
     '#form_panel_row' => 2);
   if(isset($prog_course)) $form['semester']['#default_value'] = $prog_course->semester;
+  if (arg(3)) $form['semester']['#options'] = array($progCourse->semester => $progCourse->semester); // If Edit(Update) don't allow Semester change
 
   $form['course_id'] = array(
     '#type' => 'select',
