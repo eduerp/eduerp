@@ -76,6 +76,17 @@ function student_clearance_rules_defaults() {
         '#conditions' => array(),
         '#actions' => array(
           '0' => array(
+            '#weight' => 0,
+            '#type' => 'action',
+            '#settings' => array(
+              'title' => 'A new clearance agreement for $student_id',
+              'type' => 'clearance_agreement',
+              '#argument map' => array(
+                'author' => 'author',
+                'node' => 'clearance_node',
+              ),
+            ),
+            '#name' => 'student_action_create_agreement',
             '#info' => array(
               'label' => 'Create a clearance agreement node',
               'arguments' => array(
@@ -95,17 +106,6 @@ function student_clearance_rules_defaults() {
               ),
               'module' => 'Student',
             ),
-            '#name' => 'student_action_create_agreement',
-            '#settings' => array(
-              'title' => 'A new clearance agreement for $student_id',
-              'type' => 'clearance_agreement',
-              '#argument map' => array(
-                'author' => 'author',
-                'node' => 'clearance_node',
-              ),
-            ),
-            '#type' => 'action',
-            '#weight' => 0,
           ),
         ),
         '#version' => 6003,
@@ -114,13 +114,15 @@ function student_clearance_rules_defaults() {
         '#type' => 'rule',
         '#set' => 'event_user_login',
         '#label' => 'User logs in for the first time',
-        '#active' => 1,
+        '#active' => 0,
         '#weight' => '0',
         '#categories' => array(
           '0' => 'student',
           'student_clearance' => 'student_clearance',
         ),
         '#status' => 'default',
+        '#conditions' => array(),
+        '#actions' => array(),
         '#version' => 6003,
       ),
     ),

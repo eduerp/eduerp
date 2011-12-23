@@ -92,20 +92,29 @@ function uc_edupay_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'uc_msg_order_logged_in';
-  $strongarm->value = 'Thank you for shopping at [store-name]. While logged in, you may continue shopping or <a href="[order-url]">view your current order status</a> and order history.
-
-<?php
+  $strongarm->value = 'Your Pay Fee process is now completed on this system. Your invoice has been sent to your e-mail address [order-email]. You can also print a copy of your invoice by <?php
 
 $url = url(\'user/\' . [order-uid] . \'/order/\' . [order-id] . \'/invoice/print\');
     drupal_add_js("function open_invoice() { window.open(\'$url\', \'". t(\'Invoice\') ."\', \'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50\'); }", \'inline\');
     $contents = \'<a href="#" onclick="open_invoice();">\'
                . uc_store_get_icon(\'file:print\') .\' \'
-               . t(\'Click to open a window with a printable invoice.\') .\'</a>\';
+               . t(\'clicking here.\') .\'</a>\';
     $output .= \'<div class="order-pane">\'. $contents .\'</div>\';
     print $output;
 
-?>
-';
+?>.
+
+You must proceed to any of the following banks to pay your invoice: Intercontinental Bank or Zenith Bank.
+
+You must present the invoice or provide your invoice number ([invoice-number]) to pay at the bank.
+
+Payment must be made on or before [late_registration_date]. The bank cannot accept payment after that date.
+
+If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee (NGN [late_registration_fee]).
+
+After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).
+
+Please note an additional NGN500 transaction charge must be paid when paying your fees.';
   $strongarms['uc_msg_order_logged_in'] = $strongarm;
 
   $strongarm = new stdClass;

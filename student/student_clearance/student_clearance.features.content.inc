@@ -57,11 +57,15 @@ function student_clearance_content_default_fields() {
 0|I Agree',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'I agree',
       'weight' => '-2',
-      'description' => '',
+      'description' => 'Only when you click the submit button will your clearance agreement be accepted.',
       'type' => 'optionwidgets_onoff',
       'module' => 'optionwidgets',
     ),
@@ -337,12 +341,16 @@ function student_clearance_content_default_fields() {
 0|Defer to next session',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Defer to next session',
       'weight' => '38',
       'description' => '',
-      'type' => 'optionwidgets_buttons',
+      'type' => 'optionwidgets_onoff',
       'module' => 'optionwidgets',
     ),
   );

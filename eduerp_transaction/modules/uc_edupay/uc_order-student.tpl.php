@@ -32,7 +32,7 @@
             <div class="inner" style="padding:5px">
               <div><b><?php echo $user_label ?></b></div>
               <div style="width:100%">Name: <?php echo $fullnames ?></div>
-              <div style="width:100%">Admission Number: </div>
+              <div style="width:100%">Admission Number: <?php echo $matric_number ?></div>
               <div style="width:100%">Programme: <?php echo $programme ?></div>
             </div>
           </div>
@@ -130,9 +130,7 @@
           </div>
           <div style="margin-top:5px; text-align:center; border:dotted 1px #333; padding:8px;font-style:italic">
             <ul style="">
-              <li style="display:inline"><?php echo $bank_account1 ?></li>
-              <li style="display:inline"><?php echo $bank_account2 ?></li>
-              <li style="display:inline">Account Name: <b><?php echo $institution_name ?></b></li>
+              <li style="display:inline"><?php echo $bank_details ?></li>
             </ul>
           </div>
           

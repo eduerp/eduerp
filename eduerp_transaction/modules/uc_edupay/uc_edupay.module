@@ -1037,7 +1037,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               $field['programme'] = $fields['programme'];
               $field['level_name'] = $level_name;
               $field['scholarship'] = $fields['scholarship'];
-              $field['original_amount'] = $fields['original_amount'];
               $field['allow_instalment'] = $fields['allow_instalment'];
               $field['session'] = $fields['session'];
               if(array_key_exists('late_registration', $fields) && !is_null($fields['late_registration'])) {
@@ -1164,6 +1163,15 @@ function uc_edupay_fees_order_field_info() {
     'not null' => FALSE,
     //'default' => ''
   );
+  $field['original_amount'] = array(
+    'description' => t('The fees order original price'),
+    'type' => 'numeric',
+    'not null' => FALSE,
+    'default' => 0,
+    'precision' => '16',
+    'scale' => '5',
+  );
+  
   return $field;
 }
 
@@ -1198,6 +1206,9 @@ function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_fie
          case 'college':
           $fields[$key] = $data['college'];
           break;
+         case 'original_amount':
+          $fields[$key] = $data['original_amount'];
+          break;
       }
     }
   }
@@ -1213,8 +1224,11 @@ function uc_edupay_token_values($type, $object = NULL) {
   switch ($type) {
     case 'order':
       $order = $object;
+      $student_profile = content_profile_load('student_profile', $order->uid);
       foreach($order->data as $key => $value) {
-        $programme[] = $value['programme'];
+        if($value['type'] == EDUERP_FEES_NORMAL) {
+          $programme[] = $value['programme'];
+        }
         $fullnames[] = $value['fullnames'];
         $timeout[] = $value['timeout'];
         if($value['title'] == 'Late Registration Charges') {
@@ -1225,6 +1239,8 @@ function uc_edupay_token_values($type, $object = NULL) {
       $values['fullnames'] = array_shift(array_unique($fullnames));
       $values['late_registration_date'] = array_shift(array_unique($timeout));
       $values['late_registration_fee'] = $late_charges;
+      $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
+      $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
       break;
     case 'fees_order':
       $fees_order = $object;
@@ -1243,6 +1259,8 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['fullnames'] = t('Full names of the student who made an order');
     $tokens['order']['late_registration_date'] = t('The timeout value of a specific order');
     $tokens['order']['late_registration_fee'] = t('The late registration amount applicable to a fee order');
+    $tokens['order']['invoice_number'] = t('The fees order invoice number');
+    $tokens['order']['matric-number'] = t("The student's matric number");
   }
   return $tokens;
 }
@@ -1413,7 +1431,6 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
  *
  */
 function theme_eduerp_cart_review_table($contents) {
-  //dsm($contents);
   $contents = uc_cart_get_contents();
   foreach($contents as $content) {
    //if($content->data['type'] == 'fees'){
@@ -1623,9 +1640,14 @@ function uc_edupay_theme_registry_alter(&$theme_registry) {
 function uc_edupay_preprocess_uc_order(&$vars) {
   $invoice_vars = array();
   $date = new DateTime($vars['order_date_created']);
+  
+  $student_uid = $vars['order_id'];
+  $student_profile = content_profile_load('student_profile', $student_uid);
 
   foreach($vars['order']->data as $key => $value) {
-    $programme[] = $value['programme'];
+    if($value['type'] == EDUERP_FEES_NORMAL) {
+      $programme[] = $value['programme'];
+    }
     $fullnames[] = $value['fullnames'];
     $timeout[] = $value['timeout'];
     if($value['title'] == 'Late Registration Charges') {
@@ -1634,6 +1656,8 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   }
 
   // fees related variables
+  // some values can be gotten through token_get_values($type, $object, FALSE, $options);
+  $vars['matric_number'] = $student_profile->field_profile_matno[0]['value'];
   $vars['programme'] = array_shift(array_unique($programme));
   $vars['fullnames'] = array_shift(array_unique($fullnames));
   $vars['late_registration_date'] = format_date(array_shift(array_unique($timeout)), 'custom', 'Y-m-d H:i');
@@ -1642,13 +1666,14 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $vars['fees_order_date'] = $date->format('j F Y');
 
   $vars['invoice_note'] = t("Pay this invoice at: Intercontinental Bank or Zenith Bank. Present this invoice number to pay at the bank. You must make this payment before @late_registration_date otherwise you will have to pay the late registration fee of NGN@late_registration_fee. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.", array('@late_registration_date' => $vars['late_registration_date'], '@late_registration_fee' => $vars['late_registration_fee']));
-  $vars['invoice_number'] = t('invoice no: UDUS/00012');
+  $vars['invoice_number'] = variable_get('uc_edupay_username', '') . '/' . $vars['order']->order_id;
 
   // @todo Leave this for Alan to fix
-  $vars['institution_name'] = t('Usman Danfodiyo University');
-  $vars['institution_address'] = t('PMB 2346 Sokoto');
+  $vars['institution_name'] = variable_get('eduerp_institution_current', '');
+  $vars['institution_address'] = variable_get('eduerp_institution_address', '');
   $vars['bank_account1'] = t('First bank Account Number: 123456789');
   $vars['bank_account2'] = t('Zenith Account Number: 987654321');
+  $vars['bank_details'] = variable_get('eduerp_institution_bank_details', '');
 
   $vars['user_label'] = t('Customer');
   $vars['invoice_title'] = t('Invoice');

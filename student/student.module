@@ -1808,3 +1808,19 @@ function student_init() {
   //drupal_add_js - to add the js
   drupal_add_js(drupal_get_path('module', 'student') .'/student.js');
 }
+
+function student_new_student($student_uid) {
+  student_include('student');
+  $student = new student($student_uid);
+
+  return $student;
+}
+
+function student_include($file) {
+  static $used = array();
+  if (!isset($used[$file])) {
+    require_once './' . drupal_get_path('module', 'student') . "/includes/$file.inc";
+  }
+
+  $used[$file] = TRUE;
+}

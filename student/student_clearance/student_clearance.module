@@ -15,6 +15,15 @@ function student_clearance_menu() {
       'access callback' => TRUE,
       'type' => MENU_CALLBACK,
     );
+    $items['user/%user/clearance/%node/agreement'] = array(
+    'title' => 'View clearance agreement',
+    'description' => 'View clearance agreement.',
+    'page callback' => 'student_clearance_agreement_view',
+    'page arguments' => array(1, 3, 'agreement'),
+    'access arguments' => array('access content'),
+    #'access arguments' => array(1, 3),
+    'type' => MENU_CALLBACK,
+  );
 
     return $items;
 }
@@ -48,7 +57,7 @@ function student_clearance_pdf_agreement_ahah_callback() {
 	$node = $form['#parameters'][2];
 	$node->field_agreement_agree[0]['value'] = $_POST['field_agreement_agree']['value'];
 	$terms_agree = $node->field_agreement_agree[0]['value'];
-	node_invoke_nodeapi($node, 'prepare', $terms_agree);
+	node_invoke_nodeapi($node, 'prepare', $node->body, $terms_agree);
 	node_save($node);
 	
 	$form['field_agreement_agree']['#disabled'] = TRUE;
@@ -58,13 +67,15 @@ function student_clearance_pdf_agreement_ahah_callback() {
   //unset($agreement_form['#prefix'], $agreement_form['#suffix']); // Prevent duplicate wrappers.
 	
 	if(!isset($terms_agree)) {
-		//$output = $form['agreement_pdf_ahah']['#value'];
 		$output = t('You need to accept the terms');
 	}else {
-		$output .= l(t('Download agreement'), $form['agreement_pdf_ahah']['#value'], array('absolute' => TRUE, 'attributes' => array('target' => '_blank')));
-	}
-	//print drupal_json brings up an alert window
-  drupal_json(array('status' => TRUE, 'data' => $output)); 
+		//$output .= l(t('Download agreement'), $form['agreement_pdf_ahah']['#value'], array('absolute' => TRUE, 'attributes' => array('target' => '_blank')));
+    //$output .= l('Download PDF', file_directory_path() . '/agreement' . '-' . $form['student_id']['#value'] . '.pdf', array('absolute' => TRUE));
+    $output .= t('Your clearance agreement has been accepted');
+  }
+  
+  drupal_json(array('status' => TRUE, 'data' => $output));
+  exit();
 }
 
 /**
@@ -79,93 +90,203 @@ function student_clearance_pdf_agreement_ahah_callback() {
 function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
 
     if (isset($form_state['node'])) {
-        $node = $form_state['node'] + (array)$node;
+      $node = $form_state['node'] + (array)$node;
     }
     $form['#attributes'] = array('class' => 'editablefields-form-agreement-agree');
 
     $student_id = $form['#parameters'][2]->field_student[0][uid];
 
     $arg = (isset($student_id) && is_numeric(arg(1)) && arg(2) == 'clearance');
-
+    
     // if arg and the result of the view at student/agreement/pdf/student_id is not empty
     // and the string "TCPDF ERROR: Some data has already been output, can't send PDF file"
     // doesn't occur.
     if($arg) {
-				
-				// cache the form structure so we can have access to it at ahah callback
-        $form['#cache'] = TRUE;
-        $form['agreement_url'] = array(
-          '#type' => 'hidden',
-          '#value' => 'student/agreement/pdf/' . $student_id,
-        );
-        // form element to house the pdf file
-        $form['agreement_pdf_div'] = array(
+
+      // cache the form structure so we can have access to it at ahah callback
+      $form['#cache'] = TRUE;
+      $form['agreement_url'] = array(
+        '#type' => 'hidden',
+        '#value' => 'student/agreement/pdf/' . $student_id,
+      );
+      $form['student_id'] = array(
+        '#type' => 'hidden',
+        '#value' => $student_id,
+      );
+      // form element to house the pdf file
+      $form['agreement_pdf_div'] = array(
+        '#type' => 'markup',
+        '#value' => '<div class="agreement-ajax-result"></div>',
+      );
+      $form['agreement_pdf_div2'] = array(
+        '#prefix' => '<div class="agreement-ajax-result2">',
+        '#suffix' => '</div>'
+      );
+      /*$form['field_agreement_agree']['#ahah'] = array(
+        'path' => 'agreement/pdf/ahah',
+        //'wrapper' => 'agreement-ahah-result',
+        'event' => 'click',
+        //'method' => 'replace',
+        //'effect' => 'fade',
+      );*/
+      $form['agreement_pdf_ahah'] = array(
+        '#type' => 'markup',
+        '#value' => '<div id="agreement-ahah-result"></div>'
+      );
+      if($_POST['field_agreement_agree']['value']) {
+        $form['agreement_file'] = array(
           '#type' => 'markup',
-          '#value' => '<div class="agreement-ajax-result"></div>',
+          '#value' => $form['agreement_url']['#value']
         );
-        $form['agreement_pdf_div2'] = array(
-          '#prefix' => '<div class="agreement-ajax-result2">',
-          '#suffix' => '</div>'
-        );
-        /*$form['field_agreement_agree']['#ahah'] = array(
+      }
+      /*$ahah_binding = array(
+        "button" => false,
+        "keypress" => null,
+        'url'   => url('agreement/pdf/ahah'),
+        'event' => 'click',
+        'wrapper' => 'agreement-ahah-result',
+        'selector' => '.editablefields-form-agreement-agree input',
+        'effect'   => 'slide',
+        'method'   => 'replace',
+        'progress' => array('type' => 'throbber'),
+      );
+
+      drupal_add_js('misc/jquery.form.js');
+      drupal_add_js('misc/ahah.js');
+      drupal_add_js(array('ahah' => array('.editablefields-form-agreement-agree input' => $ahah_binding)), 'setting');*/
+
+      $form['student_clearance_agree_submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Submit'),
+        '#description' => t("By clicking this button, you agree to our institution's terms of use."),
+        '#submit' => array('student_clearance_agree_submit'),
+        '#ahah' => array(
           'path' => 'agreement/pdf/ahah',
-          //'wrapper' => 'agreement-ahah-result',
-          'event' => 'click',
-          //'method' => 'replace',
-          //'effect' => 'fade',
-        );*/
-        $form['agreement_pdf_ahah'] = array(
-          '#type' => 'markup',
-          '#value' => '<div id="agreement-ahah-result"></div>'
-        );
-				if($_POST['field_agreement_agree']['value']) {
-					$form['agreement_file'] = array(
-						'#type' => 'markup',
-						'#value' => $form['agreement_url']['#value']
-					);
-				}
-        /*$ahah_binding = array(
-          "button" => false,
-          "keypress" => null,
-          'url'   => url('agreement/pdf/ahah'),
-          'event' => 'click',
           'wrapper' => 'agreement-ahah-result',
-          'selector' => '.editablefields-form-agreement-agree input',
-          'effect'   => 'slide',
-          'method'   => 'replace',
-          'progress' => array('type' => 'throbber'),
+          'method' => 'replace',
+          'effect' => 'fade',
+        ),
+      );
+
+      //drupal_add_js - to add the js
+      drupal_add_js(drupal_get_path('module', 'student_clearance') .'/student_clearance.js');
+
+      // store retrieved data to be passed to js
+      $clearance_settings = array(
+        'agreement_url' => $form['agreement_url']['#value'],
+        'href_value' => t('Download generated PDF Agreement')
         );
 
-        drupal_add_js('misc/jquery.form.js');
-        drupal_add_js('misc/ahah.js');
-        drupal_add_js(array('ahah' => array('.editablefields-form-agreement-agree input' => $ahah_binding)), 'setting');*/
-
-        $form['student_clearance_agree_submit'] = array(
-          '#type' => 'submit',
-          '#value' => t('Submit'),
-          '#description' => t("By clicking this button, you agree to our institution's terms of use."),
-          '#submit' => array('student_clearance_agree_submit'),
-          '#ahah' => array(
-            'path' => 'agreement/pdf/ahah',
-            'wrapper' => 'agreement-ahah-result',
-            'method' => 'replace',
-            'effect' => 'fade',
-          ),
-        );
-
-        //drupal_add_js - to add the js
-        drupal_add_js(drupal_get_path('module', 'student_clearance') .'/student_clearance.js');
-
-        // store retrieved data to be passed to js
-        $clearance_settings = array(
-          'agreement_url' => $form['agreement_url']['#value'],
-          'href_value' => t('Download generated PDF Agreement')
-          );
-
-        drupal_add_js(array('student_clearance' => $clearance_settings), 'setting');
+      drupal_add_js(array('student_clearance' => $clearance_settings), 'setting');
+      
+      //$node = $form['#parameters'][2];
+      $view = views_get_view_result(views_get_current_view()->name, 'page');
+      
+      $url = url('user/' . arg(1) . '/' . arg(2) . '/' . $view[0]->nid . '/agreement/print');
+      drupal_add_js("function open_clearance() { window.open('$url', '". t('Clearance Agreement') ."', 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50'); }", 'inline');
+      $contents = '<a href="#" onclick="open_clearance();">'
+                 . uc_store_get_icon('file:print') .' '
+                 . t('Print clearance agreement.') .'</a>';
+      $output .= '<div class="order-pane">'. $contents .'</div>';
+    
+      $form['print_clearance_link'] = array(
+        '#type' => 'markup',
+        '#value' => $output
+      );
     }
     return $form;
+}
 
+/**
+ * Implements hook_theme
+ */ 
+function student_clearance_theme() {
+  return array(
+    'student_clearance' => array(
+      'template' => 'student_clearance', # template hook
+      'path' => drupal_get_path('module', 'student_clearance') .'/templates',
+      'arguments' => array('uid' => NULL, 'node' => NULL, 'op' => 'view', 'template' => 'agreement'),
+    ),
+  );
+}
+
+function student_clearance_agreement_view($uid, $node, $view = 'agreement') {
+  if($view == 'agreement') {
+    $output = theme('student_clearance', $uid, $node, 'print', 'agreement');
+    $output .= '<div align="right" style="margin-top: 1em; margin-right: 1em;"><input type="button" value="'. t('Print invoice') .'" onclick="window.print();" /> '
+              .'<input type="button" value="'. t('Close window') .'" onclick="window.close();" /></div>';
+    print $output;
+    exit();
+  }
+}
+
+function template_preprocess_student_clearance(&$variables) {
+  // Add template file suggestions, default to agreement template.
+  $cached_node = cache_get('clearance_agreement_node');
+  $node = $cached_node->data;
+  
+  //$output = preg_replace_callback("|\[token ([^ ]*) ([^]]*)\]|i", 'student_clearance_filter_tokens', $node->body);
+  $body = token_replace($node->body, 'global');
+  $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
+  
+  $variables['content'] = $output;
+  $variables['template_files'] = array(
+    'student_clearance-'. $variables['template'],
+  );
+}
+
+/**
+ * We are rewriting the token code because token and token_filter
+ * modules cannot handle object of type node which is within a node
+ * body i.e node->body tokens can't be replaced at the moment
+ */ 
+function student_clearance_filter_tokens($matches) {
+  $token = $matches[0];
+  //$type  = $matches[1]; // we don't need the type
+  $token_plain = $matches[1];
+  $cached_node = cache_get('clearance_agreement_node');
+  $node = $cached_node->data;
+  
+  $value = student_clearance_agreement_profile_items($node, $token_plain);
+  //$token = '[' . $token . ']';
+  
+  $output = str_replace($token, $value, $token);
+  
+  return $output;
+}
+
+/**
+ * Get profile values for token replacement
+ * 
+ * @todo Turn to first class objects to improve performance
+ */ 
+function student_clearance_agreement_profile_items($node, $token) {
+  $student_uid = $node->field_student[0]['uid'];
+  $student = student_new_student($student_uid);
+  $clearance_staff = $node->uid;
+  
+  $profile = content_profile_load('profile', $student_uid);
+  $student_profile = content_profile_load('student_profile', $student_uid);
+  $staff_profile = content_profile_load('staff_profile', $clearance_staff);
+  
+  $program_nid = $student_profile->field_profile_first_choice[0]['nid'];
+  $dept_nid = $student->get_department_nid($program_nid);
+  
+  $values  = array(
+    'field_profile_first_name-raw' => $profile->field_profile_first_name[0]['value'],
+    'field_profile_middle_name-raw' => $profile->field_profile_middle_name[0]['value'],
+    'field_profile_last_name-raw' => $profile->field_profile_last_name[0]['value'],
+    'programme' => $student->get_programme($program_nid),
+    'level' => $student_profile->field_profile_level_name[0]['value'],
+    'faculty' => $student->get_faculty($dept_nid),
+    'matric_number' => $student_profile->field_profile_matno[0]['value'],
+    'field_profile_signature-filefield-view' => $profile->profile_field_signature[0]['filepath']
+  );
+  foreach($values as $key => $value) {
+    if($key == $token) {
+      return $value;
+    }
+  }
 }
 
 /**
@@ -174,7 +295,6 @@ function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
 * @see student_clearance_form_editablefields_form_alter
 */
 function student_clearance_agree_submit($form, &$form_state) {
-
 	if($form_state['values']['field_agreement_agree']) {
 		//$form['field_agreement_agree']['#attributes'] = array('disabled' => 'disabled');
 		return;
@@ -199,18 +319,49 @@ function student_clearance_agreement_isset($node) {
 }
 
 /**
+ * Implements hook_views_pre_render
+ */ 
+function student_clearance_views_pre_render(&$view) {
+  $node = node_load($view->result[0]->nid);
+  //token_replace_multiple($node->body, array('node' => $node, 'global' => NULL));
+}
+
+/**
 * Implementation of hook_nodeapi
 *
 */
 function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
-	switch($op) {
+  switch($op) {
 		case 'prepare':
 			if(student_clearance_agreement_isset($node)) {
 				//$node->field_agreement_agree[0]['value'] = 1;
-				return;
 			}
-			break;
+      $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $node->body);
+      //token_replace($node->body, 'global');
+      return $output;
+    case 'alter':
+      $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $node->body);
+      //token_replace($node->body, 'global');
+      return $output;
+    case 'view':
+      cache_set('clearance_agreement_node', $node);
+      break;
 	}
+}
+
+/**
+ * Implements hook_preprocess_views_view
+ */ 
+function student_clearance_preprocess_views_view(&$vars) {
+}
+
+/**
+ * Implements hook_preprocess_node
+ */ 
+function student_clearance_preprocess_node(&$vars) {
+  $body = token_replace($vars['body'], 'global');
+  $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
+  $vars['body'] = $output;
 }
 
 /**
@@ -264,15 +415,3 @@ function todo_student_clearance_init() {
 		exit;
 	}
 }
-
-/**
- * Implementation of hook_file_download
- * 
- */
-function student_clearance_file_download($file) {
-	$arg = (arg(0) == 'student' && arg(1) == 'agreement' && arg(2) == 'pdf' && is_numeric(arg(3)));
-	if($arg) {
-		return array(drupal_set_header("Content-type: application/pdf"));
-	}
-}
-

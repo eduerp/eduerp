@@ -551,6 +551,23 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   
+  // original_amount
+  $data['fees_order']['original_amount'] = array(
+    'title' => t('Fees original amount'),
+    'help' => $order_products['fields']['original_amount']['description'],
+    'field' => array(
+      'handler' => 'uc_views_handler_field_money_amount',
+      'click sortable' => TRUE,
+      'float' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_float',
+    ),
+  );
+  
   return $data;
 }
 
@@ -660,6 +677,9 @@ function uc_eduerp_fees_views_handlers() {
         'parent' => 'views_handler_field'
       ),
       'uc_eduerp_fees_handler_field_college' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_original_amount' => array(
         'parent' => 'views_handler_field'
       ),
       'views_handler_filter_college' => array('parent' => 'views_handler_filter_many_to_one',),

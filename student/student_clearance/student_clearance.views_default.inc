@@ -31,6 +31,13 @@ function student_clearance_views_default_views() {
       'relationship' => 'none',
     ),
   ));
+  $handler->override_option('fields', array(
+    'body' => array(
+      'id' => 'body',
+      'table' => 'node_revisions',
+      'field' => 'body',
+    ),
+  ));
   $handler->override_option('filters', array(
     'type_1' => array(
       'operator' => 'in',
@@ -65,24 +72,105 @@ function student_clearance_views_default_views() {
     'comments' => 0,
   ));
   $handler = $view->new_display('page', 'Page', 'page_1');
+  $handler->override_option('relationships', array(
+    'field_student_uid' => array(
+      'label' => 'Student',
+      'required' => 1,
+      'delta' => -1,
+      'id' => 'field_student_uid',
+      'table' => 'node_data_field_student',
+      'field' => 'field_student_uid',
+      'override' => array(
+        'button' => 'Use default',
+      ),
+      'relationship' => 'none',
+    ),
+  ));
+  $handler->override_option('fields', array(
+    'body' => array(
+      'label' => 'Body',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'exclude' => 0,
+      'id' => 'body',
+      'table' => 'node_revisions',
+      'field' => 'body',
+      'override' => array(
+        'button' => 'Use default',
+      ),
+      'relationship' => 'none',
+    ),
+    'nid' => array(
+      'label' => 'Nid',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'link_to_node' => 0,
+      'exclude' => 0,
+      'id' => 'nid',
+      'table' => 'node',
+      'field' => 'nid',
+      'override' => array(
+        'button' => 'Use default',
+      ),
+      'relationship' => 'none',
+    ),
+  ));
   $handler->override_option('arguments', array(
-    'uid' => array(
+    'field_student_uid' => array(
       'default_action' => 'empty',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
       'title' => 'Student agreement',
-      'breadcrumb' => '',
+      'breadcrumb' => 'Student agreement',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
       'validate_type' => 'user',
       'validate_fail' => 'empty',
       'break_phrase' => 0,
       'not' => 0,
-      'id' => 'uid',
-      'table' => 'users',
-      'field' => 'uid',
+      'id' => 'field_student_uid',
+      'table' => 'node_data_field_student',
+      'field' => 'field_student_uid',
       'validate_user_argument_type' => 'either',
       'validate_user_roles' => array(
         '29' => 29,
@@ -103,6 +191,9 @@ function student_clearance_views_default_views() {
       'default_argument_user' => 0,
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
+        'clearance_agreement' => 0,
+        'student_clearance' => 0,
+        'student_profile' => 0,
         'product' => 0,
         'uc_school_product' => 0,
         'hostels' => 0,
@@ -113,7 +204,6 @@ function student_clearance_views_default_views() {
         'approval' => 0,
         'blocks' => 0,
         'book' => 0,
-        'clearance_agreement' => 0,
         'college' => 0,
         'course' => 0,
         'course_instance' => 0,
@@ -124,12 +214,19 @@ function student_clearance_views_default_views() {
         'rooms' => 0,
         'room_allocations' => 0,
         'room_reservations' => 0,
+        'school_fee_approved_instalments' => 0,
+        'school_fee_approved_scholarships' => 0,
+        'school_fee_items' => 0,
+        'school_fee_item_setup' => 0,
+        'school_fee_item_setup_details' => 0,
+        'school_fee_level_types' => 0,
+        'school_fee_nationality_types' => 0,
+        'school_fee_settings' => 0,
+        'school_fee_structure_classes' => 0,
         'staff_profile' => 0,
         'story' => 0,
-        'student_clearance' => 0,
         'student_gpa' => 0,
         'student_grades' => 0,
-        'student_profile' => 0,
         'student_program' => 0,
         'student_record' => 0,
       ),
@@ -145,6 +242,28 @@ function student_clearance_views_default_views() {
       'validate_argument_php' => '',
     ),
   ));
+  $handler->override_option('filters', array(
+    'type_1' => array(
+      'operator' => 'in',
+      'value' => array(
+        'clearance_agreement' => 'clearance_agreement',
+      ),
+      'group' => '0',
+      'exposed' => FALSE,
+      'expose' => array(
+        'operator' => FALSE,
+        'label' => '',
+      ),
+      'id' => 'type_1',
+      'table' => 'node',
+      'field' => 'type',
+      'relationship' => 'none',
+      'override' => array(
+        'button' => 'Use default',
+      ),
+    ),
+  ));
+  $handler->override_option('items_per_page', 1);
   $handler->override_option('path', 'user/%/clearance');
   $handler->override_option('menu', array(
     'type' => 'tab',
@@ -204,6 +323,8 @@ function student_clearance_views_default_views() {
       'relationship' => 'none',
     ),
   ));
+  $handler->override_option('empty', '');
+  $handler->override_option('items_per_page', 1);
   $handler->override_option('row_plugin', 'fields');
   $handler->override_option('row_options', array(
     'inline' => array(),
@@ -253,25 +374,66 @@ function student_clearance_views_default_views() {
       ),
       'relationship' => 'none',
     ),
+    'field_student_uid' => array(
+      'label' => '',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'link_class' => '',
+        'alt' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'link_to_node' => 0,
+      'label_type' => 'none',
+      'format' => 'default',
+      'multiple' => array(
+        'group' => TRUE,
+        'multiple_number' => '',
+        'multiple_from' => '',
+        'multiple_reversed' => FALSE,
+      ),
+      'exclude' => 0,
+      'id' => 'field_student_uid',
+      'table' => 'node_data_field_student',
+      'field' => 'field_student_uid',
+      'override' => array(
+        'button' => 'Use default',
+      ),
+      'relationship' => 'none',
+    ),
   ));
   $handler->override_option('arguments', array(
-    'uid' => array(
+    'field_student_uid' => array(
       'default_action' => 'empty',
       'style_plugin' => 'default_summary',
       'style_options' => array(),
       'wildcard' => 'all',
       'wildcard_substitution' => 'All',
       'title' => 'Student agreement',
-      'breadcrumb' => '',
+      'breadcrumb' => 'Student agreement',
       'default_argument_type' => 'fixed',
       'default_argument' => '',
       'validate_type' => 'user',
       'validate_fail' => 'empty',
       'break_phrase' => 0,
       'not' => 0,
-      'id' => 'uid',
-      'table' => 'users',
-      'field' => 'uid',
+      'id' => 'field_student_uid',
+      'table' => 'node_data_field_student',
+      'field' => 'field_student_uid',
       'validate_user_argument_type' => 'either',
       'validate_user_roles' => array(
         '29' => 29,
@@ -293,6 +455,8 @@ function student_clearance_views_default_views() {
       'default_argument_php' => '',
       'validate_argument_node_type' => array(
         'clearance_agreement' => 0,
+        'student_clearance' => 0,
+        'student_profile' => 0,
         'product' => 0,
         'uc_school_product' => 0,
         'hostels' => 0,
@@ -313,12 +477,19 @@ function student_clearance_views_default_views() {
         'rooms' => 0,
         'room_allocations' => 0,
         'room_reservations' => 0,
+        'school_fee_approved_instalments' => 0,
+        'school_fee_approved_scholarships' => 0,
+        'school_fee_items' => 0,
+        'school_fee_item_setup' => 0,
+        'school_fee_item_setup_details' => 0,
+        'school_fee_level_types' => 0,
+        'school_fee_nationality_types' => 0,
+        'school_fee_settings' => 0,
+        'school_fee_structure_classes' => 0,
         'staff_profile' => 0,
         'story' => 0,
-        'student_clearance' => 0,
         'student_gpa' => 0,
         'student_grades' => 0,
-        'student_profile' => 0,
         'student_program' => 0,
         'student_record' => 0,
       ),
@@ -375,6 +546,8 @@ function student_clearance_views_default_views() {
   $handler->override_option('default_font_size', '11');
   $handler->override_option('default_text_align', 'L');
   $handler->override_option('default_font_color', '000000');
+  $handler->override_option('default_text_hyphenate', 'none');
+  $handler->override_option('css_file', '');
 
   $views[$view->name] = $view;
 
