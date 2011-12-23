@@ -20,7 +20,7 @@
               <div style="text-transform:uppercase; color:#08941E"><h4><?php echo $institution_address ?></h4></div>
             </div>
             <div style="float:right; width:25%;border:solid 1px #EDF0F9;height:100%">
-              <div style="color:#D73627"><b><?php echo $invoice_number ?></b></div>
+              <div style="color:#D73627"><b>Invoice Number: <?php echo $invoice_number ?></b></div>
               <div style="text-transform:uppercase; text-align:center"><h3><?php echo $invoice_title ?></h3></div>
             </div>
           </div>
@@ -42,7 +42,7 @@
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
-                <td><?php echo $fees_order_date ?></td>
+                <td valign="middle" style="text-align:middle"><?php echo $fees_order_date ?></td>
               </tr>
               <tr>
                 <td>&nbsp;</td>
@@ -93,9 +93,9 @@
               ?>
               <tr>
                 <td>&nbsp;</td>
-                <td valign="middle"><b><?php echo $product->title ?></b></td>
+                <td valign="middle" style="text-align:middle"><b><?php echo $product->title ?></b></td>
                 <td>&nbsp;</td>
-                <td valign="middle"><b><?php echo uc_price($price_info, $context); ?></b></td>
+                <td valign="middle" style="text-align:middle"><b><?php echo uc_price($price_info, $context); ?></b></td>
               </tr>
               <?php } ?>
               <?php } ?>
@@ -109,7 +109,7 @@
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
-                <td>Total: <b><?php echo $order_total; ?></b></td>
+                <td valign="middle" style="text-align:middle">Total: <b><?php echo $order_total; ?></b></td>
               </tr>
               <tr>
                 <td>&nbsp;</td>

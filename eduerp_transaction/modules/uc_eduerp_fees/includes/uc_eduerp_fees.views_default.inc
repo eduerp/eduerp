@@ -2143,7 +2143,7 @@ $handler->override_option('filters', array(
     'relationship' => 'none',
   ),
   'programme' => array(
-    'operator' => '=',
+    'operator' => 'contains',
     'value' => '',
     'group' => '0',
     'exposed' => TRUE,
