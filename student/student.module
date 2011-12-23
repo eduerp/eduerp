@@ -511,7 +511,7 @@ function _perform_clearance($student_id) {
   $result = db_query($sql, $user_profile->profile_first_choice);
   $row = db_fetch_object($result);
 
-  $subject = 'University Application Approved (' . variable_get('site_name', '') . ')';
+  $subject = 'University Application Approved (' . variable_get('eduerp_institution_current', '') . ')';
 
   $body = '';
   if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
@@ -520,15 +520,17 @@ function _perform_clearance($student_id) {
     $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
   }
 
-  $body .= "Your application to enrol as a Student has been approved.\n\n";
+  $body .= "Your application to enrol as a Student in " . variable_get('eduerp_current_session', '') . " session has been approved.\n\n";
   $body .= "Your Programme is: {$row->field_programme_name_value}\n\n";
-  $body .= "You now have a Matriculation Number which is: {$user_profile->profile_matno}\n\n";
-  $body .= "Please note this carefully as you will need it to access the university systems.\n";
-  $body .= "In particular, you will need it as your new Username to login to the university computer system.\n";
-  $body .= "You should continue to use the Password you entered when you Registered.\n\n";
+  $body .= "You now have an Admission Number which is: {$user_profile->profile_matno}\n\n";
+  $body .= "Please note this carefully as you will need this admission number to access the university systems.\n";
+  $body .= "This admission number replaces your previous username that you used to login to the university system.\n";
+  $body .= "Your Password remains unchanged.\n\n";
   $body .= "Your university e-mail is: {$user_profile->university_email}\n";
-  $body .= "This requires the same password\n\n";
-  $body .= variable_get('site_name', '') . "\n";
+  $body .= "To access your e-mail go to " . variable_get('eduerp_zimbra_webmail_url', '') . "\n";
+  $body .= "To login to your university e-mail use the same username and password that you have been instructed to use to access the university system.\n\n";
+  $body .= "Please see " . variable_get('eduerp_student_guidlines_url', '') . " for guidlines.\n\n";
+  $body .= variable_get('eduerp_institution_current', '') . "\n";
 
   $message = drupal_mail('student', 'newmatnumber', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
   $message['subject'] = $subject;
