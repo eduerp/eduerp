@@ -1664,11 +1664,23 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   //$vars['late_registration_date'] = date('Y-m-d H:i', array_shift(array_unique($timeout)));
   $vars['late_registration_fee'] = $late_charges;
   $vars['fees_order_date'] = $date->format('j F Y');
+  
+  $bank_list = variable_get('eduerp_institution_bank_list', '');
+  $timeout = array_unique($timeout);
+  $future_date = 2145913199;
 
-  $vars['invoice_note'] = t("Pay this invoice at: Intercontinental Bank or Zenith Bank. Present this invoice number to pay at the bank. You must make this payment before @late_registration_date otherwise you will have to pay the late registration fee of NGN@late_registration_fee. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.", array('@late_registration_date' => $vars['late_registration_date'], '@late_registration_fee' => $vars['late_registration_fee']));
+  //$vars['invoice_note'] = t("Pay this invoice at: Intercontinental Bank or Zenith Bank. Present this invoice number to pay at the bank. You must make this payment before @late_registration_date otherwise you will have to pay the late registration fee of NGN@late_registration_fee. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.", array('@late_registration_date' => $vars['late_registration_date'], '@late_registration_fee' => $vars['late_registration_fee']));
+  $vars['invoice_note'] = t('Please pay this invoice at: @bank_list', array('@bank_list' => $bank_list));
+  if($timeout < $future_date) {
+    $late_registration_date_string = t('<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>', array('@late_registration_date' => $vars['late_registration_date']));
+    $late_registration_date_string .= t('<p>If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee.</p>');
+    $vars['invoice_note'] .= $late_registration_date_string;
+  }
+  $vars['invoice_note'] .= t('<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>');
+  $vars['invoive_note'] .= t('<p>An additional NGN 500 transaction charge must be paid when paying your fees.</p>');
+
   $vars['invoice_number'] = variable_get('uc_edupay_username', '') . '/' . $vars['order']->order_id;
 
-  // @todo Leave this for Alan to fix
   $vars['institution_name'] = variable_get('eduerp_institution_current', '');
   $vars['institution_address'] = variable_get('eduerp_institution_address', '');
   $vars['bank_account1'] = t('First bank Account Number: 123456789');

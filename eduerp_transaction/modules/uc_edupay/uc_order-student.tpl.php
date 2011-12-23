@@ -33,7 +33,7 @@
               <div><b><?php echo $user_label ?></b></div>
               <div style="width:100%">Name: <?php echo $fullnames ?></div>
               <div style="width:100%">Admission Number: <?php echo $matric_number ?></div>
-              <div style="width:100%">Programme: <?php echo $programme ?></div>
+              <div style="width:100%"><?php echo $programme ?></div>
             </div>
           </div>
           <div class="body-center" style="float:right; width:72%; border:solid 1px #D0D0D0;">
