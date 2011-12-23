@@ -171,7 +171,7 @@ function uc_eduerp_fees_views_data() {
   // programme field.
   $data['fees_order']['programme'] = array(
     'title' => t('Student Programme'), 
-    'help' => $order_products['fields']['nationality']['description'],
+    'help' => $order_products['fields']['programme']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -199,7 +199,7 @@ function uc_eduerp_fees_views_data() {
   // level_nane field.
   $data['fees_order']['level_name'] = array(
     'title' => t('Student Level'), 
-    'help' => $order_products['fields']['nationality']['description'],
+    'help' => $order_products['fields']['level_name']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -215,7 +215,7 @@ function uc_eduerp_fees_views_data() {
   // session field.
   $data['fees_order']['session'] = array(
     'title' => t('Academic Session'), 
-    'help' => $order_products['fields']['nationality']['description'],
+    'help' => $order_products['fields']['session']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -332,7 +332,7 @@ function uc_eduerp_fees_views_data() {
   // email field.
   $data['fees_order']['email'] = array(
     'title' => t('Student Order email'), 
-    'help' => $order_products['fields']['fullnames']['description'],
+    'help' => $order_products['fields']['email']['description'],
     'field' => array(
       'handler' => 'views_handler_field_user_mail',
       'click sortable' => TRUE,

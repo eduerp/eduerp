@@ -1466,6 +1466,38 @@ $handler->override_option('fields', array(
     ),
     'relationship' => 'none',
   ),
+  'level_name' => array(
+    'label' => 'Level',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'exclude' => 0,
+    'id' => 'level_name',
+    'table' => 'fees_order',
+    'field' => 'level_name',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
   'nationality' => array(
     'label' => 'Nationality',
     'alter' => array(
@@ -2234,6 +2266,7 @@ foreach($view as $key => $value) {
 ?>');
 $handler->override_option('footer_format', '3');
 $handler->override_option('footer_empty', 0);
+$handler->override_option('items_per_page', 100);
 $handler->override_option('path', 'admin/build/fees');
 $handler->override_option('menu', array(
   'type' => 'tab',
