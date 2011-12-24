@@ -1231,13 +1231,14 @@ function uc_edupay_token_values($type, $object = NULL) {
         }
         $fullnames[] = $value['fullnames'];
         $timeout[] = $value['timeout'];
-        if($value['title'] == 'Late Registration Charges') {
-          $late_charges = $value['amount'];
-        }
       }
+
+      $lateRegInfo = get_late_registration_info();
+      $late_charges = $lateRegInfo['late_reg_amount'];
+
       $values['programme'] = array_shift(array_unique($programme));
       $values['fullnames'] = array_shift(array_unique($fullnames));
-      $values['late_registration_date'] = array_shift(array_unique($timeout));
+      $values['late_registration_date'] = format_date(array_shift(array_unique($timeout)), 'custom', 'Y-m-d H:i');
       $values['late_registration_fee'] = $late_charges;
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
       $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
@@ -1641,7 +1642,7 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $invoice_vars = array();
   $date = new DateTime($vars['order_date_created']);
 
-  $student_uid = $vars['order_id'];
+  $student_uid = $vars['user_id'];
   $student_profile = content_profile_load('student_profile', $student_uid);
 
   foreach($vars['order']->data as $key => $value) {
@@ -1650,24 +1651,24 @@ function uc_edupay_preprocess_uc_order(&$vars) {
     }
     $fullnames[] = $value['fullnames'];
     $timeout[] = $value['timeout'];
-    if($value['title'] == 'Late Registration Charges') {
-      $late_charges = $value['amount'];
-    }
   }
+
+  $lateRegInfo = get_late_registration_info();
+  $late_charges = $lateRegInfo['late_reg_amount'];
 
   // fees related variables
   // some values can be gotten through token_get_values($type, $object, FALSE, $options);
   $vars['matric_number'] = $student_profile->field_profile_matno[0]['value'];
   $vars['programme'] = array_shift(array_unique($programme));
   $vars['fullnames'] = array_shift(array_unique($fullnames));
-  $vars['late_registration_date'] = format_date(array_shift(array_unique($timeout)), 'custom', 'Y-m-d H:i');
-  //$vars['late_registration_date'] = date('Y-m-d H:i', array_shift(array_unique($timeout)));
+  $timeout = array_shift(array_unique($timeout));
+  $vars['late_registration_date'] = format_date($timeout, 'custom', 'Y-m-d H:i');
+  //$vars['late_registration_date'] = date('Y-m-d H:i', $timeout);
   $vars['late_registration_fee'] = $late_charges;
   $vars['fees_order_date'] = $date->format('j F Y');
 
   $bank_list = variable_get('eduerp_institution_bank_list', '');
-  $timeout = array_unique($timeout);
-dsm(array('timeout' => $timeout, 'late_registration_date' => $vars['late_registration_date'], 'vars' => $vars, 'late_charges' => $late_charges));//ab
+dsm(array('timeout' => $timeout, 'late_registration_date' => $vars['late_registration_date'], 'vars' => $vars, 'late_charges' => $late_charges, 'student_profile' => $student_profile));//ab
   $future_date = 2145913199;
 
   $vars['invoice_note'] = t('Please pay this invoice at: @bank_list', array('@bank_list' => $bank_list));
@@ -1693,4 +1694,3 @@ dsm(array('timeout' => $timeout, 'late_registration_date' => $vars['late_registr
   $vars['invoice_title'] = t('Invoice');
 
 }
-
