@@ -1238,7 +1238,7 @@ function uc_edupay_token_values($type, $object = NULL) {
 
       $values['programme'] = array_shift(array_unique($programme));
       $values['fullnames'] = array_shift(array_unique($fullnames));
-      $values['late_registration_date'] = [$vars['late_registration_date'] = date('D jS M Y', array_shift(array_unique($timeout)));
+      $values['late_registration_date'] = $vars['late_registration_date'] = date('D jS M Y', array_shift(array_unique($timeout)));
       $values['late_registration_fee'] = $late_charges;
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
       $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
