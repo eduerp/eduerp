@@ -1667,7 +1667,7 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $vars['fees_order_date'] = $date->format('j F Y');
 
   $bank_list = variable_get('eduerp_institution_bank_list', '');
-dsm(array('late_registration_date' => $vars['late_registration_date'], 'vars' => $vars));//ab
+
   $future_date = 2145913199;
 
   $vars['invoice_note'] = t('Please pay this invoice at: @bank_list', array('@bank_list' => $bank_list));
@@ -1679,7 +1679,7 @@ dsm(array('late_registration_date' => $vars['late_registration_date'], 'vars' =>
     $vars['invoice_note'] .= $late_registration_date_string;
   }
   $vars['invoice_note'] .= t('<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>');
-  $vars['invoice_note'] .= t('<p>An additional NGN 500 transaction charge must be paid when paying your fees.</p>');
+  $vars['invoice_note'] .= t('<p>An additional NGN500 transaction charge must be paid when paying your fees.</p>');
 
   $vars['invoice_number'] = variable_get('uc_edupay_username', '') . '/' . $vars['order']->order_id;
 
