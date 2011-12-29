@@ -919,7 +919,8 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
       }
     }
     // Allow external modules to translate allowed values list.
-    drupal_alter('content_allowed_values', $allowed_values[$cid], $field);
+    // Don't call this as it raises warnings (Parameter 2 ($field?) expected to be a reference) and is not necessary...
+    //drupal_alter('content_allowed_values', $allowed_values[$cid], $field);
   }
   return $allowed_values[$cid];
 }
