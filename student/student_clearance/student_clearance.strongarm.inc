@@ -173,6 +173,39 @@ function student_clearance_strongarm() {
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'eduerp_agreement';
+  $strongarm->value = 'USMANU DANFODIYO UNIVERSITY
+P.M.B. 2346, SOKOTO, NIGERIA
+OFFICE OF THE REGISTRAR
+
+Serial no:
+Date: [site-date-small]
+Name of Candidate: [field_profile_first_name-raw] [field_profile_middle_name-raw] [field_profile_last_name-raw]
+
+2011/2012 SESSION CONFIRMATION OF ADMISSION
+
+This is to confirm that the above named has been offered Provisional admission into the Usmanu Danfodiyo University, Sokoto in 2011/2012 Academic Session.
+
+The Candidate has been admitted to read: [programme]  [level] in the Faculty/College of [faculty]. His/her admission number is [matric_number]. Faculties/Departments are requested to note and register the Candidate accordingly subject to the candidate\'s acceptance of the undertaking below.
+
+Thank you
+[Staff User Signature]
+For: Registrar
+
+UNDERTAKING
+I [field_profile_first_name-raw] [field_profile_middle_name-raw] [field_profile_last_name-raw] the undersigned, hereby accept the provisional admission pending the verification of my entry qualifications by the University within the duration of the study. I further accept that this offer may be withdrawn by the University within the duration of the study if it is discovered that I have not satisfied the entry requirements or that my entry qualification is otherwise than as presented at the time of registration.
+
+To this end, I undertake to bring certified proof(s) of my qualification (e.g. SSCE, IJMB, NCE, etc.) from awarding examination bodies within one year.
+
+Dated this _____ day of ____________20_________ [site-date-small] 
+
+[field_profile_signature-filefield-view]
+Signature of Student.';
+
+  $export['eduerp_agreement'] = $strongarm;
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'form_build_id_clearance_agreement';
   $strongarm->value = 'form-e5f9748421785c9f70d7b24b11f9d74a';
 
