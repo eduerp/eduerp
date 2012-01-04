@@ -439,8 +439,11 @@ function _staff_ajax() {
 */
 function _staff_ahah_render($fields, $name) {
 
-  drupal_alter('form', $fields, array(), 'staff_course_form');
-  //$name = $fromHostel ? "block_nid" : "staff-course-assign-form1";
+  $form_state = array();
+  $fields['__drupal_alter_by_ref'] = array(&$form_state); // Special pass by reference functionality (will avoid warnings on the empty array being passed by value using call_user_func_array())
+  drupal_alter('form', $fields, 'staff_course_form'); // Note as 'staff_course_form' does not exist, this may do nothing in any case!
+  //drupal_alter('form', $fields, array(), 'staff_course_form');
+
   $form_state = array('submitted' => FALSE,'#values'=>$_POST);
   $form_build_id = $_POST['form_build_id'];
   // Add the new element to the stored form. Without adding the element to the
@@ -3010,7 +3013,7 @@ function course_levels() {
 
 
 function semesters() {
-  foreach (range(1, 3) as $number) {
+  foreach (range(1, 2) as $number) {
     $semester[$number] = $number;
   }
   return $semester;
@@ -6612,7 +6615,7 @@ function get_verify_required_courses_for_programme_form() {
 
   $form['semester'] = array(
     '#type' => 'select',
-    '#options' => array(1=>'1', 2=>'2', 3=>'3'),
+    '#options' => array(1=>'1', 2=>'2'),
     '#title' => 'Semester',
     '#default_value'=>variable_get('eduerp_current_semester', ''),
     '#required' => TRUE,

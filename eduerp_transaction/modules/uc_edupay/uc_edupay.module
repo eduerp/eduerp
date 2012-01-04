@@ -1171,7 +1171,7 @@ function uc_edupay_fees_order_field_info() {
     'precision' => '16',
     'scale' => '5',
   );
-  
+
   return $field;
 }
 
@@ -1231,13 +1231,14 @@ function uc_edupay_token_values($type, $object = NULL) {
         }
         $fullnames[] = $value['fullnames'];
         $timeout[] = $value['timeout'];
-        if($value['title'] == 'Late Registration Charges') {
-          $late_charges = $value['amount'];
-        }
       }
+
+      $lateRegInfo = get_late_registration_info();
+      $late_charges = $lateRegInfo['late_reg_amount'];
+
       $values['programme'] = array_shift(array_unique($programme));
       $values['fullnames'] = array_shift(array_unique($fullnames));
-      $values['late_registration_date'] = array_shift(array_unique($timeout));
+      $values['late_registration_date'] = $vars['late_registration_date'] = date('D jS M Y', array_shift(array_unique($timeout)));
       $values['late_registration_fee'] = $late_charges;
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
       $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
@@ -1640,8 +1641,8 @@ function uc_edupay_theme_registry_alter(&$theme_registry) {
 function uc_edupay_preprocess_uc_order(&$vars) {
   $invoice_vars = array();
   $date = new DateTime($vars['order_date_created']);
-  
-  $student_uid = $vars['order_id'];
+
+  $student_uid = $vars['user_id'];
   $student_profile = content_profile_load('student_profile', $student_uid);
 
   foreach($vars['order']->data as $key => $value) {
@@ -1650,34 +1651,35 @@ function uc_edupay_preprocess_uc_order(&$vars) {
     }
     $fullnames[] = $value['fullnames'];
     $timeout[] = $value['timeout'];
-    if($value['title'] == 'Late Registration Charges') {
-      $late_charges = $value['amount'];
-    }
   }
+
+  $lateRegInfo = get_late_registration_info();
+  $late_charges = $lateRegInfo['late_reg_amount'];
 
   // fees related variables
   // some values can be gotten through token_get_values($type, $object, FALSE, $options);
   $vars['matric_number'] = $student_profile->field_profile_matno[0]['value'];
   $vars['programme'] = array_shift(array_unique($programme));
   $vars['fullnames'] = array_shift(array_unique($fullnames));
-  $vars['late_registration_date'] = format_date(array_shift(array_unique($timeout)), 'custom', 'Y-m-d H:i');
-  //$vars['late_registration_date'] = date('Y-m-d H:i', array_shift(array_unique($timeout)));
+  $timeout = array_shift(array_unique($timeout));
+  $vars['late_registration_date'] = date('D jS M Y', $timeout);
   $vars['late_registration_fee'] = $late_charges;
   $vars['fees_order_date'] = $date->format('j F Y');
-  
+
   $bank_list = variable_get('eduerp_institution_bank_list', '');
-  $timeout = array_unique($timeout);
+
   $future_date = 2145913199;
 
-  //$vars['invoice_note'] = t("Pay this invoice at: Intercontinental Bank or Zenith Bank. Present this invoice number to pay at the bank. You must make this payment before @late_registration_date otherwise you will have to pay the late registration fee of NGN@late_registration_fee. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.", array('@late_registration_date' => $vars['late_registration_date'], '@late_registration_fee' => $vars['late_registration_fee']));
   $vars['invoice_note'] = t('Please pay this invoice at: @bank_list', array('@bank_list' => $bank_list));
+  $vars['invoice_note'] .= t('<p>Present this invoice or provide your invoice number to pay at the bank.</p>');
+
   if($timeout < $future_date) {
     $late_registration_date_string = t('<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>', array('@late_registration_date' => $vars['late_registration_date']));
     $late_registration_date_string .= t('<p>If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee.</p>');
     $vars['invoice_note'] .= $late_registration_date_string;
   }
   $vars['invoice_note'] .= t('<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>');
-  $vars['invoive_note'] .= t('<p>An additional NGN 500 transaction charge must be paid when paying your fees.</p>');
+  $vars['invoice_note'] .= t('<p>An additional NGN500 transaction charge must be paid when paying your fees.</p>');
 
   $vars['invoice_number'] = variable_get('uc_edupay_username', '') . '/' . $vars['order']->order_id;
 
@@ -1691,4 +1693,3 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $vars['invoice_title'] = t('Invoice');
 
 }
-
