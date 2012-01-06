@@ -7927,7 +7927,13 @@ function is_fee_item_existing($item, $byName=false, $forEditNID=0){
 
 
 function is_fee_setup_existing($item, $sessionName, $levelName='-1'){
-
+  //first update all null values
+  $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_program_nid_value = 0 WHERE field_fee_setup_program_nid_value IS NULL ";
+  db_query($sql);
+  
+  $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_level_name_value = 0 WHERE field_fee_setup_level_name_value IS NULL ";
+  db_query($sql);
+  
   //$sql = "SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ";
 
   $sql = "SELECT nid FROM {content_type_school_fee_item_setup} WHERE nid=%d AND field_fee_setup_session_value='%s' ";
@@ -7944,7 +7950,13 @@ function is_fee_setup_existing($item, $sessionName, $levelName='-1'){
 function is_fee_setup_combination_existing($programNID, $sessionName, $levelName){
 
   //$sql = "SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' ";
-
+  //first update all null values
+  $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_program_nid_value = 0 WHERE field_fee_setup_program_nid_value IS NULL ";
+  db_query($sql);
+  
+  $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_level_name_value = 0 WHERE field_fee_setup_level_name_value IS NULL ";
+  db_query($sql);
+  
   $sql = "SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=%d) AND 
   field_fee_setup_session_value='%s'  AND 
   (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value='%s' ) ";
@@ -8618,7 +8630,8 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
 
 function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) {
   $values = $state['values'];
-  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) ? true : false;
 
   switch(trim(strtolower(strtoupper($values['op'])))){
 
@@ -8663,8 +8676,8 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
 
 
 function staff_school_fees_create_modify_fee_setup3_form() {
-  
-  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) ? true : false;
   //display the list of all available fee items
   //get fee items
   $feeItems = get_school_fee_items();
@@ -8854,8 +8867,8 @@ function staff_school_fees_create_modify_fee_setup3_form() {
 
 //! is_numeric($values[$k.'txt'])
 function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state) {
-  
-  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) ? true : false;
 
   $values = $state['values'];
   //echo "<pre>";
@@ -8951,58 +8964,7 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
 
         }
        }
-    /*}
-    else{ //validate level-specific
-      $slID = '00';
-      foreach($studentNationalities as $snID => $snName){
-           foreach($feeItems as $k => $v) {
-             $famount = 0;
-             $iamount = 0;
-
-             //$feeBlock[$slID][$snID] = false;
-
-             if((empty($values[$slID ."-". $snID ."-". $k .'-full_amount']) || ! preg_match("/^[0-9]{1,9}$/", $values[$slID ."-". $snID ."-". $k .'-full_amount'])) && trim($values[$slID ."-". $snID ."-". $k .'-full_amount']) != 'N/A'){
-               form_set_error($slID ."-". $snID ."-". $k .'-full_amount', Error_Types(107));
-             }
-             else{
-               $famount = $values[$slID ."-". $snID ."-". $k .'-full_amount'];
-             }
-
-             if((empty($values[$slID ."-". $snID ."-". $k .'-instalment1_amount']) || ! preg_match("/^[0-9]{1,9}$/", $values[$slID ."-". $snID ."-". $k .'-instalment1_amount'])) && trim($values[$slID ."-". $snID ."-". $k .'-instalment1_amount']) != 'N/A'){
-               form_set_error($slID ."-". $snID ."-". $k .'-instalment1_amount', Error_Types(107));
-             }
-             else{
-               $iamount = $values[$slID ."-". $snID ."-". $k .'-instalment1_amount'];
-             }
-
-             //make sure for every first instalment specified there is a corresponding full amount
-             if(is_numeric($iamount) && ! is_numeric($famount)){
-               form_set_error($slID ."-". $snID ."-". $k .'-full_amount', Error_Types(165));
-             }
-
-             //make sure if first instalment is specified that it is less than total amount
-             if(is_numeric($iamount) && is_numeric($famount) && $famount <= $iamount){
-               form_set_error($slID ."-". $snID ."-". $k .'-instalment1_amount', Error_Types(164));
-
-             }
-
-             //make sure that value exists for at least one fee item in all groups
-             if(is_numeric($famount) && $famount > 0){
-              $feeBlock[$slID][$snID] = true;
-             }
-
-             if(is_numeric($famount)){
-               //if(! isset($_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID])) $_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID] = 0;
-               if(! isset($totalFeeBlock[$slID][$snID])) $totalFeeBlock[$slID][$snID] = 0;
-               //get the totals
-               //$_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID] += $famount;
-               $totalFeeBlock[$slID][$snID] += $famount;
-             }
-           }
-
-        }
-    */
-
+       
       $_SESSION['eduerp_fee_setup']['totalAmount'] = $totalFeeBlock;
 
       //make sure that amount was entered for at least one Fee Item in each Fee Block
@@ -9051,40 +9013,8 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
         }
       }
     }
-  /*}
-  else{ //store level-specific data
-    $slID = '00';
-      foreach($studentNationalities as $snID => $snName){
-        foreach($feeItems as $k => $v) {
-          if(isset($values[$slID ."-". $snID ."-". $k . '-full_amount'])){// || $values[$k.'txt'] == '0'
-            $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] = $values[$slID ."-". $snID ."-". $k .'-full_amount'];
-          }
-          else {
-            $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] = 'N/A';
-          }
-
-
-          if(isset($values[$slID ."-". $snID ."-". $k .'-instalment1_amount'])){// || $values[$k.'txt'] == '0'
-            $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'] = $values[$slID ."-". $snID ."-". $k .'-instalment1_amount'];
-          }
-          else {
-            $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'] = 'N/A';
-          }
-
-          //store values for instalment2
-          if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount']) && is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'])){
-            $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] - $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
-          }
-	      else{
-	        $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'] = 'N/A';
-
-	      }
-
-        }
-      }
   
-  } 
-  */
+  
   
 }
 
@@ -9154,7 +9084,10 @@ function staff_school_fees_create_modify_fee_setup4_form() {
 function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state) {
    $values = $state['values'];
   //make sure that the combination is not existing
-  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $programNID = is_numeric($_SESSION['eduerp_fee_setup']['programme_nid']) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
+  $academicLevel = is_numeric($_SESSION['eduerp_fee_setup']['academic_level_name']) ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : 0;
+      
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevel)) ? true : false;
   switch(trim(strtolower(strtoupper($values['op'])))){
     case 'cancel':
       unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup'] = null;
@@ -9163,8 +9096,6 @@ function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state
       break;
     
     case 'submit':
-      $programNID = is_numeric($_SESSION['eduerp_fee_setup']['programme_nid']) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
-      $academicLevel = is_numeric($_SESSION['eduerp_fee_setup']['academic_level_name']) ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : 0;
       
       //echo $programNID;
       //drupal_set_message('prog is '. $programNID .'acad is '. $academicLevel);
