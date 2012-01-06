@@ -806,6 +806,7 @@ function _uc_edupay_process_order_request_basic(&$order) {
  */
 function _uc_edupay_process_order_request($order) {
   global $user;
+  global $base_url;
 
   $order->products = _uc_edupay_fees_order_items($order);
   $products = $order->products;
@@ -842,6 +843,8 @@ function _uc_edupay_process_order_request($order) {
         ),
       );
 
+      $callback_url = $base_url . '/edupay/callback';
+
       $callback_data = array(
         'uid' => (int)$product['uid']
       );
@@ -857,12 +860,12 @@ function _uc_edupay_process_order_request($order) {
   }
   $order_parm['total_amount'] = $total_amount;
 
-dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));//ab
+dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
 if (FALSE) {//ab
 //ab  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
-    $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_data' => $callback_data));
+    $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
 
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
