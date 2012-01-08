@@ -873,6 +873,8 @@ dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_u
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 
     if ($result->code != 200) {
+$u = variable_get('uc_edupay_transaction_url', '');//ab
+dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
       drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
 
       db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
