@@ -870,6 +870,7 @@ dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_u
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
+$headers['Authorization'] = 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':edupaydatasphir');//ab hardcode non-md5 password for test
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 
     if ($result->code != 200) {
