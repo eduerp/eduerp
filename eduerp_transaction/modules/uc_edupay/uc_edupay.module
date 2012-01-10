@@ -823,7 +823,7 @@ function _uc_edupay_process_order_request($order) {
       $order_parm = array(
         'order_id' => (int)$product['order_id'],
         'transaction_token' => $product['transaction_token'],
-        'fullnames' => $product['fullnames'],
+        'full_name' => $product['fullnames'],
         'matriculation_number' => $user->name,
         'total_amount' => 0.0,
         'currency' => 'NGN',
@@ -1178,6 +1178,18 @@ function uc_edupay_fees_order_field_info() {
     'precision' => '16',
     'scale' => '5',
   );
+  $field['scholarship_type'] = array(
+    'description' => t("The type of the Student's Scholarship"),
+    'type' => 'varchar',
+    'length' => '60',
+    'not null' => FALSE,
+  );
+  $field['sponsor'] = array(
+    'description' => t("The Student's Scholarship Sponsor"),
+    'type' => 'varchar',
+    'length' => '60',
+    'not null' => FALSE,
+  );
 
   return $field;
 }
@@ -1215,6 +1227,12 @@ function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_fie
           break;
          case 'original_amount':
           $fields[$key] = $data['original_amount'];
+          break;
+         case 'scholarship_type':
+          $fields[$key] = $data['scholarship_type'];
+          break;
+         case 'sponsor':
+          $fields[$key] = $data['sponsor'];
           break;
       }
     }
@@ -1515,6 +1533,8 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship' => $value['data']['has_scholarship'],
         'transaction_token' => $value['data']['transaction_token'],
         'original_amount' => $value['data']['original_amount'],
+        'scholarship_type' => $value['data']['scholarship_type'],
+        'sponsor' => $value['data']['sponsor'],
       );
       $all[] = $nid[$key];
     }
@@ -1541,6 +1561,8 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship' => '2',
         'transaction_token' => $value['data']['transaction_token'],
         'original_amount' => $value['data']['original_amount'],
+        'scholarship_type' => $value['data']['scholarship_type'],
+        'sponsor' => $value['data']['sponsor'],
       );
       // @todo: go through drupal_alter once we have a hook of this function
 
