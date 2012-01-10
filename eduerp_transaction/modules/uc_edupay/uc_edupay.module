@@ -821,7 +821,7 @@ function _uc_edupay_process_order_request($order) {
 
     if ($first) {
       $order_parm = array(
-        'order_id' => (int)$product['order_id'],
+        'order_id' => $product['order_id'],
         'transaction_token' => $product['transaction_token'],
         'full_name' => $product['fullnames'],
         'matriculation_number' => $user->name,
@@ -862,8 +862,8 @@ function _uc_edupay_process_order_request($order) {
   $order_parm['total_amount'] = $total_amount;
 
 dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-if (FALSE) {//ab{}
-//ab}  if ($total_amount > 0.0) {
+//if (FALSE) {//ab}
+  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
     $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
