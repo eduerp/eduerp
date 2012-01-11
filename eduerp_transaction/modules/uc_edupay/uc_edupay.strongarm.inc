@@ -92,7 +92,7 @@ function uc_edupay_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'uc_msg_order_logged_in';
-  $strongarm->value = 'Your Pay Fee process is now completed on this system. Your invoice has been sent to your e-mail address [order-email]. You can also print a copy of your invoice by <?php
+  $strongarm->value = '<p>Your Pay Fee process is now completed on this system. Your invoice has been sent to your e-mail address [order-email]. You can also print a copy of your invoice by <?php
 
 $url = url(\'user/\' . [order-uid] . \'/order/\' . [order-id] . \'/invoice/print\');
     drupal_add_js("function open_invoice() { window.open(\'$url\', \'". t(\'Invoice\') ."\', \'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50\'); }", \'inline\');
@@ -102,19 +102,26 @@ $url = url(\'user/\' . [order-uid] . \'/order/\' . [order-id] . \'/invoice/print
     $output .= \'<div class="order-pane">\'. $contents .\'</div>\';
     print $output;
 
-?>.
+?>.</p>
 
-You must proceed to any of the following banks to pay your invoice: Intercontinental Bank or Zenith Bank.
+<p>You must proceed to any of the following banks to pay your invoice: Intercontinental Bank or Zenith Bank.</p>
 
-You must present the invoice or provide your invoice number ([invoice-number]) to pay at the bank.
+<p>You must present the invoice or provide your invoice number ([invoice-number]) to pay at the bank.</p>
 
-Payment must be made on or before [late_registration_date]. The bank cannot accept payment after that date.
+<?php
+if([late_registration_date] < 2145913199) {
+$content = t("<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>", array(\'@late_registration_date\' => [late_registration_date]));
 
-If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee (NGN [late_registration_fee]).
+$content .= t("<p>If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee (NGN @late_registration_fee).</p>", array(\'@late_registration_fee\' => [late_registration_fee]));
 
-After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).
+print $content;
+}
+?>
 
-Please note an additional NGN500 transaction charge must be paid when paying your fees.';
+<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>
+
+<p>Please note an additional NGN500 transaction charge must be paid when paying your fees.</p>';
+
   $strongarms['uc_msg_order_logged_in'] = $strongarm;
 
   $strongarm = new stdClass;
