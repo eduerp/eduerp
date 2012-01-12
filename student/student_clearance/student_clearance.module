@@ -97,6 +97,7 @@ function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
     $student_id = $form['#parameters'][2]->field_student[0][uid];
 
     $arg = (isset($student_id) && is_numeric(arg(1)) && arg(2) == 'clearance');
+    if (!empty($form['student_clearance_agree_submit'])) $arg = FALSE;
 
 $arg1 = arg(1);//ab
 $arg2 = arg(2);//ab
