@@ -193,7 +193,6 @@ function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
       $result = db_query($sql, arg(1));
       $row = db_fetch_object($result);
 
-dsm(array('nod' => $row->nid));//ab
       $url = url('user/' . arg(1) . '/' . arg(2) . '/' . $row->nid . '/agreement/print');
       drupal_add_js("function open_clearance() { window.open('$url', '". t('Clearance Agreement') ."', 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50'); }", 'inline');
 //      $contents = '<a href="#" onclick="open_clearance();">'
