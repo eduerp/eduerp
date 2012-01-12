@@ -49,7 +49,7 @@ function student_clearance_pdf_agreement_ahah_callback() {
 
   // Step #5.
   drupal_process_form($form_id, $form, $form_state);
-	
+
   // Step #6 and #7 and #8. Rebuilding the form is not needed because we need the form values to be set. Leaving
 	// it will clear the $_POST data
   //$form = drupal_rebuild_form($form_id, $form_state, $args, $form_build_id);
@@ -59,13 +59,13 @@ function student_clearance_pdf_agreement_ahah_callback() {
 	$terms_agree = $node->field_agreement_agree[0]['value'];
 	node_invoke_nodeapi($node, 'prepare', $node->body, $terms_agree);
 	node_save($node);
-	
+
 	$form['field_agreement_agree']['#disabled'] = TRUE;
-	
+
   $form['agreement_pdf_ahah']['#value'] = (isset($_POST['agreement_url'])) ? $_POST['agreement_url'] : array(); // we use post because $form_state is proving difficult
-	
+
   //unset($agreement_form['#prefix'], $agreement_form['#suffix']); // Prevent duplicate wrappers.
-	
+
 	if(!isset($terms_agree)) {
 		$output = t('You need to accept the terms');
 	}else {
@@ -73,7 +73,7 @@ function student_clearance_pdf_agreement_ahah_callback() {
     //$output .= l('Download PDF', file_directory_path() . '/agreement' . '-' . $form['student_id']['#value'] . '.pdf', array('absolute' => TRUE));
     $output .= t('Your clearance agreement has been accepted');
   }
-  
+
   drupal_json(array('status' => TRUE, 'data' => $output));
   exit();
 }
@@ -88,6 +88,7 @@ function student_clearance_pdf_agreement_ahah_callback() {
  * @todo Add more intelligence to the pdf processing
  */
 function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
+dsm(array('form' => $form));
 
     if (isset($form_state['node'])) {
       $node = $form_state['node'] + (array)$node;
@@ -97,7 +98,7 @@ function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
     $student_id = $form['#parameters'][2]->field_student[0][uid];
 
     $arg = (isset($student_id) && is_numeric(arg(1)) && arg(2) == 'clearance');
-    
+
     // if arg and the result of the view at student/agreement/pdf/student_id is not empty
     // and the string "TCPDF ERROR: Some data has already been output, can't send PDF file"
     // doesn't occur.
@@ -178,17 +179,17 @@ function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
         );
 
       drupal_add_js(array('student_clearance' => $clearance_settings), 'setting');
-      
+
       //$node = $form['#parameters'][2];
       $view = views_get_view_result(views_get_current_view()->name, 'page');
-      
+
       $url = url('user/' . arg(1) . '/' . arg(2) . '/' . $view[0]->nid . '/agreement/print');
       drupal_add_js("function open_clearance() { window.open('$url', '". t('Clearance Agreement') ."', 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50'); }", 'inline');
       $contents = '<a href="#" onclick="open_clearance();">'
                  . uc_store_get_icon('file:print') .' '
                  . t('Print clearance agreement.') .'</a>';
       $output .= '<div class="order-pane">'. $contents .'</div>';
-    
+
       $form['print_clearance_link'] = array(
         '#type' => 'markup',
         '#value' => $output
@@ -199,7 +200,7 @@ function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
 
 /**
  * Implements hook_theme
- */ 
+ */
 function student_clearance_theme() {
   return array(
     'student_clearance' => array(
@@ -224,11 +225,11 @@ function template_preprocess_student_clearance(&$variables) {
   // Add template file suggestions, default to agreement template.
   $cached_node = cache_get('clearance_agreement_node');
   $node = $cached_node->data;
-  
+
   //$output = preg_replace_callback("|\[token ([^ ]*) ([^]]*)\]|i", 'student_clearance_filter_tokens', $node->body);
   $body = token_replace($node->body, 'global');
   $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
-  
+
   $variables['content'] = $output;
   $variables['template_files'] = array(
     'student_clearance-'. $variables['template'],
@@ -239,39 +240,39 @@ function template_preprocess_student_clearance(&$variables) {
  * We are rewriting the token code because token and token_filter
  * modules cannot handle object of type node which is within a node
  * body i.e node->body tokens can't be replaced at the moment
- */ 
+ */
 function student_clearance_filter_tokens($matches) {
   $token = $matches[0];
   //$type  = $matches[1]; // we don't need the type
   $token_plain = $matches[1];
   $cached_node = cache_get('clearance_agreement_node');
   $node = $cached_node->data;
-  
+
   $value = student_clearance_agreement_profile_items($node, $token_plain);
   //$token = '[' . $token . ']';
-  
+
   $output = str_replace($token, $value, $token);
-  
+
   return $output;
 }
 
 /**
  * Get profile values for token replacement
- * 
+ *
  * @todo Turn to first class objects to improve performance
- */ 
+ */
 function student_clearance_agreement_profile_items($node, $token) {
   $student_uid = $node->field_student[0]['uid'];
   $student = student_new_student($student_uid);
   $clearance_staff = $node->uid;
-  
+
   $profile = content_profile_load('profile', $student_uid);
   $student_profile = content_profile_load('student_profile', $student_uid);
   $staff_profile = content_profile_load('staff_profile', $clearance_staff);
-  
+
   $program_nid = $student_profile->field_profile_first_choice[0]['nid'];
   $dept_nid = $student->get_department_nid($program_nid);
-  
+
   $values  = array(
     'field_profile_first_name-raw' => $profile->field_profile_first_name[0]['value'],
     'field_profile_middle_name-raw' => $profile->field_profile_middle_name[0]['value'],
@@ -320,7 +321,7 @@ function student_clearance_agreement_isset($node) {
 
 /**
  * Implements hook_views_pre_render
- */ 
+ */
 function student_clearance_views_pre_render(&$view) {
   $node = node_load($view->result[0]->nid);
   //token_replace_multiple($node->body, array('node' => $node, 'global' => NULL));
@@ -351,13 +352,13 @@ function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
 
 /**
  * Implements hook_preprocess_views_view
- */ 
+ */
 function student_clearance_preprocess_views_view(&$vars) {
 }
 
 /**
  * Implements hook_preprocess_node
- */ 
+ */
 function student_clearance_preprocess_node(&$vars) {
   $body = token_replace($vars['body'], 'global');
   $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
@@ -373,20 +374,20 @@ function student_clearance_preprocess_node(&$vars) {
 		$url = 'student/agreement/pdf/958);
 		if(in_array($url, $callbacks)) {
 			$callbacks[$url] = $url;
-		
+
 		}
 }*/
 
 /**
 * Implementation of hook_init()
-* 
+*
 * Marking as WON'T FIX
 *
-* @todo trigger a pdf download instead of browser display. 
+* @todo trigger a pdf download instead of browser display.
 * Implement hook_file_download to get this done.
 */
 function todo_student_clearance_init() {
-	global $user;	
+	global $user;
 	$arg = (arg(0) == 'student' && arg(1) == 'agreement' && arg(2) == 'pdf' && is_numeric(arg(3)));
 	if($arg) {
 		$student_id = isset($student_id) ? $student_id : student_views_get_current_student();
