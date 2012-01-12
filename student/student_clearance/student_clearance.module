@@ -88,7 +88,6 @@ function student_clearance_pdf_agreement_ahah_callback() {
  * @todo Add more intelligence to the pdf processing
  */
 function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
-dsm(array('form' => $form));//ab
 
     if (isset($form_state['node'])) {
       $node = $form_state['node'] + (array)$node;
@@ -98,9 +97,6 @@ dsm(array('form' => $form));//ab
     $student_id = $form['#parameters'][2]->field_student[0][uid];
 
     $arg = (isset($student_id) && is_numeric(arg(1)) && arg(2) == 'field_agreement_agree');
-$arg1 = arg(1);//ab
-$arg2 = arg(2);//ab
-dsm(array('student_id' => $student_id, 'arg1' => $arg1,  'arg2' => $arg2,  'arg' => $arg));//ab
 
     // if arg and the result of the view at student/agreement/pdf/student_id is not empty
     // and the string "TCPDF ERROR: Some data has already been output, can't send PDF file"
@@ -186,8 +182,7 @@ dsm(array('student_id' => $student_id, 'arg1' => $arg1,  'arg2' => $arg2,  'arg'
       //$node = $form['#parameters'][2];
       $view = views_get_view_result(views_get_current_view()->name, 'page');
 
-//ab[[user/$student_id/clearance/arg(1)/agreement]]
-$url = url('user/' . $student_id . '/clearance/' . arg(1) . '/agreement/print');
+      $url = url('user/' . $student_id . '/clearance/' . arg(1) . '/agreement/print');
       //$url = url('user/' . arg(1) . '/' . arg(2) . '/' . $view[0]->nid . '/agreement/print');
       drupal_add_js("function open_clearance() { window.open('$url', '". t('Clearance Agreement') ."', 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50'); }", 'inline');
 //      $contents = '<a href="#" onclick="open_clearance();">'
@@ -203,7 +198,6 @@ $url = url('user/' . $student_id . '/clearance/' . arg(1) . '/agreement/print');
         '#value' => $output
       );
     }
-dsm($form);//ab
     return $form;
 }
 
