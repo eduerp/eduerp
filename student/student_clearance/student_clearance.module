@@ -190,7 +190,10 @@ dsm(array('student_id' => $student_id, 'arg1' => $arg1,  'arg2' => $arg2,  'arg'
 $url = url('user/' . $student_id . '/clearance/' . arg(1) . '/agreement/print');
       //$url = url('user/' . arg(1) . '/' . arg(2) . '/' . $view[0]->nid . '/agreement/print');
       drupal_add_js("function open_clearance() { window.open('$url', '". t('Clearance Agreement') ."', 'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50'); }", 'inline');
-      $contents = '<a href="#" onclick="open_clearance();">'
+//      $contents = '<a href="#" onclick="open_clearance();">'
+//                 . uc_store_get_icon('file:print') .' '
+//                 . t('Print clearance agreement.') .'</a>';
+      $contents = '<a href="' . $url . '" target="_blank">'
                  . uc_store_get_icon('file:print') .' '
                  . t('Print clearance agreement.') .'</a>';
       $output .= '<div class="order-pane">'. $contents .'</div>';
