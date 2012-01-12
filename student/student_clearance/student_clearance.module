@@ -88,7 +88,7 @@ function student_clearance_pdf_agreement_ahah_callback() {
  * @todo Add more intelligence to the pdf processing
  */
 function student_clearance_form_editablefields_form_alter(&$form, $form_state) {
-dsm(array('form' => $form));
+dsm(array('form' => $form));//ab
 
     if (isset($form_state['node'])) {
       $node = $form_state['node'] + (array)$node;
@@ -98,6 +98,9 @@ dsm(array('form' => $form));
     $student_id = $form['#parameters'][2]->field_student[0][uid];
 
     $arg = (isset($student_id) && is_numeric(arg(1)) && arg(2) == 'clearance');
+$arg1 = arg(1);//ab
+$arg2 = arg(2);//ab
+dsm(array('student_id' => $student_id, 'arg1' => $arg1,  'arg2' => $arg2,  'arg' => $arg));//ab
 
     // if arg and the result of the view at student/agreement/pdf/student_id is not empty
     // and the string "TCPDF ERROR: Some data has already been output, can't send PDF file"
@@ -195,6 +198,7 @@ dsm(array('form' => $form));
         '#value' => $output
       );
     }
+dsm($form);//ab
     return $form;
 }
 
