@@ -11173,11 +11173,11 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     }
     
   }  
-
+  drupal_set_message('Point A');
   if(empty($setupNID)){
     return $feeStudentOption;
   }
-  
+  drupal_set_message('Point B');
 
   //drupal_set_message('setup total is '.$feeOption[$setupNID]['setup_total_amount']);
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
@@ -11187,7 +11187,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //echo "<pre>";
   //print_r($feeOption);
   //echo "</pre>";
-  
+  drupal_set_message('Point C');
 
 
   $feeStudentOption['studentFeeSetupNID'] = $setupNID;
@@ -11214,7 +11214,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
   $details = get_fee_setup_item_details($setupNID);
   if(db_affected_rows($details) <=0) return array();
-
+  drupal_set_message('Point D');
   $i=0;
   while($r = db_fetch_object($details)){
     //drupal_set_message('product is '. $r->product_nid);
@@ -11233,7 +11233,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
        
       //now make sure that each fee product returned has attribute and option (no more assumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-		
+drupal_set_message('Point E');		
 	  //drupal_set_message('item is '. $feeStudentOption['fee_item_details'][$i]['item_description']);
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
@@ -11241,7 +11241,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
       if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
-
+drupal_set_message('Point F');
 
   	   
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
@@ -11265,7 +11265,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
         //now make sure that each fee product returned has attribute and option (no more asumptions!)
         if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-
+drupal_set_message('Point G');
         //make sure attribute and option is attached to the product
         $aInfo['productNID'] = $r->product_nid;;
       	$aInfo['aid'] = $attributeOptionInfo['aid'];
@@ -11296,7 +11296,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-
+drupal_set_message('Point H');
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
       $aInfo['aid'] = $attributeOptionInfo['aid'];
