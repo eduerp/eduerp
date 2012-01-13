@@ -11564,7 +11564,7 @@ function staff_school_fees_create_modify_scholarship_types(){
   global $user, $selFeeItems;
   ob_start();
   
-  $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
+  $editMode = ((arg(2) || is_numeric(arg(2))) && is_valid_scholarship_type(arg(2))) ? true : false;
   if (! staff_has_eduerp_role($user->uid, 0, 0, array('Bursar'))) $isAuthorized = false; else $isAuthorized = true;
 
   $html = "";
