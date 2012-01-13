@@ -10392,11 +10392,15 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
       
   $_SESSION[$varName] = $studentFeeProfile;
   */
-  $tests = fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, false, true);
-  echo "<pre>";
-  print_r($tests);
-  echo "</pre>";
-  $_SESSION[$varName]['more'] = $tests; fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, false, true);
+  //$tests = fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, false, true);
+  //echo "<pre>";
+  //print_r($tests);
+  //echo "</pre>";
+  $_SESSION[$varName]['more'] = fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, false, true);
+  if(! sizeof($_SESSION[$varName]['more'])){
+    drupal_set_message(Error_Types(159), 'error');
+    return;
+  }
   /*
   //test if his/her program has program specific setup
   $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d  AND field_fee_setup_session_value='%s' ", $programNID, variable_get('eduerp_current_session', ''));
