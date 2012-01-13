@@ -821,11 +821,12 @@ function _uc_edupay_process_order_request($order) {
 
     if ($first) {
       $order_parm = array(
-        'order_id' => (int)$product['order_id'],
+        'order_id' => $product['order_id'],
         'transaction_token' => $product['transaction_token'],
-        'fullnames' => $product['fullnames'],
+        'full_name' => $product['fullnames'],
         'matriculation_number' => $user->name,
         'total_amount' => 0.0,
+        'currency' => 'NGN',
         'timeout' => (int)$product['timeout'],
         'programme' => $product['programme'],
         'session' => $product['session'],
@@ -861,7 +862,7 @@ function _uc_edupay_process_order_request($order) {
   $order_parm['total_amount'] = $total_amount;
 
 dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-if (FALSE) {//ab
+if (FALSE) {//ab}
 //ab  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
@@ -870,9 +871,12 @@ if (FALSE) {//ab
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
+$headers['Authorization'] = 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':edupaydatasphir');//ab hardcode non-md5 password for test
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 
     if ($result->code != 200) {
+$u = variable_get('uc_edupay_transaction_url', '');//ab
+dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
       drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
 
       db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
@@ -1174,6 +1178,18 @@ function uc_edupay_fees_order_field_info() {
     'precision' => '16',
     'scale' => '5',
   );
+  $field['scholarship_type'] = array(
+    'description' => t("The type of the Student's Scholarship"),
+    'type' => 'varchar',
+    'length' => '60',
+    'not null' => FALSE,
+  );
+  $field['sponsor'] = array(
+    'description' => t("The Student's Scholarship Sponsor"),
+    'type' => 'varchar',
+    'length' => '60',
+    'not null' => FALSE,
+  );
 
   return $field;
 }
@@ -1211,6 +1227,12 @@ function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_fie
           break;
          case 'original_amount':
           $fields[$key] = $data['original_amount'];
+          break;
+         case 'scholarship_type':
+          $fields[$key] = $data['scholarship_type'];
+          break;
+         case 'sponsor':
+          $fields[$key] = $data['sponsor'];
           break;
       }
     }
@@ -1511,6 +1533,8 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship' => $value['data']['has_scholarship'],
         'transaction_token' => $value['data']['transaction_token'],
         'original_amount' => $value['data']['original_amount'],
+        'scholarship_type' => $value['data']['scholarship_type'],
+        'sponsor' => $value['data']['sponsor'],
       );
       $all[] = $nid[$key];
     }
@@ -1537,6 +1561,8 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship' => '2',
         'transaction_token' => $value['data']['transaction_token'],
         'original_amount' => $value['data']['original_amount'],
+        'scholarship_type' => $value['data']['scholarship_type'],
+        'sponsor' => $value['data']['sponsor'],
       );
       // @todo: go through drupal_alter once we have a hook of this function
 

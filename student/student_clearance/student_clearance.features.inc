@@ -51,7 +51,7 @@ function student_clearance_rules_defaults() {
         '#type' => 'rule',
         '#set' => 'event_init',
         '#label' => 'Student clearance agreement',
-        '#active' => 1,
+        '#active' => 0,
         '#weight' => '0',
         '#categories' => array(
           '0' => 'student',
