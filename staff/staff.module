@@ -10517,6 +10517,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
                    <tr>
                      <th width='15px'>#</th>
                      <th width='250px'>Fee Item</th>
+                     <th>Scholarship Applicable</th>
                      <th>Full Amount</th>
                      <th>First Instalment Amount</th>
                      <th>Second Instalment Amount</th>
@@ -10527,6 +10528,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
                      <tr>
                        <td>". $l++ ."</td>
                        <td>". $e['item_name'] ."</td>
+                       <td>". ($e['is_scholarship_applicable'] == 0 ? 'No' : 'Yes') ."</td>
                        <td>". number_format($e['full_amount'], 2) ."</td>
                        <td>". number_format($e['instalment1_amount'], 2) ."</td>
                        <td>". number_format($e['instalment2_amount'], 2) ."</td>
@@ -10755,7 +10757,7 @@ function staff_display_scholarship_authorisations($sessionName) {
 
 
 function get_scholarship_authorisations($sessionName) {
-  $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, field_scholarship_sponsor_value sponsor_name, IFNULL(field_scholarship_type_value  , 'N/A') sponsor_type 
+  $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, field_scholarship_sponsor_value sponsor_name, IFNULL(field_scholarship_type_value, 'N/A') sponsor_type 
   FROM {content_type_school_fee_approved_scholarships} 
   WHERE field_sas_session_name_value='%s' 
   ORDER BY field_sas_session_name_value ", $sessionName);
@@ -11439,50 +11441,6 @@ function is_fee_setup_existing_for_student($studentUID){
   return true;
 }
 
-/*
-function staff_school_fees_test_attr(){
- global $user;
-  ob_start();
-  $html = drupal_get_form('show_attr_test_form');
-
-  echo $html;
-  return ob_get_clean();
-
-}
-
-function show_attr_test_form(){
-  $form['#title'] = 'Test Data';
-
-  $form['submit'] = array(
-    '#value' => 'Add Test Data to Cart',
-    '#type' => 'submit'
-  );
-
-  return $form;
-
-}
-
-function show_attr_test_form_submit($form, &$state){
-  
-  //for tests on my local copy
-  $nid = 5286;
-  $qty = 1;
-  $data = array(
-  	  'attributes' => array('4'=>'9')
-  	  );
-  uc_cart_add_item($nid, $qty, $data);
-
-
-  //for test on staging server
-  $nid = 5268; //product NID
-  $qty = 1;
-  $data = array(
-  	  'attributes' => array('1'=>'49') //where 1 = attribute ID and 49 = option ID
-  	  );
-  uc_cart_add_item($nid, $qty, $data);
-  
-}
-*/
 function load_existing_fee_structure($forCombo=true){
   $feeSetup = get_school_fee_setup(variable_get('eduerp_current_session', ''));
   
