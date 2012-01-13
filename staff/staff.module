@@ -10298,7 +10298,8 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
 function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
   global $user;
   $values = $state['values'];
-
+  $scholarshipTypes = get_scholarship_types($values['scholarship_type'], true);
+  
   switch(trim(strtolower(strtoupper($values['op'])))){
     case 'authorise scholarship!':
 
@@ -10313,7 +10314,7 @@ function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
       $node->title                            	= 'Authorise Scholarship - '. $_SESSION['eduerp_authorise_scholarship']['studentUID'] .' - '. variable_get('eduerp_current_session', '');
       $node->field_sas_student[0]['uid']       	= $_SESSION['eduerp_authorise_scholarship']['studentUID'];
       $node->field_sas_session_name[0]['value'] = variable_get('eduerp_current_session', '');
-      $node->field_scholarship_type[0]['value'] = $values['scholarship_type'];
+      $node->field_scholarship_type[0]['value'] = $scholarshipTypes[$values['scholarship_type']];
       $node->field_scholarship_sponsor[0]['value'] = $values['scholarship_sponsor'];      
       $node->field_sas_remarks[0]['value']      = $values['remarks'];
       $node->field_sas_staff[0]['uid']       	= $user->uid;
@@ -10754,11 +10755,11 @@ function staff_display_scholarship_authorisations($sessionName) {
 
 
 function get_scholarship_authorisations($sessionName) {
-  $r = db_query("SELECT ctsfas.nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, field_scholarship_sponsor_value sponsor_name, IFNULL(field_scholarship_types_value, 'N/A') sponsor_type 
-  FROM {content_type_school_fee_approved_scholarships}  ctsfas
-  LEFT JOIN {content_type_school_fees_scholarship_types} ctsfst ON ctsfas.field_scholarship_type_value=ctsfst.nid
+  $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, field_scholarship_sponsor_value sponsor_name, IFNULL(field_scholarship_type_value  , 'N/A') sponsor_type 
+  FROM {content_type_school_fee_approved_scholarships} 
   WHERE field_sas_session_name_value='%s' 
   ORDER BY field_sas_session_name_value ", $sessionName);
+  //LEFT JOIN {content_type_school_fees_scholarship_types} ctsfst ON ctsfas.field_scholarship_type_value=ctsfst.nid
   $rs = array();
   while ($f = db_fetch_object($r)){
     $rs[$f->nid]['student_uid'] = $f->student_uid;
@@ -11549,10 +11550,19 @@ function load_from_existing($setupNID){
     }
 }
 
-function get_scholarship_types($forSelectList=true) {
+function get_scholarship_types($typeID=0, $forSelectList=true) {
     $where = ""; $args = "";    
-    $r = db_query("SELECT nid, 	field_scholarship_types_value scholarship_types FROM content_type_school_fees_scholarship_types  ". $where ."
-          ORDER BY 	field_scholarship_types_value ");
+    $sql = "SELECT nid, field_scholarship_types_value scholarship_types FROM content_type_school_fees_scholarship_types ";
+    
+    if(! empty($typeID))
+    $sql .= " WHERE nid=%d ";
+    
+    $sql .= "  ORDER BY field_scholarship_types_value ";
+    
+    $r = db_query($sql, $typeID);
+    /*
+    $r = db_query("SELECT nid, 	field_scholarship_types_value scholarship_types FROM content_type_school_fees_scholarship_types  
+          ORDER BY 	field_scholarship_types_value "); */
 
  if ($forSelectList) {
    if (db_affected_rows($r) > 0) {
