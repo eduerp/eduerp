@@ -97,10 +97,12 @@ function uc_eduerp_fees_views_data() {
       'handler' => 'views_handler_sort',
     ),
     'filter' => array(
-      'handler' => 'views_handler_filter_string',
+      //'handler' => 'views_handler_filter_string',
+      'handler' => 'views_handler_filter_type'
     ),
      'argument' => array(
-      'handler' => 'views_handler_argument_string',
+      //'handler' => 'views_handler_argument_string',
+      'handler' => 'views_handler_filter_type'
     ),
   );
   
@@ -262,8 +264,9 @@ function uc_eduerp_fees_views_data() {
   );
   
   // jambno field.
+  // changed to Admission number 
   $data['fees_order']['jambno'] = array(
-    'title' => t('Jamb Number'), 
+    'title' => t('Admission Number'), 
     'help' => $order_products['fields']['jambno']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
@@ -568,6 +571,38 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   
+  // scholarship type
+  $data['fees_order']['scholarship_type'] = array(
+    'title' => t('Scholarship type'),
+    'help' => $order_products['fields']['scholarship_type']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_scholarship_type'
+    ),
+  );
+  
+  // sponsor
+  $data['fees_order']['sponsor'] = array(
+    'title' => t('Sponsor'),
+    'help' => $order_products['fields']['sponsor']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_sponsor',
+    ),
+  );
+  
   return $data;
 }
 
@@ -682,7 +717,25 @@ function uc_eduerp_fees_views_handlers() {
       'uc_eduerp_fees_handler_field_original_amount' => array(
         'parent' => 'views_handler_field'
       ),
-      'views_handler_filter_college' => array('parent' => 'views_handler_filter_many_to_one',),
+      'uc_eduerp_fees_handler_field_scholarship_type' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_sponsor' => array(
+        'parent' => 'views_handler_field'
+      ),
+      // filters
+      'views_handler_filter_college' => array(
+        'parent' => 'views_handler_filter_many_to_one',
+      ),
+      'views_handler_filter_type' => array(
+        'parent' => 'views_handler_filter_in_operator',
+      ),
+      'views_handler_filter_scholarship_type' => array(
+        'parent' => 'views_handler_filter_in_operator',
+      ),
+      'views_handler_filter_sponsor' => array(
+        'parent' => 'views_handler_filter_in_operator',
+      ),
     ),
   );
 }

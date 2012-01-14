@@ -1368,7 +1368,7 @@ $handler->override_option('fields', array(
     ),
   ),
   'jambno' => array(
-    'label' => 'Jamb No.',
+    'label' => 'Admission Number',
     'alter' => array(
       'alter_text' => 0,
       'text' => '',
@@ -1395,6 +1395,9 @@ $handler->override_option('fields', array(
     'table' => 'fees_order',
     'field' => 'jambno',
     'relationship' => 'none',
+    'override' => array(
+      'button' => 'Use default',
+    ),
   ),
   'title' => array(
     'label' => 'Fees title',
@@ -1727,6 +1730,38 @@ $handler->override_option('fields', array(
     'override' => array(
       'button' => 'Use default',
     ),
+  ),
+  'sponsor' => array(
+    'label' => 'Sponsor',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'link_class' => '',
+      'alt' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'exclude' => 0,
+    'id' => 'sponsor',
+    'table' => 'fees_order',
+    'field' => 'sponsor',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
   ),
   'phpcode' => array(
     'label' => 'PHP code',
@@ -2229,6 +2264,31 @@ $handler->override_option('filters', array(
     'relationship' => 'none',
     'reduce_duplicates' => 0,
   ),
+  'sponsor' => array(
+    'operator' => 'in',
+    'value' => array(
+      'None' => 'None',
+    ),
+    'group' => '0',
+    'exposed' => TRUE,
+    'expose' => array(
+      'use_operator' => 0,
+      'operator' => 'sponsor_op',
+      'identifier' => 'sponsor',
+      'label' => 'Sponsor',
+      'optional' => 1,
+      'single' => 1,
+      'remember' => 0,
+      'reduce' => 0,
+    ),
+    'id' => 'sponsor',
+    'table' => 'fees_order',
+    'field' => 'sponsor',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
   'status_1' => array(
     'operator' => 'in',
     'value' => array(
@@ -2300,6 +2360,57 @@ $handler->override_option('filters', array(
     ),
     'relationship' => 'none',
   ),
+  'type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'hostel' => 'hostel',
+      'fees' => 'fees',
+    ),
+    'group' => '0',
+    'exposed' => TRUE,
+    'expose' => array(
+      'use_operator' => 0,
+      'operator' => 'type_op',
+      'identifier' => 'type',
+      'label' => 'Fees type',
+      'optional' => 1,
+      'single' => 1,
+      'remember' => 0,
+      'reduce' => 0,
+    ),
+    'id' => 'type',
+    'table' => 'fees_order',
+    'field' => 'type',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
+  'scholarship_type' => array(
+    'operator' => 'in',
+    'value' => array(
+      'None' => 'None',
+    ),
+    'group' => '0',
+    'exposed' => TRUE,
+    'expose' => array(
+      'use_operator' => 0,
+      'operator' => 'scholarship_type_op',
+      'identifier' => 'scholarship_type',
+      'label' => 'Scholarship type',
+      'optional' => 1,
+      'single' => 1,
+      'remember' => 0,
+      'reduce' => 0,
+    ),
+    'id' => 'scholarship_type',
+    'table' => 'fees_order',
+    'field' => 'scholarship_type',
+    'override' => array(
+      'button' => 'Use default',
+    ),
+    'relationship' => 'none',
+  ),
 ));
 $handler->override_option('access', array(
   'type' => 'perm',
@@ -2313,10 +2424,11 @@ $handler->override_option('footer', '<?php
 $view = views_get_view_result(\'fees_summary\', \'page_1\');
 foreach($view as $key => $value) {
       $prices[] = $value->fees_order_price;
+      $original_price[] = $value->fees_order_original_amount;
     }
-    
-    print \'Order total: \' . array_sum($prices);
-
+    $output = \'<p>Order total: \' . array_sum($prices) . \' </p>\';
+    $output .= \'<p>Original amount: \' .  array_sum($original_price) . \'</p>\';
+    print $output;
 ?>');
 $handler->override_option('footer_format', '3');
 $handler->override_option('footer_empty', 0);

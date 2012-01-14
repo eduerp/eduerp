@@ -874,7 +874,7 @@ dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_u
 $headers['Authorization'] = 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':edupaydatasphir');//ab hardcode non-md5 password for test
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 
-    if ($result->code != 200) {
+    /*if ($result->code != 200) {
 $u = variable_get('uc_edupay_transaction_url', '');//ab
 dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
       drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
@@ -886,7 +886,7 @@ dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
       unset($_SESSION['checkout-redirect']);
 
       drupal_goto("user/{$user->uid}/fees/pay");
-    }
+    }*/
   }
   else {
     $_SESSION['edupay_total_amount_zero'] = TRUE;
@@ -1242,6 +1242,41 @@ function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_fie
 }
 
 /**
+ * Retrieve the type of fees order made
+ * 
+ * @deprecated
+ * @see uc_edupay_fees_order_get_item
+ */ 
+function uc_edupay_fees_order_types() {
+  $types = array();
+  $result = db_query("SELECT DISTINCT type FROM {fees_order}");
+  while($type = db_fetch_array($result)) {
+    $types[] = $type;
+  }
+  return $types;
+}
+
+/**
+ * Retrieve items from fees_order
+ */ 
+function uc_edupay_fees_order_get_item($field) {
+  // lookup the field in the schema if it exists
+  $schema = drupal_get_schema('fees_order');
+  $fields = $schema['fields'];
+  
+  // break early if it doesn't 
+  if(!array_key_exists($field, $fields)) {
+    return FALSE;
+  }
+  
+  $result = db_query("SELECT DISTINCT $field FROM {fees_order}");
+  while($data = db_fetch_array($result)) {
+    $object[] = $data;
+  }
+  return $object;
+}
+
+/**
  * Implementation of hook_token_values(). (token.module)
  */
 function uc_edupay_token_values($type, $object = NULL) {
@@ -1263,6 +1298,7 @@ function uc_edupay_token_values($type, $object = NULL) {
 
       $values['programme'] = array_shift(array_unique($programme));
       $values['fullnames'] = array_shift(array_unique($fullnames));
+      $values['timeout-raw'] = array_shift(array_unique($timeout));
       $values['late_registration_date'] = $vars['late_registration_date'] = date('D jS M Y', array_shift(array_unique($timeout)));
       $values['late_registration_fee'] = $late_charges;
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
@@ -1287,6 +1323,7 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['late_registration_fee'] = t('The late registration amount applicable to a fee order');
     $tokens['order']['invoice_number'] = t('The fees order invoice number');
     $tokens['order']['matric-number'] = t("The student's matric number");
+    $tokens['order']['timeout-raw'] = t('Raw timeout');
   }
   return $tokens;
 }
@@ -1720,5 +1757,5 @@ function uc_edupay_preprocess_uc_order(&$vars) {
 
   $vars['user_label'] = t('Customer');
   $vars['invoice_title'] = t('Invoice');
-
+dsm($vars);
 }

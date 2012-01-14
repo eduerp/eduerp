@@ -102,18 +102,21 @@ $url = url(\'user/\' . [order-uid] . \'/order/\' . [order-id] . \'/invoice/print
     $output .= \'<div class="order-pane">\'. $contents .\'</div>\';
     print $output;
 
-?>.</p>
+?></p>
 
 <p>You must proceed to any of the following banks to pay your invoice: Intercontinental Bank or Zenith Bank.</p>
 
 <p>You must present the invoice or provide your invoice number ([invoice-number]) to pay at the bank.</p>
 
 <?php
-if([late_registration_date] < 2145913199) {
-$content = t("<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>", array(\'@late_registration_date\' => [late_registration_date]));
+$timeout = [timeout-raw];
+$late_registration_date = \'[late_registration_date]\';
+
+$content = t(\'<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>\', array(\'@late_registration_date\' => $late_registration_date));
 
 $content .= t("<p>If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee (NGN @late_registration_fee).</p>", array(\'@late_registration_fee\' => [late_registration_fee]));
 
+if($timeout < 2145913199) {
 print $content;
 }
 ?>
