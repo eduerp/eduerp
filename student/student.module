@@ -157,6 +157,7 @@ class courseselectionsclass {
 
     $this->count_courses_offered[$semester] = 0;
     $this->selected_load = 0;
+    $corecodes = array();
     while ($row = db_fetch_object($result)) {
       if (in_array($row->course_code, $this->passedcodes)) continue;
 
@@ -168,6 +169,10 @@ class courseselectionsclass {
       else {
         $block = '';
         if ($row->course_type == 1) {
+          // In case a core course has two course instances, suppress all but the first (better solution would be to allow a choice... see comment below)
+          if (in_array($row->course_code, $corecodes)) continue;
+          $corecodes[] = $row->course_code;
+
           $default_value = TRUE;
           $disabled = TRUE;
           $this->selected_load += $row->credit_load;
