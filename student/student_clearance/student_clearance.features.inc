@@ -76,17 +76,7 @@ function student_clearance_rules_defaults() {
         '#conditions' => array(),
         '#actions' => array(
           '0' => array(
-            '#weight' => 0,
-            '#type' => 'action',
-            '#settings' => array(
-              'title' => 'A new clearance agreement for $student_id',
-              'type' => 'clearance_agreement',
-              '#argument map' => array(
-                'author' => 'author',
-                'node' => 'clearance_node',
-              ),
-            ),
-            '#name' => 'student_action_create_agreement',
+            '#weight' => -9,
             '#info' => array(
               'label' => 'Create a clearance agreement node',
               'arguments' => array(
@@ -103,9 +93,32 @@ function student_clearance_rules_defaults() {
                   'type' => 'value',
                   'label' => 'The student id.',
                 ),
+                'clearance_node' => array(
+                  'type' => 'node',
+                  'label' => 'Content',
+                ),
+              ),
+              'new variables' => array(
+                'clearance_agreement_node_added' => array(
+                  'label' => 'new clearance agreement node',
+                  'label callback' => FALSE,
+                  'type' => 'node',
+                  'save' => TRUE,
+                ),
               ),
               'module' => 'Student',
             ),
+            '#name' => 'student_action_create_agreement',
+            '#settings' => array(
+              'title' => 'Clearance Agreement by $author for $student_id',
+              'type' => 'clearance_agreement',
+              '#argument map' => array(
+                'author' => 'author',
+                'clearance_node' => 'node',
+                'clearance_agreement_node_added' => 'clearance_agreement_node_added',
+              ),
+            ),
+            '#type' => 'action',
           ),
         ),
         '#version' => 6003,

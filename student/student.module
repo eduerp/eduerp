@@ -479,17 +479,20 @@ function student_clearance() {
         _perform_clearance($student_id);
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
+       
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
       endif;
       node_save($node);
       if(module_exists('rules')) {
-        rules_invoke_event('student_cleared',  $user, $student_id, $node);
+        rules_invoke_event('student_cleared', $user, $student_id, $node);
+        $output = l('Click to access the clearance agreement of this student', 'student/clearance/agreement');
       }
     }
   }
 
-  return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+  $output .= "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+  return $output;
 }
 
 // Bundle of actions to be performed on clearance

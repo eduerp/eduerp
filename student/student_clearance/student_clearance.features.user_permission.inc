@@ -13,6 +13,7 @@ function student_clearance_user_default_permissions() {
       '0' => 'Administrator',
       '1' => 'Registry',
       '2' => 'Staff',
+      '3' => 'Student',
     ),
   );
 
