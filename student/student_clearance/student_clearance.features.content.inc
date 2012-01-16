@@ -14,7 +14,7 @@ function student_clearance_content_default_fields() {
       'weight' => '-2',
       'parent' => '',
       'label' => array(
-        'format' => 'hidden',
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'hidden',
@@ -79,7 +79,7 @@ function student_clearance_content_default_fields() {
       'weight' => '8',
       'parent' => '',
       'label' => array(
-        'format' => 'hidden',
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'hidden',

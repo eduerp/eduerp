@@ -79,7 +79,7 @@ function student_rules_action_info() {
           'clearance_node' => array('type' => 'node', 'label' => t('Content')),
         ),
         'new variables' => array(
-          'node_added' => array(
+          'clearance_agreement_node_added' => array(
             'type' => 'node',
             'label' => t('New content'),
             'save' => TRUE,
@@ -88,7 +88,38 @@ function student_rules_action_info() {
           ),
         'module' => 'Student', // only used for grouping of the condition in the admin dropdown list
       ),
+      // Update student clearance after it has been loaded
+      'student_action_update_student_clearance' => array(
+        'label' => t('Update student clearance'),
+        'arguments' => array(
+          'author' => array('type' => 'user', 'label' => t('User, who is set as author')),
+          'student_id' => array('type' => 'value', 'label' => t('The student id.')),
+          'student_clearance_node_loaded' => array('type' => 'node', 'label' => t('Student clearance node')),
+        ),
+        'new variables' => array(
+          'student_clearance_updated_node' => array(
+            'type' => 'node',
+            'label' => t('Updated content'),
+            'save' => TRUE,
+            'label callback' => 'rules_action_update_student_clearance_variable_label',
+          ),
+        ),
+        'module' => 'Student', // only used for grouping of the condition in the admin dropdown list
+      ),
+      // Load the just added clearance agreement using
+      // clearance_agreement_node_added variable
+      /*'student_action_load_clearance_agreement' => array(
+        'label' => t('Load the immediate new clearance agreement'),
+        'arguments' => array(
+          'agreement_node' => array('type' => 'node', 'label' => t('Agreement node')),
+        ),
+        'module' => 'Student', // only used for grouping of the condition in the admin dropdown list
+      ),*/
     );
+}
+
+function rules_action_update_student_clearance_variable_label($settings) {
+  return t('Updated node is @nid', array('@nid' => $settings['nid']));
 }
 
 /**
@@ -105,15 +136,10 @@ function student_rules_action_info() {
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
-function student_action_create_agreement($author, $title, $student_id, $settings) {
+function student_action_create_agreement($author, $title, $student_id, $node, $settings) {
 	if (node_access('create', $settings['type'], $author)) {
     module_load_include('inc', 'node', 'node.pages');
     $student_id = isset($student_id) ? $student_id : student_views_get_current_student();
-    //$node = student_clearance_node_load($student_id);
-    //if(isset($body)) {
-        //$body = eduerp_create_agreement();
-        //$body = t("Do you want to agree?");
-    //}
 
     $node = (object)array('type' => $settings['type']);
     node_object_prepare($node);
@@ -125,7 +151,7 @@ function student_action_create_agreement($author, $title, $student_id, $settings
     $node->field_student[0][uid] = $student_id;
     $node->body = variable_get('eduerp_agreement', '');
 
-    return array('node_added', node_save($node));
+    return array('clearance_agreement_node_added' , node_save($node));
 	}
 }
 
@@ -141,3 +167,34 @@ function student_action_create_agreement_form($settings, &$form) {
     '#required' => TRUE,
   );
 }
+
+function student_action_update_student_clearance($author, $student_id, $node, $settings) {
+  module_load_include('inc', 'node', 'node.pages');
+  $node->field_clearance_agreement[0]['nid'] = $settings['nid'];
+  return array('student_clearance_updated_node', node_save($node));
+}
+
+function student_action_update_student_clearance_form($settings, &$form) {
+  module_load_include('inc', 'node', 'node.pages');
+  
+  $form['settings']['nid'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Node nid'),
+    '#default_value' => isset($settings['nid']) ? $settings['nid'] : '', 
+    '#description' => t('Enter the nid of the node to update.'),
+    '#required' => TRUE,
+  );
+}
+
+/*function student_action_load_clearance_agreement($node, $settings) {
+  //return array('node_loaded' => node_load($nid, $vid ? $vid : NULL));
+}
+
+function student_action_load_clearance_agreement_form($settings, &$form) {
+  module_load_include('inc', 'node', 'node.pages');
+  
+  // put the node variable to use in $settings
+  
+  // put here a drop down select form of loaded rules variables
+  // set the variable on save into $settings
+}*/
