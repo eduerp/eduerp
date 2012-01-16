@@ -491,7 +491,22 @@ function student_clearance() {
       node_save($node);
       if(module_exists('rules')) {
         rules_invoke_event('student_cleared', $user, $student_id, $node);
-        $output = l('Click to access the clearance agreement of this student', 'student/clearance/agreement');
+        
+        // Get the immediate clearance agreement node
+        $sql = "SELECT node.nid AS nid
+        FROM {node} node
+        LEFT JOIN {content_field_student} node_data_field_student ON node.vid = node_data_field_student.vid
+        INNER JOIN {users} users_node_data_field_student ON node_data_field_student.field_student_uid = users_node_data_field_student.uid
+        WHERE node.type in ('clearance_agreement') AND node_data_field_student.field_student_uid=%d";
+
+        $result = db_query($sql, $student_id);
+        $row = db_fetch_object($result);
+        
+        $agreement_node = node_load($row->nid);
+        node_build_content($agreement_node);
+      
+        $path = "user/$student_id/clearance/$row->nid/agreement/print";
+        $output = l('Click to access the clearance agreement of this student', $path);
       }
     }
   }
