@@ -194,14 +194,14 @@ function staff_menu() {
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
   );
-  
+
   $items['staff/removepending'] = array(
     'title' => 'Remove Pending Orders',
     'page callback' => 'staff_school_fees_remove_pending_orders',
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
   );
-  
+
   $items['staff/changeuncleared']=array(
     'title'=>"Change Programme for Uncleared Candidate",
     'page callback' => 'staff_change_uncleared_candidate_programme',
@@ -1176,15 +1176,6 @@ function staff_view_form(&$obj) {
   return $form;
 }
 
-/*
-function staff_level() {
-  $titles['']="";
-  $r=db_query("select * from `level` order by level_name");
-    while ($f=db_fetch_object($r))
-      $titles[$f->level_name] = $f->level_name;
-  return  $titles;
-}
-*/
 
 function staff_course() {
   $titles[''] = '';
@@ -1309,8 +1300,10 @@ function semester_admin() {
   echo '<a href="' . url('staff/checkverifyprogmme') . '">Check if all existing Courses required for all Programmes have been Verified (associated with the Programme)</a>';
   echo '<br /><br /><hr /><br />';
 
-  //echo 'List the Fees for all Programmes by Level & Semester[Feature #444]';
   echo '<a href="' . url('staff/schoolfeesadmin') . '">School Fees Administration</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('admin/build/fees') . '">School Fees Report</a>';
   echo '<br /><br /><hr /><br />';
 
   echo drupal_get_form('open_close_student_registration_form');
@@ -2557,7 +2550,7 @@ function Error_Types($num = 0) {
   case '134': $msg = $prifix1 . 'Room Capacity must be of Numeric type!<br />'; break;
   case '135': $msg = $prifix1 . 'The allocated and available space must be equal!<br />'; break;
   case '136': $msg = $prifix1 . 'No Room exists in the selected Block!'; break;
-  case '137': $msg = $prifix1 . 'Invalid date specified!'; break;
+  case '137': $msg = $prifix1 . 'Invalid data specified!'; break;
   case '138': $msg = $prifix1 . 'Reservation already exists for the student!'; break;
   case '139': $msg = $prifix1 . 'Room allocation already exists for the student!'; break;
   case '140': $msg = $prifix1 . 'Either the student does not belong to any active category or No free Bedspace was found!'; break;
@@ -4432,7 +4425,7 @@ function staff_assign_course_to_programme_form() {
 
   $form['level'] = array(
     '#type' => 'select',
-    '#options' => array('' => '' ) + $levels, //staff_level(),
+    '#options' => array('' => '' ) + $levels,
     '#title' => 'Level',
     '#required' => TRUE,
     '#ahah' => array('path' => 'staff/ajax/course', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'courses'),
@@ -6264,7 +6257,7 @@ function get_student_info_form_validate($form, &$state) {
     //drupal_set_message($studentInfo->uid);
 
 
-    
+
     $student_profile = new UserProfile($studentInfo->uid);
     //get the current programme name
     $rs = get_programmes($student_profile->profile_first_choice);
@@ -6328,19 +6321,17 @@ function staff_student_change_programme_form_submit($form, &$state) {
 
   drupal_set_message('The Student\'s Programme was changed successfully!');
 
-
   //get students new mat no
   $student_profile = new UserProfile($_SESSION['eduerp_change_prog_info']['uid']);
   $_SESSION['eduerp_change_prog_info']['new_mat_no'] = $student_profile->profile_matno;
   $_SESSION['eduerp_change_prog_on'] = 2;
   drupal_goto('staff/changeprogmme');//force a refresh
-
 }
 
 
 function staff_student_change_programme_form_validate($form, &$state) {
-  ;
-
+  if (empty($state['values']['programme_nid'])) form_set_error('programme_nid', 'You must Select a Programme');
+  if (empty($state['values']['level_name'])) form_set_error('level_name', 'You must Select a Level');
 }
 
 
@@ -6349,16 +6340,16 @@ function staff_student_change_programme_form() {
 
  $form['programme_nid'] = array(
     '#type' => 'select',
-    '#options' => array(' '=>' ') + get_programmes(0, true),
+    '#options' => array(''=>'') + get_programmes(0, true),
     '#title' => 'New Programme for Student',
     '#ahah' => array('path' => 'staff/ajax/programmelevel', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'programmelevels'),
     '#required' => TRUE
 
   );
-  //
+
  $form['level_name'] = array(
     '#type' => 'select',
-    '#options' => array(' '=>' '), //staff_level(),
+    '#options' => array(''=>''),
     '#title' => 'New Start Level',
     '#attributes' => array(
       'style' => 'width:100px'),
@@ -6379,85 +6370,11 @@ function staff_student_change_programme_form() {
       '#type' => 'submit'
   );
   return $form;
-
-
 }
-
-/*
-function get_student_prog_form() {
-  $form['#title'] = 'Continue to Change Student Programme';
-
- $form['programme_nid'] = array(
-    '#type' => 'select',
-    '#required' => TRUE,
-    '#options' => array(' '=>' ') + get_programmes(0, true),
-    '#title' => 'New Programme for Student',
-    '#ahah' => array('path' => 'staff/ajax/programmelevel', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'programmelevels')
-
-  );
- $form['level_name'] = array(
-    '#type' => 'select',
-    '#options' => staff_level(),
-    '#title' => 'New Start Level',
-    '#attributes' => array(
-      'style' => 'width:100px'),
-    '#prefix' => "<div id='programmelevels'>",
-    '#suffix' => "</div>",
-    '#disabled' => TRUE,
-    '#required' => TRUE
-  );
-
- $form['eduerp_change_prog_on'] = array(
-    '#type' => 'hidden',
-    '#default_value'=>2,
-    '#title' => 'keep showing form'
-  );
-
-  $form['submit'] = array(
-      '#value' => 'Continue',
-      '#type' => 'submit'
-  );
-  return $form;
-}
-*/
-/*
-function get_student_prog_validate($form, &$state) {
-  form_set_error('programme_nid', Error_Types(132));
- $values = $state['values'];
- drupal_set_message('ok');
-  //if(! empty($values['programme_nid'])) {
-    //make sure that the new selected is not within the faculty
-    $currentFaculty = get_programme_faculty($_SESSION['eduerp_change_prog_info']['current_programme_nid']);
-
-    $newFaculty = get_programme_faculty($values['programme_nid']);
-    //drupal_set_message('new is ' . $newFaculty);
-    if ($currentFaculty == $newFaculty) {
-
-      form_set_error('programme_nid', Error_Types(132));
-      return;
-
-    }
-    else {
-      $rs = get_programmes($values['programme_nid']);
-      $programmeInfo = db_fetch_object($rs);
-
-      $state['storage']['new_programme_nid'] = $values['programme_nid'];
-      $state['storage']['new_programme_name'] = $programmeInfo->programme_name;
-      $state['storage']['new_programme_level'] = $values['level_name'];
-      $_SESSION['eduerp_change_prog_on'] = 2;
-      //drupal_set_message('done');
-    }
-
-  //}
-
-}
-*/
 
 
 function show_student_previous_programme_results($studentUID, $programmeNID) {
-
   ;
-
 }
 
 
@@ -6467,7 +6384,6 @@ function get_student_current_GPA($studentUID, $level) {
   $sql = "SELECT field_gpaforstudent_value gpa_value, field_semester_name_gpa_value semester FROM {content_type_student_gpa} WHERE field_student_ref_gpa_uid = %d AND field_level_name_gpa_value = '%s'";
   $rs = db_query($sql, $studentUID, $level);
   return $rs;
-
 }
 
 
@@ -6911,7 +6827,7 @@ function staff_school_fees_admin(){
     $html .= '<b>Authorise Instalment Payment</b> - Enable a Student to pay his/her Fees in instalments  for the Current Session only.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a><br />';
     $html .= '<br />';
-    
+
     $html .= '<b>Pending Orders</b> - Actions to be performed on Pending Orders.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/removepending') . '">Specify Pending Orders to Remove</a>';
 
@@ -9734,7 +9650,7 @@ function is_fee_setup_correct(){
         return 158;
       }
 
-      
+
     }
 
 
@@ -10263,7 +10179,7 @@ function get_student_info_by_jamb_number($jambno){
 function show_school_fees_payment_option($varName, $studentUID, $programNID, $levelType, $nationalityType, $academicLevel){
   //return;
   $feeOption = array();
-  
+
   //$tests = fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, false, true);
   //echo "<pre>";
   //print_r($tests);
@@ -10273,7 +10189,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
     drupal_set_message(Error_Types(159), 'error');
     return;
   }
- 
+
   //echo "<pre>";
   //print_r($_SESSION[$varName]);
   //echo "</pre>";
@@ -11566,8 +11482,8 @@ function staff_school_fees_remove_pending_orders(){
   ob_start();
   $html = "";
   $isAuthorized = staff_has_eduerp_role($user->uid, 0, 0, array('Bursar')) ? true : false;
-  
-  
+
+
   $html = '<br /><hr /><br />';
   $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Remove Pending Orders</font><br /><br />";
   $html .= '<hr /><br />';
@@ -11576,7 +11492,7 @@ function staff_school_fees_remove_pending_orders(){
     $html .= '<br />';
     //$html .= "<b><font color='#ff0000'>Warning: Please only remove pending orders long after any Student might go to Bank to pay, as EduPay will still maintain a record which the Bank could access.</font></b>";
 
-    
+
       $html .= drupal_get_form('get_remove_pending_order_form');
    }
    else {
@@ -11585,13 +11501,13 @@ function staff_school_fees_remove_pending_orders(){
     }
 
     $html .= '<br /><hr /><br />';
- 
+
   echo $html;
   return ob_get_clean();
 }
 
-function get_remove_pending_order_form(){
 
+function get_remove_pending_order_form(){
   $form['#title'] = 'Remove Pending Order';
   $form['number_of_days'] = array(
       '#title' => 'Number of days',
@@ -11600,7 +11516,7 @@ function get_remove_pending_order_form(){
       '#default_value' => 30,
       '#required' => TRUE
     );
-  
+
   $form['submit'] = array(
     '#value' => 'Remove Now',
     '#type' => 'submit'
@@ -11612,17 +11528,15 @@ $form['title_test'] = array(
     //'#required' => TRUE,
     );
   return $form;
-
 }
 
 
 function get_remove_pending_order_form_validate($form, &$state){
   $values = $state['values'];
-  
+
   if(empty($values['number_of_days']) || ! preg_match("/^[0-9]{1,3}$/", $values['number_of_days'])){
     form_set_error('number_of_days', Error_Types(137));
   }
-
 }
 
 
@@ -11637,6 +11551,7 @@ function get_remove_pending_order_form_submit($form, &$state){
   else
     drupal_set_message(Error_Types(171), 'error');
 }
+
 
 function staff_change_uncleared_candidate_programme() {
   global $user;
@@ -11653,62 +11568,22 @@ function staff_change_uncleared_candidate_programme() {
       echo $navi;
       echo "<b>Get Candidate Info</b> - Please fill the form as appropriate<br /><br />";
       echo drupal_get_form('get_candidate_info_form');
-
     }
     elseif ($_POST['eduerp_change_uncleared_on'] == 1) {//page1
-
 
         $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/changeuncleared') ."'>Change Programme for Uncleared Candidate</a>&nbsp; &raquo; &nbsp; Candidate: <b>". $_SESSION['eduerp_change_uncleared_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
         echo "<b>Candidate's Current Info</b> | <b>". $_SESSION['eduerp_change_uncleared_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_uncleared_info']['mat_no'] ."</b>
         | <b>". $_SESSION['eduerp_change_uncleared_info']['current_programme_name'] ."</b>
-        
+
         <br /><br />- Select a New Programme for the Candidate<br />";
         echo drupal_get_form('staff_candidate_change_programme_form');
-        //echo "<br /><font color=#FF0000><b>Do NOT do this until the session in which the student will be taking courses for the new program has started (otherwise the student's level will get increased for the new session)</b></font>";
-	    //| Student current level <b>". $_SESSION['eduerp_change_uncleared_info']['level'] ."</b>
-	    /*
       }
-      elseif($_POST['eduerp_change_uncleared_on'] == 2) { //page 2
-        $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/changeuncleared') ."'>Change Programme for Uncleared Candidate</a>&nbsp; &raquo; &nbsp; Candidate: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
-        $navi .= '<br /><hr /><br />';
-        echo $navi;
-        //echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
-        //| <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b>
-        //| Student current level <b>". $_SESSION['eduerp_change_prog_info']['level'] ." </b> ";
-
-
-        //echo '<br /><br />';
-        echo "<b>Student New Info</b> | <b>". $_SESSION['eduerp_change_uncleared_info']['fname'] ."</b> - ".
-        $_SESSION['eduerp_change_uncleared_info']['new_mat_no'] ."
-        | <b>". $_SESSION['eduerp_change_uncleared_info']['new_programme_name'] ."</b>
-        | Student new level <b>". $_SESSION['eduerp_change_uncleared_info']['new_programme_level'] ." </b> ";
-
-        echo '<br /><hr /><br />';
-        echo '<b>List of Passed Courses</b>';
-        echo '<br /><br />';
-        echo "<p>Below is the list of all Courses previously entered for and passed by this student.<br />
-        The student most probably is expected to move with some of their earned credits to the new programme.<br />
-        The Courses ticked below will automatically be credited to the new Programme.<br />
-        Those unticked will not be.<br />
-        If you wish the student to carry the credits of the unticked Courses over to the new Programme,<br />
-        then the HOD for the Programme (or you if you have rights) should go to the<br />
-        'Specify Courses for a Programme' part of <a href='createmodifyprog' target='_new'>Create/Modify a Programme</a>.<br />
-        Add the courses to the Programme and immediately \"Delete\" them from the Programme so that they are<br />
-        marked as 'Historical' so they cannot be registered by students selecting courses for a semester.<br />
-        You can also click on the links below to get there faster.</p>";
-
-        //echo show_student_previous_programme_results($_SESSION['eduerp_change_prog_info']['uid'], $_SESSION['eduerp_change_prog_info']['current_programme_nid']);
-        echo get_courses_passed_by_student($_SESSION['eduerp_change_uncleared_info']['new_programme_nid'], $_SESSION['eduerp_change_uncleared_info']['uid']);
-        */
-      }
-
   }
   else {
     echo $navi;
     drupal_set_message(Error_Types(127), 'error');
-
   }
   unset($_SESSION['eduerp_change_uncleared_on']);
   return ob_get_clean();
@@ -11735,15 +11610,15 @@ function get_candidate_info_form() {
 function get_candidate_info_form_validate($form, &$state) {
   $values = $state['values'];
   $studentInfo = user_load(array('name'=>$values['jamb_no']));
-   
+
   if( ! $studentInfo) {
-   
+
     form_set_error('jamb_no', Error_Types(172));
   }
   else {
     //make sure the candidate is not already cleared.
     $role = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name='Student'", $student_id));
-    if ($role) { 
+    if ($role) {
       form_set_error('jamb_no', Error_Types(173));
       return;
     }
@@ -11751,7 +11626,7 @@ function get_candidate_info_form_validate($form, &$state) {
     //drupal_set_message($studentInfo->uid);
 
 
-    
+
     $student_profile = new UserProfile($studentInfo->uid);
     //get the current programme name
     $rs = get_programmes($student_profile->profile_first_choice);
@@ -11768,9 +11643,9 @@ function get_candidate_info_form_validate($form, &$state) {
     $_SESSION['eduerp_change_uncleared_on'] = 1;//keep showing the form
     //ini_ses($studentInfo->uid, "eduerp_change_prog_info");
     $_SESSION['eduerp_change_uncleared_info'] = $studInfo;
-
   }
 }
+
 
 function staff_candidate_change_programme_form_submit($form, &$state) {
   $values = $state['values'];
@@ -11779,29 +11654,21 @@ function staff_candidate_change_programme_form_submit($form, &$state) {
   $student_profile = new UserProfile($_SESSION['eduerp_change_uncleared_info']['uid']);
   $_SESSION['eduerp_change_uncleared_info']['new_programme_nid'] = $values['programme_nid'];
   $_SESSION['eduerp_change_uncleared_info']['new_programme_name'] = $programmeInfo->programme_name;
-  //$_SESSION['eduerp_change_uncleared_info']['new_programme_level'] = $values['level_name'];
 
   $first_choice = $_SESSION['eduerp_change_uncleared_info']['new_programme_nid'];
-  //$level = $_SESSION['eduerp_change_uncleared_info']['new_programme_level'];
-  //so go ahead with the change
-  $level=0;
-  change_student_program($student_profile, $first_choice, $level, true);
+  $student_profile->profile_first_choice = $first_choice;
+  $student_profile->save();
 
   drupal_set_message("The Candidates's Programme was changed successfully from <b>". $_SESSION['eduerp_change_uncleared_info']['current_programme_name'] ."</b> to <b>". $_SESSION['eduerp_change_uncleared_info']['new_programme_name'] ."</b>");
 
   unset($_SESSION['eduerp_change_uncleared_info']);
-  //get students new mat no
-  //$student_profile = new UserProfile($_SESSION['eduerp_change_uncleared_info']['uid']);
-  //$_SESSION['eduerp_change_prog_info']['new_mat_no'] = $student_profile->profile_matno;
-  //$_SESSION['eduerp_change_prog_on'] = 2;
-  drupal_goto('staff/changeuncleared');//force a refresh
 
+  drupal_goto('staff/changeuncleared');//force a refresh
 }
 
 
 function staff_candidate_change_programme_form_validate($form, &$state) {
-  ;
-
+  if (empty($state['values']['programme_nid'])) form_set_error('programme_nid', 'You must Select a Programme');
 }
 
 
@@ -11810,26 +11677,12 @@ function staff_candidate_change_programme_form() {
 
  $form['programme_nid'] = array(
     '#type' => 'select',
-    '#options' => array(' '=>' ') + get_programmes(0, true),
+    '#options' => array(''=>'') + get_programmes(0, true),
     '#title' => 'New Programme for Candidate',
-    //'#ahah' => array('path' => 'staff/ajax/programmelevel', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'programmelevels'),
     '#required' => TRUE
 
   );
-  //
-  /*
- $form['level_name'] = array(
-    '#type' => 'select',
-    '#options' => array(' '=>' '), //staff_level(),
-    '#title' => 'New Start Level',
-    '#attributes' => array(
-      'style' => 'width:100px'),
-    '#prefix' => "<div id='programmelevels'>",
-    '#suffix' => "</div>",
-    '#disabled' => TRUE,
-    '#required' => TRUE
-  );
-  */
+
  $form['eduerp_change_uncleared_on'] = array(
     '#type' => 'hidden',
     '#default_value'=>1,
@@ -11841,7 +11694,5 @@ function staff_candidate_change_programme_form() {
       '#type' => 'submit'
   );
   return $form;
-
-
 }
 ?>
