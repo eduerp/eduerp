@@ -2,6 +2,9 @@
 
 include_once('student_registration.features.inc');
 
+/**
+ * Implements hook_FORM_ID_alter
+ */ 
 function student_registration_form_user_register_alter(&$form, $form_state) {
 
   // Ensure a valid submit array.
@@ -17,6 +20,10 @@ function student_registration_form_user_register_alter(&$form, $form_state) {
   array_unshift($form['#submit'], 'student_registration_user_register_submit');
 }
 
+/**
+ * Modification of user_register_submit
+ * @see user_register_submit
+ */ 
 function student_registration_user_register_submit($form, &$form_state) {
   global $base_url;
   $admin = user_access('administer users');
