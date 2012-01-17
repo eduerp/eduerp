@@ -1684,11 +1684,13 @@ function create_student_program($uid) {
 }
 
 
-function change_student_program(&$user, $first_choice, $level) {
+function change_student_program(&$user, $first_choice, $level, $forProgramOnly=false) {
   $user_profile = new UserProfile($user->uid);
   $formerProgID = $user_profile->profile_first_choice;
   $user_profile->profile_first_choice = $first_choice;
+  if(! $forProgramOnly)
   $user_profile->profile_level_name = $level;
+  
   $user_profile->save();
 
   create_student_program($user->uid);
