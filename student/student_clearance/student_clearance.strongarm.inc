@@ -174,33 +174,34 @@ function student_clearance_strongarm() {
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
   $strongarm->name = 'eduerp_agreement';
-  $strongarm->value = 'USMANU DANFODIYO UNIVERSITY
-P.M.B. 2346, SOKOTO, NIGERIA
-OFFICE OF THE REGISTRAR
+  $strongarm->value = '<p>USMANU DANFODIYO UNIVERSITY<br />
+P.M.B. 2346, SOKOTO, NIGERIA<br />
+OFFICE OF THE REGISTRAR</p>
 
-Serial no:
-Date: [site-date-small]
+<p>Date: [site-date-timestamp-raw]</p>
 Name of Candidate: [field_profile_first_name-raw] [field_profile_middle_name-raw] [field_profile_last_name-raw]
 
-2011/2012 SESSION CONFIRMATION OF ADMISSION
+<p>2011/2012 SESSION CONFIRMATION OF ADMISSION</p>
 
-This is to confirm that the above named has been offered Provisional admission into the Usmanu Danfodiyo University, Sokoto in 2011/2012 Academic Session.
+<p>This is to confirm that the above named has been offered Provisional admission into the Usmanu Danfodiyo University, Sokoto in 2011/2012 Academic Session.</p>
 
-The Candidate has been admitted to read: [programme]  [level] in the Faculty/College of [faculty]. His/her admission number is [matric_number]. Faculties/Departments are requested to note and register the Candidate accordingly subject to the candidate\'s acceptance of the undertaking below.
+<p>The Candidate has been admitted to read: [programme]  [level] in the Faculty/College of [faculty]. His/her admission number is [matric_number]. Faculties/Departments are requested to note and register the Candidate accordingly subject to the candidate\'s acceptance of the undertaking below.<p>
 
-Thank you
-[Staff User Signature]
-For: Registrar
+<p>Thank you</p>
 
-UNDERTAKING
-I [field_profile_first_name-raw] [field_profile_middle_name-raw] [field_profile_last_name-raw] the undersigned, hereby accept the provisional admission pending the verification of my entry qualifications by the University within the duration of the study. I further accept that this offer may be withdrawn by the University within the duration of the study if it is discovered that I have not satisfied the entry requirements or that my entry qualification is otherwise than as presented at the time of registration.
+<p></p>
+<p>For: Registrar</p>
 
-To this end, I undertake to bring certified proof(s) of my qualification (e.g. SSCE, IJMB, NCE, etc.) from awarding examination bodies within one year.
+<p>UNDERTAKING<br />
+I [field_profile_first_name-raw] [field_profile_middle_name-raw] [field_profile_last_name-raw] the undersigned, hereby accept the provisional admission pending the verification of my entry qualifications by the University within the duration of the study. I further accept that this offer may be withdrawn by the University within the duration of the study if it is discovered that I have not satisfied the entry requirements or that my entry qualification is otherwise than as presented at the time of registration.</p>
 
-Dated this _____ day of ____________20_________ [site-date-small] 
+<p>To this end, I undertake to bring certified proof(s) of my qualification (e.g. SSCE, IJMB, NCE, etc.) from awarding examination bodies within one year.</p>
 
-[field_profile_signature-filefield-view]
-Signature of Student.';
+<p>Dated this [site-date-timestamp-raw] </p>
+
+
+<p>[field_profile_signature-filefield-view]</br />
+Signature of Student.</p>';
 
   $export['eduerp_agreement'] = $strongarm;
   $strongarm = new stdClass;
