@@ -11609,28 +11609,31 @@ function get_candidate_info_form() {
 
 function get_candidate_info_form_validate($form, &$state) {
   $values = $state['values'];
-  $studentInfo = user_load(array('name'=>$values['jamb_no']));
-
-  if( ! $studentInfo) {
+  //$studentInfo = user_load(array('name'=>$values['jamb_no']));
+  $rs = db_query("SELECT nspro.uid uid
+	FROM {content_type_student_profile} spro
+	INNER JOIN {node} nspro ON spro.vid=nspro.vid
+	WHERE nspro.type='student_profile' AND field_profile_jambno_value='%s'", $values['jamb_no']);
+	
+  if( db_affected_rows($rs) <= 0) {
     form_set_error('jamb_no', Error_Types(172));
   }
   else {
+    $studentInfo = db_fetch_object($rs);
+    
     //make sure the candidate is not already cleared.
-    $role = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name='Student'", $student_id));
+    $role = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name='Student'", $studentInfo->uid));
     if ($role) {
       form_set_error('jamb_no', Error_Types(173));
       return;
     }
-    //build tableField=>formElement array
-    //drupal_set_message($studentInfo->uid);
-
+    
     $student_profile = new UserProfile($studentInfo->uid);
     //get the current programme name
     $rs = get_programmes($student_profile->profile_first_choice);
     $programmeInfo = db_fetch_object($rs);
-    //  foreach($info as $k => $v)
-
-    $studInfo = array('uid'=>$studentInfo->uid, 'fname'=>$student_profile->profile_first_name, 'mat_no'=>$studentInfo->name,
+    
+    $studInfo = array('uid'=>$studentInfo->uid, 'fname'=>$student_profile->profile_first_name,
          // 'level'=>$student_profile->profile_level_name,
           'current_programme_nid'=>$programmeInfo->programme_nid,
           'current_programme_name'=>$programmeInfo->programme_name
