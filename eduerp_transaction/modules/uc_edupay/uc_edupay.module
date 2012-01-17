@@ -862,8 +862,8 @@ function _uc_edupay_process_order_request($order) {
   $order_parm['total_amount'] = $total_amount;
 
 dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-//ab if (FALSE) {//ab}
-  if ($total_amount > 0.0) {
+if (FALSE) {//ab}
+//ab  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
     $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
@@ -871,10 +871,9 @@ dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_u
     $headers = array(
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
-$headers['Authorization'] = 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':edupaydatasphir');//ab hardcode non-md5 password for test
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 
-    /*if ($result->code != 200) {
+    if ($result->code != 200) {
 $u = variable_get('uc_edupay_transaction_url', '');//ab
 dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
       drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
@@ -886,7 +885,7 @@ dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
       unset($_SESSION['checkout-redirect']);
 
       drupal_goto("user/{$user->uid}/fees/pay");
-    }*/
+    }
   }
   else {
     $_SESSION['edupay_total_amount_zero'] = TRUE;
@@ -1243,10 +1242,10 @@ function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_fie
 
 /**
  * Retrieve the type of fees order made
- * 
+ *
  * @deprecated
  * @see uc_edupay_fees_order_get_item
- */ 
+ */
 function uc_edupay_fees_order_types() {
   $types = array();
   $result = db_query("SELECT DISTINCT type FROM {fees_order}");
@@ -1258,17 +1257,17 @@ function uc_edupay_fees_order_types() {
 
 /**
  * Retrieve items from fees_order
- */ 
+ */
 function uc_edupay_fees_order_get_item($field) {
   // lookup the field in the schema if it exists
   $schema = drupal_get_schema('fees_order');
   $fields = $schema['fields'];
-  
-  // break early if it doesn't 
+
+  // break early if it doesn't
   if(!array_key_exists($field, $fields)) {
     return FALSE;
   }
-  
+
   $result = db_query("SELECT DISTINCT $field FROM {fees_order}");
   while($data = db_fetch_array($result)) {
     $object[] = $data;
