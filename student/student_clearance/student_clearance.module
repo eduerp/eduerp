@@ -53,11 +53,11 @@ function student_clearance_agreement_view($uid, $node, $view = 'agreement') {
 
 function template_preprocess_student_clearance(&$variables) {
   // Add template file suggestions, default to agreement template.
-  $cached_node = cache_get('clearance_agreement_node');
-  $node = $cached_node->data;
+  
+  $content = variable_get('eduerp_agreement', '');
   
   //$output = preg_replace_callback("|\[token ([^ ]*) ([^]]*)\]|i", 'student_clearance_filter_tokens', $node->body);
-  $body = token_replace($node->body, 'global');
+  $body = token_replace($content, 'global');
   $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
   
   $variables['content'] = $output;
@@ -75,11 +75,13 @@ function student_clearance_filter_tokens($matches) {
   $token = $matches[0];
   //$type  = $matches[1]; // we don't need the type
   $token_plain = $matches[1];
-  $cached_node = cache_get('clearance_agreement_node');
-  $node = $cached_node->data;
   
-  $value = student_clearance_agreement_profile_items($node, $token_plain);
-  //$token = '[' . $token . ']';
+  $content = variable_get('eduerp_agreement', '');
+  
+  $student = arg(1);
+  $staff = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(3)));
+  
+  $value = student_clearance_agreement_profile_items($student, $staff, $token_plain);
   
   $output = str_replace($token, $value, $token);
   
@@ -91,10 +93,10 @@ function student_clearance_filter_tokens($matches) {
  * 
  * @todo Turn to first class objects to improve performance
  */ 
-function student_clearance_agreement_profile_items($node, $token) {
-  $student_uid = $node->field_student[0]['uid'];
+function student_clearance_agreement_profile_items($uid, $staff, $token) {  
+  $student_uid = $uid;
   $student = student_new_student($student_uid);
-  $clearance_staff = $node->uid;
+  $clearance_staff = $staff;
   
   $profile = content_profile_load('profile', $student_uid);
   $student_profile = content_profile_load('student_profile', $student_uid);
@@ -111,7 +113,8 @@ function student_clearance_agreement_profile_items($node, $token) {
     'level' => $student_profile->field_profile_level_name[0]['value'],
     'faculty' => $student->get_faculty($dept_nid),
     'matric_number' => $student_profile->field_profile_matno[0]['value'],
-    'field_profile_signature-filefield-view' => $profile->profile_field_signature[0]['filepath']
+    'field_profile_signature-filefield-view' => $profile->profile_field_signature[0]['filepath'],
+    //'field_clearance_date-date' => '' // no easy way to get this
   );
   foreach($values as $key => $value) {
     if($key == $token) {
