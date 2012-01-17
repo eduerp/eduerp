@@ -1162,7 +1162,7 @@ function staff_view_form(&$obj) {
   return $form;
 }
 
-
+/*
 function staff_level() {
   $titles['']="";
   $r=db_query("select * from `level` order by level_name");
@@ -1170,7 +1170,7 @@ function staff_level() {
       $titles[$f->level_name] = $f->level_name;
   return  $titles;
 }
-
+*/
 
 function staff_course() {
   $titles[''] = '';
@@ -6399,7 +6399,7 @@ function staff_student_change_programme_form() {
   //
  $form['level_name'] = array(
     '#type' => 'select',
-    '#options' => staff_level(),
+    '#options' => array(' '=>' '), //staff_level(),
     '#title' => 'New Start Level',
     '#attributes' => array(
       'style' => 'width:100px'),
@@ -7140,38 +7140,7 @@ function staff_school_fees_scholarship_payment(){
     $html .= show_school_fees_payment_option("eduerp_authorise_scholarship", $_SESSION['eduerp_authorise_scholarship']['studentUID'], $_SESSION['eduerp_authorise_scholarship']['programNID'], $_SESSION['eduerp_authorise_scholarship']['levelType'], $_SESSION['eduerp_authorise_scholarship']['nationalityType'], $_SESSION['eduerp_authorise_scholarship']['academicLevel']);
 
     $html .="<br />";
-    /*
-    //we need to set some defaults for scholarship payments
 
-    //get the sponsor NID for scholarship
-    $rs = db_query("SELECT nid FROM {content_type_schoo_fee_payment_sponsors} WHERE field_payment_sponsor_value='%s'", 'Scholarships');
-    $r = db_fetch_object($rs);
-    $_SESSION['eduerp_authorise_scholarship']['payment_sponsor'] = $r->nid; //sponsor is scholarship
-
-    //get the payment status NID for full payment
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_payment_status} WHERE field_fee_payment_status_value='%s'", 'Full Payment');
-    $r = db_fetch_object($rs);
-    $_SESSION['eduerp_authorise_scholarship']['payment_brief_status'] = $r->nid; //status is fully paid
-
-
-    //get the payment summary status NID for
-    $_SESSION['eduerp_authorise_scholarship']['summaryPaymentStatus'] = $_SESSION['eduerp_authorise_scholarship']['payment_brief_status']; //summary status is fully paid
-
-
-
-    //defaults for order_nid is zero
-    $_SESSION['eduerp_authorise_scholarship']['orderNID'] = 0;
-
-    $studentUID = $_SESSION['eduerp_authorise_scholarship']['studentUID'];
-    $programNID = $_SESSION['eduerp_authorise_scholarship']['program_nid'];
-    $levelType = $_SESSION['eduerp_authorise_scholarship']['levelType'];
-    $nationalityType = $_SESSION['eduerp_authorise_scholarship']['nationalityType'];
-    $html .= show_school_fees_payment_option('eduerp_authorise_scholarship', $studentUID, $programNID, $levelType, $nationalityType);
-
-    //ini the summary payment here
-    $_SESSION['eduerp_authorise_scholarship']['summaryPaymentAmount'] = $_SESSION['eduerp_authorise_scholarship']['setup_total_amount'];
-
-    */
     $html .="<br />";
     //$html .= "<br /><font color=#ff0000><b>By clicking 'Submit' you acknowledge that the student whose details appear above is under FULL Scholarship and that such Scholarship covers the School Fee Amount.</b></font><br /><br />";
     $html .= drupal_get_form('staff_show_pay_school_fees_scholarship_form');
@@ -10225,11 +10194,19 @@ function staff_show_pay_school_fees_scholarship_form(){
     '#title' => 'Scholarship Type*',
     //'#required' =>TRUE
   );
+  /*
    $form['scholarship_sponsor'] = array(
     '#type' => 'textarea',
-    '#title' => 'Scholarship Sponsor*',
+    '#title' => 'Sponsor Organisation (optional)',
     '#size' => 255,
     //'#required' => true
+  );
+  */
+  $form['scholarship_sponsor'] = array(
+    '#type' => 'select',
+    '#options' => array('None'=>'None') + get_scholarship_sponsor_organisations(),
+    '#title' => 'Sponsor Organisation (optional)',
+    //'#required' =>TRUE
   );
    $form['remarks'] = array(
     '#type' => 'textarea',
@@ -10254,7 +10231,14 @@ function staff_show_pay_school_fees_scholarship_form(){
   return $form;
 }
 
+function get_scholarship_sponsor_organisations(){
 
+ $rs =db_query("SELECT * FROM {eduerp_states} ORDER BY state_name");
+while ($row = db_fetch_object($rs)) $list[$row->state_name] = $row->state_name;
+return $list;
+
+
+}
 
 function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
   $values = $state['values'];
@@ -10268,9 +10252,9 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
       if(empty($values['scholarship_type'])){
     	form_set_error('scholarship_type', Error_Types(161));
       }
-      if(empty($values['scholarship_sponsor'])){
-    	form_set_error('scholarship_sponsor', Error_Types(161));
-      }
+      //if(empty($values['scholarship_sponsor'])){
+     //	form_set_error('scholarship_sponsor', Error_Types(161));
+      //}
 
       if(is_scholarship_authorisation_existing($_SESSION['eduerp_authorise_scholarship']['studentUID'], variable_get('eduerp_current_session', ''))){
       	form_set_error('', Error_Types(162));
@@ -10719,7 +10703,7 @@ function staff_display_scholarship_authorisations($sessionName) {
       <th><b>Full Name</b></th>
       <th><b>Program Name</b></th>
       <th><b>Scholarship Type</b></th>
-      <th><b>Sponsor Info</b></th>
+      <th><b>Sponsor Organisation</b></th>
 
       <th><b>Remarks</b></th>
       <th><b>Date</b></th>
@@ -10757,7 +10741,7 @@ function staff_display_scholarship_authorisations($sessionName) {
 
 
 function get_scholarship_authorisations($sessionName) {
-  $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, field_scholarship_sponsor_value sponsor_name, IFNULL(field_scholarship_type_value, 'N/A') sponsor_type
+  $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, IFNULL(field_scholarship_sponsor_value, 'N/A') sponsor_name, IFNULL(field_scholarship_type_value, 'N/A') sponsor_type
   FROM {content_type_school_fee_approved_scholarships}
   WHERE field_sas_session_name_value='%s'
   ORDER BY field_sas_session_name_value ", $sessionName);

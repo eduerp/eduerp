@@ -409,9 +409,9 @@ function student_clearance() {
 
   $row = false;
   $rs = db_query("SELECT cfs.nid FROM {content_field_student} cfs, {node} n WHERE field_student_uid=%d AND cfs.nid=n.nid AND n.type = 'student_clearance' ORDER BY nid DESC LIMIT 1", $student_id);
-  if ($rs):
+  if ($rs) {
     $row = db_fetch_object($rs);
-  endif;
+  }
 
   if ($row) {
     // node exists
@@ -420,78 +420,72 @@ function student_clearance() {
     $node['nid'] = $row->nid;
     $student_clearance = node_load($node);
 
-    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']):
+    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']) {
       $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
       $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
       drupal_set_message('Student\'s results verified');
-
-      // set post value for deferred student
-    elseif(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
+    }
+    elseif (isset($_POST['field-defered'])) {
       $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-      content_storage('update', $student_clearance);
-
-    // set post value for uncleared student
-    elseif(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
-    && isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
+    }
+    elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
       $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-      content_storage('update', $student_clearance);
-
-    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
+      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+    }
+    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])) {
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
       _perform_clearance($student_id);
       student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
       drupal_set_message('Student has been cleared');
-    elseif ($_POST['clearance']):
+    }
+    elseif ($_POST['clearance']) {
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
-    endif;
+    }
 
     node_save($student_clearance);
-
-  } else {
-    // node doesn't exist
+  }
+  else {
     if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
-      $node = new stdClass;
-      $node->is_new = 1;
-      $node->uid = $user->uid;
-      $node->type = 'student_clearance';
-      $node->field_student[0]['uid'] = $student_id;
+      $student_clearance = new stdClass;
+      $student_clearance->is_new = 1;
+      $student_clearance->uid = $user->uid;
+      $student_clearance->type = 'student_clearance';
+      $student_clearance->field_student[0]['uid'] = $student_id;
 
-      if (isset($_POST['verify']) && $_POST['verify'] == '1'):
-        $node->field_staff_verification[0]['uid'] = $user->uid;
-        $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+      if (isset($_POST['verify']) && $_POST['verify'] == '1') {
+        $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
+        $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
         drupal_set_message('Student\'s results verified');
-      endif;
+      }
 
-      // set post value for deferred student
-      if(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
+      if (isset($_POST['field-defered'])) {
         $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-      endif;
+      }
 
-      // set post value for reasons why a student is uncleared
-      if(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
-      && isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
+      if (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
         $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
         $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
-        content_storage('update', $student_clearance);
-      endif;
+      }
 
-      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
-        $node->field_staff_clearance[0]['uid'] = $user->uid;
-        $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)) {
+        $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
+        $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
         _perform_clearance($student_id);
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
-       
-      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
+      }
+      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1') {
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
-      endif;
-      node_save($node);
+      }
+
+      node_save($student_clearance);
+
       if(module_exists('rules')) {
-        rules_invoke_event('student_cleared', $user, $student_id, $node);
-        
+        rules_invoke_event('student_cleared', $user, $student_id, $student_clearance);
+
         // Get the immediate clearance agreement node
         $sql = "SELECT node.nid AS nid
         FROM {node} node
@@ -501,10 +495,10 @@ function student_clearance() {
 
         $result = db_query($sql, $student_id);
         $row = db_fetch_object($result);
-        
+
         $agreement_node = node_load($row->nid);
         node_build_content($agreement_node);
-      
+
         $path = "user/$student_id/clearance/$row->nid/agreement/print";
         $output = l('Click to access the clearance agreement of this student', $path);
       }
