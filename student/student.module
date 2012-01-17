@@ -407,6 +407,8 @@ function student_clearance() {
   global $user;
   $student_id = $_POST['student_uid'];
 
+  $cleared_flag = FALSE;
+
   $row = false;
   $rs = db_query("SELECT cfs.nid FROM {content_field_student} cfs, {node} n WHERE field_student_uid=%d AND cfs.nid=n.nid AND n.type = 'student_clearance' ORDER BY nid DESC LIMIT 1", $student_id);
   if ($rs) {
@@ -439,6 +441,7 @@ function student_clearance() {
       _perform_clearance($student_id);
       student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
       drupal_set_message('Student has been cleared');
+      $cleared_flag = TRUE;
     }
     elseif ($_POST['clearance']) {
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
@@ -476,33 +479,36 @@ function student_clearance() {
         _perform_clearance($student_id);
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
+        $cleared_flag = TRUE;
       }
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1') {
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
       }
 
       node_save($student_clearance);
-
-      if(module_exists('rules')) {
-        rules_invoke_event('student_cleared', $user, $student_id, $student_clearance);
-
-        // Get the immediate clearance agreement node
-        $sql = "SELECT node.nid AS nid
-        FROM {node} node
-        LEFT JOIN {content_field_student} node_data_field_student ON node.vid = node_data_field_student.vid
-        INNER JOIN {users} users_node_data_field_student ON node_data_field_student.field_student_uid = users_node_data_field_student.uid
-        WHERE node.type in ('clearance_agreement') AND node_data_field_student.field_student_uid=%d";
-
-        $result = db_query($sql, $student_id);
-        $row = db_fetch_object($result);
-
-        $agreement_node = node_load($row->nid);
-        node_build_content($agreement_node);
-
-        $path = "user/$student_id/clearance/$row->nid/agreement/print";
-        $output = l('Click to access the clearance agreement of this student', $path);
-      }
     }
+  }
+
+  if ($cleared_flag && module_exists('rules')) {
+    rules_invoke_event('student_cleared', $user, $student_id, $student_clearance);
+  }
+
+  // Get the immediate clearance agreement node
+  $sql = "SELECT node.nid AS nid
+    FROM {node} node
+    LEFT JOIN {content_field_student} node_data_field_student ON node.vid = node_data_field_student.vid
+    INNER JOIN {users} users_node_data_field_student ON node_data_field_student.field_student_uid = users_node_data_field_student.uid
+    WHERE node.type in ('clearance_agreement') AND node_data_field_student.field_student_uid=%d";
+
+  $result = db_query($sql, $student_id);
+  $row = db_fetch_object($result);
+
+  if (!empty($row->nid)) {
+    $agreement_node = node_load($row->nid);
+    node_build_content($agreement_node);
+
+    $path = "user/$student_id/clearance/$row->nid/agreement/print";
+    $output = l('Click to access the clearance agreement of this student', $path);
   }
 
   $output .= "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
