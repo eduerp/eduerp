@@ -11574,7 +11574,7 @@ function staff_change_uncleared_candidate_programme() {
         $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/changeuncleared') ."'>Change Programme for Uncleared Candidate</a>&nbsp; &raquo; &nbsp; Candidate: <b>". $_SESSION['eduerp_change_uncleared_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
-        echo "<b>Candidate's Current Info</b> | <b>". $_SESSION['eduerp_change_uncleared_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_uncleared_info']['mat_no'] ."</b>
+        echo "<b>Candidate's Current Info</b> | <b>". $_SESSION['eduerp_change_uncleared_info']['fname'] ."</b>
         | <b>". $_SESSION['eduerp_change_uncleared_info']['current_programme_name'] ."</b>
 
         <br /><br />- Select a New Programme for the Candidate<br />";
@@ -11633,7 +11633,7 @@ function get_candidate_info_form_validate($form, &$state) {
     $rs = get_programmes($student_profile->profile_first_choice);
     $programmeInfo = db_fetch_object($rs);
     
-    $studInfo = array('uid'=>$studentInfo->uid, 'fname'=>$student_profile->profile_first_name,
+    $studInfo = array('uid'=>$studentInfo->uid, 'fname'=>$student_profile->profile_last_name .', '. $student_profile->profile_first_name .' '. $student_profile->profile_middle_name,
          // 'level'=>$student_profile->profile_level_name,
           'current_programme_nid'=>$programmeInfo->programme_nid,
           'current_programme_name'=>$programmeInfo->programme_name
