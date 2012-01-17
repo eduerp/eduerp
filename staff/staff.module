@@ -11612,7 +11612,6 @@ function get_candidate_info_form_validate($form, &$state) {
   $studentInfo = user_load(array('name'=>$values['jamb_no']));
 
   if( ! $studentInfo) {
-
     form_set_error('jamb_no', Error_Types(172));
   }
   else {
@@ -11624,8 +11623,6 @@ function get_candidate_info_form_validate($form, &$state) {
     }
     //build tableField=>formElement array
     //drupal_set_message($studentInfo->uid);
-
-
 
     $student_profile = new UserProfile($studentInfo->uid);
     //get the current programme name
