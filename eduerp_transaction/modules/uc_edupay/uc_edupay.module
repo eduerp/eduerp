@@ -1302,6 +1302,7 @@ function uc_edupay_token_values($type, $object = NULL) {
       $values['late_registration_fee'] = $late_charges;
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
       $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
+      $values['bank-list-raw'] = variable_get('eduerp_institution_bank_list', '');
       break;
     case 'fees_order':
       $fees_order = $object;
@@ -1323,6 +1324,7 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['invoice_number'] = t('The fees order invoice number');
     $tokens['order']['matric-number'] = t("The student's matric number");
     $tokens['order']['timeout-raw'] = t('Raw timeout');
+    $tokens['order']['bank-list-raw'] = t('Authorized bank list');
   }
   return $tokens;
 }
