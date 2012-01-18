@@ -18,6 +18,11 @@ function uc_eduerp_fees_views_data() {
     'field' => 'nid',
   );
   
+  $data['fees_order']['table']['join']['uc_order_products'] = array(
+    'left_field' => 'nid',
+    'field' => 'product_nid',
+  );
+  
   $data['fees_order']['table']['content_type_school_fee_item_setup'] = array(
     'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
     //'field' => 'field_fee_setup_program_nid_value', # 'field' is the foreign key in this table.
@@ -66,6 +71,13 @@ function uc_eduerp_fees_views_data() {
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_numeric',
+    ),
+    'relationship' => array(
+      'base' => 'uc_order_products',
+      'field' => 'nid',
+      'handler' => 'views_handler_relationship',
+      //'relationship table' => '',
+      'label' => t('Ubercart product nid'),
     ),
   );
   

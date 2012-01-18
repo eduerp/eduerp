@@ -59,10 +59,18 @@ class student {
     return $dept_nid;
   }
   
-  public function get_faculty($dept_nid) {
+  public function get_college_nid($dept_nid) {
+    $college_id = db_result(db_query("SELECT field_college_id_nid
+        FROM {content_type_department} d
+        WHERE d.nid = %d", $dept_nid));
+        
+    return $college_id;
+  }
+  
+  public function get_faculty($college_id) {
     $faculty = db_result(db_query("SELECT field_college_name_value
         FROM {content_type_college} c
-        WHERE c.nid = %d", $dept_nid));
+        WHERE c.nid = %d", $college_id));
     $this->faculty = $faculty;
     return $this->faculty;
   }

@@ -104,6 +104,7 @@ function student_clearance_agreement_profile_items($uid, $staff, $token) {
   
   $program_nid = $student_profile->field_profile_first_choice[0]['nid'];
   $dept_nid = $student->get_department_nid($program_nid);
+  $college_nid = $student->get_college_nid($dept_nid);
   
   $values  = array(
     'field_profile_first_name-raw' => $profile->field_profile_first_name[0]['value'],
@@ -111,7 +112,7 @@ function student_clearance_agreement_profile_items($uid, $staff, $token) {
     'field_profile_last_name-raw' => $profile->field_profile_last_name[0]['value'],
     'programme' => $student->get_programme($program_nid),
     'level' => $student_profile->field_profile_level_name[0]['value'],
-    'faculty' => $student->get_faculty($dept_nid),
+    'faculty' => $student->get_faculty($college_nid),
     'matric_number' => $student_profile->field_profile_matno[0]['value'],
     'field_profile_signature-filefield-view' => $profile->profile_field_signature[0]['filepath'],
     'site-date-timestamp-raw' => date('d-F-Y')
