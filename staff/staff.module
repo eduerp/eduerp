@@ -10967,7 +10967,7 @@ dsm(array('details' => $details));//ab
   //drupal_set_message('Point D');
   $i=0;
   while($r = db_fetch_object($details)){
-dsm(array('r' => $r));//ab
+//dsm(array('r' => $r));//ab
     //drupal_set_message('product is '. $r->product_nid);
     if($feeStudentOption['instalment_payment_authorised'] == '1'){
       //for instalment payments
@@ -11063,8 +11063,12 @@ dsm(array('r' => $r));//ab
       $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
+//ab      if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
+if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
+dsm(array('r' => $r));//ab
 dsm(array('attributeOptionInfo' => $attributeOptionInfo));//ab
-      if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
+return array();
+}//ab
 //drupal_set_message('Point H');
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
