@@ -19,6 +19,7 @@ function uc_eduerp_fees_views_data() {
   );
   
   $data['fees_order']['table']['join']['uc_order_products'] = array(
+    //'left_table' => '',
     'left_field' => 'nid',
     'field' => 'product_nid',
   );
