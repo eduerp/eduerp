@@ -10930,6 +10930,7 @@ dsm(array('feeSetup' => $feeSetup));//ab
   //drupal_set_message('setup total is '.$feeOption[$setupNID]['setup_total_amount']);
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
 
+dsm(array('feeOption' => $feeOption));//ab
   if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)) return $feeStudentOption;
 
   //echo "<pre>";
@@ -10961,10 +10962,12 @@ dsm(array('feeSetup' => $feeSetup));//ab
   $feeStudentOption['student_has_paid_or_pendingpaid_fees'] = _student_has_paid_or_pendingpaid_fees($studentUID);
 
   $details = get_fee_setup_item_details($setupNID);
+dsm(array('details' => $details));//ab
   if(db_affected_rows($details) <=0) return array();
   //drupal_set_message('Point D');
   $i=0;
   while($r = db_fetch_object($details)){
+dsm(array('r' => $r));//ab
     //drupal_set_message('product is '. $r->product_nid);
     if($feeStudentOption['instalment_payment_authorised'] == '1'){
       //for instalment payments
