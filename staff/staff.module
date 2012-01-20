@@ -10881,13 +10881,15 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   //$programNID = 3444;
   $setupNID = null; $forLevel = false;
 
-  //test if level-specific setup exists for the student for the program
-  $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
-  if(db_affected_rows($rs) > 0){
-    $feeSetup = db_fetch_object($rs);
-    $setupNID = $feeSetup->nid;
-    $forLevel = true;
-    //drupal_set_message('found level');
+  if ($academicLevel > 0) {
+    //test if level-specific setup exists for the student for the program
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
+    if(db_affected_rows($rs) > 0){
+      $feeSetup = db_fetch_object($rs);
+      $setupNID = $feeSetup->nid;
+      $forLevel = true;
+      //drupal_set_message('found level');
+    }
   }
 
   if(empty($setupNID)){
@@ -11067,7 +11069,7 @@ dsm(array('details' => $details));//ab
 if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
 dsm(array('r' => $r));//ab
 dsm(array('attributeOptionInfo' => $attributeOptionInfo));//ab
-dsm(array('feeStudentOption[fee_item_details][i][item_description]' => $feeStudentOption['fee_item_details'][$i]['item_description']));
+dsm(array('feeStudentOption[fee_item_details][i][item_description]' => $feeStudentOption['fee_item_details'][$i]['item_description'], 'forLevel' => $forLevel, 'academic_level' => $feeStudentOption['academic_level'], 'level_name' => $feeStudentOption['level_name']));
 return array();
 }//ab
 //drupal_set_message('Point H');
