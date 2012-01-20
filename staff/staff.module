@@ -10902,7 +10902,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
   }
 
-  if(empty($setupNID)){
+  if(empty($setupNID) && $academicLevel > 0){
     //test Level-Specific for General Fee Structure
     $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=0) AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' ", variable_get('eduerp_current_session', ''), $academicLevel);
     if(db_affected_rows($rs) > 0){
@@ -10922,7 +10922,6 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     }
 
   }
-dsm(array('feeSetup' => $feeSetup));//ab
   //drupal_set_message('Point A');
   if(empty($setupNID)){
     return $feeStudentOption;
@@ -10932,7 +10931,6 @@ dsm(array('feeSetup' => $feeSetup));//ab
   //drupal_set_message('setup total is '.$feeOption[$setupNID]['setup_total_amount']);
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
 
-dsm(array('feeOption' => $feeOption));//ab
   if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)) return $feeStudentOption;
 
   //echo "<pre>";
@@ -10964,12 +10962,10 @@ dsm(array('feeOption' => $feeOption));//ab
   $feeStudentOption['student_has_paid_or_pendingpaid_fees'] = _student_has_paid_or_pendingpaid_fees($studentUID);
 
   $details = get_fee_setup_item_details($setupNID);
-dsm(array('details' => $details));//ab
   if(db_affected_rows($details) <=0) return array();
   //drupal_set_message('Point D');
   $i=0;
   while($r = db_fetch_object($details)){
-//dsm(array('r' => $r));//ab
     //drupal_set_message('product is '. $r->product_nid);
     if($feeStudentOption['instalment_payment_authorised'] == '1'){
       //for instalment payments
@@ -11065,27 +11061,13 @@ dsm(array('details' => $details));//ab
       $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
-//ab      if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
-dsm(array('r' => $r));//ab
-dsm(array('attributeOptionInfo' => $attributeOptionInfo));//ab
-dsm(array('feeStudentOption[fee_item_details][i][item_description]' => $feeStudentOption['fee_item_details'][$i]['item_description'], 'forLevel' => $forLevel, 'academic_level' => $feeStudentOption['academic_level'], 'level_name' => $feeStudentOption['level_name']));
-return array();
-}//ab
-//drupal_set_message('Point H');
+      if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
       $aInfo['aid'] = $attributeOptionInfo['aid'];
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
-//ab      if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
-if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) {//ab
-if (!is_uc_attribute_attached_to_product($aInfo)) dsm(array('FAILURE att' => $aInfo));//ab
-if (!is_uc_option_attached_to_product($aInfo)) dsm(array('FAILURE opt' => $aInfo));//ab
-dsm(array('FAILURE aInfo' => $aInfo));//ab
-        return array();
-}//ab
-//drupal_set_message('Point I');
+      if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
@@ -11219,12 +11201,10 @@ function get_fee_items($studentUID){
 
 function is_fee_setup_existing_for_student($studentUID){
   $studentFeeProfile = fees_ini_student_profile($studentUID);
-dsm(array('studentFeeProfile' => $studentFeeProfile, 'studentFeeItem' => $studentFeeItem));//ab
 
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return false;
 
   $studentFeeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], $studentFeeProfile['academicLevel'], True);
-dsm(array('studentFeeProfile' => $studentFeeProfile, 'studentFeeItem' => $studentFeeItem));//ab
 
   if(! is_array($studentFeeItem) || ! sizeof($studentFeeItem)) return false;
 
