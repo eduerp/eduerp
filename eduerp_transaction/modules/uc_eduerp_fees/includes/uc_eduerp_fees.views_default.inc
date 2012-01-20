@@ -310,6 +310,23 @@ $handler->override_option('filters', array(
     'field' => 'order_status',
     'relationship' => 'none',
   ),
+  'uid_current' => array(
+    'operator' => '=',
+    'value' => '1',
+    'group' => '0',
+    'exposed' => FALSE,
+    'expose' => array(
+      'operator' => FALSE,
+      'label' => '',
+    ),
+    'id' => 'uid_current',
+    'table' => 'users',
+    'field' => 'uid_current',
+    'override' => array(
+      'button' => 'Override',
+    ),
+    'relationship' => 'none',
+  ),
 ));
 $handler->override_option('access', array(
   'type' => 'none',
