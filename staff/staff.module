@@ -2570,7 +2570,7 @@ function Error_Types($num = 0) {
   case '154': $msg = $prifix1 . 'First and Second Installments MUST be activated together!<br />'; break;
   case '155': $msg = $prifix1 . 'Sum Total of First and Second Installments MUST equal Sum Total of Fee Amount!<br />'; break;
   case '156': $msg = $prifix1 . 'The Fee Setup combination already exists. Please try modifying it instead!<br />'; break;
-  case '157': $msg = $prifix3 . 'No Fee Steup information was found!<br />'; break;
+  case '157': $msg = $prifix3 . 'No Fee Setup information was found!<br />'; break;
   case '158': $msg = $prifix3 . 'Fee Setup is not complete!<br />'; break;
   case '159': $msg = $prifix1 . 'No School Fee Setup matching the Student was found!<br />'; break;
   case '160': $msg = $prifix1 . 'School Fee Payment already exists for the Student for the current Session!<br />'; break;
@@ -2587,6 +2587,8 @@ function Error_Types($num = 0) {
   case '171': $msg = $prifix1 . 'The operation was not successful!'; break;
   case '172': $msg = $prifix1 . 'Either the JAMB Number does not exist or it is invalid!<br />'; break;
   case '173': $msg = $prifix1 . 'The Candidate has already been cleared!<br />'; break;
+  case '174': $msg = $prifix1 . 'The Operation cannot continue because No Instalment1 Amount greater than zero was found!<br />'; break;
+  case '175': $msg = $prifix1 . "Problem retrieving Student's Information!<br />"; break;
 
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
@@ -9733,7 +9735,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
     $studInfo = get_student_info_by_jamb_number($studentNumber);
     if(! db_affected_rows($studInfo) > 0) {
       form_set_error('mat_number', Error_Types(125));
-
+      
       unset($_SESSION[$varName]); $_SESSION[$varName]=null;
       drupal_goto($returnURL);
     }
@@ -9750,7 +9752,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
   }
   //$studentInfo->uid = 947;
   if($found) {
-
+  
     //if(! $EDUERPstudentInitiated) {//if request is from student then do not show this
       $student_profile = new UserProfile($studentInfo->uid);
       //make sure no payment info exists for the student for the current session
@@ -9762,16 +9764,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       The check below is no longer applcable
 
       */
-      /*
-      if(is_school_fee_payment_type_info_existing($studentInfo->uid, $_SESSION[$varName]['summaryPaymentType'])){
-      	form_set_error('mat_number', Error_Types(160));
-
-      	unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
-      }
-
-      */
-
+      
       if($varName == "eduerp_authorise_scholarship"){
       	//make sure he is not already enabled for instalment
       	if(is_instalment_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
@@ -9802,136 +9795,18 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
 
       }
       $studentFeeProfile = fees_ini_student_profile($student_profile->uid);
-      $_SESSION[$varName] = $studentFeeProfile;
-      return ;
-      /*
-      //drupal_set_message('MOE is '. $student_profile->profile_mode_of_entry);
-      //valid mat or JAMB number was found
-      $_SESSION[$varName]['studentUID'] = $student_profile->uid;
-      $_SESSION[$varName]['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
-      $_SESSION[$varName]['first_choice_nid'] = $student_profile->profile_first_choice;
-      $_SESSION[$varName]['level_name'] = $student_profile->profile_level_name;
-      $_SESSION[$varName]['mat_num'] = ! empty($student_profile->profile_matno) ? $student_profile->profile_matno : 'N/A';
-      $_SESSION[$varName]['jamb_num'] = $student_profile->profile_jambno;
-      $_SESSION[$varName]['gender'] = strtolower($student_profile->profile_gender);
-      $_SESSION[$varName]['mode_of_entry'] = strtolower($student_profile->profile_mode_of_entry);
-      //$_SESSION['eduerp_authorise_scholarship']['health_status'] = strtolower($student_profile->profile_health_status);
-      $_SESSION[$varName]['programNID'] = $student_profile->profile_first_choice;
-
-      $_SESSION[$varName]['country_name'] = ! empty($student_profile->profile_country_name) ? $student_profile->profile_country_name : 'N/A';
-
-
-      $programmeName = get_programmes($student_profile->profile_first_choice, true);
-      $_SESSION[$varName]['programme_name'] = $programmeName[$student_profile->profile_first_choice];
-
-
-
-      if(! isset($_SESSION[$varName]['jamb_num']) || $_SESSION[$varName]['jamb_num'] == ""){
-        form_set_error('mat_number', Error_Types(143));
-
-        unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
+      if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)){
+        drupal_set_message(Error_Types(175), 'error');
         return;
       }
-
-      //get level types
-      $rs = db_query('SELECT nid, field_level_type_value level_type_name FROM {content_type_school_fee_level_types} ');
-      if(db_affected_rows($rs) <= 0){
-      	form_set_error('mat_number', Error_Types(158));
-
-      	unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
-      	return;
-      }
-      $_SESSION[$varName]['levelType'] = null;
-
-
-      //get the level of the student
-      $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
-
-      if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
-        $levelStatus = "freshman";
-      }
-      elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE"){
-      	$levelStatus = "freshman";
-
-      }
-      else{
-        $levelStatus = "returning student";
-      }
-
-      while($r = db_fetch_object($rs)){
-        if($levelStatus == "freshman" && trim(strtolower(strtoupper($r->level_type_name))) == "freshman"){
-      	  $_SESSION[$varName]['levelType'] = $r->nid;
-      	  break;
-        }
-
-        if($levelStatus == "returning student" && trim(strtolower(strtoupper($r->level_type_name))) == "returning student"){
-      	  $_SESSION[$varName]['levelType'] = $r->nid;
-      	  break;
-        }
-      }
-
-      if(! $_SESSION[$varName]['levelType']){
-        form_set_error('mat_number', Error_Types(143));
-
-        unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
-      	return;
-      }
-
-      //get nationality types
-      $rs = db_query('SELECT nid, field_nationality_type_value nationality_type_name FROM {content_type_school_fee_nationality_types} ');
-      if(db_affected_rows($rs) <= 0){
-      	form_set_error('mat_number', Error_Types(158));
-
-      	unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
-      	return;
-      }
-
-      //get the local country name from setting
-      $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
-      if(db_affected_rows($rs1) <= 0){
-      	form_set_error('mat_number', Error_Types(143));
-
-      	unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
-      	return;
-      }
-
-      $_SESSION[$varName]['nationalityType'] = null;
-      $localCountry = db_fetch_object($rs1);
-
-      while($r = db_fetch_object($rs)){
-      	if(trim(strtolower(strtoupper($student_profile->profile_country_name))) == trim(strtolower(strtoupper($localCountry->country_name)))){
-      	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'local'){
-      	    $_SESSION[$varName]['nationalityType'] = $r->nid;
-      	    //return;
-      	    break;
-      	  }
-
-      	}
-      	if(trim($student_profile->profile_country_name) != trim($localCountry->country_name)){
-      	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'international'){
-      	    $_SESSION[$varName]['nationalityType'] = $r->nid;
-      	    //return;
-      	    break;
-      	  }
-
-      	}
-
-      }
-
-      if(! $_SESSION[$varName]['nationalityType']){
-        form_set_error('mat_number', Error_Types(143));
-
-        unset($_SESSION[$varName]); $_SESSION[$varName]=null;
-        drupal_goto($returnURL);
-      	return;
-      }
-      */
+      
+      $_SESSION[$varName] = $studentFeeProfile;
+      //echo print_r($studentFeeProfile);
+      //drupal_set_message('hmm '. $student_profile->uid);
+      return ;
+     
   }
+  
 
 }
 
@@ -10204,7 +10079,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
   <table border=1 >
     <tr>
       <td width='200px;'>Fee Structure Name:</td>
-      <td><b>". $_SESSION[$varName]['fee_structure_name'] ."</b></td>
+      <td><b>". $_SESSION[$varName]['more']['fee_structure_name'] ."</b></td>
     </tr>";
 
     if(isset($feeOption[$setupNID]['program_nid']) && $feeOption[$setupNID]['program_nid'] != 0){
@@ -10278,10 +10153,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
 
                  $html .="
                </table>";
-              // }
-              // else{
-              //   $html .= Error_Types(106);
-              // }
+              
              $html .="
              </fieldset>
            </td>
@@ -10559,7 +10431,7 @@ function get_authorise_instalment_student_finder_form_validate($form, &$state){
 function get_authorise_instalment_student_finder_form_submit($form, &$state){
   global $EDUERPstudentInitiated;
   $values = $state['values'];
-
+ // drupal_set_message('hi');
   $returnURL = 'staff/authoriseinstalment';
   ini_student_fee_profile($values['mat_number'], 'eduerp_authorise_instalment', $returnURL);
 
@@ -10639,14 +10511,42 @@ function staff_show_authorise_instalment_form(){
     '#value' => "<font color=#FF0000><b>By clicking 'Authorise Instalment Payment!' you acknowledge that the student whose details appear above has been authorised to pay his/her School Fees in Instalments for the Current Session only.</b></font>",
 
   );
-  $form['cmdCancel'] = array(
-    '#value' => 'Cancel',
-    '#type' => 'submit'
-  );
-  $form['submit'] = array(
-    '#value' => 'Authorise Instalment Payment!',
-    '#type' => 'submit'
-  );
+  
+  
+  //do not show this button if instalment1 does not exist for at least one fee item
+  if(isset($_SESSION['eduerp_authorise_instalment']['more']) && sizeof($_SESSION['eduerp_authorise_instalment']['more']) ){
+    $found=false;
+    foreach($_SESSION['eduerp_authorise_instalment']['more']['fee_item_details'] as $e){
+      if($e['instalment1_amount'] > 0){
+        $found=true; break;
+      }
+    }
+  }
+  
+  if($found){
+    $form['cmdCancel'] = array(
+      '#value' => 'Cancel',
+      '#type' => 'submit'
+    );
+  
+    $form['submit'] = array(
+      '#value' => 'Authorise Instalment Payment!',
+      '#type' => 'submit'
+    );
+  }
+  else{
+    //drupal_set_message(Error_Types(174), 'error');
+    $form['title_err'] = array(
+    '#type' => 'item',
+    '#value' => "<b><font color='#ff0000'>". Error_Types(174) ."</font></b>",
+    //'#required' => TRUE,
+    );
+    
+    $form['cmdCancel'] = array(
+      '#value' => 'Cancel',
+      '#type' => 'submit'
+    );
+  }
 
   return $form;
 }
@@ -10674,6 +10574,11 @@ function staff_show_authorise_instalment_form_validate($form, &$state){
 
 
     break;
+   case 'cancel':
+     unset($_SESSION['eduerp_authorise_instalment']);
+     $_SESSION['eduerp_authorise_instalment'] = null;
+     drupal_goto("staff/authoriseinstalment");
+   break;
   }
 
 }
@@ -10763,7 +10668,7 @@ function fees_ini_student_profile($studentUID){
       $student_profile = new UserProfile($studentUID);
 
       if(! is_object($student_profile)) return 0;
-
+    
       $studentFeeProfile['studentUID'] = $student_profile->uid;
       $studentFeeProfile['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
       $studentFeeProfile['first_choice_nid'] = $student_profile->profile_first_choice;
@@ -10868,6 +10773,7 @@ function fees_ini_student_profile($studentUID){
       }
 
       //print_r($studentFeeProfile);
+      //drupal_set_message('hmm3 '. $studentUID);
   return $studentFeeProfile;
 
 }
@@ -11086,8 +10992,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 	  if(! $feeStudentOption['studentUID']) $feeStudentOption['studentUID'] = $studentUID;
 	  $feeStudentOption['fee_item_details'][$i]['item_name'] = $r->item_name;
 	  $feeStudentOption['fee_item_details'][$i]['full_amount'] = $r->full_amount;
-	  $feeStudentOption['fee_item_details'][$i]['installment1_amount'] = $r->instalment1_amount;
-	  $feeStudentOption['fee_item_details'][$i]['installment2_amount'] = $r->instalment2_amount;
+	  $feeStudentOption['fee_item_details'][$i]['instalment1_amount'] = $r->instalment1_amount;//instalment1_amount
+	  $feeStudentOption['fee_item_details'][$i]['instalment2_amount'] = $r->instalment2_amount;
 	}
     $i++;
   }
