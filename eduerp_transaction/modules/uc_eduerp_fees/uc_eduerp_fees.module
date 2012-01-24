@@ -564,11 +564,6 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       $fullnames = "$profile->profile_last_name, $profile->profile_first_name{$middle}";
     }
 
-    // Add institution
-    module_load_include('inc', 'eduerp', 'eduerp.admin');
-    $institution = eduerp_get_institution('name');
-    //$options['institution'] = $institution->id;
-
     $fees_item['options'] = array(
       'type' => EDUERP_FEES_NORMAL,
       'nid' => $fees_item['studentFeeSetupNID'],
@@ -581,7 +576,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'late_registration' => $fees_item['late_reg_info'],
       'jambno' => $profile->profile_matno,
       'fullnames' => $fullnames,
-      'institution' => $institution->id
+      'institution' => 1
     );
     // Late registration added by Alan
     $fees_item['options']['late_registration']['last_registration_date'] = intval(strtotime($fees_item['options']['late_registration']['last_registration_date']));
@@ -595,7 +590,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'expiry_date' => intval(strtotime($fees_item['hostel']['expiry_date'])),
       'jambno' => $profile->profile_matno,
       'fullnames' => $fullnames,
-      'institution' => $institution->id
+      'institution' => 1
     );
   } else {
     $fees_item = array();
