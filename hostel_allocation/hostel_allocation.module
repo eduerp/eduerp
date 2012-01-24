@@ -3856,90 +3856,11 @@ function hostel_allocation_show_reserved_room($studentUID){
    </table>
    </div>";
   }
-/*
-  $object = new stdClass();
-  $object->studentid = $student_profile->uid;
-  $object->profile_first_choice = $programmeName[$student_profile->profile_first_choice];
-  $object->profile_matno = $student_profile->profile_matno;
-  $object->profile_jambno = $student_profile->profile_jambno;
-  $object->profile_last_name = $student_profile->profile_last_name;
-  $object->profile_first_name = $student_profile->profile_first_name;
-  $object->profile_gender = $student_profile->profile_gender;
-  $Object->profile_level_name = $student_profile->profile_level_name;
-  $object->hostel_name = $rs->hostel_name;
-  $object->block_name = $rs->block_name;
-  $object->room_name = $rs->room_name;
-  $object->allocation_date = $rs->allocation_date;
-
-  //db_write_record('hostel_reserved', $object);
-  dsm($object);*/
-
-  //$html .= $form;
-  //$html .= drupal_get_form('save_reservation');
-  //save_reservation(serialize($object));
 
   return $html;
 }
 //allocation reservation reports ends here
 
-/**
- * Saves the reservation object for later retrieval
- * @global <type> $user
- * @return <type>
- *
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function save_reservation() {
-
-    global $user;
-    $object = new stdClass();
-    $reservedInfo = get_reservation_info($user->uid);
-    $programmeName = array();
-    $student_profile = new UserProfile($user->uid); //user_load($studentUID);
-    (object)$rs;
-
-    if(db_affected_rows($reservedInfo) > 0){
-        $rs = db_fetch_object($reservedInfo);
-        $programmeName = get_programmes($student_profile->profile_first_choice, true);
-    }
-
-    $object->studentid = $student_profile->uid;
-    $object->profile_first_choice = $programmeName[$student_profile->profile_first_choice];
-    $object->profile_matno = $student_profile->profile_matno;
-    $object->profile_jambno = $student_profile->profile_jambno;
-    $object->profile_last_name = $student_profile->profile_last_name;
-    $object->profile_first_name = $student_profile->profile_first_name;
-    $object->profile_gender = $student_profile->profile_gender;
-    $object->profile_level_name = $student_profile->profile_level_name;
-    $object->hostel_name = $rs->hostel_name;
-    $object->block_name = $rs->block_name;
-    $object->room_name = $rs->room_name;
-    $object->allocation_date = $rs->allocation_date;
-
-    $success = FALSE;
-
-    $form['submit'] = array(
-        '#type'  => 'submit',
-        '#value' => 'Save & Continue',
-    );
-    if(!empty($object)) {
-        //$form['#submit'][] = drupal_write_record('hostel_reserved', $object);
-        $query = db_query("INSERT INTO {hostel_reserved} (uid, profile_first_choice, profile_matno, profile_jambno, profile_last_name,
-            profile_first_name, profile_gender, profile_level_name, hostel_name, block_name, room_name, reservation_date) VALUES(%d, '%s', '%s', '%s', '%s','%s', '%s','%s', '%s','%s', '%s', '%s')",
-        $object->studentid, $object->profile_first_choice, $object->profile_matno, $object->profile_jambno, $object->profile_last_name,
-        $object->profile_first_name, $object->profile_gender, $Object->profile_level_name, $object->hostel_name,
-        $object->block_name, $object->room_name, $object->allocation_date);
-
-        $form['#submit'][] = $query;
-        //    drupal_goto('student/hostelreservation/cart');
-        if($success) {
-            $success = TRUE;
-        }
-    }
-
-    return $form;
-
-}
 
 /**
  * @brief The hostel reservation data object
@@ -3977,6 +3898,8 @@ function hostel_allocation_reserved_data() {
 
     return $data;
 }
+
+
 //revoke reservation starts here
 function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=false){
 
