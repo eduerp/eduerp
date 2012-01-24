@@ -189,16 +189,12 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
       break;
 
     case 'uc_cart_checkout_review_form':
-      //dsm('form is uc_cart_checkout_review_form');
       $order_id = intval($_SESSION['cart_order']);
       if($order_id > 0) {
         $order = uc_order_load($order_id);
 
         if ($order->payment_method == 'edupay') {
-          //unset($form['submit']);
           $form['#prefix'] = '<table id="edupay-review-table"><tr><td>';
-          // We can unset the submit order here so we can send data to edupay
-          //$form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td><td>'. drupal_get_form('uc_edupay_form', $order) .'</td></tr></table>';
           $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td></tr></table>';
         }
       }
@@ -541,33 +537,15 @@ function uc_edupay_form($form_state, $order) {
     'transaction_id' => $edupay_data['transaction_id'],
     'total' => uc_price($order->order_total, $context, $options),
     'cart_order_id' => $order->order_id,
-    //'x_receipt_link_url' => url('cart/2checkout/complete/'. uc_cart_get_id(), array('absolute' => TRUE)),
-    //'merchant_order_id' => $order->order_id,
     'pay_method' => isset($order->payment_method) ? $order->payment_method : 'edupay',
   );
-
-  //$form['#action'] = '_uc_edupay_service_add';
 
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit Order')
   );
 
-  //$form['#submit'][] = '_uc_edupay_service_add';
   return $form;
-}
-
-/**
- * @see uc_edupay_form
- * Makes 'add' service request to edupay.
- * Called when user submits order
- *
- * @deprecated @see _uc_edupay_process_order_request
- *
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function _uc_edupay_service_add() {
-  return 'http://edupay.co.cc/api/transaction/add';
 }
 
 
@@ -712,30 +690,15 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 
         // Occurs when Submit Order is clicked
         case 'submit':
-          //dsm("OP IS SUBMIT");
-          //dsm("in op submit, arg1->transaction_id is " . $arg1->transaction_id);
 
-          // on submit, it is possible to also update $arg1->transaction_id into uc_orders data field
           if ($arg1->payment_method == 'edupay') {
-            // process payment
-            // Before uc_payment_process function can be called, you need to write a gateway callback
-            // to do the actual processing. In the regards, we will simply made a web service call
-            // to edupay to store the generated transaction_id and jamb number
-            // uc_payment_process('edupay', $arg1->order_id, $arg1->order_total, NULL, TRUE, NULL, FALSE);
 
             // if the order is successful, empty the cart and invalidate SESSION variables
             if(isset($_SESSION['edupay_transaction_accepted'])){
-              // @todo set the order_status to completed
-
-              // Break everything
               uc_cart_empty(uc_cart_get_id());
               // Clear our the session variables used to force the cart workflow.
               unset($_SESSION['cart_order'], $_SESSION['do_complete'], $_SESSION['new_user']);
             }else {
-              // Keep the user's item in the cart until the problem for the failure
-              // has been resolved.
-              // Also set the SESSION object for redirect so that the user can continue
-              // from where he/she left off.
             }
           }
           break;
@@ -756,7 +719,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             $field = array();
             $fields = array();
             $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
-            // @todo Break this all into API functions
             foreach ($fees as $key => $product) {
               $fields = $product->data;
               $field['type'] = $fields['type'];
@@ -815,7 +777,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           break;
         // The real order object that will be put into $_SESSION['cart_order'].
         case 'load':
-          //dsm("OP IS LOAD");
           if(isset($_SESSION['transaction_id'])) {
             unset($_SESSION['transaction_id']);
           }
@@ -1049,28 +1010,6 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['bank-list-raw'] = t('Authorized bank list');
   }
   return $tokens;
-}
-
-/**
- * Load Transaction
- * A Transaction occurs when an order operation is new
- *
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-
-function _uc_edupay_load_transaction($order) {
-  if(!isset($order_id)) {
-      return FALSE;
-  }
-  $order_id = $order->order_id;
-
-  $sql = 'SELECT transaction_id
-      FROM {eduerp_transaction}
-      WHERE order_id = %d';
-
-  $result = db_result(db_query($sql, $order_id));
-  $loaded_transaction = $result;
-  return $loaded_transaction;
 }
 
 
@@ -1323,7 +1262,6 @@ function uc_edupay_schema_alter(&$schema) {
  */
 function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
   if($form['#id'] == 'views-exposed-form-fees-summary-page-1') {
-    //drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
     $form['college']['#default_value'] = 'All';
   }
 }
