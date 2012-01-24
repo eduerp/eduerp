@@ -41,17 +41,7 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => -26,
   );
-  /*
-  $items['student/hostelreservation/cart'] = array(
-        'title' => t('Confirm reservation'),
-        'description' => 'Display confirmation about allocation and perform checkout',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('student_hostelreservation_cart'),
-        'access callback' => 'user_access',
-        'access arguments' => array('access cart items'),
-        'type' => MENU_CALLBACK,
-    );
-  */
+
   return $items;
 }
 
@@ -1759,14 +1749,15 @@ function student_hostel_reservation(){
 
 //Israel's functions ends here
 
+
 function student_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
     eduerp_add_role($account, 'Applicant');
-    //$edit['roles'] = NULL;
     $edit['roles'] += $account->roles;
   }
 }
+
 
 /**
  * Retrieves hostel reservation as a uc product
@@ -1775,11 +1766,11 @@ function student_user($op, &$edit, &$account, $category = NULL) {
  */
 function _student_hostelreservation_product() {
     $data = hostel_allocation_reserved_data();
-    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
     $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
     $uc_product = db_fetch_object($block_uc_product);
     return $uc_product;
 }
+
 
 /**
  * Provides the capability to add the hostel reservation to cart
@@ -1821,6 +1812,7 @@ function student_hostelreservation_cart(&$form_state) {
      return $form;
 }
 
+
 function student_hostelreservation_cart_submit($form, &$form_state) {
     //dsm($form_state['values']);
     $uc_product = _student_hostelreservation_product();
@@ -1836,8 +1828,8 @@ function student_hostelreservation_cart_submit($form, &$form_state) {
     }
 }
 
+
 function student_init() {
-  //drupal_add_js - to add the js
   drupal_add_js(drupal_get_path('module', 'student') .'/student.js');
 }
 
