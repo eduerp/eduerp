@@ -3862,44 +3862,6 @@ function hostel_allocation_show_reserved_room($studentUID){
 //allocation reservation reports ends here
 
 
-/**
- * @brief The hostel reservation data object
- * @return
- * The hostel allocation data object
- *
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function hostel_allocation_reserved_data() {
-
-    global $user;
-    $data = new stdClass();
-    $reservedInfo = get_reservation_info($user->uid);
-    $programmeName = array();
-
-    $student_profile = new UserProfile($user->uid); //user_load($studentUID);
-    (object)$rs;
-    if(db_affected_rows($reservedInfo) > 0){
-        $rs = db_fetch_object($reservedInfo);
-        $programmeName = get_programmes($student_profile->profile_first_choice, true);
-    }
-
-    $data->studentid = $student_profile->uid;
-    $data->profile_first_choice = $programmeName[$student_profile->profile_first_choice];
-    $data->profile_matno = $student_profile->profile_matno;
-    $data->profile_jambno = $student_profile->profile_jambno;
-    $data->profile_last_name = $student_profile->profile_last_name;
-    $data->profile_first_name = $student_profile->profile_first_name;
-    $data->profile_gender = $student_profile->profile_gender;
-    $data->profile_level_name = $student_profile->profile_level_name;
-    $data->hostel_name = $rs->hostel_name;
-    $data->block_name = $rs->block_name;
-    $data->room_name = $rs->room_name;
-    $data->allocation_date = $rs->allocation_date;
-
-    return $data;
-}
-
-
 //revoke reservation starts here
 function hostel_allocation_revoke_expired_reservation($studentUID=0, $allocated=false){
 
