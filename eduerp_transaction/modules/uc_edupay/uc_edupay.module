@@ -609,18 +609,18 @@ function _uc_edupay_process_order_request($order) {
         'total_amount' => 0.0,
         'currency' => 'NGN',
         'timeout' => (int)$product['timeout'],
-        'programme' => $product['programme'],
+        'programme' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags($product['programme'])),
         'session' => $product['session'],
         'banks' => array(
           array(
-            'name' => variable_get('eduerp_institution_bank_1_name', ''),
-            'account_name' => variable_get('eduerp_institution_bank_1_account_name', ''),
-            'account_number' => variable_get('eduerp_institution_bank_1_account_number', ''),
+            'name' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags(variable_get('eduerp_institution_bank_1_name', ''))),
+            'account_name' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags(variable_get('eduerp_institution_bank_1_account_name', ''))),
+            'account_number' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags(variable_get('eduerp_institution_bank_1_account_number', ''))),
           ),
           array(
-            'name' => variable_get('eduerp_institution_bank_2_name', ''),
-            'account_name' => variable_get('eduerp_institution_bank_2_account_name', ''),
-            'account_number' => variable_get('eduerp_institution_bank_2_account_number', ''),
+            'name' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags(variable_get('eduerp_institution_bank_2_name', ''))),
+            'account_name' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags(variable_get('eduerp_institution_bank_2_account_name', ''))),
+            'account_number' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags(variable_get('eduerp_institution_bank_2_account_number', ''))),
           ),
         ),
       );
@@ -634,8 +634,9 @@ function _uc_edupay_process_order_request($order) {
       $first = FALSE;
     }
 
+//ab BELOW: . 'XXX...XXX'
     $fees[] = array(
-      'title' => $product['title'],
+      'title' => str_replace(array("\r", "\n", "<", ">"), array('', '', '', ''), striptags($product['title'])) . 'XXX&"'."'".'\XXX',
       'amount' => 0.0 + $product['amount'],
       'currency' => 'NGN'
     );
