@@ -16,6 +16,12 @@ define('FEES_FULL', 'Full Amount');
 define('FEES_FIRST_INSTALMENT', 'Instalment1');
 define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
+/**
+ * Implements hook_perm
+ */ 
+function uc_eduerp_fees_perm() {
+  return array('view hidden tabs');
+}
 
 function uc_eduerp_fees_menu() {
   $items['edupay/callback'] = array(
@@ -29,14 +35,14 @@ function uc_eduerp_fees_menu() {
 
 
 function uc_eduerp_fees_menu_alter(&$items) {
-  $items['user/%user/orders'] = MENU_CALLBACK;
-  unset($items['user/%user/orders']);
+  //$items['user/%user/orders'] = MENU_CALLBACK;
+  //unset($items['user/%user/orders']);
   
   // Alternatively add a new permission named "view hidden tabs"
   // and grant only admin role to view this tab.
   // I like this one. It is much cleaner.
-  // $items['user/%user/orders']['access callback'] = 'user_access';
-  // $items['user/%user/orders']['access arguments'] = array('view hidden tabs');
+  $items['user/%user/orders']['access callback'] = 'user_access';
+  $items['user/%user/orders']['access arguments'] = array('view hidden tabs');
 }
 
 
