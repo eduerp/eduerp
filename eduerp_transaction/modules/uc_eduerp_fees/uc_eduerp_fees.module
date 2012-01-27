@@ -225,7 +225,10 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     $fees = $fees_items;
   }
-  dsm($fees);
+$menusaved = db_result(db_query("SELECT temp FROM tempab"));//ab
+$menusaved = unserialize($menusaved);//ab
+dsm(array('menu saved' => $menusaved));//ab
+dsm($fees);//ab
 
   // Check if the current user has an existing fees setup
   if(!is_fee_setup_existing_for_student($student_id)) {
