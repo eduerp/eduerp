@@ -29,8 +29,8 @@ function uc_eduerp_fees_menu() {
 
 
 function uc_eduerp_fees_menu_alter(&$items) {
+  unset $items['user/%user/orders'];
 db_query("INSERT INTO tempab SET temp='%s'", serialize($items));//ab
-  $items['user/%user/orders']['access callback'] = FALSE;
 }
 
 
