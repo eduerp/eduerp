@@ -35,14 +35,9 @@ function uc_eduerp_fees_menu() {
 
 
 function uc_eduerp_fees_menu_alter(&$items) {
-  //$items['user/%user/orders'] = MENU_CALLBACK;
-  //unset($items['user/%user/orders']);
+  $items['user/%user/orders'] = MENU_CALLBACK;
+  unset($items['user/%user/orders']);
   
-  // Alternatively add a new permission named "view hidden tabs"
-  // and grant only admin role to view this tab.
-  // I like this one. It is much cleaner.
-  $items['user/%user/orders']['access callback'] = 'user_access';
-  $items['user/%user/orders']['access arguments'] = array('view hidden tabs');
 }
 
 
