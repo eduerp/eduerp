@@ -604,23 +604,23 @@ function _uc_edupay_process_order_request($order) {
       $order_parm = array(
         'order_id' => $product['order_id'],
         'transaction_token' => $product['transaction_token'],
-        'full_name' => $product['fullnames'],
-        'matriculation_number' => $user->name,
+        'full_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($product['fullnames'])),
+        'matriculation_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($user->name)),
         'total_amount' => 0.0,
         'currency' => 'NGN',
         'timeout' => (int)$product['timeout'],
-        'programme' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags($product['programme'])),
+        'programme' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($product['programme'])),
         'session' => $product['session'],
         'banks' => array(
           array(
-            'name' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_name', ''))),
-            'account_name' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_account_name', ''))),
-            'account_number' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_account_number', ''))),
+            'name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_name', ''))),
+            'account_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_account_name', ''))),
+            'account_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_account_number', ''))),
           ),
           array(
-            'name' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_name', ''))),
-            'account_name' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_account_name', ''))),
-            'account_number' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_account_number', ''))),
+            'name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_name', ''))),
+            'account_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_account_name', ''))),
+            'account_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_account_number', ''))),
           ),
         ),
       );
@@ -634,9 +634,8 @@ function _uc_edupay_process_order_request($order) {
       $first = FALSE;
     }
 
-//ab BELOW: . 'XXX...XXX'
     $fees[] = array(
-      'title' => str_replace(array("\r", "\n", "<", ">", "&"), array('', '', '', '', ''), strip_tags($product['title'])) . 'XXX"'."'".'\XXX',
+      'title' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($product['title'])),
       'amount' => 0.0 + $product['amount'],
       'currency' => 'NGN'
     );
