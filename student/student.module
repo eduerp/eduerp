@@ -1011,7 +1011,7 @@ function student_views_post_render(&$view, &$output, &$cache) {
 
     $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
-    $output = str_replace("CLEARANCE_UNCLEARED_OPTIONS", $clearance_uncleared_value ? 'checked' : '', $output);
+    $output = str_replace('checked="CLEARANCE_UNCLEARED_OPTIONS"', $clearance_uncleared_value ? 'checked="checked"' : '', $output);
     $output = str_replace("UNCLEARED_REASONS_OPTIONS", ($uncleared_reasons_value !== FALSE) ? $uncleared_reasons_value : '', $output);
     $output = str_replace("SUBMIT_OPTIONS", (($cleared && $verified) || $clearance_uncleared_value) ? "disabled=\"disabled\"" : "", $output);
   }
