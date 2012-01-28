@@ -422,7 +422,8 @@ function student_clearance() {
     }
     elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
       $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+      //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
     }
     elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])) {
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
@@ -459,7 +460,8 @@ function student_clearance() {
 
       if (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
         $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
       }
 
       if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)) {
@@ -776,7 +778,7 @@ function theme_student_field_uncleared_reasons() {
     '#id' => 'edit-field-uncleared-reasons',
     '#options' => $options,
 '#default_value' => 1,
-    '#multiple' => 1,
+    // '#multiple' => 1, // The CCK is not setup to support multiple
     '#attributes' => array('class' => ''),
     '#parents' => array('field-uncleared-reasons')
   );
