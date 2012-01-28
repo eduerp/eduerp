@@ -752,10 +752,7 @@ function theme_student_field_uncleared() {
     '#title' => t('Not Cleared'),
     '#name' => t('field-uncleared'),
     '#id' => t('edit-field-uncleared'),
-    '#value' => 0,
-//'#default_value' => 1,
 '#attributes' => array('checked' => 'checked'),
-    //'#attributes' => array('checked' => ''),
     '#return_value' => variable_get('field-uncleared', TRUE),
     '#parents' => array(t('field-uncleared'))
   );
@@ -777,15 +774,12 @@ function theme_student_field_uncleared_reasons() {
     '#name' => 'field-uncleared-reasons',
     '#id' => 'edit-field-uncleared-reasons',
     '#options' => $options,
-'#default_value' => 1,
 '#value' => 1,
     // '#multiple' => 1, // The CCK is not setup to support multiple
     '#attributes' => array('class' => ''),
     '#parents' => array('field-uncleared-reasons')
   );
-
   return theme('select', $element);
-
 }
 
 /**
@@ -799,12 +793,11 @@ function theme_student_field_deferred() {
     '#title' => t('Defer to next session'),
     '#name' => 'field-defered',
     '#id' => 'edit-field-deferred',
-    '#value' => 0, // this is for setting checked="checked". We are not setting it due to theme_chechbox bug
-//'#default_value' => 1,
-'#attributes' => array('checked' => 'checked'),
+    '#attributes' => array('checked' => 'checked'),
     '#return_value' => variable_get('field-defered', TRUE),
     '#parents' => array('field-defered')
   );
+  $element = array(); // Disable as requested by Sokoto
   return theme('checkbox', $element);
 }
 
