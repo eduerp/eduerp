@@ -79,8 +79,8 @@
         <td><?php print theme('student_field_deferred');?></td>
       </tr>
       <?php
-      }
       $row_class = ($row_class == "even") ? "odd" : "even";
+      }
       ?>
       <tr class="<?php echo $row_class; ?> view-row-last">
         <th style="text-align:right">
