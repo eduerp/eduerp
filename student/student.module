@@ -748,19 +748,14 @@ function _module_views_templates($templates_path) {
  * @see student_theme()
  */
 function theme_student_field_uncleared() {
-  global $clearance_uncleared_value;
-
   $element = array(
     '#title' => t('Not Cleared'),
     '#name' => t('field-uncleared'),
     '#id' => t('edit-field-uncleared'),
-    '#attributes' => array('CLEARANCE_UNCLEARED_OPTIONS'),
+    '#attributes' => array('checked' => 'CLEARANCE_UNCLEARED_OPTIONS'),
     '#return_value' => variable_get('field-uncleared', TRUE),
     '#parents' => array(t('field-uncleared'))
   );
-dsm(array('clearance_uncleared_value' => $clearance_uncleared_value));//ab
-  if ($clearance_uncleared_value) $element['#attributes'] = array('checked' => 'checked');
-
   return theme('checkbox', $element);
 }
 
@@ -989,8 +984,6 @@ function student_views_get_current_student() {
  * so as to enable appending the clearance form
  */
 function student_views_post_render(&$view, &$output, &$cache) {
-  global $clearance_uncleared_value, $uncleared_reasons_value;
-
   if ($view->name == "student_clearance") {
     // view mutation
     $student_id = $view->result[0]->users_uid;
@@ -1020,10 +1013,9 @@ dsm(array('student_clearance' => $student_clearance));//ab
       if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
     }
 
-    // snippet to determine whether or not to place the checkmark to the options
-    // viz a viz results verification and student clearance
     $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace("CLEARANCE_UNCLEARED_OPTIONS", $clearance_uncleared_value ? 'checked' : '', $output);
     $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
   }
 }
