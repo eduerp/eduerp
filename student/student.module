@@ -416,29 +416,33 @@ function student_clearance() {
       $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
       $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
       drupal_set_message('Student\'s results verified');
+      node_save($student_clearance);
     }
     elseif (isset($_POST['field-defered'])) {
       $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-    }
-    elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
-      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-      //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
-      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+      node_save($student_clearance);
     }
     elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])) {
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+      $student_clearance->field_clearance_uncleared[0]['value'] = NULL;
+      $student_clearance->field_uncleared_reasons[0]['value'] = NULL;
 
       _perform_clearance($student_id);
       student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
       drupal_set_message('Student has been cleared');
       $cleared_flag = TRUE;
+      node_save($student_clearance);
     }
     elseif ($_POST['clearance']) {
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
     }
-
-    node_save($student_clearance);
+    elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
+      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+      //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+      node_save($student_clearance);
+    }
   }
   else {
     if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
@@ -448,20 +452,17 @@ function student_clearance() {
       $student_clearance->type = 'student_clearance';
       $student_clearance->field_student[0]['uid'] = $student_id;
 
+      $save_it = FALSE;
       if (isset($_POST['verify']) && $_POST['verify'] == '1') {
         $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
         $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
         drupal_set_message('Student\'s results verified');
+        $save_it = TRUE;
       }
 
       if (isset($_POST['field-defered'])) {
         $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-      }
-
-      if (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
-        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-        //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
-        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+        $save_it = TRUE;
       }
 
       if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)) {
@@ -472,12 +473,18 @@ function student_clearance() {
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
         $cleared_flag = TRUE;
+        $save_it = TRUE;
       }
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1') {
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
       }
-
-      node_save($student_clearance);
+      elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
+        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+        //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+        $save_it = TRUE;
+      }
+      if ($save_it) node_save($student_clearance);
     }
     else {
       drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
