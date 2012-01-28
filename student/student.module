@@ -766,8 +766,6 @@ function theme_student_field_uncleared() {
  * @see student_theme()
  */
 function theme_student_field_uncleared_reasons() {
-  global $uncleared_reasons_value;
-
   $options = student_uncleared_get_reasons();
 
   $element = array(
@@ -775,12 +773,11 @@ function theme_student_field_uncleared_reasons() {
     '#name' => 'field-uncleared-reasons',
     '#id' => 'edit-field-uncleared-reasons',
     '#options' => $options,
+    '#value' => 'UNCLEARED_REASONS_OPTIONS',
     // '#multiple' => 1, // The CCK is not setup to support multiple
     '#attributes' => array('class' => ''),
     '#parents' => array('field-uncleared-reasons')
   );
-  if ($uncleared_reasons_value !== FALSE) $element['#value'] = $uncleared_reasons_value;
-
   return theme('select', $element);
 }
 
@@ -1006,7 +1003,6 @@ function student_views_post_render(&$view, &$output, &$cache) {
 
       $clearance_uncleared_value = FALSE;
       $uncleared_reasons_value = FALSE;
-dsm(array('student_clearance' => $student_clearance));//ab
       if (!empty($student_clearance->field_clearance_uncleared[0]['value'])) $clearance_uncleared_value = TRUE;
       if (isset($student_clearance->field_uncleared_reasons[0]['value'])) $uncleared_reasons_value = $student_clearance->field_uncleared_reasons[0]['value'];
       if ($student_clearance->field_staff_verification[0]['uid']) $verified = true;
@@ -1016,9 +1012,11 @@ dsm(array('student_clearance' => $student_clearance));//ab
     $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_UNCLEARED_OPTIONS", $clearance_uncleared_value ? 'checked' : '', $output);
-    $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
+    $output = str_replace("UNCLEARED_REASONS_OPTIONS", ($uncleared_reasons_value !== FALSE) ? $uncleared_reasons_value : '', $output);
+    $output = str_replace("SUBMIT_OPTIONS", (($cleared && $verified) || $clearance_uncleared_value) ? "disabled=\"disabled\"" : "", $output);
   }
 }
+
 
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'profile') {
