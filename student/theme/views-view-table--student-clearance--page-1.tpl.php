@@ -70,16 +70,18 @@
       </tr>
 			<?php
       $row_class = ($row_class == "even") ? "odd" : "even";
-    ?>
+      if (FALSE) { // Disable for Sokoto
+      ?>
       <tr class="<?php echo $row_class; ?>">
         <th style="text-align:right">
           <!--<input type="checkbox" name="field-clearance-deferred" id="edit-field-clearance-deferred" value="0" class="form-checkbox" />-->
         </th>
         <td><?php print theme('student_field_deferred');?></td>
       </tr>
-    <?php
+      <?php
+      }
       $row_class = ($row_class == "even") ? "odd" : "even";
-    ?>
+      ?>
       <tr class="<?php echo $row_class; ?> view-row-last">
         <th style="text-align:right">
           &nbsp;
