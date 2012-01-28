@@ -773,8 +773,6 @@ function theme_student_field_uncleared_reasons() {
     '#name' => 'field-uncleared-reasons',
     '#id' => 'edit-field-uncleared-reasons',
     '#options' => $options,
-//    '#value' => 'UNCLEARED_REASONS_OPTIONS',
-    '#value' => 1,
     // '#multiple' => 1, // The CCK is not setup to support multiple
     '#attributes' => array('class' => ''),
     '#parents' => array('field-uncleared-reasons')
@@ -1010,12 +1008,14 @@ function student_views_post_render(&$view, &$output, &$cache) {
       if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
     }
 
-dsm(array('student_clearance' => $student_clearance, 'uncleared_reasons_value' => $uncleared_reasons_value));//ab
     $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace('checked="CLEARANCE_UNCLEARED_OPTIONS"', $clearance_uncleared_value ? 'checked="checked"' : '', $output);
-    $output = str_replace("UNCLEARED_REASONS_OPTIONS", ($uncleared_reasons_value !== FALSE) ? $uncleared_reasons_value : '', $output);
     $output = str_replace("SUBMIT_OPTIONS", (($cleared && $verified) || $clearance_uncleared_value) ? "disabled=\"disabled\"" : "", $output);
+
+    if ($uncleared_reasons_value !== FALSE) {
+      $output = str_replace('search <option value="' . $uncleared_reasons_value . '">', '<option value="' . $uncleared_reasons_value . '" selected="selected">', $output);
+    }
   }
 }
 
