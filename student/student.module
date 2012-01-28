@@ -479,6 +479,9 @@ function student_clearance() {
 
       node_save($student_clearance);
     }
+    else {
+      drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
+    }
   }
 
   if ($cleared_flag && module_exists('rules')) {
@@ -506,6 +509,7 @@ function student_clearance() {
   $output .= "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
   return $output;
 }
+
 
 // Bundle of actions to be performed on clearance
 function _perform_clearance($student_id) {
