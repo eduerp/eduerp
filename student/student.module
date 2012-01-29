@@ -433,6 +433,8 @@ function student_clearance() {
       drupal_set_message('Student has been cleared');
       $cleared_flag = TRUE;
       node_save($student_clearance);
+
+      record_cleared($student_id, 'Cleared');
     }
     elseif ($_POST['clearance']) {
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
@@ -443,6 +445,10 @@ function student_clearance() {
       $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
       drupal_set_message('Student marked "Not Cleared"');
       node_save($student_clearance);
+
+      $reasons = student_uncleared_get_reasons();
+dsm(array('reasons' => $reasons, 'post' => $_POST['field-uncleared-reasons']));//ab
+      record_cleared($student_id, 'Not Cleared', $reasons[$_POST['field-uncleared-reasons']]);
     }
   }
   else {
@@ -475,6 +481,8 @@ function student_clearance() {
         drupal_set_message('Student has been cleared');
         $cleared_flag = TRUE;
         $save_it = TRUE;
+
+        record_cleared($student_id, 'Cleared');
       }
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1') {
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
@@ -485,6 +493,9 @@ function student_clearance() {
         $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
         drupal_set_message('Student marked "Not Cleared"');
         $save_it = TRUE;
+
+        $reasons = student_uncleared_get_reasons();
+        record_cleared($student_id, 'Not Cleared', $reasons[$_POST['field-uncleared-reasons']]);
       }
       if ($save_it) node_save($student_clearance);
     }
@@ -566,18 +577,36 @@ function _perform_clearance($student_id) {
   drupal_mail_send($message);
 }
 
-/**
- * A reverse implementation of _perform_clearance
- *
- */
-function remove_clearance($student_id) {
-  // delete student program
-  // unset matriculation number_format
-  //$student = user_load($student_id);
-  //eduerp_set_role($student, 'Applicant');
-  // send a mail that the student has been uncleared
 
+function record_cleared($student_id, $action, $reason = NULL) {
+  $user_profile = new UserProfile($student_id);
+
+  $name = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $name = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
+  }
+
+  $node = new stdClass();
+  $node->type                               = 'student_record';
+  $node->uid                                = 1;  // Admin
+  $node->status                             = 1;  // Published
+  $node->promote                            = 0;
+  $node->sticky                             = 0;
+  $node->comment                            = 0;
+  $node->title                              = "$name - $action";
+  $node->field_student_ref_sr[0]['uid']     = $student_id;
+  $node->field_event_sr[0]['value']         = $action;
+  $node->field_degree_sr[0]['value']        = 'None';
+  $node->field_session_sr[0]['value']       = variable_get('eduerp_current_session', '');
+  $node->field_student_program_sr[0]['nid'] = $user_profile->profile_first_choice;
+  $node->field_approver_sr[0]['uid']        = $user->uid;
+  $node->field_comment_sr[0]['value']       = !empty($reason) ? $reason : NULL;
+  node_save($node);
 }
+
+
 /**
  * Logs clearance information
  * @global  $user
@@ -596,8 +625,8 @@ function student_log_clearance($student_id, $clearance_date, $user) {
   $student = $user_profile->profile_first_name . ' ' . $user_profile->profile_last_name;
 
   watchdog('Clearance', t('New clearance was successfully created by @email, on @studentid.'), array('@email' => $user->mail, '@studentid' => $student));
-
 }
+
 
 function set_matriculation_number($student_id, $formerProgID=0) {
   // Generate the matriculation number for this student
