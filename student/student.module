@@ -441,6 +441,7 @@ function student_clearance() {
       $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
       //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
       $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+      drupal_set_message('Student marked "Not Cleared"');
       node_save($student_clearance);
     }
   }
@@ -482,6 +483,7 @@ function student_clearance() {
         $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
         //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
         $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+        drupal_set_message('Student marked "Not Cleared"');
         $save_it = TRUE;
       }
       if ($save_it) node_save($student_clearance);
