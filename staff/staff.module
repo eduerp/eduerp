@@ -10904,13 +10904,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
       if (!$feeStudentOption['is_student_on_scholarship'] || $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] != 1) {
+        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
+        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
+      }
+      else {
         $scholarship_type = db_fetch_object(db_query("SELECT field_scholarship_type_value AS scholarship_type, field_scholarship_sponsor_value AS sponsor FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s'", $studentUID, variable_get('eduerp_current_session', '')));
         $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = $scholarship_type->scholarship_type;
         $feeStudentOption['fee_item_details'][$i]['sponsor'] = $scholarship_type->sponsor;
-      }
-      else {
-        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
-        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
       }
 
       //check if second instalment collection is activated
@@ -10943,13 +10943,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
         $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
         if (!$feeStudentOption['is_student_on_scholarship'] || $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] != 1) {
+          $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
+          $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
+        }
+        else {
           $scholarship_type = db_fetch_object(db_query("SELECT field_scholarship_type_value AS scholarship_type, field_scholarship_sponsor_value AS sponsor FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s'", $studentUID, variable_get('eduerp_current_session', '')));
           $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = $scholarship_type->scholarship_type;
           $feeStudentOption['fee_item_details'][$i]['sponsor'] = $scholarship_type->sponsor;
-        }
-        else {
-          $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
-          $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
         }
       }
     }
@@ -10979,16 +10979,15 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
       if (!$feeStudentOption['is_student_on_scholarship'] || $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] != 1) {
+        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
+        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
+      }
+      else {
         $scholarship_type = db_fetch_object(db_query("SELECT field_scholarship_type_value AS scholarship_type, field_scholarship_sponsor_value AS sponsor FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s'", $studentUID, variable_get('eduerp_current_session', '')));
         $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = $scholarship_type->scholarship_type;
         $feeStudentOption['fee_item_details'][$i]['sponsor'] = $scholarship_type->sponsor;
       }
-      else {
-        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
-        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
-      }
     }
-dsm(array('feeStudentOption' => $feeStudentOption));//ab
 
 	if($showAllAmounts){//this handles showing stuff in scholarship and instalment payment UIs
 	  if(! $feeStudentOption['studentUID']) $feeStudentOption['studentUID'] = $studentUID;
@@ -11040,7 +11039,6 @@ dsm(array('feeStudentOption' => $feeStudentOption));//ab
       $feeStudentOption['late_reg_info']['last_registration_date'] = $payment_due_date;
     }
   }
-dsm(array('feeStudentOption' => $feeStudentOption));//ab
 
   //now if this is to check fees only then do not check for hostel
   if(! $checkFeesOnly){
