@@ -30,7 +30,7 @@ function student_clearance_menu() {
 
 /**
  * Implements hook_theme
- */ 
+ */
 function student_clearance_theme() {
   return array(
     'student_clearance' => array(
@@ -44,7 +44,7 @@ function student_clearance_theme() {
 function student_clearance_agreement_view($uid, $node, $view = 'agreement') {
   if($view == 'agreement') {
     $output = theme('student_clearance', $uid, $node, 'print', 'agreement');
-    $output .= '<div align="right" style="margin-top: 1em; margin-right: 1em;"><input type="button" value="'. t('Print invoice') .'" onclick="window.print();" /> '
+    $output .= '<div align="right" style="margin-top: 1em; margin-right: 1em;"><input type="button" value="'. t('Print') .'" onclick="window.print();" /> '
               .'<input type="button" value="'. t('Close window') .'" onclick="window.close();" /></div>';
     print $output;
     exit();
@@ -53,13 +53,13 @@ function student_clearance_agreement_view($uid, $node, $view = 'agreement') {
 
 function template_preprocess_student_clearance(&$variables) {
   // Add template file suggestions, default to agreement template.
-  
+
   $content = variable_get('eduerp_agreement', '');
-  
+
   //$output = preg_replace_callback("|\[token ([^ ]*) ([^]]*)\]|i", 'student_clearance_filter_tokens', $node->body);
   $body = token_replace($content, 'global');
   $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
-  
+
   $variables['content'] = $output;
   $variables['template_files'] = array(
     'student_clearance-'. $variables['template'],
@@ -70,42 +70,42 @@ function template_preprocess_student_clearance(&$variables) {
  * We are rewriting the token code because token and token_filter
  * modules cannot handle object of type node which is within a node
  * body i.e node->body tokens can't be replaced at the moment
- */ 
+ */
 function student_clearance_filter_tokens($matches) {
   $token = $matches[0];
   //$type  = $matches[1]; // we don't need the type
   $token_plain = $matches[1];
-  
+
   $content = variable_get('eduerp_agreement', '');
-  
+
   $student = arg(1);
   $staff = db_result(db_query("SELECT uid FROM {node} WHERE nid = %d", arg(3)));
-  
+
   $value = student_clearance_agreement_profile_items($student, $staff, $token_plain);
-  
+
   $output = str_replace($token, $value, $token);
-  
+
   return $output;
 }
 
 /**
  * Get profile values for token replacement
- * 
+ *
  * @todo Turn to first class objects to improve performance
- */ 
-function student_clearance_agreement_profile_items($uid, $staff, $token) {  
+ */
+function student_clearance_agreement_profile_items($uid, $staff, $token) {
   $student_uid = $uid;
   $student = student_new_student($student_uid);
   $clearance_staff = $staff;
-  
+
   $profile = content_profile_load('profile', $student_uid);
   $student_profile = content_profile_load('student_profile', $student_uid);
   $staff_profile = content_profile_load('staff_profile', $clearance_staff);
-  
+
   $program_nid = $student_profile->field_profile_first_choice[0]['nid'];
   $dept_nid = $student->get_department_nid($program_nid);
   $college_nid = $student->get_college_nid($dept_nid);
-  
+
   $values  = array(
     'field_profile_first_name-raw' => $profile->field_profile_first_name[0]['value'],
     'field_profile_middle_name-raw' => $profile->field_profile_middle_name[0]['value'],
@@ -155,7 +155,7 @@ function student_clearance_agreement_isset($node) {
 
 /**
  * Implements hook_views_pre_render
- */ 
+ */
 function student_clearance_views_pre_render(&$view) {
   $node = node_load($view->result[0]->nid);
   //token_replace_multiple($node->body, array('node' => $node, 'global' => NULL));
@@ -171,7 +171,7 @@ function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
     case 'presave':
       $cached_node = cache_get('clearance_agreement_node');
       if(isset($cached_node)) {
-        // Bug fix: remove the node from cache to allow it to be 
+        // Bug fix: remove the node from cache to allow it to be
         // reloaded for other users
         cache_clear_all('clearance_agreement_node', 'cache');
       }
@@ -195,13 +195,13 @@ function student_clearance_nodeapi(&$node, $op, $a3 = null, $a4 = null) {
 
 /**
  * Implements hook_preprocess_views_view
- */ 
+ */
 function student_clearance_preprocess_views_view(&$vars) {
 }
 
 /**
  * Implements hook_preprocess_node
- */ 
+ */
 function student_clearance_preprocess_node(&$vars) {
   $body = token_replace($vars['body'], 'global');
   $output = preg_replace_callback("|\[([^ ]*)\]|i", 'student_clearance_filter_tokens', $body);
@@ -210,7 +210,7 @@ function student_clearance_preprocess_node(&$vars) {
 
 /**
  * Implements hook_link
- */ 
+ */
 function student_clearance_link($type, $node = NULL, $teaser = FALSE) {
 
   if($type == 'node' && $node->type == 'clearance_agreement') {
@@ -231,14 +231,14 @@ function student_clearance_link($type, $node = NULL, $teaser = FALSE) {
 
 /**
 * Implementation of hook_init()
-* 
+*
 * Marking as WON'T FIX
 *
-* @todo trigger a pdf download instead of browser display. 
+* @todo trigger a pdf download instead of browser display.
 * Implement hook_file_download to get this done.
 */
 function todo_student_clearance_init() {
-	global $user;	
+	global $user;
 	$arg = (arg(0) == 'student' && arg(1) == 'agreement' && arg(2) == 'pdf' && is_numeric(arg(3)));
 	if($arg) {
 		$student_id = isset($student_id) ? $student_id : student_views_get_current_student();

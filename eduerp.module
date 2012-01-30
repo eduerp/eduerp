@@ -14,14 +14,6 @@ function eduerp_menu() {
     ),
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/settings/eduerp/institution-settings'] = array (
-    'title' => 'Institution Settings',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('eduerp_configure_institution'),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'eduerp.admin.inc'
-    );
 
   return $items;
 }
@@ -211,17 +203,4 @@ class UserProfile {
       node_save($node);
     }
   }
-}
-
-/**
- *
- */
-function eduerp_init() {
-    /*if(!isset($institution)) {
-        $institution = 'institution';
-        // we can't call eduerp_run_task here since it is not within a .module file
-        $path = drupal_get_path('module', 'eduerp');
-        require_once "./$path/eduerp.api.inc";
-        eduerp_run_task($institution);
-    }*/
 }

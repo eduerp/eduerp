@@ -16,6 +16,12 @@ define('FEES_FULL', 'Full Amount');
 define('FEES_FIRST_INSTALMENT', 'Instalment1');
 define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
+/**
+ * Implements hook_perm
+ */ 
+function uc_eduerp_fees_perm() {
+  return array('view hidden tabs');
+}
 
 function uc_eduerp_fees_menu() {
   $items['edupay/callback'] = array(
@@ -25,6 +31,13 @@ function uc_eduerp_fees_menu() {
     'type' => MENU_CALLBACK,
   );
   return $items;
+}
+
+
+function uc_eduerp_fees_menu_alter(&$items) {
+  $items['user/%user/orders'] = MENU_CALLBACK;
+  unset($items['user/%user/orders']);
+  
 }
 
 
@@ -219,7 +232,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     $fees = $fees_items;
   }
-  dsm($fees);
 
   // Check if the current user has an existing fees setup
   if(!is_fee_setup_existing_for_student($student_id)) {
@@ -564,11 +576,6 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       $fullnames = "$profile->profile_last_name, $profile->profile_first_name{$middle}";
     }
 
-    // Add institution
-    module_load_include('inc', 'eduerp', 'eduerp.admin');
-    $institution = eduerp_get_institution('name');
-    //$options['institution'] = $institution->id;
-
     $fees_item['options'] = array(
       'type' => EDUERP_FEES_NORMAL,
       'nid' => $fees_item['studentFeeSetupNID'],
@@ -581,7 +588,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'late_registration' => $fees_item['late_reg_info'],
       'jambno' => $profile->profile_matno,
       'fullnames' => $fullnames,
-      'institution' => $institution->id
+      'institution' => 1
     );
     // Late registration added by Alan
     $fees_item['options']['late_registration']['last_registration_date'] = intval(strtotime($fees_item['options']['late_registration']['last_registration_date']));
@@ -595,7 +602,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'expiry_date' => intval(strtotime($fees_item['hostel']['expiry_date'])),
       'jambno' => $profile->profile_matno,
       'fullnames' => $fullnames,
-      'institution' => $institution->id
+      'institution' => 1
     );
   } else {
     $fees_item = array();

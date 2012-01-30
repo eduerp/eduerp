@@ -62,7 +62,6 @@ projects[pathauto][subdir] = "contrib"
 
 ; Services
 projects[services][subdir] = "contrib"
-projects[oauth][subdir] = "contrib"
 
 ; Other
 projects[ctools][subdir] = "contrib"
