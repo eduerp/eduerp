@@ -416,28 +416,39 @@ function student_clearance() {
       $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
       $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
       drupal_set_message('Student\'s results verified');
+      node_save($student_clearance);
     }
     elseif (isset($_POST['field-defered'])) {
       $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-    }
-    elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
-      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+      node_save($student_clearance);
     }
     elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])) {
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+      $student_clearance->field_clearance_uncleared[0]['value'] = NULL;
+      $student_clearance->field_uncleared_reasons[0]['value'] = NULL;
 
       _perform_clearance($student_id);
       student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
       drupal_set_message('Student has been cleared');
       $cleared_flag = TRUE;
+      node_save($student_clearance);
+
+      record_cleared($student_id, 'Cleared');
     }
     elseif ($_POST['clearance']) {
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
     }
+    elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
+      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+      //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+      drupal_set_message('Student marked "Not Cleared"');
+      node_save($student_clearance);
 
-    node_save($student_clearance);
+      $reasons = student_uncleared_get_reasons();
+      record_cleared($student_id, 'Not Cleared', $reasons[$_POST['field-uncleared-reasons']]);
+    }
   }
   else {
     if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
@@ -447,19 +458,17 @@ function student_clearance() {
       $student_clearance->type = 'student_clearance';
       $student_clearance->field_student[0]['uid'] = $student_id;
 
+      $save_it = FALSE;
       if (isset($_POST['verify']) && $_POST['verify'] == '1') {
         $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
         $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
         drupal_set_message('Student\'s results verified');
+        $save_it = TRUE;
       }
 
       if (isset($_POST['field-defered'])) {
         $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-      }
-
-      if (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
-        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        $save_it = TRUE;
       }
 
       if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)) {
@@ -470,12 +479,27 @@ function student_clearance() {
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
         $cleared_flag = TRUE;
+        $save_it = TRUE;
+
+        record_cleared($student_id, 'Cleared');
       }
       elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1') {
         drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
       }
+      elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
+        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+        //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+        drupal_set_message('Student marked "Not Cleared"');
+        $save_it = TRUE;
 
-      node_save($student_clearance);
+        $reasons = student_uncleared_get_reasons();
+        record_cleared($student_id, 'Not Cleared', $reasons[$_POST['field-uncleared-reasons']]);
+      }
+      if ($save_it) node_save($student_clearance);
+    }
+    else {
+      drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
     }
   }
 
@@ -504,6 +528,7 @@ function student_clearance() {
   $output .= "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
   return $output;
 }
+
 
 // Bundle of actions to be performed on clearance
 function _perform_clearance($student_id) {
@@ -551,18 +576,38 @@ function _perform_clearance($student_id) {
   drupal_mail_send($message);
 }
 
-/**
- * A reverse implementation of _perform_clearance
- *
- */
-function remove_clearance($student_id) {
-  // delete student program
-  // unset matriculation number_format
-  //$student = user_load($student_id);
-  //eduerp_set_role($student, 'Applicant');
-  // send a mail that the student has been uncleared
 
+function record_cleared($student_id, $action, $reason = NULL) {
+  global $user;
+
+  $user_profile = new UserProfile($student_id);
+
+  $name = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $name = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
+  }
+
+  $node = new stdClass();
+  $node->type                               = 'student_record';
+  $node->uid                                = 1;  // Admin
+  $node->status                             = 1;  // Published
+  $node->promote                            = 0;
+  $node->sticky                             = 0;
+  $node->comment                            = 0;
+  $node->title                              = "$name - $action";
+  $node->field_student_ref_sr[0]['uid']     = $student_id;
+  $node->field_event_sr[0]['value']         = $action;
+  $node->field_degree_sr[0]['value']        = 'None';
+  $node->field_session_sr[0]['value']       = variable_get('eduerp_current_session', '');
+  $node->field_student_program_sr[0]['nid'] = $user_profile->profile_first_choice;
+  $node->field_approver_sr[0]['uid']        = $user->uid;
+  $node->field_comment_sr[0]['value']       = !empty($reason) ? $reason : NULL;
+  node_save($node);
 }
+
+
 /**
  * Logs clearance information
  * @global  $user
@@ -581,8 +626,8 @@ function student_log_clearance($student_id, $clearance_date, $user) {
   $student = $user_profile->profile_first_name . ' ' . $user_profile->profile_last_name;
 
   watchdog('Clearance', t('New clearance was successfully created by @email, on @studentid.'), array('@email' => $user->mail, '@studentid' => $student));
-
 }
+
 
 function set_matriculation_number($student_id, $formerProgID=0) {
   // Generate the matriculation number for this student
@@ -750,8 +795,7 @@ function theme_student_field_uncleared() {
     '#title' => t('Not Cleared'),
     '#name' => t('field-uncleared'),
     '#id' => t('edit-field-uncleared'),
-    '#value' => 0,
-    //'#attributes' => array('checked' => ''),
+    '#attributes' => array('checked' => 'CLEARANCE_UNCLEARED_OPTIONS'),
     '#return_value' => variable_get('field-uncleared', TRUE),
     '#parents' => array(t('field-uncleared'))
   );
@@ -765,7 +809,6 @@ function theme_student_field_uncleared() {
  * @see student_theme()
  */
 function theme_student_field_uncleared_reasons() {
-
   $options = student_uncleared_get_reasons();
 
   $element = array(
@@ -773,13 +816,11 @@ function theme_student_field_uncleared_reasons() {
     '#name' => 'field-uncleared-reasons',
     '#id' => 'edit-field-uncleared-reasons',
     '#options' => $options,
-    '#multiple' => 1,
+    // '#multiple' => 1, // The CCK is not setup to support multiple
     '#attributes' => array('class' => ''),
     '#parents' => array('field-uncleared-reasons')
   );
-
   return theme('select', $element);
-
 }
 
 /**
@@ -793,7 +834,7 @@ function theme_student_field_deferred() {
     '#title' => t('Defer to next session'),
     '#name' => 'field-defered',
     '#id' => 'edit-field-deferred',
-    '#value' => 0, // this is for setting checked="checked". We are not setting it due to theme_chechbox bug
+    '#attributes' => array('checked' => 'checked'),
     '#return_value' => variable_get('field-defered', TRUE),
     '#parents' => array('field-defered')
   );
@@ -1002,17 +1043,25 @@ function student_views_post_render(&$view, &$output, &$cache) {
       $node['nid'] = $row->nid;
       $student_clearance = node_load($node);
 
+      $clearance_uncleared_value = FALSE;
+      $uncleared_reasons_value = FALSE;
+      if (!empty($student_clearance->field_clearance_uncleared[0]['value'])) $clearance_uncleared_value = TRUE;
+      if (isset($student_clearance->field_uncleared_reasons[0]['value'])) $uncleared_reasons_value = $student_clearance->field_uncleared_reasons[0]['value'];
       if ($student_clearance->field_staff_verification[0]['uid']) $verified = true;
       if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
     }
 
-    // snippet to determine whether or not to place the checkmark to the options
-    // viz a viz results verification and student clearance
     $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace('checked="CLEARANCE_UNCLEARED_OPTIONS"', $clearance_uncleared_value ? 'checked="checked"' : '', $output);
     $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
+
+    if ($uncleared_reasons_value !== FALSE) {
+      $output = str_replace('<option value="' . $uncleared_reasons_value . '">', '<option value="' . $uncleared_reasons_value . '" selected="selected">', $output);
+    }
   }
 }
+
 
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'profile') {
@@ -1286,7 +1335,7 @@ function student_course_form(&$obj) {
     $courseselections->finishform();
   }
   else {
-    drupal_set_message('You must pay your Tuition Fees before registering courses!');
+    drupal_set_message('You must pay your fees before course registration!');
     drupal_goto("user/$user->uid/fees/pay");
   }
 

@@ -2606,7 +2606,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
       	if( ! $studentInitiated)
         echo $navi = "<font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url("hostel_allocation/direct_reservation") ."'>Direct Room Reservation</a>&nbsp; &raquo; &nbsp;<b>Select Block  (Step 2 of 2)</b></font><br /><br />";
 
-	echo hostel_allocation_show_student_info();
+	    echo hostel_allocation_show_student_info();
         echo '<br /><hr /><br />';
         echo hostel_allocation_show_reservation_summary_info();
         echo '<br /><hr /><br />';
@@ -2617,7 +2617,10 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
           echo "<b>Direct Room Reservation</b> - Please select the Block<br /><br /><br />";
 
         echo drupal_get_form('hostel_allocation_select_block_form');
-
+		
+		echo '<br /><hr /><br />';
+        echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid']);
+        
         break;
       case '1':
         unset($_SESSION['eduerp_reserve_room']);
@@ -2626,6 +2629,9 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
           echo "<b>Direct Room Reservation</b> - Please enter the Student's Matriculation Number.<br />";
         }
         echo drupal_get_form('hostel_allocation_enter_mat_number_form');
+        
+        echo '<br /><hr /><br />';
+        echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''));
         break;
 
       default:
@@ -3338,7 +3344,7 @@ function hostel_allocation_reports(){
 
       break;
       case 'allocation':
-  	echo hostel_allocation_room_allocation_report($_SESSION['EDUERP_rpt']['block_nid']);
+  	    echo hostel_allocation_room_allocation_report($_SESSION['EDUERP_rpt']['block_nid']);
       break;
       case 'room_statistics':
         echo hostel_allocation_room_statistics_report($_SESSION['EDUERP_rpt']['session_name'], $_SESSION['EDUERP_rpt']['block_nid']);
@@ -4189,5 +4195,84 @@ function add_international_student_category_to_allocation_category(){
     //drupal_set_message($form_state['values']['category_name'] . ' Category has been created!<br />');
     node_save($node);
   }
+}
+
+function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0){
+ ob_start();
+ 
+ 
+ $html = "";
+ $sql = "SELECT cth.field_hostel_name_value hostel_name, ctb.field_block_name_value block_name, ctard.field_category_name_value category_name, abs.allocation_number, abs.alloted_number, abs.session_name session_name 
+  FROM {content_type_hostels} cth, {allocation_block_statistics} abs, {content_type_blocks} ctb, {content_type_allocation_rules_description} ctard
+  WHERE
+  abs.block_nid = ctb.nid
+  AND abs.allocation_rules_description_nid=ctard.nid
+  AND ctb.field_hostel_id_nid=cth.nid
+
+  AND abs.session_name = '%s' AND abs.allocation_number > abs.alloted_number";
+
+  if($hostelNID != '0') 
+    $sql .= " AND abs.block_nid = %d ";
+
+   $sql .= " ORDER BY hostel_name, block_name, category_name ";
+
+
+ if($hostelNID != '0'){
+   $hostelInfo = get_hostels($hostelNID, true); //get_blocks($blockNID, false);
+   $html .="
+     <div>Available Blocks for Allocation in <b>". $hostelInfo[$hostelNID] .' - '. $session ."</b> session</div><br />";
+ }else
+   $html .="
+     <div>Available Blocks for Allocation <b>". $session ."</b> session</div><br />";
+
+  if($hostelNID != '0')
+   $rs = db_query($sql, $session, $hostelNID);
+  else
+   $rs = db_query($sql, $session);
+
+ if(db_affected_rows($rs) > 0){
+   $html.= "
+   <div id='assigned_courses'>
+   <table border=1>
+     <th>s/n</th>
+     <th>Hostel Name</th>
+     <th>Block Name</th>
+     <th>Category Name</th>
+     <th>Allocation Number</th>
+     <th>Alloted Number</th>
+     <th>Session</th>";
+     $i = 1;
+     while($r = db_fetch_object($rs)){
+
+
+
+      //foreach ($settings as $v){
+        if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+          $html .= "
+           <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+             <td>". $i++ ."</td>
+             <td>". $r->hostel_name ."</td>
+             <td>". $r->block_name ."</td>
+             <td>". $r->category_name ."</td>
+             <td>". $r->allocation_number ."</td>
+             <td>". $r->alloted_number ."</td>
+             <td>". $r->session_name ."</td>
+           </tr>";
+      //}
+
+     }
+     $html .="
+   </table>
+   </div>
+   ";
+
+ }
+ else {
+   //drupal_set_message(Error_Types(106), 'error');
+   $html .= Error_Types(176);
+ }
+     echo $html;
+
+ return ob_get_clean();
 }
 ?>
