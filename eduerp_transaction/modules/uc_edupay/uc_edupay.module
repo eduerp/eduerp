@@ -1339,3 +1339,13 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $vars['invoice_title'] = t('Invoice');
 dsm($vars);
 }
+
+/**
+ * Implementation of hook_views_api().
+ */
+function uc_edupay_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'uc_edupay') . '/includes',
+  );
+}
