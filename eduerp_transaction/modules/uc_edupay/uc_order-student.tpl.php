@@ -15,11 +15,11 @@
             <?php echo $site_logo; ?>
           </div>
           <div class="header-right" style="float:right;width:73%;height:100%">
-            <div style="float:left;border:solid 1px #EDF0F9; width:70%;text-align:center;height:100%">
-              <div style="text-transform:uppercase; color:#305E37"><h3><?php echo $institution_name ?></h1></div>
-              <div style="text-transform:uppercase; color:#08941E"><h4><?php echo $institution_address ?></h4></div>
+            <div class="inner-left" style="float:left;border:solid 1px #EDF0F9; width:70%;text-align:center;height:100%">
+              <div class="title" style="text-transform:uppercase; color:#305E37"><h3><?php echo $institution_name ?></h1></div>
+              <div class="sub-title" style="text-transform:uppercase; color:#08941E"><h4><?php echo $institution_address ?></h4></div>
             </div>
-            <div style="float:right; width:25%;border:solid 1px #EDF0F9;height:100%">
+            <div class="inner-right" style="float:right; width:25%;border:solid 1px #EDF0F9;height:100%">
               <div style="color:#D73627"><b>Invoice Number: <?php echo $invoice_number ?></b></div>
               <div style="text-transform:uppercase; text-align:center"><h3><?php echo $invoice_title ?></h3></div>
             </div>
@@ -37,7 +37,7 @@
             </div>
           </div>
           <div class="body-center" style="float:right; width:72%; border:solid 1px #D0D0D0;">
-            <table border="0" bordercolor="#FFCC00" style="font-size:11px" width="100%" cellpadding="0" cellspacing="0">
+            <table border="0" class="table" bordercolor="#FFCC00" style="font-size:11px;text-align:center" width="100%" cellpadding="0" cellspacing="0">
               <tr>
                 <td>&nbsp;</td>
                 <td>&nbsp;</td>
