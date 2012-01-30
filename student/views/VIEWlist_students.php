@@ -3,10 +3,9 @@ $view = new view;
 $view->name = 'list_students';
 $view->description = 'List Students';
 $view->tag = '';
-$view->view_php = '';
 $view->base_table = 'users';
-$view->is_cacheable = FALSE;
-$view->api_version = 2;
+$view->core = 0;
+$view->api_version = '2';
 $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 $handler = $view->new_display('default', 'Defaults', 'default');
 $handler->override_option('relationships', array(
@@ -57,6 +56,46 @@ $handler->override_option('relationships', array(
   ),
 ));
 $handler->override_option('fields', array(
+  'field_profile_jambno_value' => array(
+    'label' => 'JAMB No.',
+    'alter' => array(
+      'alter_text' => 0,
+      'text' => '',
+      'make_link' => 0,
+      'path' => '',
+      'absolute' => 0,
+      'link_class' => '',
+      'alt' => '',
+      'rel' => '',
+      'prefix' => '',
+      'suffix' => '',
+      'target' => '',
+      'help' => '',
+      'trim' => 0,
+      'max_length' => '',
+      'word_boundary' => 1,
+      'ellipsis' => 1,
+      'html' => 0,
+      'strip_tags' => 0,
+    ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'link_to_node' => 0,
+    'label_type' => 'widget',
+    'format' => 'default',
+    'multiple' => array(
+      'group' => TRUE,
+      'multiple_number' => '',
+      'multiple_from' => '',
+      'multiple_reversed' => FALSE,
+    ),
+    'exclude' => 0,
+    'id' => 'field_profile_jambno_value',
+    'table' => 'node_data_field_profile_jambno',
+    'field' => 'field_profile_jambno_value',
+    'relationship' => 'content_profile_rel_1',
+  ),
   'name' => array(
     'label' => 'Mat No.',
     'alter' => array(
@@ -400,8 +439,8 @@ $handler->override_option('filters', array(
   'rid' => array(
     'operator' => 'or',
     'value' => array(
-      '30' => '30',
-      '29' => '29',
+      8 => '8',
+      7 => '7',
     ),
     'group' => '0',
     'exposed' => TRUE,
@@ -599,7 +638,7 @@ if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'rid\'])) {
   }
 
   $sql = "SELECT COUNT(users.uid) AS count
-    FROM users users 
+    FROM users users
     LEFT JOIN node node_users ON users.uid = node_users.uid AND node_users.type = \'profile\'
     LEFT JOIN node node_users_1 ON users.uid = node_users_1.uid AND node_users_1.type = \'student_profile\'
     LEFT JOIN content_type_student_profile node_users_1_node_data_field_profile_first_choice ON node_users_1.vid = node_users_1_node_data_field_profile_first_choice.vid
