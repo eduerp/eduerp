@@ -1,4 +1,4 @@
-<?php 
+<?php
 /**
  * Implementation of hook_views_default_views().
  */
@@ -356,20 +356,19 @@ $handler->override_option('tab_options', array(
   'weight' => 0,
   'name' => 'navigation',
 ));
-  
+
   $views[$view->name] = $view;
-   
+
   /**
    * Fees summary
-   */ 
+   */
 $view = new view;
 $view->name = 'fees_summary';
 $view->description = 'Fees reporting as a summary';
 $view->tag = 'eduerp';
-$view->view_php = '';
 $view->base_table = 'node';
-$view->is_cacheable = FALSE;
-$view->api_version = 2;
+$view->core = 0;
+$view->api_version = '2';
 $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 $handler = $view->new_display('default', 'Defaults', 'default');
 $handler->override_option('relationships', array(
@@ -1037,13 +1036,13 @@ $handler->override_option('filters', array(
   'field_college_id_nid' => array(
     'operator' => 'or',
     'value' => array(
-      '4946' => '4946',
-      '4725' => '4725',
-      '4938' => '4938',
-      '4952' => '4952',
-      '4945' => '4945',
-      '4939' => '4939',
-      '4942' => '4942',
+      4946 => '4946',
+      4725 => '4725',
+      4938 => '4938',
+      4952 => '4952',
+      4945 => '4945',
+      4939 => '4939',
+      4942 => '4942',
     ),
     'group' => '0',
     'exposed' => TRUE,
@@ -1070,6 +1069,8 @@ $handler->override_option('access', array(
 $handler->override_option('cache', array(
   'type' => 'none',
 ));
+$handler->override_option('header_format', '1');
+$handler->override_option('header_empty', 0);
 $handler->override_option('use_pager', '1');
 $handler->override_option('style_plugin', 'table');
 $handler->override_option('style_options', array(
@@ -2080,15 +2081,7 @@ $handler->override_option('filters', array(
   ),
   'college' => array(
     'operator' => 'or',
-    'value' => array(
-      '123' => '123',
-      'Business' => 'Business',
-      'Environmental Sciences' => 'Environmental Sciences',
-      'Fac X' => 'Fac X',
-      'jjjj' => 'jjjj',
-      'Law' => 'Law',
-      'Social Sciences' => 'Social Sciences',
-    ),
+    'value' => array(),
     'group' => '0',
     'exposed' => TRUE,
     'expose' => array(
@@ -2098,7 +2091,7 @@ $handler->override_option('filters', array(
       'label' => 'Faculty',
       'optional' => 1,
       'single' => 1,
-      'remember' => 0,
+      'remember' => 1,
       'reduce' => 0,
     ),
     'case' => 0,
@@ -2113,9 +2106,7 @@ $handler->override_option('filters', array(
   ),
   'sponsor' => array(
     'operator' => 'in',
-    'value' => array(
-      'None' => 'None',
-    ),
+    'value' => array(),
     'group' => '0',
     'exposed' => TRUE,
     'expose' => array(
@@ -2125,7 +2116,7 @@ $handler->override_option('filters', array(
       'label' => 'Sponsor',
       'optional' => 1,
       'single' => 1,
-      'remember' => 0,
+      'remember' => 1,
       'reduce' => 0,
     ),
     'id' => 'sponsor',
@@ -2152,7 +2143,7 @@ $handler->override_option('filters', array(
       'label' => 'Order Status',
       'optional' => 1,
       'single' => 0,
-      'remember' => 0,
+      'remember' => 1,
       'reduce' => 1,
     ),
     'id' => 'status_1',
@@ -2162,28 +2153,6 @@ $handler->override_option('filters', array(
     'override' => array(
       'button' => 'Use default',
     ),
-  ),
-  'status' => array(
-    'operator' => 'in',
-    'value' => array(
-      'canceled' => 'canceled',
-      'in_checkout' => 'in_checkout',
-      'pending' => 'pending',
-      'payment_received' => 'payment_received',
-    ),
-    'group' => '0',
-    'exposed' => FALSE,
-    'expose' => array(
-      'operator' => FALSE,
-      'label' => '',
-    ),
-    'id' => 'status',
-    'table' => 'fees_order',
-    'field' => 'status',
-    'override' => array(
-      'button' => 'Use default',
-    ),
-    'relationship' => 'none',
   ),
   'level_name' => array(
     'operator' => 'contains',
@@ -2195,7 +2164,6 @@ $handler->override_option('filters', array(
       'operator' => 'level_name_op',
       'identifier' => 'level_name',
       'label' => 'Level',
-      'optional' => 1,
       'remember' => 0,
     ),
     'case' => 0,
@@ -2209,10 +2177,7 @@ $handler->override_option('filters', array(
   ),
   'type' => array(
     'operator' => 'in',
-    'value' => array(
-      'hostel' => 'hostel',
-      'fees' => 'fees',
-    ),
+    'value' => array(),
     'group' => '0',
     'exposed' => TRUE,
     'expose' => array(
@@ -2222,7 +2187,7 @@ $handler->override_option('filters', array(
       'label' => 'Fees type',
       'optional' => 1,
       'single' => 1,
-      'remember' => 0,
+      'remember' => 1,
       'reduce' => 0,
     ),
     'id' => 'type',
@@ -2235,9 +2200,7 @@ $handler->override_option('filters', array(
   ),
   'scholarship_type' => array(
     'operator' => 'in',
-    'value' => array(
-      'None' => 'None',
-    ),
+    'value' => array(),
     'group' => '0',
     'exposed' => TRUE,
     'expose' => array(
@@ -2247,7 +2210,7 @@ $handler->override_option('filters', array(
       'label' => 'Scholarship type',
       'optional' => 1,
       'single' => 1,
-      'remember' => 0,
+      'remember' => 1,
       'reduce' => 0,
     ),
     'id' => 'scholarship_type',
@@ -2264,8 +2227,6 @@ $handler->override_option('access', array(
   'perm' => 'student payments',
 ));
 $handler->override_option('title', 'Fees');
-$handler->override_option('header_format', '1');
-$handler->override_option('header_empty', 0);
 $handler->override_option('footer', '<?php
 
 $view = views_get_view_result(\'fees_summary\', \'page_1\');
