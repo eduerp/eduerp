@@ -1214,24 +1214,30 @@ Part_Time',
     'active' => '1',
     'subjects_allowed_values' => '|
 Agricultural Science
+Animal Husbandry
 Applied Electricity
 Arabic
 Auto Mechanics
 Biology
 Building Construction
 Business Management
+Carpentry and Joinery
+Catering Craft Practice
 Chemistry
 Christian Religious Studies
 Clerical Office Duties
 Clothing and textiles
 Commerce
+Cosmetology
 Cover
+Draughtmanship Craft Practice
 Economics
 Electronics
 Engineering Science
 English Language
 English Language Balance
 Financial Accounting
+Fisheries
 Food and Nutrition
 French
 Further Maths
@@ -1241,16 +1247,21 @@ Hausa Language
 Health Science
 History
 Home Management
-Introduction
+ICT – Information Communication Technology
+Introduction to Building Construction
 Islamic Religious Studies
+Ladies Garment Making
 Literature in English
 Management Living
 Mathematics
+Mens Garment Making
 Metalwork
 Music
 Nigerian Languages
+Painting and Decorating
 Physical Education
 Physics
+Plumbing and Pipefitting
 Principles of Cost Accounting
 Science (core)
 Shorthand
@@ -1271,8 +1282,7 @@ D7
 E8
 F9
 Distinction
-Upper Credit
-Lower Credit
+Credit
 Pass
 Fail
 A
@@ -1341,24 +1351,30 @@ F',
     'active' => '1',
     'subjects_allowed_values' => '|
 Agricultural Science
+Animal Husbandry
 Applied Electricity
 Arabic
 Auto Mechanics
 Biology
 Building Construction
 Business Management
+Carpentry and Joinery
+Catering Craft Practice
 Chemistry
 Christian Religious Studies
 Clerical Office Duties
 Clothing and textiles
 Commerce
+Cosmetology
 Cover
+Draughtmanship Craft Practice
 Economics
 Electronics
 Engineering Science
 English Language
 English Language Balance
 Financial Accounting
+Fisheries
 Food and Nutrition
 French
 Further Maths
@@ -1368,16 +1384,21 @@ Hausa Language
 Health Science
 History
 Home Management
-Introduction
+ICT – Information Communication Technology
+Introduction to Building Construction
 Islamic Religious Studies
+Ladies Garment Making
 Literature in English
 Management Living
 Mathematics
+Mens Garment Making
 Metalwork
 Music
 Nigerian Languages
+Painting and Decorating
 Physical Education
 Physics
+Plumbing and Pipefitting
 Principles of Cost Accounting
 Science (core)
 Shorthand
@@ -1398,8 +1419,7 @@ D7
 E8
 F9
 Distinction
-Upper Credit
-Lower Credit
+Credit
 Pass
 Fail
 A

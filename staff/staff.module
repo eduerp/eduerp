@@ -9736,7 +9736,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
     $studInfo = get_student_info_by_jamb_number($studentNumber);
     if(! db_affected_rows($studInfo) > 0) {
       form_set_error('mat_number', Error_Types(125));
-      
+
       unset($_SESSION[$varName]); $_SESSION[$varName]=null;
       drupal_goto($returnURL);
     }
@@ -9753,7 +9753,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
   }
   //$studentInfo->uid = 947;
   if($found) {
-  
+
     //if(! $EDUERPstudentInitiated) {//if request is from student then do not show this
       $student_profile = new UserProfile($studentInfo->uid);
       //make sure no payment info exists for the student for the current session
@@ -9765,7 +9765,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       The check below is no longer applcable
 
       */
-      
+
       if($varName == "eduerp_authorise_scholarship"){
       	//make sure he is not already enabled for instalment
       	if(is_instalment_authorisation_existing($studentInfo->uid, variable_get('eduerp_current_session', ''))){
@@ -9800,14 +9800,14 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
         drupal_set_message(Error_Types(175), 'error');
         return;
       }
-      
+
       $_SESSION[$varName] = $studentFeeProfile;
       //echo print_r($studentFeeProfile);
       //drupal_set_message('hmm '. $student_profile->uid);
       return ;
-     
+
   }
-  
+
 
 }
 
@@ -10154,7 +10154,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
 
                  $html .="
                </table>";
-              
+
              $html .="
              </fieldset>
            </td>
@@ -10512,8 +10512,8 @@ function staff_show_authorise_instalment_form(){
     '#value' => "<font color=#FF0000><b>By clicking 'Authorise Instalment Payment!' you acknowledge that the student whose details appear above has been authorised to pay his/her School Fees in Instalments for the Current Session only.</b></font>",
 
   );
-  
-  
+
+
   //do not show this button if instalment1 does not exist for at least one fee item
   if(isset($_SESSION['eduerp_authorise_instalment']['more']) && sizeof($_SESSION['eduerp_authorise_instalment']['more']) ){
     $found=false;
@@ -10523,13 +10523,13 @@ function staff_show_authorise_instalment_form(){
       }
     }
   }
-  
+
   if($found){
     $form['cmdCancel'] = array(
       '#value' => 'Cancel',
       '#type' => 'submit'
     );
-  
+
     $form['submit'] = array(
       '#value' => 'Authorise Instalment Payment!',
       '#type' => 'submit'
@@ -10542,7 +10542,7 @@ function staff_show_authorise_instalment_form(){
     '#value' => "<b><font color='#ff0000'>". Error_Types(174) ."</font></b>",
     //'#required' => TRUE,
     );
-    
+
     $form['cmdCancel'] = array(
       '#value' => 'Cancel',
       '#type' => 'submit'
@@ -10669,7 +10669,7 @@ function fees_ini_student_profile($studentUID){
       $student_profile = new UserProfile($studentUID);
 
       if(! is_object($student_profile)) return 0;
-    
+
       $studentFeeProfile['studentUID'] = $student_profile->uid;
       $studentFeeProfile['full_name'] = $student_profile->profile_last_name .', '. $student_profile->profile_first_name;
       $studentFeeProfile['first_choice_nid'] = $student_profile->profile_first_choice;
@@ -10904,13 +10904,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
       if (!$feeStudentOption['is_student_on_scholarship'] || $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] != 1) {
+        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
+        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
+      }
+      else {
         $scholarship_type = db_fetch_object(db_query("SELECT field_scholarship_type_value AS scholarship_type, field_scholarship_sponsor_value AS sponsor FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s'", $studentUID, variable_get('eduerp_current_session', '')));
         $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = $scholarship_type->scholarship_type;
         $feeStudentOption['fee_item_details'][$i]['sponsor'] = $scholarship_type->sponsor;
-      }
-      else {
-        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
-        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
       }
 
       //check if second instalment collection is activated
@@ -10943,13 +10943,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
         $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
         if (!$feeStudentOption['is_student_on_scholarship'] || $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] != 1) {
+          $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
+          $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
+        }
+        else {
           $scholarship_type = db_fetch_object(db_query("SELECT field_scholarship_type_value AS scholarship_type, field_scholarship_sponsor_value AS sponsor FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s'", $studentUID, variable_get('eduerp_current_session', '')));
           $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = $scholarship_type->scholarship_type;
           $feeStudentOption['fee_item_details'][$i]['sponsor'] = $scholarship_type->sponsor;
-        }
-        else {
-          $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
-          $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
         }
       }
     }
@@ -10979,13 +10979,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
 
       if (!$feeStudentOption['is_student_on_scholarship'] || $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] != 1) {
+        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
+        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
+      }
+      else {
         $scholarship_type = db_fetch_object(db_query("SELECT field_scholarship_type_value AS scholarship_type, field_scholarship_sponsor_value AS sponsor FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s'", $studentUID, variable_get('eduerp_current_session', '')));
         $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = $scholarship_type->scholarship_type;
         $feeStudentOption['fee_item_details'][$i]['sponsor'] = $scholarship_type->sponsor;
-      }
-      else {
-        $feeStudentOption['fee_item_details'][$i]['scholarship_type'] = 'None';
-        $feeStudentOption['fee_item_details'][$i]['sponsor'] = 'None';
       }
     }
 
