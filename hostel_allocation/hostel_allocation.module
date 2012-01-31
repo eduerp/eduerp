@@ -4274,12 +4274,16 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
 
 function get_student_allocation_categories(){
   if(! is_array($_SESSION['eduerp_reserve_room']) || ! sizeof($_SESSION['eduerp_reserve_room'])) return array();
+  $uid = $_SESSION['eduerp_reserve_room']['student_uid'];
   
+  $student_profile = new UserProfile($uid);
   //since a student can belong to more than one of the categories (e.g he can be a new student + studying medicine + crippled etc), lets determine all the categories that affects the student.
   $studCate = array();
   $studProgramNode = node_load($_SESSION['eduerp_reserve_room']['first_choice_nid']);
   //test for freshman
-  $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
+  //$studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
+
+  $studentLevel = student_next_level($uid, variable_get('eduerp_current_session', ''));
   if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
     $studCate[] = "freshmen";
   }elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE"){
