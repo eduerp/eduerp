@@ -624,20 +624,21 @@ function get_blocks($block_nid = 0, $forCombo = true, $onlyActive=false) {
 }
 
 
-function get_blocks_in_hostel($hostel_nid = 0, $forCombo = true, $gender='none') {
+function get_blocks_in_hostel($hostel_nid = 0, $forCombo = true, $gender='') {
   $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
-
-  switch($gender):
+  
+  //drupal_set_message($gender);
+  switch(strtolower(strtoupper($gender))):
   case 'male':
-    $sql .= " AND (field_block_type_value = 1 OR field_block_type_value = 0) "; //get blocks that are male only or mixed
+    $sql .= " AND field_block_type_value IN (1, 0) "; //get blocks that are male only or mixed
     break;
   case 'female':
-    $sql .= " AND (field_block_type_value = 2 OR field_block_type_value = 0) "; //get blocks that are female only or mixed
+    $sql .= " AND field_block_type_value IN (2, 0) "; //get blocks that are female only or mixed
     break;
   default://this can happen because of bad profile setup
     $sql .= " AND field_block_type_value = 0 "; //show only mixed blocks
   endswitch;
-
+  //drupal_set_message($sql);
   $rs = db_query($sql, $hostel_nid);
   if(db_affected_rows($rs) > 0) {
         while($row = db_fetch_object($rs)){
@@ -2623,7 +2624,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
 		echo '<br /><hr /><br />';
 		
 		if(isset($_SESSION['eduerp_reserve_room']) && sizeof($_SESSION['eduerp_reserve_room']))
-		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid'], true);
+		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid'], true, (strtolower(strtoupper($_SESSION['eduerp_reserve_room']['gender'])) == 'male' ? 1 : 2));
 		else
           echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''));
         
@@ -2645,7 +2646,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
         echo '<br /><hr /><br />';
         //echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), 0, $studentInitiated);
         if(isset($_SESSION['eduerp_reserve_room']) && sizeof($_SESSION['eduerp_reserve_room']))
-		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid'], true);
+		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid'], true, (strtolower(strtoupper($_SESSION['eduerp_reserve_room']['gender'])) == 'male' ? 1 : 2) );
 		else
           echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''));
         
@@ -2737,7 +2738,7 @@ function hostel_allocation_enter_mat_number_form(){
 
 function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
   $values = $form_state['values'];
-  ini_mini_reservation_info($values['mat_number']);
+  ini_mini_reservation_info($values);
 }
 
 
@@ -2751,10 +2752,10 @@ function hostel_allocation_enter_mat_number_form_submit($form, &$form_state){
 
 }
 
-function ini_mini_reservation_info($matNum=''){
+function ini_mini_reservation_info($values){
   global $EDUERPstudentInitiated;
   
-  $values['mat_number'] = $matNum; //$form_state['values'];
+  //$values['mat_number'] = $matNum; //$form_state['values'];
   if($EDUERPstudentInitiated)
      $studentInfo = user_load($EDUERPstudentInitiated);
   else
@@ -2767,7 +2768,7 @@ function ini_mini_reservation_info($matNum=''){
     $studInfo = get_student_info_by_jamb_number($values['mat_number']);
     if(! db_affected_rows($studInfo) > 0) {
       form_set_error('mat_number', Error_Types(125));
-      return;
+      //return;
     }
     else {
       //ok! the jamb number is valid!
@@ -2792,8 +2793,8 @@ function ini_mini_reservation_info($matNum=''){
       $_SESSION['eduerp_reserve_room']['level_name'] = $student_profile->profile_level_name;
       $_SESSION['eduerp_reserve_room']['mat_num'] = $student_profile->profile_matno; //$values['mat_number'];
       $_SESSION['eduerp_reserve_room']['jamb_num'] = $student_profile->profile_jambno;
-      $_SESSION['eduerp_reserve_room']['gender'] = strtolower($student_profile->profile_gender);
-      $_SESSION['eduerp_reserve_room']['health_status'] = strtolower($student_profile->profile_health_status);
+      $_SESSION['eduerp_reserve_room']['gender'] = strtolower(strtoupper($student_profile->profile_gender));
+      $_SESSION['eduerp_reserve_room']['health_status'] = strtolower(strtoupper($student_profile->profile_health_status));
 
       $programmeName = get_programmes($student_profile->profile_first_choice, true);
       $_SESSION['eduerp_reserve_room']['programme_name'] = $programmeName[$student_profile->profile_first_choice];
@@ -2830,7 +2831,8 @@ function ini_mini_reservation_info($matNum=''){
 
 function hostel_allocation_select_block_form(){
   $form['#title'] = 'Select Room';
-  
+ //$a = var_dump($_SESSION['eduerp_reserve_room']);
+ //drupal_set_message($a);
   $form['block_nid'] = array(
     '#title' => 'Block Name',
     '#type' => 'select',
@@ -4150,9 +4152,9 @@ function add_international_student_category_to_allocation_category(){
   }
 }
 
-function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID='0', $showAffectedCategoriesInBlock=false){
+function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID='0', $showAffectedCategoriesInBlock=false, $genderID='0'){
  ob_start();
- drupal_set_message($hostelNID);
+ //drupal_set_message($hostelNID);
  $html = "";
  
  $sql = "SELECT cth.nid, cth.field_hostel_name_value hostel_name, ctb.field_block_name_value block_name, ctard.field_category_name_value category_name, abs.allocation_number, abs.alloted_number, abs.session_name session_name, field_block_type_value block_type 
@@ -4185,12 +4187,21 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID='0
         $studCate2[] = ("'". $p ."'");
     
       $sql .= " AND ctard.field_category_name_value IN (". implode(",", $studCate2) .") ";
-      //drupal_set_message($sql);
+      
+      //add gender
+      if(! empty($genderID)){
+        if($genderID == '1')
+          $sql .= " AND field_block_type_value IN (0, 1) "; //male and mixed
+        elseif($genderID == '2')
+          $sql .= " AND field_block_type_value IN (0, 2) "; //female and mixed
+      
+      }
+      //drupal_set_message($genderID);
     }
 
    $sql .= " ORDER BY hostel_name, block_name, category_name ";
 
- drupal_set_message($sql);
+ //drupal_set_message($sql);
  if($hostelNID != '0'){
    $hostelInfo = get_hostels($hostelNID, true); //get_blocks($blockNID, false);
    $html .="
