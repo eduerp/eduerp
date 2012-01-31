@@ -2565,7 +2565,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
   if($canProceed != '-1') {
     if( ! $studentInitiated)
       echo $navi;
-      drupal_set_message($canProceed);
+      //drupal_set_message($canProceed);
     //echo 'ok';
     return ob_get_clean();
   }
@@ -2630,7 +2630,13 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
         break;
       case '1':
         unset($_SESSION['eduerp_reserve_room']);
-        if( ! $studentInitiated) {
+        
+        
+        
+        if($studentInitiated) {
+          ini_mini_reservation_info();
+        }
+        else{
           echo $navi ." <b>(Step 1 of 2)</b> <br /><br /><br /><hr /><br />";
           echo "<b>Direct Room Reservation</b> - Please enter the Student's Matriculation Number.<br />";
         }
@@ -2730,8 +2736,25 @@ function hostel_allocation_enter_mat_number_form(){
 
 
 function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
-  global $EDUERPstudentInitiated;
   $values = $form_state['values'];
+  ini_mini_reservation_info($values['mat_number']);
+}
+
+
+function hostel_allocation_enter_mat_number_form_submit($form, &$form_state){
+  global $EDUERPstudentInitiated;
+  //$_SESSION['eduerp_reserve_room']['page'] = 2;
+  if($EDUERPstudentInitiated)
+    drupal_goto("student/hostelreservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
+  else
+    drupal_goto("hostel_allocation/direct_reservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
+
+}
+
+function ini_mini_reservation_info($matNum=''){
+  global $EDUERPstudentInitiated;
+  
+  $values['mat_number'] = $matNum; //$form_state['values'];
   if($EDUERPstudentInitiated)
      $studentInfo = user_load($EDUERPstudentInitiated);
   else
@@ -2744,6 +2767,7 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
     $studInfo = get_student_info_by_jamb_number($values['mat_number']);
     if(! db_affected_rows($studInfo) > 0) {
       form_set_error('mat_number', Error_Types(125));
+      return;
     }
     else {
       //ok! the jamb number is valid!
@@ -2799,44 +2823,10 @@ function hostel_allocation_enter_mat_number_form_validate($form, &$form_state){
       }
     }
 
-
-
-    //$ps = node_load($student_profile->profile_first_choice);
-
-    //$student_profile->profile_gender = 'male';
-    //$student_profile->profile_last_name = "Gab";
-    //$student_profile->profile_first_name = "Ola";
-    //$student_profile->profile_first_choice = "3444";
-    //$student_profile->profile_health_status = 'Normal';
-    //$student_profile->profile_matno = $values['mat_number'];
-    //$student_profile->profile_jambno = '1234AB'; //$values['mat_number'];
-    //$student_profile->profile_level_name = '100'; //$values['mat_number'];
-    //$student_profile->save();
-    //form_set_error('mat_number', 'First Choice is '. $student_profile->profile_first_choice);
-    //form_set_error('mat_number', 'Gender is '. $student_profile->profile_last_name);
-    //form_set_error('mat_number', 'Level is '. $student_profile->profile_level_name);
-    //form_set_error('mat_number', 'UID is '. $student_profile->uid);
-    //form_set_error('mat_number', print_r($student_profile));
-    //form_set_error('mat_number', print_r($studentInfo));
-    //form_set_error('mat_number', 'Mat number is: '. $_SESSION['eduerp_reserve_room']['mat_num']);
-    //form_set_error('mat_number', $student_profile->profile_gender);
-    //form_set_error('mat_number', print_r($ps));
-    //form_set_error('mat_number', 'Programme type value is '. $ps->field_program_type[0]['value']);
   }
 
-}
-
-
-function hostel_allocation_enter_mat_number_form_submit($form, &$form_state){
-  global $EDUERPstudentInitiated;
-  //$_SESSION['eduerp_reserve_room']['page'] = 2;
-  if($EDUERPstudentInitiated)
-    drupal_goto("student/hostelreservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
-  else
-    drupal_goto("hostel_allocation/direct_reservation/". $_SESSION['eduerp_reserve_room']['student_uid']);
 
 }
-
 
 function hostel_allocation_select_block_form(){
   $form['#title'] = 'Select Room';
@@ -4160,9 +4150,9 @@ function add_international_student_category_to_allocation_category(){
   }
 }
 
-function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0, $showAffectedCategoriesInBlock=false){
+function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID='0', $showAffectedCategoriesInBlock=false){
  ob_start();
- 
+ drupal_set_message($hostelNID);
  $html = "";
  
  $sql = "SELECT cth.nid, cth.field_hostel_name_value hostel_name, ctb.field_block_name_value block_name, ctard.field_category_name_value category_name, abs.allocation_number, abs.alloted_number, abs.session_name session_name, field_block_type_value block_type 
@@ -4181,7 +4171,7 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
 		INNER JOIN {content_type_blocks} b ON b.nid = r.field_rules_block_id_nid
 		WHERE r.field_hostel_id_nid = %d ";//field_rules_block_id_nid
 	*/	
-  if($hostelNID != '0'){
+  if(! empty($hostelNID)){
     $sql .= " AND cth.nid = %d ";
   }
     if($showAffectedCategoriesInBlock){
@@ -4197,12 +4187,10 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
       $sql .= " AND ctard.field_category_name_value IN (". implode(",", $studCate2) .") ";
       //drupal_set_message($sql);
     }
-  
-  //}
 
    $sql .= " ORDER BY hostel_name, block_name, category_name ";
 
-//drupal_set_message($sql);
+ //drupal_set_message($sql);
  if($hostelNID != '0'){
    $hostelInfo = get_hostels($hostelNID, true); //get_blocks($blockNID, false);
    $html .="
@@ -4211,7 +4199,7 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
    $html .="
      <div>Available Blocks for Allocation <b>". $session ."</b> session</div><br />";
 
-  if($hostelNID != '0')
+  if(! empty($hostelNID) )
    $rs = db_query($sql, $session, $hostelNID);
   else
    $rs = db_query($sql, $session);
@@ -4266,7 +4254,7 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
  else {
    //drupal_set_message(Error_Types(106), 'error');
    $html .= Error_Types(176);
-   drupal_set_message('hmmmm...');
+   //drupal_set_message('hmmmm...');
  }
      echo $html;
 
