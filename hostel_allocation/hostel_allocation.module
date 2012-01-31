@@ -4224,8 +4224,9 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID='0
      <th>Block Name</th>
      <th>Type</th>
      <th>Category</th>
-     <th>Total Number of Spaces</th>
-     <th>Available Spaces</th>";
+     ";
+     //<th>Total Number of Spaces</th>
+     //<th>Available Spaces</th>
      $i = 1;
      while($r = db_fetch_object($rs)){
 
@@ -4250,11 +4251,11 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID='0
              <td>". $r->block_name ."</td>
              <td>". $blockType ."</td>
              <td>". $r->category_name ."</td>
-             <td>". number_format($r->allocation_number) ."</td>
-             <td>". number_format($r->allocation_number - $r->alloted_number) ."</td>
+             
            </tr>";
       //}
-
+       //<td>". number_format($r->allocation_number) ."</td>
+       //<td>". number_format($r->allocation_number - $r->alloted_number) ."</td>
      }
      $html .="
    </table>
