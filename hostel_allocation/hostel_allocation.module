@@ -2623,7 +2623,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
 		echo '<br /><hr /><br />';
 		
 		if(isset($_SESSION['eduerp_reserve_room']) && sizeof($_SESSION['eduerp_reserve_room']))
-		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), 0, true);
+		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid'], true);
 		else
           echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''));
         
@@ -2639,7 +2639,7 @@ function hostel_allocation_direct_room_reservation($studentUID=0, $studentInitia
         echo '<br /><hr /><br />';
         //echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), 0, $studentInitiated);
         if(isset($_SESSION['eduerp_reserve_room']) && sizeof($_SESSION['eduerp_reserve_room']))
-		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), 0, true);
+		  echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''), $_SESSION['eduerp_reserve_room']['hostel_nid'], true);
 		else
           echo hostel_allocation_show_hostel_block_free_spaces(variable_get('eduerp_current_session', ''));
         
@@ -4184,20 +4184,21 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
   if($hostelNID != '0'){
     $sql .= " AND r.nid = %d ";
   }
-  elseif($showAffectedCategoriesInBlock){
-    $studCate = get_student_allocation_categories();
-    if(! sizeof($studCate)){ 
-       $html .= Error_Types(177);//form_set_error('block_nid', Error_Types(177));
+    if($showAffectedCategoriesInBlock){
+      $studCate = get_student_allocation_categories();
+      if(! sizeof($studCate)){ 
+        $html .= Error_Types(177);//form_set_error('block_nid', Error_Types(177));
         return ;
-    }
-    //fix the entries
-    foreach($studCate as $p)
-      $studCate2[] = ("'". $p ."'");
+      }
+      //fix the entries
+      foreach($studCate as $p)
+        $studCate2[] = ("'". $p ."'");
     
-    $sql .= " AND ctard.field_category_name_value IN (". implode(",", $studCate2) .") ";
-    drupal_set_message($sql);
+      $sql .= " AND ctard.field_category_name_value IN (". implode(",", $studCate2) .") ";
+      drupal_set_message($sql);
+    }
   
-  }
+  //}
 
    $sql .= " ORDER BY hostel_name, block_name, category_name ";
 
