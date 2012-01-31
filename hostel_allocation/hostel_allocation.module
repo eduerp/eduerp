@@ -4195,6 +4195,7 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
       $studCate2[] = ("'". $p ."'");
     
     $sql .= " AND ctard.field_category_name_value IN (". implode(",", $studCate2) .") ";
+    drupal_set_message($sql);
   
   }
 
@@ -4264,6 +4265,7 @@ function hostel_allocation_show_hostel_block_free_spaces($session, $hostelNID=0,
  else {
    //drupal_set_message(Error_Types(106), 'error');
    $html .= Error_Types(176);
+   drupal_set_message('hmmmm...');
  }
      echo $html;
 
