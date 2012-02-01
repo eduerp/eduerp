@@ -99,7 +99,9 @@ Drupal.behaviors.student = function(context) {
 	var not_cleared = 'edit-field-uncleared-wrapper';
 	var reasons_uncleared = 'edit-field-uncleared-reasons-wrapper';
 
-  if (document.getElementById('edit-field-uncleared').checked == false)	$('#' + reasons_uncleared).hide();
+  if (document.getElementById('edit-field-uncleared') != null) {
+    if (document.getElementById('edit-field-uncleared').checked == false)	$('#' + reasons_uncleared).hide();
+  }
 	
 	var elements_uncleared = [not_cleared, reasons_uncleared];
 	var elements_hidden = [not_cleared];
