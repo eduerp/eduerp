@@ -120,17 +120,43 @@ function uc_eduerp_fees_update_fees() {
 
 
 function display_cart_for_scholarship() {
-  //echo theme_cart_review_table();
+  global $user;
+
   ob_start();
-?>
-    <table border='1' align='center'  cellpadding="5" cellspacing="5">
+
+  $student_profile = new UserProfile($user->uid);
+
+  $studentname = '';
+  if (!empty($student_profile->profile_first_name) && !empty($student_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($student_profile->profile_middle_name)) $middle = ' ' . $student_profile->profile_middle_name;
+    $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
+  }
+
+  $sql = "SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $user_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
+  ?>
+  <div class="title"><h3><?php echo variable_get('eduerp_institution_current', '') ?></h3></div>
+  <div class="sub-title"<h4><?php echo variable_get('eduerp_institution_address', '') ?></h4></div>
+  <br />
+  Name: <?php echo $studentname ?><br />
+  Admission Number: <?php echo $user->name ?><br />
+  Session: <?php echo variable_get('eduerp_current_session', '') ?><br />
+  Programme: <?php echo $row->field_programme_name_value ?><br />
+  <br />
+  If you are due a scholarship, print and bring this page to the Scholarship Board.<br /><br />
+  (There is a link <i>Printer-friendly version</i> above which can be used to generate a better printout.)<br /><br />
+
+  <table border='1' align='center'  cellpadding="5" cellspacing="5">
     <tr bgcolor='#ACCFCC'><td><b>Department</b></td><td><b>HOD</b></td><td><b>Action</b></td></tr>
-      <tr>
+    <tr>
       <td><?php echo theme_cart_review_table(); ?></td>
       <td>XXX</td>
       <td>YYY</td>
-      </tr>
-    </table>
+    </tr>
+  </table>
 <?php
   return ob_get_clean();
 }
