@@ -1710,7 +1710,7 @@ function create_student_program($uid) {
   }
   $sql = "SELECT p.field_programme_name_value AS programme_name FROM {content_type_program} p WHERE p.nid=%d";
   $result = db_query($sql, $user_profile->profile_first_choice);
-  $row = db_fetch_array($result);
+  $row = db_fetch_object($result);
 
   $node->title                                      = "$name - {$row->programme_name}";
   $node->field_student_ref_sp[0]['uid']             = $uid;
