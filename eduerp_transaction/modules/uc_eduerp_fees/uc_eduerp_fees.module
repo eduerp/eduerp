@@ -175,20 +175,7 @@ function show_cart_for_student() {
   // Set up table rows.
   $contents = uc_cart_get_contents();
   foreach ($contents as $item) {
-    $price_info = array(
-      'price' => $item->price,
-      'qty' => $item->qty,
-    );
-
-    $context['revision'] = 'altered';
-    $context['type'] = 'cart_item';
-    $context['subject'] = array(
-      'cart' => $contents,
-      'cart_item' => $item,
-      'node' => node_load($item->nid),
-    );
-
-    $total = uc_price($price_info, $context);
+    $total = $item->price;
     $subtotal += $total;
 
     $description = check_plain($item->title) . uc_product_get_description($item);
