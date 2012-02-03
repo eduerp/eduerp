@@ -174,7 +174,6 @@ function show_cart_for_student() {
 
   // Set up table rows.
   $contents = uc_cart_get_contents();
-dsm(array($contents => $contents));//ab
   foreach ($contents as $item) {
     $price_info = array(
       'price' => $item->price,
@@ -475,8 +474,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     $vkeys[] = $key;
     $values[$key] = $value;
   }
-  //dsm($vkeys);
-  //dsm($values);
   $key_search = implode(',', array_values($vkeys));
   preg_match_all('/product_item_fees_\d+/', $key_search, $matches);
   // match options for fees option
@@ -527,24 +524,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   if(!in_array('hostel', $vkeys)) {
     unset($cart_items['hostel_item_fees']);
   }
-  // subject = vkeys
-  // for each of $vkeys that matches regex pattern
-  // put all
-  // $items = all of its values
-  // @todo Move into a function and find alternative ways to get the
-  // cart keys. Also get the quantity of each fee item to pass to uc_cart_add_item
-  /*$cart_nids = array(
-    $vkeys[2] => array(
-      'item' => $form_state['values'][$vkeys[2]],
-      'options' => $form_state['values'][$vkeys[3]]
-    ),
-    $vkeys[6] => array(
-      'item' => $form_state['values'][$vkeys[6]],
-      'options' => $form_state['values'][$vkeys[7]]
-    ),
-  );
-  */
-  //dsm($cart_items);
 
   $transaction_token = uniqid();
 
@@ -813,7 +792,6 @@ function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
     $order->data = unserialize($order->data);
     $items[$order->nid] = $order;
   }
-  //dsm(uc_order_module_invoke('load', $order, NULL));
   return $items;
 }
 

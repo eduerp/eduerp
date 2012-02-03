@@ -244,12 +244,9 @@ function uc_edupay_cart_fees_type() {
 function uc_edupay_cart_item($op, &$item){
   switch($op) {
     case 'load':
-    //dsm($item);
       $fees_type = EDUERP_FEES_NORMAL;
       if($item->data['type'] == $fees_type){
 
-        # Alter scholarship
-//if (strpos($item->title, 'Acceptance') === 0) dsm(array('item' => $item, 'has_scholarship' => $item->data['has_scholarship'], 'title change' => 'title change'));//ab
         if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
           $text = t('Scholarship Applicable');
           $item->title = $item->title . ' ' . $text;
@@ -283,7 +280,6 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
 
   foreach ($items as $key => $item) {
     if($item->data['type'] == EDUERP_FEES_NORMAL) {
-//if (strpos($item->title, 'Acceptance') === 0) dsm(array('item' => $item, 'has_scholarship' => $item->data['has_scholarship']));//ab
       if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
         $item->price = $item->price * 0;
       }
@@ -820,10 +816,8 @@ function uc_edupay_save($order_id, $product) {
 
   if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid = %d AND uid = %d AND session = '%s' $format_sql", $product['product_nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
     $product['fees_order_id'] = $result->fees_order_id;
-dsm(array('product' => $product, 'format_sql' => $format_sql, 'UPDATE' => 'UPDATE'));//ab
     drupal_write_record('fees_order', $product, 'fees_order_id');
   }else {
-dsm(array('product' => $product, 'format_sql' => $format_sql, 'INSERT' => 'INSERT'));//ab
     // do an insert
     drupal_write_record('fees_order', $product);
   }
@@ -1023,7 +1017,6 @@ function uc_edupay_token_list($type = 'all') {
 function uc_edupay_checkout_pane() {
   //$fees = uc_eduerp_fees_get_fees_order();
   $items = uc_cart_get_contents();
-  //dsm($items);
   foreach($items as $fee) {
     $panes[$fee->title] = array(
       'id' => $fee->cart_item_id, //pass in here the fee attribute
@@ -1051,19 +1044,15 @@ function uc_edupay_checkout_pane() {
  */
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   global $user;
-  //dsm($arg1);
-  //$items = uc_cart_get_contents();
   $zz = uc_cart_get_contents();
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
-  //dsm($items);
   switch ($op) {
     case 'view':
       // if item in the cart is of type fees
       // for each on the items and display them in fees pane
       $description = array();
-      //$contents = array();
       $x = array();
       foreach($items as $key => $fee){
         $item[$key] = $fee;
@@ -1181,7 +1170,6 @@ function _uc_edupay_fees_order_items($order) {
     $data[$key] = $fee['data'];
     $description[$key] = $fee['title'];
   }
-  //dsm($item);
   $types = array();
   foreach($item as $key => $value) {
     $types[] = $value['data']['type'];
@@ -1339,7 +1327,6 @@ function uc_edupay_preprocess_uc_order(&$vars) {
 
   $vars['user_label'] = t('Customer');
   $vars['invoice_title'] = t('Invoice');
-dsm($vars);
 }
 
 /**
