@@ -249,7 +249,7 @@ function uc_edupay_cart_item($op, &$item){
       if($item->data['type'] == $fees_type){
 
         # Alter scholarship
-dsm(array('item' => $item, 'title change' => 'title change'));//ab
+if (strpos($item->title, 'Acceptance') === 0) dsm(array('item' => $item, 'title change' => 'title change'));//ab
         if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
           $text = t('Scholarship Applicable');
           $item->title = $item->title . ' ' . $text;
@@ -283,7 +283,7 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
 
   foreach ($items as $key => $item) {
     if($item->data['type'] == EDUERP_FEES_NORMAL) {
-dsm(array('item' => $item));//ab
+if (strpos($item->title, 'Acceptance') === 0) dsm(array('item' => $item));//ab
       if($item->data['has_scholarship'] == HAS_SCHOLARSHIP) {
         $item->price = $item->price * 0;
       }
