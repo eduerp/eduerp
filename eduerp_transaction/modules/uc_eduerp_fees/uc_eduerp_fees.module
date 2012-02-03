@@ -178,6 +178,7 @@ dsm(array('contents' => $contents));//ab
   foreach ($contents as $item) {
     $price_info = array(
       'price' => $item->price,
+      'qty' => $item->qty,
     );
 
     $context['revision'] = 'altered';
@@ -199,8 +200,7 @@ dsm(array('contents' => $contents));//ab
     unset($context['subject']);
     $rows[] = array(
       array('data' => $description, 'class' => 'products'),
-//      array('data' => uc_price($total, $context), 'class' => 'price'),
-      array('data' => uc_price(999, $context), 'class' => 'price'),
+      array('data' => uc_price($total, $context), 'class' => 'price'),
     );
   }
 
