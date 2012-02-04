@@ -352,7 +352,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $rs = db_query("SELECT order_id, order_status FROM {uc_orders} WHERE uid=%d", $user->uid);
     while ($r = db_fetch_object($rs)){
       $message .= '<br />You may regenerate your invoices by clicking on them...';
-      $message .= '<br /><a href="' . url('user/' $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice</a>';
+      $message .= '<br /><a href="' . url('user/' . $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice</a>';
     }
     drupal_set_message($message, 'error');
     return FALSE;
