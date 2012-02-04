@@ -350,9 +350,13 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     $message = 'All your fees items are currently in process or already paid for. Consult the bursary';
 
     $rs = db_query("SELECT order_id, order_status FROM {uc_orders} WHERE uid=%d", $user->uid);
+    $firstone = TRUE;
     while ($r = db_fetch_object($rs)){
-      $message .= '<br />You may regenerate your invoices by clicking on them...';
-      $message .= '<br /><a href="' . url('user/' . $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice</a>';
+      if ($firstone) {
+        $message .= '<br />You may regenerate your invoices by clicking on them...';
+        $firstone = FALSE;
+      }
+      $message .= '<br /><a href="' . url('user/' . $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice: ' . $r->order_id . '</a>';
     }
     drupal_set_message($message, 'error');
     return FALSE;
