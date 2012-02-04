@@ -614,6 +614,7 @@ function get_blocks($block_nid = 0, $forCombo = true, $onlyActive=false) {
     }
   }
   else {
+    //drupal_set_message($sql ." ". $hostel_nid);
     if ($forCombo)
       $blocks[] = strip_tags(Error_Types(106));
     else
@@ -635,8 +636,8 @@ function get_blocks_in_hostel($hostel_nid = 0, $forCombo = true, $gender='') {
   case 'female':
     $sql .= " AND field_block_type_value IN (2, 0) "; //get blocks that are female only or mixed
     break;
-  default://this can happen because of bad profile setup
-    $sql .= " AND field_block_type_value = 0 "; //show only mixed blocks
+  //default://this can happen because of bad profile setup
+    //$sql .= " AND field_block_type_value = 0 "; //show only mixed blocks
   endswitch;
   //drupal_set_message($sql);
   $rs = db_query($sql, $hostel_nid);
