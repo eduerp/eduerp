@@ -175,19 +175,22 @@ function show_cart_for_student() {
   // Set up table rows.
   $contents = uc_cart_get_contents();
   foreach ($contents as $item) {
-    $total = $item->price;
-    $subtotal += $total;
+    $description = uc_product_get_description($item);
+    if (!empty($description) && strpos($description, 'Fee Structure') !== FALSE) { // Don't include e.g. Hostels
+      $total = $item->price;
+      $subtotal += $total;
 
-    $description = check_plain($item->title) . uc_product_get_description($item);
+      $description = check_plain($item->title) . $description;
 
-    // Remove node from context to prevent the price from being altered.
-    $context['revision'] = 'themed-original';
-    $context['type'] = 'amount';
-    unset($context['subject']);
-    $rows[] = array(
-      array('data' => $description, 'class' => 'products'),
-      array('data' => uc_price($total, $context), 'class' => 'price'),
-    );
+      // Remove node from context to prevent the price from being altered.
+      $context['revision'] = 'themed-original';
+      $context['type'] = 'amount';
+      unset($context['subject']);
+      $rows[] = array(
+        array('data' => $description, 'class' => 'products'),
+        array('data' => uc_price($total, $context), 'class' => 'price'),
+      );
+    }
   }
 
   // Add the subtotal as the final row.
