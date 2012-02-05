@@ -649,12 +649,18 @@ function student_clearance_content_default_fields() {
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => 'Incomplete grade
-low score',
+    'max_length' => '255',
+    'allowed_values' => 'Grades do not meet entry requirements
+Incomplete grades for chosen programme
+Key subject missing for chosen programme
+Other',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Reasons not cleared',
       'weight' => '37',
