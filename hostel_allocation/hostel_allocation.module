@@ -3300,7 +3300,7 @@ function hostel_allocation_reports(){
 
       break;
       case 'allocation':
-  	    echo hostel_allocation_room_allocation_report($_SESSION['EDUERP_rpt']['block_nid']);
+  	    echo hostel_allocation_room_allocation_report($_SESSION['EDUERP_rpt']['block_nid'], $_SESSION['EDUERP_rpt']['session_name']);
       break;
       case 'room_statistics':
         echo hostel_allocation_room_statistics_report($_SESSION['EDUERP_rpt']['session_name'], $_SESSION['EDUERP_rpt']['block_nid']);
@@ -3330,16 +3330,16 @@ function hostel_allocation_reports_switch_form(&$form_state){
 
 
   $form['#title'] = 'Select Block';
-
+  
   // drupal_set_message();
   $form['session_name'] = array(
 	'#title' => 'Session Name e.g. 2010/2011',
 	'#type' => 'textfield',
-        '#size' => 40,
+    '#size' => 40,
 	'#required' => TRUE
     );
   if(isset($EDUERP_rpt['session_name'])) $form['session_name']['#default_value'] = $EDUERP_rpt['session_name'];
-
+  
   $form['hostel_nid'] = array(
 	'#title' => 'Hostel Name',
 	'#type' => 'select',
@@ -3410,12 +3410,12 @@ function hostel_allocation_room_reservation_report($blockNID=0){
  //$html .= "<br /><hr /><br /><font size = '1px'><a href = '". url("staff/alloc_admin") ."'>Hostel Administration</a>&nbsp; &raquo; &nbsp;<b>Room Reservation Reports</b></font><br /><hr /><br />";
 
  //CONCAT(field_profile_last_name_value, ', ', field_profile_first_name_value, field_profile_maiden_name_value) full_name,
- $sql = "SELECT field_profile_last_name_value last_name, field_profile_first_name_value first_name, field_profile_matno_value matno, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, field_reservation_date_value date_reserved, field_expiry_date_value 	expiry_date
+ $sql = "SELECT field_student_id_uid studentUID, field_profile_last_name_value last_name, field_profile_first_name_value first_name, field_profile_matno_value matno, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, field_reservation_date_value date_reserved, field_expiry_date_value 	expiry_date
   		  FROM {node} n, {content_type_student_profile} ctsp, {content_type_hostels} cth, {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr,
   		  {content_type_profile} ctp, {node} nn
   		  WHERE ctr.nid=ctrr.field_room_id_nid AND ctr.field_block_id_nid=ctb.nid AND ctb.field_hostel_id_nid=cth.nid
   		  AND n.type='student_profile' AND n.nid=ctsp.nid AND n.uid=ctrr.field_student_id_uid
-  		  AND nn.type='profile' AND nn.nid=ctp.nid AND nn.uid=n.uid";
+  		  AND nn.type='profile' AND nn.nid=ctp.nid AND nn.uid=n.uid ";
   if($blockNID != 0)
     $sql .= " AND ctb.nid=%d";
   		  $sql .= "
@@ -3440,6 +3440,7 @@ function hostel_allocation_room_reservation_report($blockNID=0){
 
 
    $html.= "
+   <div>Please click on a Student's <b>Last Name</b> to view his/her Profile</div>
    <div id='assigned_courses'>
    <table border=1>
      <th>s/n</th>
@@ -3461,8 +3462,8 @@ function hostel_allocation_room_reservation_report($blockNID=0){
           $html .= "
            <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
              <td>". $i++ ."</td>
-	     <td>". $r->matno ."</td>
-             <td>". $r->last_name ."</td>
+	         <td>". $r->matno ."</td>
+             <td><a href='". url('user/'.$r->studentUID) ."' title='view Profile'>". $r->last_name ."</a></td>
              <td>". $r->first_name ."</td>
              <td>". $r->hostel_name ."</td>
              <td>". $r->block_name ."</td>
@@ -3489,16 +3490,16 @@ function hostel_allocation_room_reservation_report($blockNID=0){
 }
 
 
-function hostel_allocation_room_allocation_report($blockNID=0){
+function hostel_allocation_room_allocation_report($blockNID=0, $sessionName){
  ob_start();
  $html = "";
 
- $sql = "SELECT field_profile_last_name_value last_name, field_profile_first_name_value first_name, field_profile_matno_value matno, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, field_allocation_date_value date_allocated, field_allocation_session_name_value  AS session_name
+ $sql = "SELECT ctra.field_allocation_student_id_uid studentUID, field_profile_last_name_value last_name, field_profile_first_name_value first_name, field_profile_matno_value matno, field_hostel_name_value AS hostel_name, field_block_name_value AS block_name, field_room_name_value as room_name, field_allocation_date_value date_allocated, field_allocation_session_name_value  AS session_name
   		  FROM {node} n, {content_type_student_profile} ctsp, {content_type_hostels} cth, {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_allocations} ctra,
   		  {content_type_profile} ctp, {node} nn
   		  WHERE ctr.nid=ctra.field_allocation_room_id_nid AND ctr.field_block_id_nid=ctb.nid AND ctb.field_hostel_id_nid=cth.nid
   		  AND n.type='student_profile' AND n.nid=ctsp.nid AND n.uid=ctra.field_allocation_student_id_uid
-  		  AND nn.type='profile' AND nn.nid=ctp.nid AND nn.uid=n.uid";
+  		  AND nn.type='profile' AND nn.nid=ctp.nid AND nn.uid=n.uid AND field_allocation_session_name_value='%s' ";
   if($blockNID != 0)
     $sql .= " AND ctb.nid=%d";
   		  $sql .= "
@@ -3509,20 +3510,21 @@ function hostel_allocation_room_allocation_report($blockNID=0){
  if($blockNID != 0){
    $blockInfo = get_blocks($blockNID, false);
    $html .="
-     <div>Room Allocations for <b>". $blockInfo[$blockNID]['block_name'] .',  '. $blockInfo[$blockNID]['hostel_name'] .' - '. variable_get('eduerp_current_session', '') ."</b> session</div><br />";
+     <div>Room Allocations for <b>". $blockInfo[$blockNID]['block_name'] .',  '. $blockInfo[$blockNID]['hostel_name'] .' - '. $sessionName ."</b> session</div><br />";
  }else
    $html .="
-     <div>Room Allocations for <b>". variable_get('eduerp_current_session', '') ."</b> session</div><br />";
+     <div>Room Allocations for <b>". $sessionName ."</b> session</div><br />";
 
 
   if($blockNID != 0)
-   $rs = db_query($sql, $blockNID);
+   $rs = db_query($sql, $sessionName, $blockNID);
  else
-   $rs = db_query($sql);
+   $rs = db_query($sql, $sessionName);
  if(db_affected_rows($rs) > 0){
 
 
    $html.= "
+   <div>Please click on a Student's <b>Last Name</b> to view his/her Profile</div>
    <div id='assigned_courses'>
    <table border=1>
      <th>s/n</th>
@@ -3544,8 +3546,8 @@ function hostel_allocation_room_allocation_report($blockNID=0){
           $html .= "
            <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
              <td>". $i++ ."</td>
-	     <td>". $r->matno ."</td>
-             <td>". $r->last_name ."</td>
+	         <td>". $r->matno ."</td>
+             <td><a href='". url('user/'.$r->studentUID) ."' title='view Profile'>". $r->last_name ."</a></td>
              <td>". $r->first_name ."</td>
              <td>". $r->hostel_name ."</td>
              <td>". $r->block_name ."</td>
