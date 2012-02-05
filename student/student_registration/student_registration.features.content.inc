@@ -342,7 +342,7 @@ dysmenorrhoea|Dysmenorrhoea
 epilepsy|Epilepsy
 hypertension|Hypertension
 myopia|Myopia/Hypermyopia
-disabled|Physically Disabled
+physically-challenged|Physically Challenged
 std|STD/HIV/AIDS
 sickle|Sickle Cell
 tuberculosis|Tuberculosis',
@@ -1278,7 +1278,7 @@ Hausa Language
 Health Science
 History
 Home Management
-ICT – Information Communication Technology
+ICT - Information Communication Technology
 Introduction to Building Construction
 Islamic Religious Studies
 Ladies Garment Making
@@ -1415,7 +1415,7 @@ Hausa Language
 Health Science
 History
 Home Management
-ICT – Information Communication Technology
+ICT - Information Communication Technology
 Introduction to Building Construction
 Islamic Religious Studies
 Ladies Garment Making
