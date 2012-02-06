@@ -587,6 +587,19 @@ function _uc_edupay_process_order_request($order) {
   global $user;
   global $base_url;
 
+  $student_profile = new UserProfile($user->uid);
+
+  $studentname = '';
+  if (!empty($student_profile->profile_first_name) && !empty($student_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($student_profile->profile_middle_name)) $middle = ' ' . $student_profile->profile_middle_name;
+    $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
+  }
+
+  $sql = "SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $student_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
   $order->products = _uc_edupay_fees_order_items($order);
   $products = $order->products;
   $_SESSION['eduerp_fees_order'] = $products['fees'];
@@ -602,12 +615,12 @@ function _uc_edupay_process_order_request($order) {
       $order_parm = array(
         'order_id' => $product['order_id'],
         'transaction_token' => $product['transaction_token'],
-        'full_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($product['fullnames'])),
+        'full_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($studentname)),
         'matriculation_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($user->name)),
         'total_amount' => 0.0,
         'currency' => 'NGN',
         'timeout' => (int)$product['timeout'],
-        'programme' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($product['programme'])),
+        'programme' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($row->field_programme_name_value)),
         'session' => $product['session'],
         'banks' => array(
           array(
