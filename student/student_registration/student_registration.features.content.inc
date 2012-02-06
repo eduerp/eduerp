@@ -1312,10 +1312,6 @@ C6
 D7
 E8
 F9
-Distinction
-Credit
-Pass
-Fail
 A
 B
 C
@@ -1636,12 +1632,8 @@ F',
     'text_processing' => '0',
     'max_length' => '30',
     'allowed_values' => 'GCE-O-Level
-GCE-A-Level
-IJMB
 NABTEB
-NCE
 NECO
-OND
 WAEC',
     'allowed_values_php' => '',
     'widget' => array(
