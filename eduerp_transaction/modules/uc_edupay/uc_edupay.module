@@ -575,8 +575,7 @@ function uc_edupay_ctools_plugin_api($module, $api) {
 
 
 /**
- * Process fees via basic authentication and
- * authorization mechanism
+ * Queue request to EduPay (picked up by cron)
  *
  * @param $order
  *  The order in the cart order is already
@@ -658,26 +657,8 @@ if (FALSE) {//ab}
 //ab  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
-    $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
-
-    $headers = array(
-      'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
-      'Content-Type' => 'application/json');
-    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
-
-    if ($result->code != 200) {
-$u = variable_get('uc_edupay_transaction_url', '');//ab
-dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
-      drupal_set_message('<b>CANNOT COMMUNICATE WITH BANK. Please try again later!!!</b>');
-
-      db_query("UPDATE {uc_orders} set order_status = 'canceled' WHERE order_id = %d", $order->order_id);
-
-      unset($_SESSION['cart_order']);
-      unset($_SESSION['do_review']);
-      unset($_SESSION['checkout-redirect']);
-
-      drupal_goto("user/{$user->uid}/fees/pay");
-    }
+    $data = serialize(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data))
+    db_query("INSERT INTO cron_edupay_send_queue (data) VALUES ('%s')", $data);
   }
   else {
     $_SESSION['edupay_total_amount_zero'] = TRUE;
