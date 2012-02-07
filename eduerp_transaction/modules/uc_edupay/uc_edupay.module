@@ -667,7 +667,7 @@ dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_u
 
 
 function uc_edupay_cron() {
-  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue} LIMIT 50");
+  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue} LIMIT 500");
   while ($queue_item = db_fetch_object($queue_items)) {
 
     $parameters = unserialize($queue_item->data);
