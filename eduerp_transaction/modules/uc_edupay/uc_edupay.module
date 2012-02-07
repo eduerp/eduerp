@@ -685,6 +685,25 @@ dsm(array('url' => $u, 'headers' => $headers, 'result' => $result));//ab
 }
 
 
+function uc_edupay_cron() {
+  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue} LIMIT 50");
+  while ($queue_item = db_fetch_object($queue_items)) {
+
+    $parameters = unserialize($queue_item->data);
+    $data = drupal_to_js($parameters);
+
+    $headers = array(
+      'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
+      'Content-Type' => 'application/json');
+    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
+
+    if ($result->code == 200) {
+      db_query("DELETE FROM {cron_edupay_send_queue} WHERE serial_id=%d", $queue_item->serial_id);
+    }
+  }
+}
+
+
 /**
  * Implementation of hook_order().
  * This is called before uc_checkout_pane_eduerp_fees

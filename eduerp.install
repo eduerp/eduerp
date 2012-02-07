@@ -563,6 +563,24 @@ function eduerp_schema() {
     ),
   );
 
+  $schema['cron_edupay_send_queue'] = array(
+    'description' => t('CRON Queue for POSTS to be sent to EduPay'),
+    'fields' => array(
+      'serial_id' => array(
+        'description' => t('id used to delete processed entries'),
+        'type' => 'serial',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => t('Serialised data to be sent to EduPay'),
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('serial_id'),
+  );
+
   return $schema;
 }
 
