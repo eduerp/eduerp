@@ -653,12 +653,22 @@ function _uc_edupay_process_order_request($order) {
   $order_parm['total_amount'] = $total_amount;
 
 dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-if (FALSE) {//ab}
-//ab  if ($total_amount > 0.0) {
+//abif (FALSE) {//ab}
+  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
-    $data = serialize(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
-    db_query("INSERT INTO cron_edupay_send_queue (data) VALUES ('%s')", $data);
+    // Try to send POST immediately, if this does not work, we will queue
+    $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
+
+    $headers = array(
+      'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
+      'Content-Type' => 'application/json');
+//ab    $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
+
+    if (TRUE || $result->code != 200) {
+      $data = serialize(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
+      db_query("INSERT INTO cron_edupay_send_queue (data) VALUES ('%s')", $data);
+    }
   }
   else {
     $_SESSION['edupay_total_amount_zero'] = TRUE;
