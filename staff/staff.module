@@ -10685,11 +10685,8 @@ function fees_ini_student_profile($studentUID){
 
       $studentFeeProfile['country_name'] = ! empty($student_profile->profile_country_name) ? $student_profile->profile_country_name : 'N/A';
 
-
       $programmeName = get_programmes($student_profile->profile_first_choice, true);
       $studentFeeProfile['programme_name'] = $programmeName[$student_profile->profile_first_choice];
-
-
 
       if(! isset($studentFeeProfile['jamb_num']) || $studentFeeProfile['jamb_num'] == ""){
         //echo "no JAMB Number";
@@ -10699,20 +10696,19 @@ function fees_ini_student_profile($studentUID){
       //get level types
       $rs = db_query('SELECT nid, field_level_type_value level_type_name FROM {content_type_school_fee_level_types} ');
       if(db_affected_rows($rs) <= 0){
-
       	return 0;
       }
 
       //get the level of the student
       $studentLevel = student_next_level($student_profile->uid, variable_get('eduerp_current_session', ''));
-	  $studentFeeProfile['academic_level'] = $studentLevel;
+      $studentFeeProfile['academic_level'] = $studentLevel;
+dsm(array('studentLevel' => $studentLevel, 'studentFeeProfile' => $studentFeeProfile));//ab
 
       if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
         $levelStatus = "freshman";
       }
       elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE"){
       	$levelStatus = "freshman";
-
       }
       else{
         $levelStatus = "returning student";
@@ -10731,24 +10727,20 @@ function fees_ini_student_profile($studentUID){
       }
 
       if(! $studentFeeProfile['levelType']){
-
       	return 0;
       }
 
       //get nationality types
       $rs = db_query('SELECT nid, field_nationality_type_value nationality_type_name FROM {content_type_school_fee_nationality_types} ');
       if(db_affected_rows($rs) <= 0){
-
       	return 0;
       }
 
       //get the local country name from setting
       $rs1 = db_query("SELECT country_id, country_name FROM {eduerp_countries} WHERE country_id= (SELECT field_fee_settings_value_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value = 'Local Country Name')  ");
       if(db_affected_rows($rs1) <= 0){
-
       	return 0;
       }
-
 
       $localCountry = db_fetch_object($rs1);
 
@@ -10758,27 +10750,20 @@ function fees_ini_student_profile($studentUID){
       	    $studentFeeProfile['nationalityType'] = $r->nid;
       	    break;
       	  }
-
       	}
       	if(trim($student_profile->profile_country_name) != trim($localCountry->country_name)){
       	  if(trim(strtolower(strtoupper($r->nationality_type_name))) == 'international'){
       	    $studentFeeProfile['nationalityType'] = $r->nid;
       	    break;
       	  }
-
       	}
-
       }
 
       if(! $studentFeeProfile['nationalityType']){
-
       	return 0;
       }
 
-      //print_r($studentFeeProfile);
-      //drupal_set_message('hmm3 '. $studentUID);
   return $studentFeeProfile;
-
 }
 
 
