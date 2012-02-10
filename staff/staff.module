@@ -11057,20 +11057,11 @@ function _student_has_paid_or_pendingpaid_fees($student_id) {
 
 
 function get_fee_items($studentUID){
-  //ini student profile
   $studentFeeProfile = fees_ini_student_profile($studentUID);
-
-  //echo "<pre>";
-  //print_r($studentFeeProfile);
-  //echo "</pre>";
+dsm(array('studentFeeProfile' => $studentFeeProfile));//ab
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return array();
 
-  //echo "1 done! ";
   $feeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], $studentFeeProfile['academic_level']);
-
-  //echo "<pre>";
-  //print_r($feeItem);
-  //echo "</pre>";
 
   return $feeItem;
 }
