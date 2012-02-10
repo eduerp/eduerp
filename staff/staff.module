@@ -405,7 +405,7 @@ function _staff_ajax() {
     	}else
     	*/
           $sql = "SELECT nid, field_block_name_value FROM {content_type_blocks} WHERE field_hostel_id_nid = %d ";
-         
+
         $rs = db_query($sql, $hostel_nid);
         while($row = db_fetch_object($rs))
           $blocks[$row->nid] = $row->field_block_name_value;
@@ -2591,7 +2591,7 @@ function Error_Types($num = 0) {
   case '175': $msg = $prifix1 . "Problem retrieving Student's Information!<br />"; break;
   case '176': $msg = $prifix1 . "This Block has no free space for you!<br />"; break;
   case '177': $msg = $prifix1 . "There was a problem. Kindly restart the entire process again!<br />"; break;
-  
+
 
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
@@ -10783,11 +10783,9 @@ function fees_ini_student_profile($studentUID){
 
 
 function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, $checkFeesOnly=false, $showAllAmounts=false){
-  //return;
   $feeOption = array();
   $feeStudentOption = array();
 
-  //$programNID = 3444;
   $setupNID = null; $forLevel = false;
 
   if ($academicLevel > 0) {
@@ -10797,7 +10795,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeSetup = db_fetch_object($rs);
       $setupNID = $feeSetup->nid;
       $forLevel = true;
-      //drupal_set_message('found level');
+dsm(array('feeSetup' => $feeSetup));//ab
     }
   }
 
@@ -10807,8 +10805,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     if(db_affected_rows($rs) > 0){
       $feeSetup = db_fetch_object($rs);
       $setupNID = $feeSetup->nid;
+dsm(array('feeSetup' => $feeSetup));//ab
     }
-
   }
 
   if(empty($setupNID) && $academicLevel > 0){
@@ -10818,8 +10816,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeSetup = db_fetch_object($rs);
       $setupNID = $feeSetup->nid;
       $forLevel = true;
+dsm(array('feeSetup' => $feeSetup));//ab
     }
-
   }
 
   if(empty($setupNID)){
@@ -10828,25 +10826,17 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     if(db_affected_rows($rs) > 0){
       $feeSetup = db_fetch_object($rs);
       $setupNID = $feeSetup->nid;
+dsm(array('feeSetup' => $feeSetup));//ab
     }
-
   }
-  //drupal_set_message('Point A');
   if(empty($setupNID)){
+dsm(array('feeSetup' => $feeSetup));//ab
     return $feeStudentOption;
   }
-  //drupal_set_message('Point B');
 
-  //drupal_set_message('setup total is '.$feeOption[$setupNID]['setup_total_amount']);
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
-
+dsm(array('feeOption' => $feeOption, 'feeSetup' => $feeSetup));//ab
   if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)) return $feeStudentOption;
-
-  //echo "<pre>";
-  //print_r($feeOption);
-  //echo "</pre>";
-  //drupal_set_message('Point C');
-
 
   $feeStudentOption['studentFeeSetupNID'] = $setupNID;
   $feeStudentOption['nationality_name'] = $feeOption[$setupNID]['nationality_name'];
@@ -10872,10 +10862,9 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
   $details = get_fee_setup_item_details($setupNID);
   if(db_affected_rows($details) <=0) return array();
-  //drupal_set_message('Point D');
+
   $i=0;
   while($r = db_fetch_object($details)){
-    //drupal_set_message('product is '. $r->product_nid);
     if($feeStudentOption['instalment_payment_authorised'] == '1'){
       //for instalment payments
       if($forLevel)
@@ -10891,16 +10880,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
       //now make sure that each fee product returned has attribute and option (no more assumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-//drupal_set_message('Point E');
-	  //drupal_set_message('item is '. $feeStudentOption['fee_item_details'][$i]['item_description']);
+
       //make sure attribute and option is attached to the product
       $aInfo['productNID'] = $r->product_nid;;
       $aInfo['aid'] = $attributeOptionInfo['aid'];
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
       if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) return array();
-//drupal_set_message('Point F');
-
 
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
       $feeStudentOption['fee_item_details'][$i]['attribute_id'] = $attributeOptionInfo['aid'];
@@ -10933,7 +10919,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
         //now make sure that each fee product returned has attribute and option (no more asumptions!)
         if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
-//drupal_set_message('Point G');
+
         //make sure attribute and option is attached to the product
         $aInfo['productNID'] = $r->product_nid;;
       	$aInfo['aid'] = $attributeOptionInfo['aid'];
@@ -11000,10 +10986,6 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 	}
     $i++;
   }
-
-  //echo "<pre>";
-  //print_r($feeStudentOption);
-  //echo "</pre>";
 
   $amount_payable = 0.0;
   foreach ($feeStudentOption['fee_item_details'] as $fee_amount) {
