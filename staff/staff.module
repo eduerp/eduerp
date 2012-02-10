@@ -10847,6 +10847,7 @@ dsm(array('feeOption' => $feeOption, 'feeSetup' => $feeSetup));//ab
   $feeStudentOption['student_has_paid_or_pendingpaid_fees'] = _student_has_paid_or_pendingpaid_fees($studentUID);
 
   $details = get_fee_setup_item_details($setupNID);
+dsm(array('details' => $details, 'setupNID' => $setupNID));//ab
   if(db_affected_rows($details) <=0) return array();
 
   $i=0;
@@ -11033,7 +11034,6 @@ dsm(array('feeOption' => $feeOption, 'feeSetup' => $feeSetup));//ab
       $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
     }
   }
-
 
   return $feeStudentOption;
 }
