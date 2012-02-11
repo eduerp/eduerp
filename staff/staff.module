@@ -10848,13 +10848,13 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     }
   }
   if(empty($setupNID)){
-    drupal_set_message('Issue is from setupNID'); 
+    //drupal_set_message('Issue is from setupNID'); 
     return $feeStudentOption;
   }
 
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
   if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)){
-    drupal_set_message('Issue is from get_school_fee_setup'); 
+    //drupal_set_message('Issue is from get_school_fee_setup'); 
     return $feeStudentOption;
   }
 
@@ -10882,7 +10882,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
   $details = get_fee_setup_item_details($setupNID);
   if(db_affected_rows($details) <=0) {
-    drupal_set_message('Issue is from get_fee_setup_item_details'); 
+    //drupal_set_message('Issue is from get_fee_setup_item_details'); 
     return array();
   }
 
@@ -10980,7 +10980,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
-        drupal_set_message('Issue is from attributeOptionInfo '. $feeStudentOption['fee_item_details'][$i]['item_description']);
+        //drupal_set_message('Issue is from attributeOptionInfo '. $feeStudentOption['fee_item_details'][$i]['item_description']);
         return array();
       }
       //make sure attribute and option is attached to the product
@@ -10989,7 +10989,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
       if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) {
-         drupal_set_message('Issue is from is_uc_attribute_attached_to_product');
+        // drupal_set_message('Issue is from is_uc_attribute_attached_to_product');
         return array();
       }
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
@@ -11099,16 +11099,16 @@ function _student_has_paid_or_pendingpaid_fees($student_id) {
 
 
 function get_fee_items($studentUID){
-  drupal_set_message('Getting Student Info');
+  //drupal_set_message('Getting Student Info');
   $studentFeeProfile = fees_ini_student_profile($studentUID);
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return array();
-  drupal_set_message(print_r($studentFeeProfile));
-  drupal_set_message('Finished getting Student info');
+  //drupal_set_message(print_r($studentFeeProfile));
+  //drupal_set_message('Finished getting Student info');
   
-  drupal_set_message('Getting Fee info');
+  //drupal_set_message('Getting Fee info');
   $feeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], $studentFeeProfile['academic_level']);
-  drupal_set_message(print_r($feeItem));
-  drupal_set_message('Finished getting Fee info');
+  //drupal_set_message(print_r($feeItem));
+  //drupal_set_message('Finished getting Fee info');
   
   return $feeItem;
 }
