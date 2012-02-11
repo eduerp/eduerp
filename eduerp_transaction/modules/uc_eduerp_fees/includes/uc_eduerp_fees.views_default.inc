@@ -723,7 +723,7 @@ $handler->override_option('fields', array(
     'relationship' => 'none',
   ),
   'price' => array(
-    'label' => 'Paid by Students Directly',
+    'label' => 'Paid by Student Directly',
     'alter' => array(
       'alter_text' => 0,
       'text' => '',
@@ -768,7 +768,7 @@ $handler->override_option('fields', array(
     ),
   ),
   'original_amount' => array(
-    'label' => 'Paid by Students plus Scholarships',
+    'label' => 'Paid by Student plus Scholarship',
     'alter' => array(
       'alter_text' => 0,
       'text' => '',
