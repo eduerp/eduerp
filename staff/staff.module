@@ -10848,11 +10848,15 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     }
   }
   if(empty($setupNID)){
+    drupal_set_message('Issue is from setupNID'); 
     return $feeStudentOption;
   }
 
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
-  if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)) return $feeStudentOption;
+  if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)){
+    drupal_set_message('Issue is from get_school_fee_setup'); 
+    return $feeStudentOption;
+  }
 
   $feeStudentOption['studentFeeSetupNID'] = $setupNID;
   $feeStudentOption['nationality_name'] = $feeOption[$setupNID]['nationality_name'];
@@ -10877,7 +10881,10 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   $feeStudentOption['student_has_paid_or_pendingpaid_fees'] = _student_has_paid_or_pendingpaid_fees($studentUID);
 
   $details = get_fee_setup_item_details($setupNID);
-  if(db_affected_rows($details) <=0) return array();
+  if(db_affected_rows($details) <=0) {
+    drupal_set_message('Issue is from get_fee_setup_item_details'); 
+    return array();
+  }
 
   $i=0;
   while($r = db_fetch_object($details)){
