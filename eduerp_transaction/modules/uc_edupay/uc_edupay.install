@@ -4,7 +4,7 @@
  * Installs uc_edupay
  */
 
- function uc_edupay_schema() {
+function uc_edupay_schema() {
   $schema['fees_order'] = array(
   'description' => t('Eduerp Fees orders'),
   'fields' => array(
@@ -159,10 +159,9 @@
       'not null' => FALSE,
     ),
     'expiry_date' => array(
-      'description' => t('Hostel expiry date'),
+      'description' => t('Date when the Fee was marked Paid with EduPay callback to EduERP'),
       'type' => 'int',
       'not null' => FALSE,
-      'default' => 0,
     ),
     'attributes' => array(
       'description' => t('Fees product attribute. This is usually the node title of the Fees Structure'),
@@ -181,9 +180,10 @@
   'indexes' => array(
     'uid' => array('uid', 'status'),
   ),
-);
+  );
   return $schema;
 }
+
 
 /**
  * Implememntation of hook_install
@@ -192,15 +192,15 @@ function uc_edupay_install() {
   drupal_install_schema('uc_edupay');
 }
 
+
 /**
  * Implementation of hook_uninstall
  */
 function uc_edupay_uninstall() {
-
 }
 
+
 function uc_edupay_update_6100() {
-  db_query("ALTER TABLE {fees_order} CHANGE `expiry_date` `expiry_date` INT( 50 ) NULL DEFAULT '0'");
   db_query("ALTER TABLE {fees_order} CHANGE `price` `price` DECIMAL( 16, 5 ) NULL DEFAULT '0'");
   db_query("ALTER TABLE {fees_order} CHANGE `late_registration_amount` `late_registration_amount` DECIMAL( 16, 5 ) NULL DEFAULT '0'");
   db_query("ALTER TABLE {fees_order} CHANGE `late_registration_date` `late_registration_date` INT( 50 ) NULL DEFAULT '0'");
