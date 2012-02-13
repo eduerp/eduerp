@@ -830,6 +830,8 @@ function uc_edupay_save($order_id, $product) {
     unset($product['fees_format']);
   }
 
+  unset($product['expiry_date']); // We want it to be NULL until payment marked received by call-back
+
   if ($_SESSION['edupay_total_amount_zero']) {
     $product['status'] = 'payment_received';
   }
@@ -840,7 +842,8 @@ function uc_edupay_save($order_id, $product) {
   if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid = %d AND uid = %d AND session = '%s' $format_sql", $product['product_nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
     $product['fees_order_id'] = $result->fees_order_id;
     drupal_write_record('fees_order', $product, 'fees_order_id');
-  }else {
+  }
+  else {
     // do an insert
     drupal_write_record('fees_order', $product);
   }

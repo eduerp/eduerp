@@ -101,6 +101,8 @@ function uc_eduerp_fees_update_fees() {
 
     db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
     db_query("UPDATE {fees_order} SET status = '$status' WHERE order_id = %d", $order_id);
+    $timestamp = time();
+    db_query("UPDATE {fees_order} SET expiry_date = %d WHERE order_id = %d", $timestamp, $order_id);
     watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $uid)));
   }
 
