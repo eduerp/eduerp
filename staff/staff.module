@@ -8918,20 +8918,11 @@ function staff_school_fees_create_modify_fee_setup4_form_submit($form, &$state) 
 	      }
 
 	      //insert the fee item details
-	      //foreach($_SESSION['eduerp_fee_setup']['items'] as $k => $v){
 	      foreach($feeItems as $k => $feeItem) {
-		    //if(is_numeric($v) && $v > 0){
 		    if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] > 0){
-			  //build the item/product name
-	          //if($academicLevels != '0'){
-	          //  $itmName = $_SESSION['eduerp_fee_setup']['fee_structure_name'] .' - '. $academicLevels .'L - '. $slName ." - ". $snName ." (". $feeItem['fee_item'];
-	            //$itmName = $_SESSION['eduerp_fee_setup']['fee_structure_name'] .' - '. $academicLevels .'L - '. $slName .' - '. $snName .' - '. $programNID;
-	          //}
-	          //else{
-	            $itmName = $_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'];
-	          //}
+          $itmName = $_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'];
 		      //we need to check if attribute options exists else we'll create them
-			  $ucOptionName = array();
+          $ucOptionName = array();
 		      //construct the names of the option
 		      $ucOptionName[0]['name'] = $itmName . " - Full Amount)"; //$_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Full Amount)";
 		      $ucOptionName[0]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];
@@ -8997,7 +8988,6 @@ function staff_school_fees_create_modify_fee_setup4_form_submit($form, &$state) 
 		     $node->field_fee_full_payment_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];//$v;
 		     $node->field_fee_instalment1_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
 		     $node->field_fee_instalment2_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
-		     //$node->field_fee_uc_oid[0]['value'] 				= $oid;
 
 		     node_save($node);
 		   }
