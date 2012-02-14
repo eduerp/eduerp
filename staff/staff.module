@@ -9791,20 +9791,9 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
     $found = true;
 
   }
-  //$studentInfo->uid = 947;
+
   if($found) {
-
-    //if(! $EDUERPstudentInitiated) {//if request is from student then do not show this
       $student_profile = new UserProfile($studentInfo->uid);
-      //make sure no payment info exists for the student for the current session
-      //if(is_school_fee_info_existing($studentInfo->uid)){
-      //drupal_set_message($_SESSION[$varName]['summaryPaymentType']);
-
-
-      /**
-      The check below is no longer applcable
-
-      */
 
       if($varName == "eduerp_authorise_scholarship"){
       	//make sure he is not already enabled for instalment
@@ -9818,7 +9807,6 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
 	      drupal_set_message('Scholarship Authorisation for the Student already exists', 'error');
 	      return;
 	    }
-
       }
 
       if($varName == "eduerp_authorise_instalment"){
@@ -9845,10 +9833,7 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
       //echo print_r($studentFeeProfile);
       //drupal_set_message('hmm '. $student_profile->uid);
       return ;
-
   }
-
-
 }
 
 
@@ -10189,7 +10174,6 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
                        <td>". number_format($e['instalment1_amount'], 2) ."</td>
                        <td>". number_format($e['instalment2_amount'], 2) ."</td>
                      </tr>";
-
                    }
 
                  $html .="
@@ -10205,152 +10189,6 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
    </table>
    </div>";
   return $html;
-
-}
-
-
-function is_school_fee_info_existing($studentUID){
-
-  $rs = db_query("SELECT nid FROM {content_type_school_fee_payments} WHERE field_student_uid_fk_uid=%d AND field_fee_session_name_value='%s' ", $studentUID, variable_get('eduerp_current_session', ''));
-  if(db_affected_rows($rs) > 0) return true;
-
-  return false;
-}
-
-
-function is_school_fee_payment_type_info_existing($studentUID, $paymentType){
-
-  $rs = db_query("SELECT ctsfp.nid FROM {content_type_school_fee_payments} ctsfp
-  	  INNER JOIN {content_type_school_fee_payment_summary} ctsfps ON ctsfp.nid=ctsfps.field_fee_payment_fk1_nid
-  	  WHERE field_student_uid_fk_uid=%d AND field_fee_payment_type_fk_nid=%d AND field_fee_session_name_value='%s' ", $studentUID, $paymentType, variable_get('eduerp_current_session', ''));
-  if(db_affected_rows($rs) > 0) return true;
-
-  return false;
-}
-
-
-function is_school_fee_details_info_existing($paymentBriefNID){
-
-  $rs = db_query("SELECT nid FROM {content_type_school_fee_payment_details} WHERE field_fee_payment_fk_nid=%d ", $paymentBriefNID);
-  if(db_affected_rows($rs) > 0) return true;
-
-  return false;
-}
-
-
-function is_school_fee_summary_info_existing($paymentBriefNID, $summaryPaymentType){
-
-  $rs = db_query("SELECT nid FROM {content_type_school_fee_payment_summary} WHERE field_fee_payment_fk1_nid=%d AND field_fee_payment_type_fk_nid=%d ", $paymentBriefNID, $summaryPaymentType);
-  if(db_affected_rows($rs) > 0) return true;
-
-  return false;
-}
-
-
-function post_fee_payment($varName){
-
-  //insert payment info
-  if(! is_school_fee_info_existing($_SESSION[$varName]['studentUID'])){
-    $_SESSION[$varName]['paymentBriefNID'] = insert_payment_brief_info($varName);
-
-
-  }
-  else{
-    //get the payment NID
-
-  }
-
-  if(! is_school_fee_details_info_existing($_SESSION[$varName]['paymentBriefNID'])){//make sure no previous details exists
-    //insert payment details info
-    insert_payment_details_info($varName);
-  }
-
-
-  //make sure no such summary already exists
-  if(! is_school_fee_summary_info_existing($_SESSION[$varName]['paymentBriefNID'], $_SESSION[$varName]['summaryPaymentType'])){
-    //insert payment summary info
-    insert_payment_summary_info($varName);
-  }
-
-  return 1;
-
-}
-
-
-function insert_payment_brief_info($varName){
-
-  $node = new stdClass();
-  $node->type                               	= 'school_fee_payments';
-  $node->uid                                	= 1;  // Admin
-  $node->status                             	= 1;  // Published
-  $node->promote                            	= 0;
-  $node->sticky                             	= 0;
-  $node->comment                           	= 0;
-  $node->title                              	= "Payment brief - ". $_SESSION[$varName]['studentUID'] .' - '. variable_get('eduerp_current_session', '');
-  $node->field_fee_payment_sponsor_fk[0]['nid']	= $_SESSION[$varName]['payment_sponsor'];
-  $node->field_fee_payment_status_fk[0]['nid']  = $_SESSION[$varName]['payment_brief_status'];
-  $node->field_student_uid_fk[0]['uid']        	= $_SESSION[$varName]['studentUID'];
-  $node->field_fee_session_name[0]['value']     = variable_get('eduerp_current_session', '');
-  $node->field_fee_total_amount[0]['value'] 	= $_SESSION[$varName]['setup_total_amount'];
-
-  $node->field_fee_structure_type_fk[0]['nid'] 		= $_SESSION[$varName]['fee_structure_nid'];
-  $node->field_fee_student_level_type_fk[0]['nid'] 	= $_SESSION[$varName]['levelType'];
-  $node->field_fee_nationality_type_fk[0]['nid'] 	= $_SESSION[$varName]['nationalityType'];
-  $node->field_fee_program_fk[0]['nid'] 		= $_SESSION[$varName]['fee_program_nid'];
-
-
-  node_save($node);
-
-  return $node->nid;
-}
-
-
-function insert_payment_details_info($varName){
-
-  //get all the fee items associated with the fee setup
-  $feeItems = get_fee_setup_item_details($_SESSION[$varName]['studentFeeSetupNID']);
-  while($r = db_fetch_object($feeItems)){
-
-    $node = new stdClass();
-    $node->type                               		= 'school_fee_payment_details';
-    $node->uid                                		= 1;  // Admin
-    $node->status                             		= 1;  // Published
-    $node->promote                            		= 0;
-    $node->sticky                             		= 0;
-    $node->comment                           		= 0;
-    $node->title                              		= "Payment details - ". $_SESSION[$varName]['paymentBriefNID'];
-    $node->field_fee_payment_fk[0]['nid']		= $_SESSION[$varName]['paymentBriefNID'];
-    $node->field_fee_item_name[0]['value']  		= $r->item_name;
-    $node->field_fee_payment_item_amount[0]['value']    = $r->amount;
-
-
-    node_save($node);
-
-  }
-}
-
-
-function insert_payment_summary_info($varName){
-
-  $node = new stdClass();
-  $node->type                               		= 'school_fee_payment_summary';
-  $node->uid                                		= 1;  // Admin
-  $node->status                             		= 1;  // Published
-  $node->promote                            		= 0;
-  $node->sticky                             		= 0;
-  $node->comment                           		= 0;
-  $node->title                              		= "Payment summary - ". $_SESSION[$varName]['paymentBriefNID'];
-  $node->field_fee_payment_status_fk1[0]['nid']		= $_SESSION[$varName]['summaryPaymentStatus'];
-  $node->field_fee_payment_type_fk[0]['nid']  		= $_SESSION[$varName]['summaryPaymentType'];
-  $node->field_fee_payment_fk1[0]['nid']        	= $_SESSION[$varName]['paymentBriefNID'];
-  $node->field_fee_payment_date[0]['value']     	=  date("Y-m-d H:i:s");
-  $node->field_fee_summary_amount_paid[0]['value'] 	= $_SESSION[$varName]['summaryPaymentAmount'];
-  $node->field_fee_order_nid[0]['nid']        		= $_SESSION[$varName]['orderNID'];
-
-
-  node_save($node);
-
-  //return $node->nid;
 }
 
 
@@ -10373,7 +10211,6 @@ function staff_display_scholarship_authorisations($sessionName) {
       <th><b>Program Name</b></th>
       <th><b>Scholarship Type</b></th>
       <th><b>Sponsor Organisation</b></th>
-
       <th><b>Remarks</b></th>
       <th><b>Date</b></th>
 
@@ -10405,7 +10242,6 @@ function staff_display_scholarship_authorisations($sessionName) {
   </table>
   </div>";
   return $html;
-
 }
 
 
@@ -11104,16 +10940,10 @@ function _student_has_paid_or_pendingpaid_fees($student_id) {
 
 
 function get_fee_items($studentUID){
-  //drupal_set_message('Getting Student Info');
   $studentFeeProfile = fees_ini_student_profile($studentUID);
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return array();
-  //drupal_set_message(print_r($studentFeeProfile));
-  //drupal_set_message('Finished getting Student info');
 
-  //drupal_set_message('Getting Fee info');
   $feeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], $studentFeeProfile['academic_level']);
-  //drupal_set_message(print_r($feeItem));
-  //drupal_set_message('Finished getting Fee info');
 
 dsm(array('feeItem' => $feeItem));//ab
   return $feeItem;
@@ -11172,11 +11002,10 @@ function load_existing_fee_structure($forCombo=true){
         }
       }
     }
-
   }
   return $return;
-  //drupal_set_message(var_dump($return));
 }
+
 
 function load_from_existing($setupNID){
 
@@ -11199,6 +11028,7 @@ function load_from_existing($setupNID){
       }
     }
 }
+
 
 function get_scholarship_types($typeID=0, $forSelectList=true) {
     $where = ""; $args = "";
@@ -11257,16 +11087,14 @@ function staff_school_fees_create_modify_scholarship_types(){
       //$html .= drupal_get_form('staff_school_fees_test_fee_setup_form');
       //$html .= '<br /><hr /><br />';
       $html .= staff_display_available_scholarships();
-
     }
-
-
 
   echo $html;
   //drupal_set_message("unset");
   unset($_SESSION['eduerp_page']);
   return ob_get_clean();
 }
+
 
 function staff_school_fees_create_modify_scholarship_types_form() {
 
@@ -11279,7 +11107,6 @@ function staff_school_fees_create_modify_scholarship_types_form() {
       $r = db_fetch_object($rs);
       $scholarshipItem['scholarshipItem'] = $r->scholarship_types;
     }
-
   }
 
   $form['#title'] = 'Create / Modify Fee Setup';
@@ -11292,15 +11119,14 @@ function staff_school_fees_create_modify_scholarship_types_form() {
    );
   if ($scholarshipItem) $form['scholarshipItem']['#value'] = $scholarshipItem['scholarshipItem'];
 
-
   $form['submit'] = array(
     '#value' => 'Submit',
     '#type' => 'submit'
   );
 
   return $form;
-
 }
+
 
 function staff_school_fees_create_modify_scholarship_types_form_validate($form, &$form_state){
   $values = $form_state['values'];
@@ -11315,6 +11141,7 @@ function staff_school_fees_create_modify_scholarship_types_form_validate($form, 
     }
   }
 }
+
 
 function staff_school_fees_create_modify_scholarship_types_form_submit($form, &$form_state){
   if(arg(2) && is_numeric(arg(2)) && is_valid_scholarship_type(arg(2))){
@@ -11342,8 +11169,8 @@ function staff_school_fees_create_modify_scholarship_types_form_submit($form, &$
   node_save($node);
 
   drupal_goto("staff/createmodifschlshptypes");
-
 }
+
 
 function is_scholarship_type_name_existing($name, $nid = 0){
   if ($nid != 0)
@@ -11358,12 +11185,14 @@ function is_scholarship_type_name_existing($name, $nid = 0){
   return false;
 }
 
+
 function is_valid_scholarship_type($nid) {
   $result = db_query("SELECT nid FROM {content_type_school_fees_scholarship_types} WHERE nid =%d ", $nid);
   if (db_affected_rows($result) > 0 ) return true;
 
   return false;
 }
+
 
 function staff_display_available_scholarships() {
 
@@ -11397,8 +11226,8 @@ function staff_display_available_scholarships() {
       </table>";
   }
   return $str;
-
 }
+
 
 function staff_school_fees_remove_pending_orders(){
   global $user;
@@ -11413,13 +11242,10 @@ function staff_school_fees_remove_pending_orders(){
   if($isAuthorized){
     $html .= "<b>Remove Pending Orders</b> - Remove Pending Orders that have not been paid for in the past number of days.<br />";
     $html .= '<br />';
-    //$html .= "<b><font color='#ff0000'>Warning: Please only remove pending orders long after any Student might go to Bank to pay, as EduPay will still maintain a record which the Bank could access.</font></b>";
-
 
       $html .= drupal_get_form('get_remove_pending_order_form');
    }
    else {
-      //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
 
@@ -11448,7 +11274,6 @@ function get_remove_pending_order_form(){
 $form['title_test'] = array(
     '#type' => 'item',
     '#value' => "<b><font color='#ff0000'>Warning: Please only remove pending orders long after any Student might go to Bank to pay, as EduPay will still maintain a record which the Bank could access.</font></b>",
-    //'#required' => TRUE,
     );
   return $form;
 }
@@ -11532,7 +11357,7 @@ function get_candidate_info_form() {
 
 function get_candidate_info_form_validate($form, &$state) {
   $values = $state['values'];
-  //$studentInfo = user_load(array('name'=>$values['jamb_no']));
+
   $rs = db_query("SELECT nspro.uid uid
 	FROM {content_type_student_profile} spro
 	INNER JOIN {node} nspro ON spro.vid=nspro.vid
