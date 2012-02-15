@@ -7614,7 +7614,7 @@ function get_uc_attribute_option_info($product_nid, $program_nid, $level_name, $
 
   $rs = db_query("
     SELECT uco.oid, uco.aid, uco.name, uco.price FROM {eduerp_product_options} epo, {uc_attribute_options} uco
-    WHERE epo.product_nid=%d AND epo.program_nid=%d AND epo.level_name='%s' AND epo.nationality='%s' AND epo.instalment=%s AND epo.oid=uco.oid",
+    WHERE epo.product_nid=%d AND epo.program_nid=%d AND epo.level_name='%s' AND epo.nationality='%s' AND epo.instalment='%s' AND epo.oid=uco.oid",
     $product_nid, $program_nid, $level_name, $nationality, $instalment);
 
   if (db_affected_rows($rs) > 0) {
@@ -10262,7 +10262,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
     }
     $programme_specific = FALSE;
   }
-dsm(array('setupNID' => $setupNID));//ab
+
   if(empty($setupNID)){
     return $feeStudentOption;
   }
@@ -10296,9 +10296,7 @@ dsm(array('feeOption' => $feeOption));//ab
   $feeStudentOption['student_has_paid_or_pendingpaid_fees'] = _student_has_paid_or_pendingpaid_fees($studentUID);
 
   $details = get_fee_setup_item_details($setupNID);
-dsm(array('details' => $details));//ab
   if(db_affected_rows($details) <=0) {
-    //drupal_set_message('Issue is from get_fee_setup_item_details');
     return array();
   }
 
@@ -10395,8 +10393,8 @@ dsm(array('details' => $details));//ab
       $attributeOptionInfo = get_uc_attribute_option_info($r->product_nid, ($programme_specific ? $programNID : 0), ($forLevel ? $feeStudentOption['academic_level'] : $feeStudentOption['level_name']), $feeStudentOption['nationality_name'], 'Full Amount');
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
-dsm(array('attributeOptionInfo' => $attributeOptionInfo, 'item_description' => $feeStudentOption['fee_item_details'][$i]['item_description']));//ab
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
+dsm(array('attributeOptionInfo' => $attributeOptionInfo, 'item_description' => $feeStudentOption['fee_item_details'][$i]['item_description']));//ab
         return array();
       }
       //make sure attribute and option is attached to the product
