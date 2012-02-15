@@ -581,6 +581,55 @@ function eduerp_schema() {
     'primary key' => array('serial_id'),
   );
 
+  $schema['eduerp_product_options'] = array(
+    'description' => 'UberCart Options for each Product/Program/Level/Nationality/Instalment.',
+    'fields' => array(
+      'product_nid' => array(
+        'description' => 'The UC Product',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'aid' => array(
+        'description' => 'The {uc_attributes}.aid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'oid' => array(
+        'description' => 'The option ID',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'program_nid' => array(
+        'description' => 'The Programme nid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'level_name' => array(
+        'description' => 'The Level',
+        'type' => 'varchar',
+        'length' => 17,
+        'not null' => TRUE,
+      ),
+      'nationality' => array(
+        'description' => 'The Nationality',
+        'type' => 'varchar',
+        'length' => 13,
+        'not null' => TRUE,
+      ),
+      'instalment' => array(
+        'description' => 'The Instalment',
+        'type' => 'varchar',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+    ),
+    'indexes' => array('program_nid_product_nid' => array('program_nid', 'product_nid')),
+  );
+
   return $schema;
 }
 
