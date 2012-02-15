@@ -7538,16 +7538,6 @@ function is_uc_attribute_existing($attributeName){
 }
 
 
-function is_uc_attribute_option_existing(&$optionInfo){
-
-  $rs = db_query("SELECT oid FROM {uc_attribute_options} WHERE aid=%d AND name='%s' ", $optionInfo['aid'], $optionInfo['name']);
-
-  if(db_affected_rows($rs) > 0) return true;
-
-  return false;
-}
-
-
 function is_uc_attribute_attached_to_product(&$optionInfo){
 
   $rs = db_query("SELECT nid FROM {uc_product_attributes} WHERE nid=%d AND aid=%d AND label='%s' ",$optionInfo['productNID'], $optionInfo['aid'], $optionInfo['label']);
@@ -7587,13 +7577,18 @@ function get_uc_attribute_info($attributeName){
 function create_uc_attribute(&$info){
 
   db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display) VALUES ('%s', '%s', 0, 1, 1 ) ", $info['name'], $info['label']);
-
 }
 
 
-function create_uc_attribute_option(&$info){
+function create_uc_attribute_option($aid, $name, $price, $product_nid, $program_nid, $level_name, $nationality, $instalment) {
 
-  db_query("INSERT INTO {uc_attribute_options} (aid, name, price) VALUES (%d, '%s',  '%s') ", $info['aid'], $info['name'], $info['price']);
+  db_query("INSERT INTO {uc_attribute_options} (aid, name, price) VALUES (%d, '%s', '%s')", $aid, $name, $price);
+  $oid = db_last_insert_id('uc_attribute_options', 'oid');
+dsm(array($aid, $oid, $name, $price, $product_nid, $program_nid, $level_name, $nationality, $instalment));//ab
+
+  db_query("INSERT INTO {eduerp_product_options}
+    (product_nid, aid, oid, program_nid, level_name, nationality, instalment) VALUES (%d, %d, %d, $d, '%s', '%s', '%s')",
+    $product_nid, $aid, $oid, $program_nid, $level_name, $nationality, $instalment);
 }
 
 
@@ -7603,9 +7598,9 @@ function attach_uc_option_to_product(&$info){
 }
 
 
-function update_uc_attribute_option(&$info){
+function update_uc_attribute_option($oid, $price){
 
-  db_query("UPDATE {uc_attribute_options} SET price = '%s' WHERE name='%s' ", $info['price'], $info['name']);
+  db_query("UPDATE {uc_attribute_options} SET price = '%s' WHERE oid=%d", $price, $oid);
 }
 
 
@@ -7615,19 +7610,26 @@ function update_uc_product_option(&$info){
 }
 
 
-function get_uc_attribute_option_info($attributeOptionName){
-  $rs = db_query("SELECT oid, aid, name, price FROM {uc_attribute_options} WHERE name='%s'", $attributeOptionName);
+function get_uc_attribute_option_info($product_nid, $program_nid, $level_name, $nationality, $instalment) {
 
-  if(db_affected_rows($rs) > 0) {
+  $rs = db_query("
+    SELECT uco.oid, uco.aid, uco.name, uco.price FROM {eduerp_product_options} epo, {uc_attribute_options} uco
+    WHERE epo.product_nid=%d AND epo.program_nid=%d AND epo.level_name='%s' AND epo.nationality='%s' AND epo.instalment=%s AND epo.oid=uco.oid",
+    $product_nid, $program_nid, $level_name, $nationality, $instalment);
+
+  if (db_affected_rows($rs) > 0) {
     while($r = db_fetch_object($rs)){
       $attributeOption['oid'] = $r->oid;
       $attributeOption['aid'] = $r->aid;
       $attributeOption['name'] = $r->name;
       $attributeOption['price'] = $r->price;
     }
+
+dsm(array('attributeOption' => $attributeOption, $product_nid, $program_nid, $level_name, $nationality, $instalment));//ab
     return $attributeOption;
   }
 
+dsm(array('attributeOption' => 'FAILED', $product_nid, $program_nid, $level_name, $nationality, $instalment));//ab
   return array();
 }
 
@@ -8782,227 +8784,223 @@ function staff_school_fees_create_modify_fee_setup4_form_submit($form, &$state) 
   global $user;
   $values = $state['values'];
 
-  switch(trim(strtolower(strtoupper($values['op'])))){
+  switch(trim(strtolower(strtoupper($values['op'])))) {
     case 'cancel':
       unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup'] = null;
       unset($_SESSION['eduerp_page']); $_SESSION['eduerp_page']=null;
       drupal_goto('staff/createmodifyfeestup');
+    break;
 
-      break;
     case 'back':
       $_SESSION['eduerp_page'] = 3; unset($_POST['eduerp_page']);
       if((arg(2) || is_numeric(arg(2))))
-       	 drupal_goto('staff/createmodifyfeestup/'. arg(2));
-       else
-         drupal_goto('staff/createmodifyfeestup');
-
+        drupal_goto('staff/createmodifyfeestup/'. arg(2));
+      else
+        drupal_goto('staff/createmodifyfeestup');
     break;
 
     case 'submit':
-
       //we need to check if attribute exists if not create it.
-      if(is_uc_attribute_existing("fee_structure")){
+      if (is_uc_attribute_existing("fee_structure")) {
         $attribute = get_uc_attribute_info("fee_structure");
-
       }
-      else{
-        //create the attribute
-	    $info['name'] = "fee_structure";
-	    $info['label'] = "Fee Structure";
-	    create_uc_attribute($info);
+      else {
+        $info['name'] = "fee_structure";
+        $info['label'] = "Fee Structure";
+        create_uc_attribute($info);
 
-	    $attribute = get_uc_attribute_info("fee_structure");
-
+        $attribute = get_uc_attribute_info("fee_structure");
       }
-      if(! is_array($attribute) || ! sizeof($attribute)){
-	    //something ugly happened here and we have to quit
-	   drupal_set_message(Error_Types(177), 'error');
-	   return;
-	  }
-	   $forEdit = false;
-       $_SESSION['eduerp_page'] = 4;
+      if (! is_array($attribute) || ! sizeof($attribute)) {
+        //something ugly happened here and we have to quit
+        drupal_set_message(Error_Types(177), 'error');
+        return;
+      }
+      $forEdit = false;
+      $_SESSION['eduerp_page'] = 4;
 
-       $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
+      $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
 
-       $feeItems = get_school_fee_items();
-       if(! is_array($feeItems) || ! sizeof($feeItems)){
-		 //something ugly happened here and we have to quit
-	     drupal_set_message(Error_Types(177), 'error');
-		 return;
-	   }
+      $feeItems = get_school_fee_items();
+      if (! is_array($feeItems) || ! sizeof($feeItems)) {
+        //something ugly happened here and we have to quit
+        drupal_set_message(Error_Types(177), 'error');
+        return;
+      }
 
-       $studentLevels = get_fee_student_level_types();
-       if(! is_array($studentLevels) || ! sizeof($studentLevels)){
-		 //something ugly happened here and we have to quit
-	     drupal_set_message(Error_Types(177), 'error');
-		 return;
-	   }
+      $studentLevels = get_fee_student_level_types();
+      if (! is_array($studentLevels) || ! sizeof($studentLevels)) {
+        //something ugly happened here and we have to quit
+        drupal_set_message(Error_Types(177), 'error');
+        return;
+      }
 
-       $studentNationalities = get_fee_student_nationality_types();
-       if(! is_array($studentNationalities) || ! sizeof($studentNationalities)){
-		 //something ugly happened here and we have to quit
-	     drupal_set_message(Error_Types(177), 'error');
-		 return;
-	   }
+      $studentNationalities = get_fee_student_nationality_types();
+      if (! is_array($studentNationalities) || ! sizeof($studentNationalities)) {
+        //something ugly happened here and we have to quit
+        drupal_set_message(Error_Types(177), 'error');
+        return;
+      }
 
-       //this is where we'll submit the entire fee setup
-       // fee setup CCK
-       $programNID = (isset($_SESSION['eduerp_fee_setup']['programme_nid']) && is_numeric($_SESSION['eduerp_fee_setup']['programme_nid'])) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
-       $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
+      //this is where we'll submit the entire fee setup
+      $programNID = (isset($_SESSION['eduerp_fee_setup']['programme_nid']) && is_numeric($_SESSION['eduerp_fee_setup']['programme_nid'])) ? $_SESSION['eduerp_fee_setup']['programme_nid'] : 0;
+      $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
 
-       $programInfo = get_programmes($programNID, true);
-       $_SESSION['eduerp_fee_setup']['fee_structure_name'] = ($programNID == 0) ? 'General Fee Structure' : $programInfo[$programNID];
+      $programInfo = get_programmes($programNID, true);
+      $_SESSION['eduerp_fee_setup']['fee_structure_name'] = ($programNID == 0) ? 'General Fee Structure' : $programInfo[$programNID];
 
-       if($academicLevels != '0'){ //default the array to one entry
+      if ($academicLevels != '0') { //default the array to one entry
         $studentLevels = array();
         $studentLevels['00'] = $academicLevels ." Level";
         $slID2 = '0';
-       }
+      }
 
-       foreach($studentLevels as $slID => $slName){
-        foreach($studentNationalities as $snID => $snName){
-	       if((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)){
-		     //for update
-			 if(isset($slID2)) $slID3 = $slID2; else $slID3 = $slID;
-		     //get the node nid
-		     $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup}
-		 	 WHERE field_fee_nationality_type_nid=%d AND
-		 	 (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=%d) AND
-		 	 (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=%d) AND
-		 	 field_fee_setup_session_value='%s' AND
-		 	 (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value='%s') ", $snID, $slID3, $programNID, variable_get('eduerp_current_session', ''), $academicLevels);
-		     $j = db_fetch_object($rs);
+      foreach ($studentLevels as $slID => $slName) {
+        foreach ($studentNationalities as $snID => $snName) {
+          if ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) {
+            //for update
+            if (isset($slID2)) $slID3 = $slID2; else $slID3 = $slID;
+            //get the node nid
+            $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup}
+              WHERE field_fee_nationality_type_nid=%d AND
+                (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=%d) AND
+                (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=%d) AND
+                 field_fee_setup_session_value='%s' AND
+                (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value='%s') ", $snID, $slID3, $programNID, variable_get('eduerp_current_session', ''), $academicLevels);
+            $j = db_fetch_object($rs);
 
-		     $node =  node_load($j->nid);
-		     $node->field_fee_setup_total_amount[0]['value']        = $_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID];
+            $node =  node_load($j->nid);
+            $node->field_fee_setup_total_amount[0]['value'] = $_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID];
 
-		     node_save($node);
-		     $feeSetupNID = $j->nid;
-		     $forEdit = true;
-	       }
-	       else {
-	           $itmName = $feeStructure['name'] .' - '. $snName .' - '. $slName .' - '. $programNID;
+            node_save($node);
+            $feeSetupNID = $j->nid;
+            $forEdit = true;
+          }
+          else {
+            $itmName = $feeStructure['name'] .' - '. $snName .' - '. $slName .' - '. $programNID;
 
-		     //for insert
-		     $node = new stdClass();
-		     $node->type                               			= 'school_fee_item_setup';
-		     $node->uid                                			= 1;  // Admin
-		     $node->status                             			= 1;  // Published
-		     $node->promote                            			= 0;
-		     $node->sticky                             			= 0;
-		     $node->comment                            			= 0;
-		     $node->title                              			= $itmName; //$feeStructure['name'] .' - '. $snName .' - '. $slName .' - '. $programNID;//$feeStructure['name'] .' - '. $feeNationality['name'] .' - '. $feeLevelType['name'] .' - '. $programNID;
-		     $node->field_fee_nationality_type[0]['nid']        = $snID; //$_SESSION['eduerp_fee_setup']['fee_student_nationality_type'];
-		     $node->field_fee_structure_type[0]['nid']          = $_SESSION['eduerp_fee_setup']['fee_structure_type'];
-		     $node->field_fee_student_level_type[0]['nid'] 		= $slID; //$_SESSION['eduerp_fee_setup']['fee_student_level_type'];
-		     $node->field_fee_setup_total_amount[0]['value']    = $_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID];
-		     $node->field_setup_officer[0]['uid']         		= $user->uid;
-		     $node->field_fee_setup_program_nid[0]['value']     = is_numeric($programNID) ? $programNID : 0 ;
-		     $node->field_fee_structure_name[0]['value']        = $_SESSION['eduerp_fee_setup']['fee_structure_name'];
-		     $node->field_fee_setup_session[0]['value']        	= variable_get('eduerp_current_session', '');
-		     $node->field_fee_setup_date[0]['value']        	= date("Y-m-d H:i:s");
-		     $node->field_fee_setup_level_name[0]['value']		= $academicLevels;
+            //for insert
+            $node = new stdClass();
+            $node->type                                    = 'school_fee_item_setup';
+            $node->uid                                     = 1;  // Admin
+            $node->status                                  = 1;  // Published
+            $node->promote                                 = 0;
+            $node->sticky                                  = 0;
+            $node->comment                                 = 0;
+            $node->title                                   = $itmName; //$feeStructure['name'] .' - '. $snName .' - '. $slName .' - '. $programNID;//$feeStructure['name'] .' - '. $feeNationality['name'] .' - '. $feeLevelType['name'] .' - '. $programNID;
+            $node->field_fee_nationality_type[0]['nid']        = $snID; //$_SESSION['eduerp_fee_setup']['fee_student_nationality_type'];
+            $node->field_fee_structure_type[0]['nid']          = $_SESSION['eduerp_fee_setup']['fee_structure_type'];
+            $node->field_fee_student_level_type[0]['nid']    = $slID; //$_SESSION['eduerp_fee_setup']['fee_student_level_type'];
+            $node->field_fee_setup_total_amount[0]['value']    = $_SESSION['eduerp_fee_setup']['totalAmount'][$slID][$snID];
+            $node->field_setup_officer[0]['uid']             = $user->uid;
+            $node->field_fee_setup_program_nid[0]['value']     = is_numeric($programNID) ? $programNID : 0 ;
+            $node->field_fee_structure_name[0]['value']        = $_SESSION['eduerp_fee_setup']['fee_structure_name'];
+            $node->field_fee_setup_session[0]['value']         = variable_get('eduerp_current_session', '');
+            $node->field_fee_setup_date[0]['value']          = date("Y-m-d H:i:s");
+            $node->field_fee_setup_level_name[0]['value']    = $academicLevels;
 
-		     node_save($node);
-		     $feeSetupNID = $node->nid;
-	      }
+            node_save($node);
+            $feeSetupNID = $node->nid;
+          }
 
-	      if((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)){
-		    //we need to delete all previous inserts
-		    //get previous details
+          if ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) {
+            //we need to delete all previous inserts
+            $feeSetupDetails = get_fee_setup_item_details($feeSetupNID);
+            while ($r = db_fetch_object($feeSetupDetails)) {
+              delete_node($r->nid);
+            }
+          }
 
-		    $feeSetupDetails = get_fee_setup_item_details($feeSetupNID);
-		    while($r = db_fetch_object($feeSetupDetails)){
-		      delete_node($r->nid);
-		    }
-	      }
+          //insert the fee item details
+          foreach ($feeItems as $k => $feeItem) {
+            if (is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] > 0) {
 
-	      //insert the fee item details
-	      foreach($feeItems as $k => $feeItem) {
-		    if(is_numeric($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount']) && $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'] > 0){
-          $itmName = $_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'];
-		      //we need to check if attribute options exists else we'll create them
-          $ucOptionName = array();
-		      //construct the names of the option
-		      $ucOptionName[0]['name'] = $itmName . " - Full Amount)"; //$_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Full Amount)";
-		      $ucOptionName[0]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];
+              $itmName = $_SESSION['eduerp_fee_setup']['fee_structure_name'] . ' - ' . $slName . ' - ' . $snName . ' (' . $feeItem['fee_item'];
 
-		      $ucOptionName[1]['name'] = $itmName  . " - Instalment1)"; //$_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Instalment1)";
-		      $ucOptionName[1]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
+              //we need to check if attribute options exists else we'll create them
+              $ucOptionName = array();
+              //construct the names of the option
+              $ucOptionName[0]['name'] = $itmName . ' - Full Amount)';
+              $ucOptionName[0]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];
+              $ucOptionName[0]['product_nid'] = $feeItem['uc_product_nid'];
+              $ucOptionName[0]['program_nid'] = is_numeric($programNID) ? $programNID : 0;
+              $ucOptionName[0]['level_name'] = str_replace(' Level', '', $slName);
+              $ucOptionName[0]['nationality'] = $snName;
+              $ucOptionName[0]['instalment'] = 'Full Amount';
 
-		      $ucOptionName[2]['name'] = $itmName  . " - Instalment2)"; //$_SESSION['eduerp_fee_setup']['fee_structure_name'] ." - ". $slName ." - ". $snName ." (". $feeItem['fee_item'] . " - Instalment2)";
-		      $ucOptionName[2]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
+              $ucOptionName[1]['name'] = $itmName . ' - Instalment1)';
+              $ucOptionName[1]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
+              $ucOptionName[1]['product_nid'] = $feeItem['uc_product_nid'];
+              $ucOptionName[1]['program_nid'] = is_numeric($programNID) ? $programNID : 0;
+              $ucOptionName[1]['level_name'] = str_replace(' Level', '', $slName);
+              $ucOptionName[1]['nationality'] = $snName;
+              $ucOptionName[1]['instalment'] = 'Instalment1';
 
-		      foreach($ucOptionName as $u){
-		       $optionInfo = array();
-		       $optionInfo['aid']=$attribute['aid'];
-		       $optionInfo['name'] = $u['name'];
-		       $optionInfo['price'] = $u['price'];
-		       if(is_uc_attribute_option_existing($optionInfo)){
-		         //fine, update the amount
+              $ucOptionName[2]['name'] = $itmName . ' - Instalment2)';
+              $ucOptionName[2]['price'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
+              $ucOptionName[2]['product_nid'] = $feeItem['uc_product_nid'];
+              $ucOptionName[2]['program_nid'] = is_numeric($programNID) ? $programNID : 0;
+              $ucOptionName[2]['level_name'] = str_replace(' Level', '', $slName);
+              $ucOptionName[2]['nationality'] = $snName;
+              $ucOptionName[2]['instalment'] = 'Instalment2';
 
-		         update_uc_attribute_option($optionInfo);
-		       }
-		       else{
-		         //create it
-		         create_uc_attribute_option($optionInfo);
-		       }
+              foreach ($ucOptionName as $u) {
 
-		       //get the option info
-		       $attributeOptionInfo = get_uc_attribute_option_info($u['name']);
+                if ($attributeOptionInfo = get_uc_attribute_option_info($u['product_nid'], $u['program_nid'], $u['level_name'], $u['nationality'], $u['instalment'])) {
+                  update_uc_attribute_option($attributeOptionInfo['oid'], $u['price']);
+                }
+                else {
+                  create_uc_attribute_option($attribute['aid'], $u['name'], $u['price'], $u['product_nid'], $u['program_nid'], $u['level_name'], $u['nationality'], $u['instalment']);
+                }
 
-			   if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)){
-			     //something ugly happened here and we to quit
-			     //form_set_error('', Error_Types(177));
-			     drupal_set_message(Error_Types(177), 'error');
-			     return;
-			   }
-		       //enable option for product $v['fee_item']
-		       //we need the product_nid, oid, price
-			   $productOption = array();
-		       $productOption['productNID'] = $feeItem['uc_product_nid'];
-		       $productOption['oid'] = $attributeOptionInfo['oid'];
-		       $productOption['price'] = $u['price'];
+                $attributeOptionInfo = get_uc_attribute_option_info($u['product_nid'], $u['program_nid'], $u['level_name'], $u['nationality'], $u['instalment']);
 
-		       //first make sure that the option is not already attached to the product
-		       if(is_uc_option_attached_to_product($productOption)){
-		         //fine, update the amount
-		         update_uc_product_option($productOption);
-		       }
-		       else{
-		         //create it
-		         attach_uc_option_to_product($productOption);
-		       }
-		     }
+                if (! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
+                  //something ugly happened here and we to quit
+                  drupal_set_message(Error_Types(177), 'error');
+                  return;
+                }
 
-		     $node = new stdClass();
-		     $node->type                               			= 'school_fee_item_setup_details';
-		     $node->uid                                			= 1;  // Admin
-		     $node->status                             			= 1;  // Published
-		     $node->promote                            			= 0;
-		     $node->sticky                             			= 0;
-		     $node->comment                            			= 0;
-		     $node->title                              		    = 'Fee Setup Details' .' - '. $k .' - '. $feeSetupNID;
-		     $node->field_fee_item_fk[0]['nid']          		= $k;
-		     $node->field_fee_item_setup_fk[0]['nid']           = $feeSetupNID;
-		     $node->field_fee_full_payment_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];//$v;
-		     $node->field_fee_instalment1_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
-		     $node->field_fee_instalment2_amount[0]['value'] 	= $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
+                $productOption = array();
+                $productOption['productNID'] = $feeItem['uc_product_nid'];
+                $productOption['oid'] = $attributeOptionInfo['oid'];
+                $productOption['price'] = $u['price'];
 
-		     node_save($node);
-		   }
-	      }
-	    }
-       }
-       if($forEdit)
-         drupal_set_message('The Fee Setup was updated successfully!');
-       else
-         drupal_set_message('The Fee Setup was created successfully!');
+                if (is_uc_option_attached_to_product($productOption)) {
+                  update_uc_product_option($productOption);
+                }
+                else {
+                  attach_uc_option_to_product($productOption);
+                }
+              }
 
-       unset($_SESSION['eduerp_fee_setup']);
-       unset($_SESSION['eduerp_page']); unset($_POST['eduerp_page']);
-       drupal_goto('staff/createmodifyfeestup');
+              $node = new stdClass();
+              $node->type                                    = 'school_fee_item_setup_details';
+              $node->uid                                     = 1;  // Admin
+              $node->status                                  = 1;  // Published
+              $node->promote                                 = 0;
+              $node->sticky                                  = 0;
+              $node->comment                                 = 0;
+              $node->title                                   = 'Fee Setup Details' .' - '. $k .' - '. $feeSetupNID;
+              $node->field_fee_item_fk[0]['nid']             = $k;
+              $node->field_fee_item_setup_fk[0]['nid']       = $feeSetupNID;
+              $node->field_fee_full_payment_amount[0]['value'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'];//$v;
+              $node->field_fee_instalment1_amount[0]['value']  = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
+              $node->field_fee_instalment2_amount[0]['value']  = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
 
+              node_save($node);
+            }
+          }
+        }
+      }
+      if ($forEdit)
+        drupal_set_message('The Fee Setup was updated successfully!');
+      else
+        drupal_set_message('The Fee Setup was created successfully!');
+
+      unset($_SESSION['eduerp_fee_setup']);
+      unset($_SESSION['eduerp_page']); unset($_POST['eduerp_page']);
+      drupal_goto('staff/createmodifyfeestup');
     break;
   }
 }
@@ -10223,6 +10221,8 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 
   $setupNID = null; $forLevel = false;
 
+  $programme_specific = TRUE;
+
   if ($academicLevel > 0) {
     //test if level-specific setup exists for the student for the program
     $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
@@ -10250,6 +10250,7 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $setupNID = $feeSetup->nid;
       $forLevel = true;
     }
+    $programme_specific = FALSE;
   }
 
   if(empty($setupNID)){
@@ -10259,17 +10260,16 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
       $feeSetup = db_fetch_object($rs);
       $setupNID = $feeSetup->nid;
     }
+    $programme_specific = FALSE;
   }
 dsm(array('setupNID' => $setupNID));//ab
   if(empty($setupNID)){
-    //drupal_set_message('Issue is from setupNID');
     return $feeStudentOption;
   }
 
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
 dsm(array('feeOption' => $feeOption));//ab
   if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)){
-    //drupal_set_message('Issue is from get_school_fee_setup');
     return $feeStudentOption;
   }
 
@@ -10316,7 +10316,7 @@ dsm(array('details' => $details));//ab
       $feeStudentOption['fee_item_details'][$i]['product_nid'] = $r->product_nid;
       $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
-      $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+      $attributeOptionInfo = get_uc_attribute_option_info($r->product_nid, ($programme_specific ? $programNID : 0), ($forLevel ? $feeStudentOption['academic_level'] : $feeStudentOption['level_name']), $feeStudentOption['nationality_name'], 'Instalment1');
 
       //now make sure that each fee product returned has attribute and option (no more assumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
@@ -10355,7 +10355,7 @@ dsm(array('details' => $details));//ab
         $feeStudentOption['fee_item_details'][$i]['product_nid'] = $r->product_nid;
         $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
-        $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+        $attributeOptionInfo = get_uc_attribute_option_info($r->product_nid, ($programme_specific ? $programNID : 0), ($forLevel ? $feeStudentOption['academic_level'] : $feeStudentOption['level_name']), $feeStudentOption['nationality_name'], 'Instalment2');
 
         //now make sure that each fee product returned has attribute and option (no more asumptions!)
         if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) return array();
@@ -10392,7 +10392,7 @@ dsm(array('details' => $details));//ab
       $feeStudentOption['fee_item_details'][$i]['product_nid'] = $r->product_nid;
       $feeStudentOption['fee_item_details'][$i]['is_scholarship_applicable'] = $r->is_scholarship_applicable;
 
-      $attributeOptionInfo = get_uc_attribute_option_info($feeStudentOption['fee_item_details'][$i]['item_description']);
+      $attributeOptionInfo = get_uc_attribute_option_info($r->product_nid, ($programme_specific ? $programNID : 0), ($forLevel ? $feeStudentOption['academic_level'] : $feeStudentOption['level_name']), $feeStudentOption['nationality_name'], 'Full Amount');
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
 dsm(array('attributeOptionInfo' => $attributeOptionInfo, 'item_description' => $feeStudentOption['fee_item_details'][$i]['item_description']));//ab
