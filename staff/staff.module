@@ -7584,7 +7584,6 @@ function create_uc_attribute_option($aid, $name, $price, $product_nid, $program_
 
   db_query("INSERT INTO {uc_attribute_options} (aid, name, price) VALUES (%d, '%s', '%s')", $aid, $name, $price);
   $oid = db_last_insert_id('uc_attribute_options', 'oid');
-dsm(array($aid, $oid, $name, $price, $product_nid, $program_nid, $level_name, $nationality, $instalment));//ab
 
   db_query("INSERT INTO {eduerp_product_options}
     (product_nid, aid, oid, program_nid, level_name, nationality, instalment) VALUES (%d, %d, %d, %d, '%s', '%s', '%s')",
@@ -7625,11 +7624,9 @@ function get_uc_attribute_option_info($product_nid, $program_nid, $level_name, $
       $attributeOption['price'] = $r->price;
     }
 
-dsm(array('attributeOption' => $attributeOption, $product_nid, $program_nid, $level_name, $nationality, $instalment));//ab
     return $attributeOption;
   }
 
-dsm(array('attributeOption' => 'FAILED', $product_nid, $program_nid, $level_name, $nationality, $instalment));//ab
   return array();
 }
 
@@ -10268,7 +10265,6 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   }
 
   $feeOption = get_school_fee_setup(variable_get('eduerp_current_session', ''), $feeSetup->nid);
-dsm(array('feeOption' => $feeOption));//ab
   if(! $feeOption || ! is_array($feeOption) || ! sizeof($feeOption)){
     return $feeStudentOption;
   }
@@ -10394,7 +10390,6 @@ dsm(array('feeOption' => $feeOption));//ab
 
       //now make sure that each fee product returned has attribute and option (no more asumptions!)
       if(! is_array($attributeOptionInfo) || ! sizeof($attributeOptionInfo)) {
-dsm(array('attributeOptionInfo' => $attributeOptionInfo, 'item_description' => $feeStudentOption['fee_item_details'][$i]['item_description']));//ab
         return array();
       }
       //make sure attribute and option is attached to the product
@@ -10403,7 +10398,6 @@ dsm(array('attributeOptionInfo' => $attributeOptionInfo, 'item_description' => $
       $aInfo['oid'] = $attributeOptionInfo['oid'];
       $aInfo['label'] = "Fee Structure";
       if(! is_uc_attribute_attached_to_product($aInfo) || ! is_uc_option_attached_to_product($aInfo)) {
-dsm(array('aInfo' => $aInfo));//ab
         return array();
       }
       $feeStudentOption['fee_item_details'][$i]['option_id'] = $attributeOptionInfo['oid'];
@@ -10490,7 +10484,7 @@ dsm(array('aInfo' => $aInfo));//ab
       $feeStudentOption['hostel_info']['amount'] = $reservationInfo->hostel_price;
     }
   }
-dsm(array('feeStudentOption' => $feeStudentOption));//ab
+
   return $feeStudentOption;
 }
 
@@ -10518,7 +10512,6 @@ function get_fee_items($studentUID){
 
   $feeItem = fees_ini_student_fee_option($studentUID, $studentFeeProfile['programNID'], $studentFeeProfile['levelType'], $studentFeeProfile['nationalityType'], $studentFeeProfile['academic_level']);
 
-dsm(array('feeItem' => $feeItem));//ab
   return $feeItem;
 }
 
