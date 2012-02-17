@@ -1117,6 +1117,29 @@ $handler->override_option('filters', array(
     'field' => 'scholarship_type',
     'relationship' => 'none',
   ),
+  'expiry_date' => array(
+    'operator' => 'between',
+    'value' => array(
+      'type' => 'date',
+      'value' => '',
+      'min' => '',
+      'max' => '',
+    ),
+    'group' => '0',
+    'exposed' => TRUE,
+    'expose' => array(
+      'use_operator' => 0,
+      'operator' => 'expiry_date_op',
+      'identifier' => 'date',
+      'label' => 'Payment date between',
+      'optional' => 1,
+      'remember' => 1,
+    ),
+    'id' => 'expiry_date',
+    'table' => 'fees_order',
+    'field' => 'expiry_date',
+    'relationship' => 'none',
+  ),
 ));
 $handler->override_option('access', array(
   'type' => 'perm',
