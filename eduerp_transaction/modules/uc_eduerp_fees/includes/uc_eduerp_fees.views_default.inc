@@ -371,44 +371,6 @@ $view->core = 0;
 $view->api_version = '2';
 $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 $handler = $view->new_display('default', 'Defaults', 'default');
-$handler->override_option('relationships', array(
-  'field_college_id_nid' => array(
-    'label' => 'College nid',
-    'required' => 0,
-    'delta' => -1,
-    'id' => 'field_college_id_nid',
-    'table' => 'node_data_field_college_id',
-    'field' => 'field_college_id_nid',
-    'relationship' => 'none',
-  ),
-  'field_profile_first_choice_nid' => array(
-    'label' => 'Programme offerred',
-    'required' => 0,
-    'delta' => -1,
-    'id' => 'field_profile_first_choice_nid',
-    'table' => 'node_data_field_profile_first_choice',
-    'field' => 'field_profile_first_choice_nid',
-    'relationship' => 'none',
-  ),
-  'field_department_id_nid' => array(
-    'label' => 'Department nid',
-    'required' => 0,
-    'delta' => -1,
-    'id' => 'field_department_id_nid',
-    'table' => 'node_data_field_department_id',
-    'field' => 'field_department_id_nid',
-    'relationship' => 'none',
-  ),
-  'content_profile_rel' => array(
-    'label' => 'Content Profile',
-    'required' => 0,
-    'type' => 'student_profile',
-    'id' => 'content_profile_rel',
-    'table' => 'users',
-    'field' => 'content_profile_rel',
-    'relationship' => 'none',
-  ),
-));
 $handler->override_option('fields', array(
   'order_id' => array(
     'label' => 'Order Id',
