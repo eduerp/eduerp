@@ -16,9 +16,7 @@ $items['importudus/importstudents'] = array(
 function importstudents() {
   ob_start();
 
-//!!!remove matno
-
-$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='X821903017' LIMIT 100";
+$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='Y821903017' LIMIT 100";
 $imports = db_query($sql);
 $number_imported = 0;
 while ($import = db_fetch_object($imports)) {
@@ -27,6 +25,8 @@ while ($import = db_fetch_object($imports)) {
   $email = $mat . '@udusok.edu.ng';
 
   $dob          = $import->field_profile_dob_value;
+  $pass         = substr($dob, 0, 10);
+
   $last         = $import->field_profile_last_name_value;
   $first        = $import->field_profile_first_name_value;
   $middle       = $import->field_profile_middle_name_value;
@@ -53,44 +53,69 @@ while ($import = db_fetch_object($imports)) {
 
   $newUser = array(
     'name' => $mat,
-    'pass' => $dob,
+    'pass' => $pass,
     'mail' => $email,
     'init' => $email,
     'status' => 1,
 
     'roles' => array(7 => 'Student'),
-
-    'profile_last_name'   => $last,
-    'profile_first_name'  => $first,
-    'profile_middle_name' => $middle,
-
-    'profile_dob' => $dob,
-
-    'profile_matno'             => $mat,
-    'profile_jambno'            => 'none',
-    'university_email'          => $email,
-    'profile_reg_session'       => '2010/2011',
-    'profile_reg_semester'      => 2,
-    'profile_title_name'        => $import->field_profile_title_name_value,
-    'profile_gender_value'      => $import->field_profile_gender_value,
-    'profile_country_name'      => $import->field_profile_country_name_value,
-    'profile_health_status'     => $import->field_profile_health_status_value,
-    'profile_yearofentry'       => $import->field_profile_yearofentry_value,
-    'profile_mode_of_entry'     => $import->field_profile_mode_of_entry_value,
-    'profile_mode_of_study'     => $import->field_profile_mode_of_study_value,
-    'profile_level_name'        => $import->field_profile_level_name_value,
-    'profile_state_name_origin' => $import->field_profile_state_name_origin_value,
-    'profile_sponsor_name'      => $profile_sponsor_name,
-    'profile_state_sponsor'     => $profile_state_sponsor,
   );
 
   user_save(NULL, $newUser);
   $uid = db_last_insert_id('users', 'uid');
 
-  db_query("UPDATE import_sokoto SET uid=%d, imported=1 WHERE field_profile_matno_value='%s'", $uid, $mat);
+  db_query("UPDATE import_sokoto SET uid=%d WHERE field_profile_matno_value='%s'", $uid, $mat);
 
-  // Should do Zimbra automatically
-  // Should do profile & student_profile automatically
+  $node = new stdClass();
+  $node->type    = 'profile';
+  $node->uid     = $uid;
+  $node->status  = 1;  // Published
+  $node->promote = 0;
+  $node->sticky  = 0;
+  $node->comment = 0;
+  $node->title  = "Profile";
+  $node->field_profile_last_name[0]['value'] = $last;
+  node_save($node);
+
+  $node = new stdClass();
+  $node->type    = 'student_profile';
+  $node->uid     = $uid;
+  $node->status  = 1;  // Published
+  $node->promote = 0;
+  $node->sticky  = 0;
+  $node->comment = 0;
+  $node->title  = "Student Profile";
+  $node->field_profile_matno[0]['value'] = $mat;
+  node_save($node);
+
+  $user_profile = new UserProfile($uid);
+
+  $user_profile->profile_last_name   = $last;
+  $user_profile->profile_first_name  = $first;
+  $user_profile->profile_middle_name = $middle;
+
+  $user_profile->profile_dob' = $dob;
+
+  $user_profile->profile_matno             = $mat;
+  $user_profile->profile_jambno            = 'none';
+  $user_profile->university_email          = $email;
+  $user_profile->profile_reg_session       = '2010/2011';
+  $user_profile->profile_reg_semester      = 2;
+  $user_profile->profile_title_name        = $import->field_profile_title_name_value;
+  $user_profile->profile_gender_value      = $import->field_profile_gender_value;
+  $user_profile->profile_country_name      = $import->field_profile_country_name_value;
+  $user_profile->profile_health_status     = $import->field_profile_health_status_value;
+  $user_profile->profile_yearofentry       = $import->field_profile_yearofentry_value;
+  $user_profile->profile_mode_of_entry     = $import->field_profile_mode_of_entry_value;
+  $user_profile->profile_mode_of_study     = $import->field_profile_mode_of_study_value;
+  $user_profile->profile_level_name        = $import->field_profile_level_name_value;
+  $user_profile->profile_state_name_origin = $import->field_profile_state_name_origin_value;
+  $user_profile->profile_sponsor_name      = $profile_sponsor_name;
+  $user_profile->profile_state_sponsor     = $profile_state_sponsor;
+
+  $user_profile->profile_first_choice      = $program_nid;
+
+  $user_profile->save();
 
   $node = new stdClass();
   $node->type    = 'student_program';
@@ -144,6 +169,7 @@ while ($import = db_fetch_object($imports)) {
     $year_1_session--;
     $year_2_session--;
   }
+  echo "uid: $uid, pass: $pass<br />";
   $number_imported++;
 }
 
