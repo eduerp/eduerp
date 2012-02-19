@@ -16,7 +16,7 @@ $items['importudus/importstudents'] = array(
 function importstudents() {
   ob_start();
 
-$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='Z821903017' LIMIT 100";
+$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='P821903017' LIMIT 100";
 $imports = db_query($sql);
 $number_imported = 0;
 while ($import = db_fetch_object($imports)) {
@@ -47,7 +47,7 @@ while ($import = db_fetch_object($imports)) {
   }
 
   $sql = "SELECT p.nid FROM {content_type_program} p WHERE p.field_programme_name_value='%s'";
-  $result = db_query($sql, $programme_name);
+  $result = db_query($sql, $program_name);
   $row = db_fetch_object($result);
   $program_nid = $row->nid;
 
@@ -65,7 +65,7 @@ while ($import = db_fetch_object($imports)) {
   $new_user = user_load(array('name' => $mat));
   $uid = $new_user->uid;
 
-  db_query("UPDATE import_sokoto SET uid=%d WHERE field_profile_matno_value='%s'", $uid, $mat);
+  db_query("UPDATE importsokoto SET uid=%d WHERE field_profile_matno_value='%s'", $uid, $mat);
 
   $node = new stdClass();
   $node->type    = 'profile';
@@ -103,7 +103,7 @@ while ($import = db_fetch_object($imports)) {
   $user_profile->profile_reg_session       = '2010/2011';
   $user_profile->profile_reg_semester      = 2;
   $user_profile->profile_title_name        = $import->field_profile_title_name_value;
-  $user_profile->profile_gender_value      = $import->field_profile_gender_value;
+  $user_profile->profile_gender            = $import->field_profile_gender_value;
   $user_profile->profile_country_name      = $import->field_profile_country_name_value;
   $user_profile->profile_health_status     = $import->field_profile_health_status_value;
   $user_profile->profile_yearofentry       = $import->field_profile_yearofentry_value;
@@ -115,6 +115,14 @@ while ($import = db_fetch_object($imports)) {
   $user_profile->profile_state_sponsor     = $profile_state_sponsor;
 
   $user_profile->profile_first_choice      = $program_nid;
+
+  // Update session, semester, year of entry on disk so student_nodeapi() 'presave' hook will find new values that it specifically handles
+  $sql = "UPDATE {content_type_student_profile} spro, {node} nspro SET spro.field_profile_reg_session_value='%s', spro.field_profile_reg_semester_value='%s', spro.field_profile_yearofentry_value='%s'
+    WHERE
+      spro.vid=nspro.vid AND
+      nspro.uid=%d AND
+      nspro.type='student_profile'";
+  db_query($sql, $user_profile->profile_reg_session, $user_profile->profile_reg_semester, $user_profile->profile_yearofentry, $uid);
 
   $user_profile->save();
 
