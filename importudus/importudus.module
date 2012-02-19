@@ -16,7 +16,7 @@ $items['importudus/importstudents'] = array(
 function importstudents() {
   ob_start();
 
-$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='Y821903017' LIMIT 100";
+$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='Z821903017' LIMIT 100";
 $imports = db_query($sql);
 $number_imported = 0;
 while ($import = db_fetch_object($imports)) {
@@ -62,7 +62,8 @@ while ($import = db_fetch_object($imports)) {
   );
 
   user_save(NULL, $newUser);
-  $uid = db_last_insert_id('users', 'uid');
+  $new_user = user_load(array('name' => $mat);
+  $uid = $new_user->uid;
 
   db_query("UPDATE import_sokoto SET uid=%d WHERE field_profile_matno_value='%s'", $uid, $mat);
 
@@ -169,7 +170,7 @@ while ($import = db_fetch_object($imports)) {
     $year_1_session--;
     $year_2_session--;
   }
-  echo "uid: $uid, pass: $pass<br />";
+  echo "uid: $uid, username: $mat, password: $pass<br />";
   $number_imported++;
 }
 
