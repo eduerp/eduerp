@@ -3309,6 +3309,10 @@ function hostel_allocation_reports(){
       case 'block_statistics':
         echo hostel_allocation_block_statistics_report($_SESSION['EDUERP_rpt']['session_name'], $_SESSION['EDUERP_rpt']['block_nid']);
       break;
+      
+      case 'hostel_statistics':
+        echo hostel_allocation_hostel_statistics_report($_SESSION['EDUERP_rpt']['session_name']);
+      break;
 
     }
 
@@ -3318,6 +3322,7 @@ function hostel_allocation_reports(){
 
 
   unset($_SESSION['EDUERP_rpt']);
+  $_SESSION['EDUERP_rpt'] = null;
   return ob_get_clean();
 
 }
@@ -3358,7 +3363,7 @@ function hostel_allocation_reports_switch_form(&$form_state){
       '#prefix' => "<div id='shwblocks'>",
       '#suffix' => "</div>",
       '#disabled' => TRUE,
-    '#required' => TRUE
+    //'#required' => TRUE
     );
   if(isset($EDUERP_rpt['block_nid'])){
     $form['block_nid']['#default_value'] = $EDUERP_rpt['block_nid'];
@@ -3371,7 +3376,7 @@ function hostel_allocation_reports_switch_form(&$form_state){
   $form['rpt_type'] = array(
     '#type' => 'radios',
     '#title' => "Report Type",
-    '#options' => array('reservation' => '<b>Room Reservations</b> - List of Rooms in the Block currently reserved and yet to be paid for', 'allocation' => '<b>Room Allocations</b> - List of Rooms in the Block that have been paid for', 'room_statistics' => '<b>Room Statistics</b> - Show Allocation/Reservation information for each Room in the Block based on Room Capacity', 'block_statistics' => '<b>Block Statistics</b> - Show Allocation/Reservation information for the Categories in the Block based on Allocation Rules'),
+    '#options' => array('reservation' => '<b>Room Reservations</b> - List of Rooms in the Block currently reserved and yet to be paid for', 'allocation' => '<b>Room Allocations</b> - List of Rooms in the Block that have been paid for', 'room_statistics' => '<b>Room Statistics</b> - Show Allocation/Reservation information for each Room in the Block based on Room Capacity', 'block_statistics' => '<b>Block Statistics</b> - Show Allocation/Reservation information for the Categories in the Block based on Allocation Rules', 'hostel_statistics' => '<b>Hostel Statistics</b> - Show Allocation/Reservation information for Hostels based on Allocation Rules'),
     '#required' => TRUE,
     '#default_value' => 'reservation'
   );
@@ -3389,8 +3394,17 @@ function hostel_allocation_reports_switch_form(&$form_state){
 
 
 function hostel_allocation_reports_switch_form_validate(&$form, &$form_state){
-
-  $_SESSION['EDUERP_rpt'] = $form_state['values'];
+  $values = $form_state['values'];
+  if(empty($values['block_nid']) && $values['rpt_type'] != "hostel_statistics"){
+  
+    form_set_error("block_nid", "Please select Block Name");
+    unset($_SESSION['EDUERP_rpt']);
+    $_SESSION['EDUERP_rpt'] = null;
+  }
+  else{
+  
+    $_SESSION['EDUERP_rpt'] = $form_state['values'];
+  }
 
   //drupal_set_message($EDUERP_rpt['session_name']);
 
@@ -3634,6 +3648,82 @@ function hostel_allocation_block_statistics_report($session, $blockNID=0){
              <td>". $r->category_name ."</td>
              <td>". $r->allocation_number ."</td>
              <td>". $r->alloted_number ."</td>
+             <td>". $r->session_name ."</td>
+           </tr>";
+      //}
+
+     }
+     $html .="
+   </table>
+   </div>
+   ";
+
+ }
+ else {
+   //drupal_set_message(Error_Types(106), 'error');
+   $html .= Error_Types(106);
+ }
+     echo $html;
+
+ return ob_get_clean();
+}
+
+function hostel_allocation_hostel_statistics_report($session){
+ ob_start();
+ $html = "";
+
+ $sql = "SELECT cth.field_hostel_name_value hostel_name, 
+  
+ SUM(ars.room_capacity) total_places,  
+ SUM(ars.reservation_count) total_reserved, SUM(ars.allocation_count) total_allocated, ars.session_name
+  FROM {content_type_hostels} cth, {allocation_room_statistics} ars, {content_type_blocks} ctb, {content_type_rooms} ctr
+  WHERE
+  ars.room_nid=ctr.nid 
+  AND ctr.field_block_id_nid = ctb.nid 
+
+  AND ctb.field_hostel_id_nid=cth.nid 
+  AND ctr.field_room_status_value != 0 
+  AND ars.session_name = '%s' 
+  ";// AND cth.nid = %d
+
+ $sql .= " GROUP BY cth.nid ORDER BY hostel_name ";
+
+
+ 
+   $hostelInfo = get_hostels($hostelNID, false);
+   $html .="
+     <div>Hostel Allocations Statistics  - ". $session ."</b> session</div><br />";
+ 
+ 
+  $rs = db_query($sql, $session);
+ 
+
+ if(db_affected_rows($rs) > 0){
+
+
+   $html.= "
+   <div id='assigned_courses'>
+   <table border=1>
+     <th>s/n</th>
+     <th>Hostel Name</th>
+     <th>Total Places</th>
+     <th>Places Reserved</th>
+     <th>Places Allocated</th>
+     <th>Session</th>";
+     $i = 1;
+     while($r = db_fetch_object($rs)){
+
+
+
+      //foreach ($settings as $v){
+        if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
+          $html .= "
+           <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
+             <td>". $i++ ."</td>
+             <td>". $r->hostel_name ."</td>
+             <td>". number_format($r->total_places) ."</td>
+             <td>". number_format($r->total_reserved) ."</td>
+             <td>". number_format($r->total_allocated) ."</td>
              <td>". $r->session_name ."</td>
            </tr>";
       //}
