@@ -830,7 +830,8 @@ function uc_edupay_save($order_id, $product) {
     unset($product['fees_format']);
   }
 
-  unset($product['expiry_date']); // We want it to be NULL until payment marked received by call-back
+  unset($product['expiry_date']); // We want it to be NULL until payment marked received by call-back (this will be the date payment was received)
+  unset($product['email']);       // & same for this which will be the EduPay username that marked the payment as received)
 
   if ($_SESSION['edupay_total_amount_zero']) {
     $product['status'] = 'payment_received';
