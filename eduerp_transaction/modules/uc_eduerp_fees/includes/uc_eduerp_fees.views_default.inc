@@ -1102,6 +1102,24 @@ $handler->override_option('filters', array(
     'field' => 'expiry_date',
     'relationship' => 'none',
   ),
+  'email' => array(
+    'operator' => 'contains',
+    'value' => '',
+    'group' => '0',
+    'exposed' => TRUE,
+    'expose' => array(
+      'use_operator' => 0,
+      'operator' => 'email_op',
+      'identifier' => 'bank',
+      'label' => 'Bank',
+      'remember' => 1,
+    ),
+    'case' => 1,
+    'id' => 'email',
+    'table' => 'fees_order',
+    'field' => 'email',
+    'relationship' => 'none',
+  ),
 ));
 $handler->override_option('access', array(
   'type' => 'perm',
@@ -1159,10 +1177,15 @@ $handler->override_option('style_options', array(
 ));
 $handler = $view->new_display('views_data_export', 'Data export', 'views_data_export_1');
 $handler->override_option('items_per_page', '0');
-$handler->override_option('style_plugin', 'views_data_export_csv');
+$handler->override_option('style_plugin', 'views_data_export_xls');
 $handler->override_option('style_options', array(
   'mission_description' => FALSE,
   'description' => '',
+  'attach_text' => 'XLS',
+  'provide_file' => 1,
+  'filename' => '%view-%timestamp-mmm-%timestamp-dd-%timestamp-yyyy.xls',
+  'help' => '',
+  'parent_sort' => 0,
 ));
 $handler->override_option('row_plugin', '');
 $handler->override_option('path', 'admin/build/fees/csv');
@@ -1180,7 +1203,10 @@ $handler->override_option('tab_options', array(
   'weight' => 0,
   'name' => 'navigation',
 ));
-$handler->override_option('displays', array());
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+));
 $handler->override_option('sitename_title', FALSE);
 $handler->override_option('use_batch', TRUE);
 $handler = $view->new_display('page', 'Page', 'page_1');
