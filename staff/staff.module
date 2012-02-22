@@ -1749,7 +1749,6 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
        If you are the HOD for those courses, you will be able to fix the problem yourself.<br />In any case, when the problem is resolved, you MUST come back to this screen to complete verification!</font></b>";
 
   return $str;
-
 }
 
 
@@ -4991,48 +4990,23 @@ function  get_progress_qualification_details() {
     }
   }
 
-  /*
-    //test data
-  $GPA[1]['2008/2009'][1] = array("field_gpa_value"=>'34.3', "field_credit_load_completed_value"=>'50', "field_sess_name_gpa_value"=>'2008/2009',
-      "field_semester_name_gpa_value"=>'1', "field_level_name_gpa_value"=>'100');
-  $GPA[1]['2008/2009'][2] = array("field_gpa_value"=>'20.3', "field_credit_load_completed_value"=>'5', "field_sess_name_gpa_value"=>'2008/2009',
-      "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'100');
-
-  $GPA[1]['2009/2010'][1] = array("field_gpa_value"=>'11.3', "field_credit_load_completed_value"=>'45', "field_sess_name_gpa_value"=>'2009/2010',
-      "field_semester_name_gpa_value"=>'1', "field_level_name_gpa_value"=>'200');
-  $GPA[1]['2009/2010'][2] = array("field_gpa_value"=>'67.3', "field_credit_load_completed_value"=>'75', "field_sess_name_gpa_value"=>'2009/2010',
-      "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'200');
-
-  $GPA[2]['2008/2009'][1] = array("field_gpa_value"=>'90.3', "field_credit_load_completed_value"=>'70', "field_sess_name_gpa_value"=>'2008/2009',
-      "field_semester_name_gpa_value"=>'1', "field_level_name_gpa_value"=>'200');
-  $GPA[2]['2008/2009'][2] = array("field_gpa_value"=>'70.3', "field_credit_load_completed_value"=>'5', "field_sess_name_gpa_value"=>'2008/2009',
-      "field_semester_name_gpa_value"=>'2', "field_level_name_gpa_value"=>'200');
-  */
-  //arrange the faled courses
-
   $failed_courses = get_cumulative_list_of_failed_courses($session, $eduerp_programme_nid, $level);
   if (db_affected_rows($failed_courses) > 0) {
     $failed_arr = array("failedlist");
     while ($f = db_fetch_object($failed_courses)) {
       foreach ($failed_arr as $v)
         $failed[$f->uid] = $f->{$v};
-
     }
   }
 
-  //test data for failed course
-  //$failed[2] = "code1, code2";
-
   //build the table
   //note i am using cGPA as the root iterator because cGPA must exist for all students
-  //print_r($cGPA);
   $html = "";
   if(isset($cGPA) && is_array($cGPA)) {
   $html = "
   <table border=1>";$i=1;
   foreach($cGPA as $k=> $v){
 
-  //    drupal_set_message($v['field_cgpa_sp_value']);
     //build cGPA
     $html .= "
     <tr>
@@ -5059,11 +5033,6 @@ function  get_progress_qualification_details() {
      </tr>";
     if (isset($failed[$k])) {
       //now build failed courses
-      //$flist = "";
-      //foreach($failed[$k] as $p) {
-      //  $flist .= $p['failedlist'] .', ';
-      //}
-      ///$flist = substr($flist, 0, -2); //remove the trailing ', '
       $html .= "
       <tr>
         <td colspan=2>&nbsp;</td>
@@ -5097,10 +5066,6 @@ function  get_progress_qualification_details() {
 
           foreach($GPA[$k] as $p) {
                 $b = array_keys($p);
-                //echo sizeof($b) .'<br />';
-               // if(sizeof($b)){
-               //       foreach($b as $h=>$a) echo $k . '=>'. $a .'<br />';
-               // }
                 foreach($b as $t){
           $html .= "
             <tr>
@@ -5140,46 +5105,7 @@ function  get_progress_qualification_details() {
         <td colspan=7>";
           $eduerp_uid = $v['uid'];
           $eduerp_studentName = $v['student_name'];
-          //$stud = new student_action_class($v['uid'], $programmeName, $programme_nid, $v['student_name']);
           $html .= drupal_get_form('staff_student_action_form');
-          //$html .= $stud;
-          //unset($_SESSION['eduerp_stud']);
-        /*
-          <table border=1>
-            <tr>
-              <td nowrap>Comment:<input type='text' name='comment'></td>
-              <td nowrap>Event:<select name='studentevent' >
-                <option value='Graduated'>Graduated</option>
-                <option value='Left Voluntarily'>Left Voluntarily</option>
-                <option value='Repeat Session'>Repeat Session</option>
-                <option value='Defer Session'>Defer Session</option>
-                <option value='Left Forced'>Left Forced</option>
-
-                </select>
-              </td>
-              <td nowrap>Degree:<select name='studentdegree' >
-                <option value='None'>None</option>
-                <option value='First Class'>First Class</option>
-                <option value='Second Class Upper'>Second Class Upper</option>
-                <option value='Second Class Lower'>Second Class Lower</option>
-                <option value='Third Class'>Third Class</option>
-                <option value='Pass'>Pass</option>
-
-                </select>
-              </td>";
-              $all_sessions = get_all_sessions();
-              $html .="
-              <td nowrap>Session:<select name='studentsession' >";
-              foreach($all_sessions as $v){
-                      $html .="
-                <option value='". $v ."'>". $v ."</option>";
-              }
-              $html .="
-                </select>
-              <td><input type='button' class='delete_btn' value='Perform Action' onClick=\"student_action(". $v['uid'] .");\" /></td>
-            </tr>
-          </table>
-          */
           $str .="
         </td>
       </tr>
@@ -5411,7 +5337,6 @@ function staff_unregistered_students() {
       $str  .= display_list_of_unregistered_students($unregStudents);
     }
     else{
-      //$str .= Error_Types(106);
       drupal_set_message(Error_Types(106), 'error');
     }
   }
@@ -10135,7 +10060,6 @@ function fees_ini_student_profile($studentUID){
       $studentFeeProfile['programme_name'] = $programmeName[$student_profile->profile_first_choice];
 
       if(! isset($studentFeeProfile['jamb_num']) || $studentFeeProfile['jamb_num'] == ""){
-        //echo "no JAMB Number";
         return 0;
       }
 
@@ -10152,7 +10076,8 @@ function fees_ini_student_profile($studentUID){
       if(trim($studentLevel) == '100' || trim($studentLevel) == '1'){
         $levelStatus = "freshman";
       }
-      elseif((trim($studentLevel) == '200' || trim($studentLevel) == '2') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE"){
+      // Was: (trim($studentLevel) == '200' || trim($studentLevel) == '2')
+      elseif ((trim($studentLevel) == '200') && strtoupper(strtolower($student_profile->profile_mode_of_entry)) == "DE") {
       	$levelStatus = "freshman";
       }
       else{
