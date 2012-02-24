@@ -3280,11 +3280,13 @@ function staff_assign_course_form_validate($form, &$form_state) {
 
   //make sure it is unique for course/semester/session
   if (arg(3)) {//validate EDIT variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
+dsm(array($form_state['values']));//ab
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
     }
   }
   else {
+dsm(array($form_state['values']));//ab
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'])) {
       form_set_error('course_code', Error_Types(113));
     }
@@ -3505,7 +3507,7 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
     if ($instance_nid != 0) {
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $instance_nid, $timetable);
-
+dsm(array($course_nid, $semester, $session, $instance_nid, $timetable));//ab
     }
     else {
       $result = db_query("SELECT nid FROM {content_type_course_instance}
