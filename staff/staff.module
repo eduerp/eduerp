@@ -3496,11 +3496,9 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' ", $course_nid, $semester, $session);
     }
-
   }
   else {//include timetable
     if ($instance_nid != 0) {
-dsm(array($course_nid, $semester, $session, $instance_nid, $timetable));//ab
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $instance_nid, $timetable);
     }
