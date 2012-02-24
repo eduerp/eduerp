@@ -3205,7 +3205,6 @@ function staff_assign_course_form() {
       '#suffix' => "</div>",
       '#disabled' => TRUE,
       '#required'  => TRUE
-
       );
   if ($course_instance) {$form['chief_staff_nid']['#default_value'] = $course_instance->field_lecturer_uid; $form['chief_staff_nid']['#disabled'] = FALSE; }
 
@@ -3213,7 +3212,6 @@ function staff_assign_course_form() {
       '#type' => 'select',
       '#options' => array(0=>'N/A') + get_Staff_in_Department(), //arg(2)),
       '#title' => 'Second Lecturer'
-
       );
   if ($course_instance) $form['assist_staff_nid']['#default_value'] = (int) $course_instance->field_lecturer_alternate_uid ;
 
@@ -3223,6 +3221,14 @@ function staff_assign_course_form() {
       '#required' => TRUE
       );
    if ($course_instance) $form['timetable']['#default_value'] = $course_instance->field_timetable_value;
+
+   if (!$course_instance) {
+     $form['allow_twice'] = array(
+        '#type' => 'checkbox',
+        '#title' => 'Allow me run the same course twice in the same semester',
+        '#default_value' => FALSE
+        );
+   }
 
    $form['showCourseAssignment'] = array( //used to keep showing the form
       '#type' => 'hidden',
@@ -3289,6 +3295,10 @@ function staff_assign_course_form_validate($form, &$form_state) {
     }
   }
   else {
+    if (empty($form_state['values']['allow_twice']) && is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], 0, TRUE)) {
+      form_set_error('course_code', 'You are not to run the same course twice in the same semester unless you specifically check "Allow me run the same course twice in the same semester"');
+    }
+
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'])) {
       form_set_error('course_code', Error_Types(113));
     }
