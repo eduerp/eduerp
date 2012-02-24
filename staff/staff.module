@@ -3279,8 +3279,12 @@ function staff_assign_course_form_validate($form, &$form_state) {
   if ($form_state['values']['course_nid'] == 0) form_set_error('course_nid', 'Course Code is required.');
 
   //make sure it is unique for course/semester/session
-  if (arg(3)) {//validate EDIT variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
-    if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
+  if (arg(3)) {//validate EDIT
+
+    // In an edit 'course_nid' is actually a course_instance nid, so we need to get the course nid
+    $row = db_fetch_object(db_query("SELECT field_course_id_nid FROM {content_type_course_instance} WHERE nid=%d", $form_state['values']['course_nid']));
+
+    if (is_course_assignment_existing($row->field_course_id_nid, $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
     }
   }
@@ -3298,7 +3302,6 @@ function staff_assign_course_form_submit($form, &$form_state) {
   $course = db_fetch_object(get_Available_Courses(0,$form_state['values']['course_nid']));
 
   if(arg(3)){
-
     $node =  node_load(arg(3));
     $node->title                              = $course->course_code .' - '. $_SESSION['eduerp_assign_course_session'] .' - '. $_SESSION['eduerp_assign_course_semester'] .' - '. $course->course_level .' - '. $form_state['values']['location']; //[Course Title] . ' - ' . [Session Name] . ' - ' . [Semester Name] . ' - ' . [Level Name];
     $node->field_lecturer[0]['uid']           = $form_state['values']['chief_staff_nid'];
@@ -3320,8 +3323,8 @@ function staff_assign_course_form_submit($form, &$form_state) {
       //now get the max Location ID
       $max = get_Max_Location_ID($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session']);
       $location = $max->num + 1;
-
     }
+
     $node = new stdClass();
     $node->type                               = 'course_instance';
     $node->uid                                = 1;  // Admin
@@ -3485,9 +3488,9 @@ function get_Max_Location_ID($course_nid, $semester, $session) {
 function is_course_assignment_existing($course_nid, $semester, $session, $timetable, $instance_nid = 0, $for_location_checks=false) {
   if ($for_location_checks) {//no need to include timetable
     if ($instance_nid != 0) {
+      // Not used (Alan says)
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d ", $course_nid, $semester, $session, $instance_nid);
-
     }
     else {
       $result = db_query("SELECT nid FROM {content_type_course_instance}
@@ -3497,6 +3500,7 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
   }
   else {//include timetable
     if ($instance_nid != 0) {
+dsm(array($course_nid, $semester, $session, $instance_nid, $timetable));//ab
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $instance_nid, $timetable);
     }
