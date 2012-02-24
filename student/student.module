@@ -58,7 +58,7 @@ class courseselectionsclass {
 
   private $failedcodes;
 
-  private $selected_load;
+  private $selected_load = array(1 => 0, 2 => 0);
 
   private $count_courses_offered = array();
 
@@ -146,7 +146,7 @@ class courseselectionsclass {
       );
 
     $this->count_courses_offered[$semester] = 0;
-    $this->selected_load = 0;
+    $this->selected_load[$semester] = 0;
     $corecodes = array();
     while ($row = db_fetch_object($result)) {
       if (in_array($row->course_code, $this->passedcodes)) continue;
@@ -165,14 +165,14 @@ class courseselectionsclass {
 
           $default_value = TRUE;
           $disabled = TRUE;
-          $this->selected_load += $row->credit_load;
+          $this->selected_load[$semester] += $row->credit_load;
         }
         else {
           $disabled = FALSE;
 
           if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
             $default_value = TRUE;
-            $this->selected_load += $row->credit_load;
+            $this->selected_load[$semester] += $row->credit_load;
           }
           else {
             $default_value = FALSE;
@@ -313,7 +313,7 @@ class courseselectionsclass {
         );
 
         if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
-          // Unless spec changes, removed: $this->selected_load += $row->credit_load; (and {$row->credit_load} not displayed above)
+          // Unless spec changes, removed: $this->selected_load[$semester] += $row->credit_load; (and {$row->credit_load} not displayed above)
           $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
         }
         // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
@@ -334,7 +334,7 @@ class courseselectionsclass {
       <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
       <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
       <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
-      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load . '</span></td></tr>
+      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load[$semester] . '</span></td></tr>
       </table>');
 
     $this->form['#max_credit_load' . $semester] = $min_max_credits->max_credit_load;
