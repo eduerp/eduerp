@@ -3296,7 +3296,7 @@ function staff_assign_course_form_validate($form, &$form_state) {
   }
   else {
     if (empty($form_state['values']['allow_twice']) && is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], 0, TRUE)) {
-      form_set_error('course_code', 'You are not to run the same course twice in the same semester unless you specifically check "Allow me run the same course twice in the same semester"');
+      form_set_error('course_code', 'You are not to run the same course twice in the same semester unless you specifically check "Allow me run the same course twice in the same semester". Maybe you should use "Modify Assigned Lecturers and Timetables for Courses" instead.');
     }
 
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'])) {
