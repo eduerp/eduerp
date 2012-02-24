@@ -177,7 +177,14 @@ class courseselectionsclass {
           else {
             $default_value = FALSE;
           }
-          $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+
+          if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+            $semester_for_totals = 2;
+          }
+          else {
+            $semester_for_totals = $semester;
+          }
+          $this->addscriptforcheckbox($row->course_instance, $semester_for_totals, $row->credit_load);
         }
         $this->currentlevelcis[] = $row->course_instance;
 
@@ -326,15 +333,26 @@ class courseselectionsclass {
 
     $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green");';
 
-    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
-    $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
-    $min_max_credits = db_fetch_object($result);
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+      $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND (pls.semester='1' OR pls.semester='2')";
+      $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name);
+      $min_max_credits = db_fetch_object($result);
+
+      $select_load_for_totals = $this->selected_load[1] + $this->selected_load[2];
+    }
+    else {
+      $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
+      $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
+      $min_max_credits = db_fetch_object($result);
+
+      $select_load_for_totals = $this->selected_load[$semester];
+    }
 
     $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
       <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
       <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
       <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
-      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load[$semester] . '</span></td></tr>
+      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $select_load_for_totals . '</span></td></tr>
       </table>');
 
     $this->form['#max_credit_load' . $semester] = $min_max_credits->max_credit_load;
@@ -1322,7 +1340,12 @@ function student_course_form(&$obj) {
 
       $courseselections->addformelementsforsemester(1);
       $courseselections->addformelementsforfailedcoursesforsemester(1);
-      $courseselections->addformelementsforloadcounter(1);
+      if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+        $this->form['add_a_break'] = array('#value' => '<br />');
+      }
+      else {
+        $courseselections->addformelementsforloadcounter(1);
+      }
 
       $courseselections->addformelementsforsemester(2);
       $courseselections->addformelementsforfailedcoursesforsemester(2);
@@ -1421,8 +1444,14 @@ function student_course_form_validate($form, &$form_state) {
   // The test for $currentlevelcis removed (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates and new failed test added)
   $result = db_query($sql, $cis1, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '1');
   $row = db_fetch_object($result);
-  if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
-  if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
+
+  if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+  }
+  else {
+    if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
+    if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
+  }
+
   $form_state['storage']['creditload'][1] = $row->tload;
 
   if (!empty($form['#max_credit_load2'])) {
@@ -1464,10 +1493,19 @@ function student_course_form_validate($form, &$form_state) {
           )";
     $result = db_query($sql, $cis2, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '2');
     $row = db_fetch_object($result);
-    if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
-    if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
+
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+      if (($form_state['storage']['creditload'][1] + $row->tload) < ($form['#min_credit_load1'] + $form['#min_credit_load2'])) form_set_error('Semester 1_2 Min', 'You have not selected enough credit load for semesters 1 & 2, select more courses.');
+      if (($form_state['storage']['creditload'][1] + $row->tload) > ($form['#max_credit_load1'] + $form['#max_credit_load2'])) form_set_error('Semester 1_2 Max', 'You have selected too much credit load for semesters 1 & 2, select fewer courses.');
+    }
+    else {
+      if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
+      if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
+    }
     $form_state['storage']['creditload'][2] = $row->tload;
   }
+
+  if (form_get_errors()) drupal_goto('student/course'); // Need to completely regenerate form so that selected_load is recalculated
 }
 
 
