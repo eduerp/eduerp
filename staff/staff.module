@@ -3280,13 +3280,11 @@ function staff_assign_course_form_validate($form, &$form_state) {
 
   //make sure it is unique for course/semester/session
   if (arg(3)) {//validate EDIT variable_get('eduerp_current_session', '') variable_get('eduerp_current_semester', '')
-dsm(array($form_state['values']));//ab
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'], arg(3))) {
       form_set_error('course_code', Error_Types(113));
     }
   }
   else {
-dsm(array($form_state['values']));//ab
     if (is_course_assignment_existing($form_state['values']['course_nid'], $_SESSION['eduerp_assign_course_semester'], $_SESSION['eduerp_assign_course_session'], $form_state['values']['timetable'])) {
       form_set_error('course_code', Error_Types(113));
     }
@@ -3298,18 +3296,16 @@ function staff_assign_course_form_submit($form, &$form_state) {
   $_SESSION['eduerp_showCourseAssignment'] = 1;
 
   $course = db_fetch_object(get_Available_Courses(0,$form_state['values']['course_nid']));
-  //if(! arg(3)) $_SESSION['eduerp_showFullForm'] = 1;
+
   if(arg(3)){
 
     $node =  node_load(arg(3));
     $node->title                              = $course->course_code .' - '. $_SESSION['eduerp_assign_course_session'] .' - '. $_SESSION['eduerp_assign_course_semester'] .' - '. $course->course_level .' - '. $form_state['values']['location']; //[Course Title] . ' - ' . [Session Name] . ' - ' . [Semester Name] . ' - ' . [Level Name];
-    //$node->field_course_id[0]['nid']          = $form_state['values']['course_nid'];
     $node->field_lecturer[0]['uid']           = $form_state['values']['chief_staff_nid'];
     $node->field_lecturer_alternate[0]['uid'] = ($form_state['values']['assist_staff_nid'] != 0) ? $form_state['values']['assist_staff_nid'] : NULL;
     $node->field_sess_name[0]['value']        = $_SESSION['eduerp_assign_course_session'];
     $node->field_semester_name[0]['value']    = $_SESSION['eduerp_assign_course_semester'];
     $node->field_repeat[0]['value']           = ($_SESSION['eduerp_assign_course_semester'] == 3) ? 1 : 0;
-    //$node->field_location[0]['value']         = $form_state['values']['location'];
     $node->field_timetable[0]['value']        = $form_state['values']['timetable'];
     node_save($node);
     drupal_set_message($course->course_code .' Course was updated!<br />');
@@ -3326,7 +3322,6 @@ function staff_assign_course_form_submit($form, &$form_state) {
       $location = $max->num + 1;
 
     }
-    // course_instance CCK
     $node = new stdClass();
     $node->type                               = 'course_instance';
     $node->uid                                = 1;  // Admin
@@ -3344,14 +3339,11 @@ function staff_assign_course_form_submit($form, &$form_state) {
     $node->field_location[0]['value']         = $location;
     $node->field_timetable[0]['value']        = $form_state['values']['timetable'];
 
-    //$course_instance = $node->nid;
-
     drupal_set_message($course->course_code. ' Course has been Assigned!<br />');
   }
 
   node_save($node);
   if ($_SESSION['eduerp_return_url']) drupal_goto($_SESSION['eduerp_return_url']);
-
 }
 
 
@@ -3507,17 +3499,15 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
     if ($instance_nid != 0) {
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' AND nid !=%d AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $instance_nid, $timetable);
-dsm(array($course_nid, $semester, $session, $instance_nid, $timetable));//ab
     }
     else {
       $result = db_query("SELECT nid FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s'  AND field_timetable_value = '%s' ", $course_nid, $semester, $session, $timetable);
     }
   }
-  if (db_affected_rows() > 0) return true;
+  if (db_affected_rows($result) > 0) return true;
 
   return false;
-
 }
 
 
