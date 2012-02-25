@@ -184,7 +184,7 @@ class courseselectionsclass {
           else {
             $semester_for_totals = $semester;
           }
-          $this->addscriptforcheckbox($row->course_instance, $semester_for_totals, $row->credit_load);
+          $this->addscriptforcheckbox($row->course_instance, $semester, $semester_for_totals, $row->credit_load);
         }
         $this->currentlevelcis[] = $row->course_instance;
 
@@ -323,7 +323,7 @@ class courseselectionsclass {
           // Unless spec changes, removed: $this->selected_load[$semester] += $row->credit_load; (and {$row->credit_load} not displayed above)
           $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
         }
-        // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+        // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $semester_for_totals, $row->credit_load);
       }
     }
   }
@@ -363,30 +363,30 @@ class courseselectionsclass {
     $this->form['add_a_break'] = array('#value' => '<br />');
   }
 
-  private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
+  private function addscriptforcheckbox($course_instance, $semester, $semester_for_totals, $credit_load) {
     $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
-      selected_load = parseInt($(\"#selected_load{$semester}\").text());
-      min_load = parseInt($(\"#min_load{$semester}\").text());
-      max_load = parseInt($(\"#max_load{$semester}\").text());
+      selected_load = parseInt($(\"#selected_load{$semester_for_totals}\").text());
+      min_load = parseInt($(\"#min_load{$semester_for_totals}\").text());
+      max_load = parseInt($(\"#max_load{$semester_for_totals}\").text());
 
       if (this.checked == true) {
         selected_load += {$credit_load};
-        $(\"#selected_load{$semester}\").text(selected_load);
+        $(\"#selected_load{$semester_for_totals}\").text(selected_load);
         if (selected_load > max_load) {
-          $(\"#max_load{$semester}\").css(\"background-color\", \"red\")
+          $(\"#max_load{$semester_for_totals}\").css(\"background-color\", \"red\")
         }
         if (selected_load >= min_load) {
-          $(\"#min_load{$semester}\").css(\"background-color\", \"green\")
+          $(\"#min_load{$semester_for_totals}\").css(\"background-color\", \"green\")
         }
       }
       else {
         selected_load -= {$credit_load};
-        $(\"#selected_load{$semester}\").text(selected_load);
+        $(\"#selected_load{$semester_for_totals}\").text(selected_load);
         if (selected_load <= max_load) {
-          $(\"#max_load{$semester}\").css(\"background-color\", \"green\")
+          $(\"#max_load{$semester_for_totals}\").css(\"background-color\", \"green\")
         }
         if (selected_load < min_load) {
-          $(\"#min_load{$semester}\").css(\"background-color\", \"red\")
+          $(\"#min_load{$semester_for_totals}\").css(\"background-color\", \"red\")
         }
       }
     });";
