@@ -359,6 +359,10 @@ class courseselectionsclass {
     $this->form['#min_credit_load' . $semester] = $min_max_credits->min_credit_load;
   }
 
+  private function add_a_break() {
+    $this->form['add_a_break'] = array('#value' => '<br />');
+  }
+
   private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
     $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
       selected_load = parseInt($(\"#selected_load{$semester}\").text());
@@ -1341,7 +1345,7 @@ function student_course_form(&$obj) {
       $courseselections->addformelementsforsemester(1);
       $courseselections->addformelementsforfailedcoursesforsemester(1);
       if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
-        $this->form['add_a_break'] = array('#value' => '<br />');
+        $courseselections->add_a_break();
       }
       else {
         $courseselections->addformelementsforloadcounter(1);
