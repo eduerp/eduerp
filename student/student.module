@@ -334,7 +334,7 @@ class courseselectionsclass {
     $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green");';
 
     if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
-      $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND (pls.semester='1' OR pls.semester='2')";
+      $sql = "SELECT SUM(pls.min_credit_load) AS min_credit_load, SUM(pls.max_credit_load) AS max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND (pls.semester='1' OR pls.semester='2')";
       $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name);
       $min_max_credits = db_fetch_object($result);
 
