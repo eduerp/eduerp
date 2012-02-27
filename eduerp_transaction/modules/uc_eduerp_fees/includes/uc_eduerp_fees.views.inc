@@ -12,14 +12,51 @@ function uc_eduerp_fees_views_data() {
     'title' => t('Eduerp fees order'),
     'help' => t("Fees that have been ordered."),
   );
+  
   $data['fees_order']['table']['join']['node'] = array(
     'left_field' => 'nid',
     'field' => 'nid',
   );
   
+  $data['fees_order']['table']['join']['uc_order_products'] = array(
+    //'left_table' => '',
+    'left_field' => 'nid',
+    'field' => 'product_nid',
+  );
+  
+  $data['fees_order']['table']['content_type_school_fee_item_setup'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    //'field' => 'field_fee_setup_program_nid_value', # 'field' is the foreign key in this table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
+  );
+  
+  $data['fees_order']['table']['content_type_student_profile'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    //'field' => 'field_fee_setup_program_nid_value', # 'field' is the foreign key in this table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
+  );
+  
   $data['fees_order']['table']['join']['uc_orders'] = array(
     'left_field' => 'order_id',
     'field' => 'order_id',
+  );
+  
+  // This table references the {content_type_program} table.
+  // This creates an 'implicit' relationship to the content_type_program table, so that when 'Node'
+  // is the base table, the fields are automatically available.
+  $data['fees_order']['table']['content_type_program'] = array(
+    'left_field' => 'nid', # 'left_field' is the primary key in the referenced table.
+    'field' => 'nid', # 'field' is the foreign key in this table.
+  );
+  
+  $data['fees_order']['table']['join']['content_type_department'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
+  );
+  
+  $data['fees_order']['table']['join']['content_type_college'] = array(
+    'left_field' => 'vid', # 'left_field' is the primary key in the referenced table.
+    'field' => 'vid', # 'field' is the foreign key in this table.
   );
   
   // product_nid field.
@@ -35,6 +72,13 @@ function uc_eduerp_fees_views_data() {
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_numeric',
+    ),
+    'relationship' => array(
+      'base' => 'uc_order_products',
+      'field' => 'nid',
+      'handler' => 'views_handler_relationship',
+      //'relationship table' => '',
+      'label' => t('Ubercart product nid'),
     ),
   );
   
@@ -66,10 +110,12 @@ function uc_eduerp_fees_views_data() {
       'handler' => 'views_handler_sort',
     ),
     'filter' => array(
-      'handler' => 'views_handler_filter_string',
+      //'handler' => 'views_handler_filter_string',
+      'handler' => 'views_handler_filter_type'
     ),
      'argument' => array(
-      'handler' => 'views_handler_argument_string',
+      //'handler' => 'views_handler_argument_string',
+      'handler' => 'views_handler_filter_type'
     ),
   );
   
@@ -105,7 +151,7 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   // price field
-  $data['uc_order_products']['price'] = array(
+  $data['fees_order']['price'] = array(
     'title' => t('Fee Cost'),
     'help' => $order_products['fields']['price']['description'],
     'field' => array(
@@ -140,7 +186,7 @@ function uc_eduerp_fees_views_data() {
   // programme field.
   $data['fees_order']['programme'] = array(
     'title' => t('Student Programme'), 
-    'help' => $order_products['fields']['nationality']['description'],
+    'help' => $order_products['fields']['programme']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -151,12 +197,24 @@ function uc_eduerp_fees_views_data() {
     'filter' => array(
       'handler' => 'views_handler_filter_string',
     ),
-  );
+    /*'relationship' => array(
+      'base' => 'content_type_program',
+      'field' => 'nid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Program'),
+    ),*/
+    /*'relationship' => array(
+      'base' => 'content_type_student_profile',
+      'field' => 'field_profile_first_choice_nid',
+      'handler' => 'views_handler_relationship',
+      'label' => t('Program'),
+    ),*/
+  );  
   
   // level_nane field.
   $data['fees_order']['level_name'] = array(
     'title' => t('Student Level'), 
-    'help' => $order_products['fields']['nationality']['description'],
+    'help' => $order_products['fields']['level_name']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -172,7 +230,7 @@ function uc_eduerp_fees_views_data() {
   // session field.
   $data['fees_order']['session'] = array(
     'title' => t('Academic Session'), 
-    'help' => $order_products['fields']['nationality']['description'],
+    'help' => $order_products['fields']['session']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
@@ -219,8 +277,9 @@ function uc_eduerp_fees_views_data() {
   );
   
   // jambno field.
+  // changed to Admission number 
   $data['fees_order']['jambno'] = array(
-    'title' => t('Jamb Number'), 
+    'title' => t('Admission Number'), 
     'help' => $order_products['fields']['jambno']['description'],
     'field' => array(
       'handler' => 'views_handler_field',
@@ -289,7 +348,7 @@ function uc_eduerp_fees_views_data() {
   // email field.
   $data['fees_order']['email'] = array(
     'title' => t('Student Order email'), 
-    'help' => $order_products['fields']['fullnames']['description'],
+    'help' => $order_products['fields']['email']['description'],
     'field' => array(
       'handler' => 'views_handler_field_user_mail',
       'click sortable' => TRUE,
@@ -450,6 +509,113 @@ function uc_eduerp_fees_views_data() {
     ),
   );
   
+  // total
+  $data['fees_order']['total'] = array(
+    'title' => t('Order total'),
+    'help' => t('Display order total from an existing fees order views result.'),
+    'field' => array(
+      //'handler' => 'views_customfield_handler_field_phpcode',
+      'handler' => 'uc_eduerp_fees_handler_field_total',
+      'click sortable' => FALSE,
+      'notafield' => TRUE,
+    ),
+  );
+  
+  // fees_format
+  $data['fees_order']['fees_format'] = array(
+    'title' => t('Fees Order fees format'), 
+    'help' => $order_products['fields']['fees_format']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+  );
+  // course
+  $data['fees_order']['course'] = array(
+    'title' => t('Fees Order course'), 
+    'help' => $order_products['fields']['course']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_string',
+    ),
+  );
+  // college
+  $data['fees_order']['college'] = array(
+    'title' => t('Fees order college'), 
+    'help' => $order_products['fields']['college']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_college',
+    ),
+  );
+  
+  // original_amount
+  $data['fees_order']['original_amount'] = array(
+    'title' => t('Fees original amount'),
+    'help' => $order_products['fields']['original_amount']['description'],
+    'field' => array(
+      'handler' => 'uc_views_handler_field_money_amount',
+      'click sortable' => TRUE,
+      'float' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_float',
+    ),
+  );
+  
+  // scholarship type
+  $data['fees_order']['scholarship_type'] = array(
+    'title' => t('Scholarship type'),
+    'help' => $order_products['fields']['scholarship_type']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_scholarship_type'
+    ),
+  );
+  
+  // sponsor
+  $data['fees_order']['sponsor'] = array(
+    'title' => t('Sponsor'),
+    'help' => $order_products['fields']['sponsor']['description'],
+    'field' => array(
+      'handler' => 'views_handler_field',
+      'click sortable' => TRUE,
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'views_handler_filter_sponsor',
+    ),
+  );
+  
   return $data;
 }
 
@@ -548,6 +714,40 @@ function uc_eduerp_fees_views_handlers() {
       ),
      'uc_eduerp_fees_handler_field_module' => array(
         'parent' => 'views_handler_field',
+      ),
+      'uc_eduerp_fees_handler_field_total' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_fees_format' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_course' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_college' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_original_amount' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_scholarship_type' => array(
+        'parent' => 'views_handler_field'
+      ),
+      'uc_eduerp_fees_handler_field_sponsor' => array(
+        'parent' => 'views_handler_field'
+      ),
+      // filters
+      'views_handler_filter_college' => array(
+        'parent' => 'views_handler_filter_many_to_one',
+      ),
+      'views_handler_filter_type' => array(
+        'parent' => 'views_handler_filter_in_operator',
+      ),
+      'views_handler_filter_scholarship_type' => array(
+        'parent' => 'views_handler_filter_in_operator',
+      ),
+      'views_handler_filter_sponsor' => array(
+        'parent' => 'views_handler_filter_in_operator',
       ),
     ),
   );

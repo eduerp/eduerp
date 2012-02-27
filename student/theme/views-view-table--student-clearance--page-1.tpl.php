@@ -15,7 +15,7 @@
     <caption><?php print $title; ?></caption>
   <?php endif; ?>
   <tbody>
-    <?php 
+    <?php
       $new_rows = array();
       foreach ($rows[0] as $field=>$content) {
         if ($content != "")
@@ -23,7 +23,7 @@
       }
       $count = 0;
       // Only taking the first record in $rows
-      foreach ($new_rows as $field => $content): 
+      foreach ($new_rows as $field => $content):
         // skip fields that have blank content
         if ($content == "") continue;
         $row_class = ($count % 2) ? "even " : "odd ";
@@ -46,7 +46,7 @@
         <th style="text-align:right">
           <input type="checkbox" name="verify" value="1" VERIFY_OPTIONS />
         </th>
-        <td>Verify Result</td>
+        <td>Verified</td>
       </tr>
     <?php
       $row_class = ($row_class == "even") ? "odd" : "even";
@@ -55,7 +55,7 @@
         <th style="text-align:right">
           <input type="checkbox" name="clearance" id="edit-field-clearance-cleared" value="1" CLEARANCE_OPTIONS />
         </th>
-        <td>Clear Student</td>
+        <td>Cleared</td>
       </tr>
 			<?php
       $row_class = ($row_class == "even") ? "odd" : "even";
@@ -70,16 +70,18 @@
       </tr>
 			<?php
       $row_class = ($row_class == "even") ? "odd" : "even";
-    ?>
+      if (FALSE) { // Disable for Sokoto
+      ?>
       <tr class="<?php echo $row_class; ?>">
         <th style="text-align:right">
           <!--<input type="checkbox" name="field-clearance-deferred" id="edit-field-clearance-deferred" value="0" class="form-checkbox" />-->
         </th>
         <td><?php print theme('student_field_deferred');?></td>
       </tr>
-    <?php
+      <?php
       $row_class = ($row_class == "even") ? "odd" : "even";
-    ?>
+      }
+      ?>
       <tr class="<?php echo $row_class; ?> view-row-last">
         <th style="text-align:right">
           &nbsp;

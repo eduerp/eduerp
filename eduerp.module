@@ -14,14 +14,6 @@ function eduerp_menu() {
     ),
     'type' => MENU_NORMAL_ITEM,
   );
-  $items['admin/settings/eduerp/institution-settings'] = array (
-    'title' => 'Institution Settings',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('eduerp_configure_institution'),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
-    'file' => 'eduerp.admin.inc'
-    );
 
   return $items;
 }
@@ -48,12 +40,38 @@ function eduerp_admin_settings() {
     '#tree' => TRUE
   );
 
+  $form['CombineCreditLoadTestsforBothSemesters'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Combine Credit Load Tests for Both Semesters',
+    '#default_value' => variable_get('CombineCreditLoadTestsforBothSemesters', 0),
+    '#description' => "This switch determines whether student's Credit Loads are tested against total limits for both semesters rather than individually checked against limits for each semester",
+    '#tree' => TRUE
+  );
+
   $form['RegistrarApprovesGrades'] = array(
     '#type' => 'checkbox',
     '#title' => 'RegistrarApprovesGrades',
     '#default_value' => variable_get('RegistrarApprovesGrades', 0),
     '#description' => 'This switch determines whether student grades are approved by the Registrar (if not they go straight to the Vice Chancellor)',
     '#tree' => TRUE
+  );
+
+  $form['eduerp_institution_current'] = array(
+    '#type' => 'textfield',
+    '#title' => 'University Name',
+    '#default_value' => variable_get('eduerp_institution_current', ''),
+  );
+
+  $form['eduerp_student_guidlines_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Student Guidelines URL',
+    '#default_value' => variable_get('eduerp_student_guidlines_url', ''),
+  );
+
+  $form['eduerp_zimbra_webmail_url'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Student Webmail URL',
+    '#default_value' => variable_get('eduerp_zimbra_webmail_url', ''),
   );
 
   $form['eduerp_agreement'] = array(
@@ -70,7 +88,7 @@ function eduerp_admin_settings() {
     $form['tokens'] = array(
       '#type' => 'fieldset',
       '#title' => t('Tokens'),
-      '#description' => theme('token_help', array('global', 'user')),
+      '#description' => theme('token_help', array('global', 'user', 'node', 'order')),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
     );
@@ -193,17 +211,4 @@ class UserProfile {
       node_save($node);
     }
   }
-}
-
-/**
- *
- */
-function eduerp_init() {
-    /*if(!isset($institution)) {
-        $institution = 'institution';
-        // we can't call eduerp_run_task here since it is not within a .module file
-        $path = drupal_get_path('module', 'eduerp');
-        require_once "./$path/eduerp.api.inc";
-        eduerp_run_task($institution);
-    }*/
 }

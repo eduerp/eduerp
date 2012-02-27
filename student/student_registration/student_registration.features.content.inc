@@ -11,7 +11,7 @@ function student_registration_content_default_fields() {
     'field_name' => 'field_personal_email',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '18',
+      'weight' => '16',
       'parent' => '',
       'label' => array(
         'format' => 'inline',
@@ -61,7 +61,7 @@ function student_registration_content_default_fields() {
       'default_value' => NULL,
       'default_value_php' => NULL,
       'label' => 'Personal Email Address',
-      'weight' => '18',
+      'weight' => '22',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -73,8 +73,8 @@ function student_registration_content_default_fields() {
     'field_name' => 'field_profile_exam_number_1',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '40',
-      'parent' => '',
+      'weight' => '32',
+      'parent' => 'group_olevels_first',
       'label' => array(
         'format' => 'inline',
       ),
@@ -135,8 +135,8 @@ function student_registration_content_default_fields() {
     'field_name' => 'field_profile_exam_number_2',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '41',
-      'parent' => '',
+      'weight' => '38',
+      'parent' => 'group_olevels_second',
       'label' => array(
         'format' => 'inline',
       ),
@@ -235,33 +235,41 @@ function student_registration_content_default_fields() {
     'active' => '1',
     'referenceable_types' => array(
       'program' => 'program',
+      'allocation_rules' => 0,
+      'allocation_rules_description' => 0,
+      'allocation_settings' => 0,
       'approval' => 0,
-      'book' => 0,
+      'blocks' => 0,
+      'clearance_agreement' => 0,
       'college' => 0,
       'course' => 0,
       'course_instance' => 0,
       'department' => 0,
+      'hostels' => 0,
       'page' => 0,
+      'product' => 0,
+      'product_kit' => 0,
       'profile' => 0,
+      'room_allocations' => 0,
+      'room_reservations' => 0,
+      'rooms' => 0,
+      'school_fee_approved_instalments' => 0,
+      'school_fee_approved_scholarships' => 0,
+      'school_fee_item_setup' => 0,
+      'school_fee_item_setup_details' => 0,
+      'school_fee_items' => 0,
+      'school_fee_level_types' => 0,
+      'school_fee_nationality_types' => 0,
+      'school_fee_settings' => 0,
+      'school_fee_structure_classes' => 0,
       'staff_profile' => 0,
       'story' => 0,
       'student_clearance' => 0,
       'student_gpa' => 0,
       'student_profile' => 0,
       'student_program' => 0,
+      'student_record' => 0,
       'student_grades' => 0,
-      'testalan' => 0,
-      'allocation_rules' => FALSE,
-      'allocation_rules_description' => FALSE,
-      'allocation_settings' => FALSE,
-      'blocks' => FALSE,
-      'hostels' => FALSE,
-      'product' => FALSE,
-      'product_kit' => FALSE,
-      'room_allocations' => FALSE,
-      'room_reservations' => FALSE,
-      'rooms' => FALSE,
-      'student_record' => FALSE,
     ),
     'advanced_view' => 'registration_allowed_programmes',
     'advanced_view_args' => '',
@@ -275,7 +283,7 @@ function student_registration_content_default_fields() {
       ),
       'default_value_php' => NULL,
       'label' => 'Programme offerred',
-      'weight' => '8',
+      'weight' => '14',
       'description' => '',
       'type' => 'nodereference_select',
       'module' => 'nodereference',
@@ -324,14 +332,27 @@ function student_registration_content_default_fields() {
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => 'blind|Blind
+    'max_length' => '50',
+    'allowed_values' => 'asthma|Asthma
+blind|Blind
 deaf|Deaf
+diabetes|Diabetes
 dumb|Dumb
-crippled|Crippled',
+dysmenorrhoea|Dysmenorrhoea
+epilepsy|Epilepsy
+hypertension|Hypertension
+myopia|Myopia/Hypermyopia
+physically-challenged|Physically Challenged
+std|STD/HIV/AIDS
+sickle|Sickle Cell
+tuberculosis|Tuberculosis',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Disabilities',
       'weight' => '11',
@@ -383,12 +404,17 @@ crippled|Crippled',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '30',
     'allowed_values' => 'normal|Normal
-disabled|Disabled',
+physically-challenged|Physically Challenged
+sickness|Sickness',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Health Status',
       'weight' => '10',
@@ -449,7 +475,7 @@ disabled|Disabled',
       'default_value' => NULL,
       'default_value_php' => NULL,
       'label' => 'Hobbies',
-      'weight' => '9',
+      'weight' => '15',
       'description' => '',
       'type' => 'text_textarea',
       'module' => 'text',
@@ -461,7 +487,7 @@ disabled|Disabled',
     'field_name' => 'field_profile_jambno',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '1',
+      'weight' => 0,
       'parent' => '',
       'label' => array(
         'format' => 'inline',
@@ -512,7 +538,7 @@ disabled|Disabled',
       ),
       'default_value_php' => NULL,
       'label' => 'JAMB No.',
-      'weight' => '1',
+      'weight' => '6',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -672,18 +698,23 @@ disabled|Disabled',
     ),
     'widget_active' => '1',
     'type' => 'text',
-    'required' => '1',
+    'required' => '0',
     'multiple' => '0',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '15',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_kin_mobile][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Next of Kin\'s Mobile',
       'weight' => '24',
@@ -990,7 +1021,7 @@ return $rows;',
       ),
       'default_value_php' => NULL,
       'label' => 'Level',
-      'weight' => '7',
+      'weight' => '13',
       'description' => '',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
@@ -1053,7 +1084,7 @@ return $rows;',
       ),
       'default_value_php' => NULL,
       'label' => 'Matriculation No.',
-      'weight' => '2',
+      'weight' => '8',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -1065,7 +1096,7 @@ return $rows;',
     'field_name' => 'field_profile_mode_of_entry',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => 0,
+      'weight' => '-1',
       'parent' => '',
       'label' => array(
         'format' => 'inline',
@@ -1115,7 +1146,7 @@ MATRIC',
       ),
       'default_value_php' => NULL,
       'label' => 'Mode of Entry',
-      'weight' => 0,
+      'weight' => '5',
       'description' => '',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
@@ -1176,7 +1207,7 @@ Part_Time',
       ),
       'default_value_php' => NULL,
       'label' => 'Mode of Study',
-      'weight' => '3',
+      'weight' => '9',
       'description' => 'Please specify your mode of study',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
@@ -1188,7 +1219,7 @@ Part_Time',
     'field_name' => 'field_profile_olevel_exams_1',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '32',
+      'weight' => '34',
       'parent' => 'group_olevels_first',
       'label' => array(
         'format' => 'inline',
@@ -1214,24 +1245,30 @@ Part_Time',
     'active' => '1',
     'subjects_allowed_values' => '|
 Agricultural Science
+Animal Husbandry
 Applied Electricity
 Arabic
 Auto Mechanics
 Biology
 Building Construction
 Business Management
+Carpentry and Joinery
+Catering Craft Practice
 Chemistry
 Christian Religious Studies
 Clerical Office Duties
 Clothing and textiles
 Commerce
+Cosmetology
 Cover
+Draughtmanship Craft Practice
 Economics
 Electronics
 Engineering Science
 English Language
 English Language Balance
 Financial Accounting
+Fisheries
 Food and Nutrition
 French
 Further Maths
@@ -1241,16 +1278,21 @@ Hausa Language
 Health Science
 History
 Home Management
-Introduction
+ICT - Information Communication Technology
+Introduction to Building Construction
 Islamic Religious Studies
+Ladies Garment Making
 Literature in English
 Management Living
 Mathematics
+Mens Garment Making
 Metalwork
 Music
 Nigerian Languages
+Painting and Decorating
 Physical Education
 Physics
+Plumbing and Pipefitting
 Principles of Cost Accounting
 Science (core)
 Shorthand
@@ -1270,11 +1312,6 @@ C6
 D7
 E8
 F9
-Distinction
-Upper Credit
-Lower Credit
-Pass
-Fail
 A
 B
 C
@@ -1303,7 +1340,7 @@ F',
     'field_name' => 'field_profile_olevel_exams_2',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '38',
+      'weight' => '40',
       'parent' => 'group_olevels_second',
       'label' => array(
         'format' => 'inline',
@@ -1341,24 +1378,30 @@ F',
     'active' => '1',
     'subjects_allowed_values' => '|
 Agricultural Science
+Animal Husbandry
 Applied Electricity
 Arabic
 Auto Mechanics
 Biology
 Building Construction
 Business Management
+Carpentry and Joinery
+Catering Craft Practice
 Chemistry
 Christian Religious Studies
 Clerical Office Duties
 Clothing and textiles
 Commerce
+Cosmetology
 Cover
+Draughtmanship Craft Practice
 Economics
 Electronics
 Engineering Science
 English Language
 English Language Balance
 Financial Accounting
+Fisheries
 Food and Nutrition
 French
 Further Maths
@@ -1368,16 +1411,21 @@ Hausa Language
 Health Science
 History
 Home Management
-Introduction
+ICT - Information Communication Technology
+Introduction to Building Construction
 Islamic Religious Studies
+Ladies Garment Making
 Literature in English
 Management Living
 Mathematics
+Mens Garment Making
 Metalwork
 Music
 Nigerian Languages
+Painting and Decorating
 Physical Education
 Physics
+Plumbing and Pipefitting
 Principles of Cost Accounting
 Science (core)
 Shorthand
@@ -1398,8 +1446,7 @@ D7
 E8
 F9
 Distinction
-Upper Credit
-Lower Credit
+Credit
 Pass
 Fail
 A
@@ -1584,11 +1631,9 @@ F',
     'active' => '1',
     'text_processing' => '0',
     'max_length' => '30',
-    'allowed_values' => 'GCE
-GCENECO
-NCE
+    'allowed_values' => 'GCE-O-Level
+NABTEB
 NECO
-OND
 WAEC',
     'allowed_values_php' => '',
     'widget' => array(
@@ -1649,8 +1694,10 @@ WAEC',
     'active' => '1',
     'text_processing' => '0',
     'max_length' => '30',
-    'allowed_values' => 'GCE
-GCENECO
+    'allowed_values' => 'GCE-O-Level
+GCE-A-Level
+IJMB
+NABTEB
 NCE
 NECO
 OND
@@ -1734,7 +1781,7 @@ return $rows;',
       ),
       'default_value_php' => NULL,
       'label' => 'Registered Semester',
-      'weight' => '6',
+      'weight' => '12',
       'description' => '',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
@@ -1800,10 +1847,77 @@ return $rows;',
       ),
       'default_value_php' => NULL,
       'label' => 'Registered Session',
-      'weight' => '5',
+      'weight' => '11',
       'description' => '',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
+    ),
+  );
+
+  // Exported field: field_profile_score_details
+  $fields['student_profile-field_profile_score_details'] = array(
+    'field_name' => 'field_profile_score_details',
+    'type_name' => 'student_profile',
+    'display_settings' => array(
+      'weight' => '52',
+      'parent' => '',
+      'label' => array(
+        'format' => 'inline',
+      ),
+      'teaser' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'full' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '4' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '2' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '3' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      '5' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+      'token' => array(
+        'format' => 'default',
+        'exclude' => 0,
+      ),
+    ),
+    'widget_active' => '1',
+    'type' => 'text',
+    'required' => '1',
+    'multiple' => '0',
+    'module' => 'text',
+    'active' => '1',
+    'text_processing' => '0',
+    'max_length' => '255',
+    'allowed_values' => '',
+    'allowed_values_php' => '',
+    'widget' => array(
+      'rows' => 5,
+      'size' => '60',
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_score_details][0][value',
+        ),
+      ),
+      'default_value_php' => NULL,
+      'label' => 'Score Details',
+      'weight' => '7',
+      'description' => 'Please put in JAMB Score for UTME or Highest Qualification for DE',
+      'type' => 'text_textfield',
+      'module' => 'text',
     ),
   );
 
@@ -1812,7 +1926,7 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_address',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '12',
+      'weight' => '46',
       'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
@@ -1875,7 +1989,7 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_city',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '13',
+      'weight' => '47',
       'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
@@ -1938,8 +2052,8 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_email',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '39',
-      'parent' => '',
+      'weight' => '51',
+      'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
       ),
@@ -2000,7 +2114,7 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_mobile',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '16',
+      'weight' => '50',
       'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
@@ -2063,7 +2177,7 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_name',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '11',
+      'weight' => '45',
       'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
@@ -2126,7 +2240,7 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_phone',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '15',
+      'weight' => '49',
       'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
@@ -2189,7 +2303,7 @@ return $rows;',
     'field_name' => 'field_profile_sponsor_state',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '14',
+      'weight' => '48',
       'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
@@ -2253,7 +2367,7 @@ return $rows;',
     'type_name' => 'student_profile',
     'display_settings' => array(
       'weight' => '44',
-      'parent' => '',
+      'parent' => 'group_sponsor_information',
       'label' => array(
         'format' => 'inline',
       ),
@@ -2315,8 +2429,8 @@ return $list;',
     'field_name' => 'field_profile_year_exam_taken_1',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '42',
-      'parent' => '',
+      'weight' => '33',
+      'parent' => 'group_olevels_first',
       'label' => array(
         'format' => 'inline',
       ),
@@ -2389,8 +2503,8 @@ return $list;',
     'field_name' => 'field_profile_year_exam_taken_2',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '43',
-      'parent' => '',
+      'weight' => '39',
+      'parent' => 'group_olevels_second',
       'label' => array(
         'format' => 'inline',
       ),
@@ -2521,7 +2635,7 @@ return $rows;',
       ),
       'default_value_php' => NULL,
       'label' => 'Year of Entry',
-      'weight' => '4',
+      'weight' => '10',
       'description' => '',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
@@ -2533,7 +2647,7 @@ return $rows;',
     'field_name' => 'field_university_email',
     'type_name' => 'student_profile',
     'display_settings' => array(
-      'weight' => '17',
+      'weight' => '15',
       'parent' => '',
       'label' => array(
         'format' => 'inline',
@@ -2583,7 +2697,7 @@ return $rows;',
       'default_value' => NULL,
       'default_value_php' => NULL,
       'label' => 'Internal University Email Address',
-      'weight' => '17',
+      'weight' => '21',
       'description' => '',
       'type' => 'text_textfield',
       'module' => 'text',
@@ -2616,6 +2730,7 @@ return $rows;',
   t('Qualification');
   t('Registered Semester');
   t('Registered Session');
+  t('Score Details');
   t('Sponsor\'s Address');
   t('Sponsor\'s Address City');
   t('Sponsor\'s Address State');

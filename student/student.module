@@ -41,17 +41,7 @@ function student_menu() {
     'type' => MENU_NORMAL_ITEM,
     'weight' => -26,
   );
-  /*
-  $items['student/hostelreservation/cart'] = array(
-        'title' => t('Confirm reservation'),
-        'description' => 'Display confirmation about allocation and perform checkout',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('student_hostelreservation_cart'),
-        'access callback' => 'user_access',
-        'access arguments' => array('access cart items'),
-        'type' => MENU_CALLBACK,
-    );
-  */
+
   return $items;
 }
 
@@ -68,7 +58,7 @@ class courseselectionsclass {
 
   private $failedcodes;
 
-  private $selected_load;
+  private $selected_load = array(1 => 0, 2 => 0);
 
   private $count_courses_offered = array();
 
@@ -156,7 +146,8 @@ class courseselectionsclass {
       );
 
     $this->count_courses_offered[$semester] = 0;
-    $this->selected_load = 0;
+    $this->selected_load[$semester] = 0;
+    $corecodes = array();
     while ($row = db_fetch_object($result)) {
       if (in_array($row->course_code, $this->passedcodes)) continue;
 
@@ -168,21 +159,32 @@ class courseselectionsclass {
       else {
         $block = '';
         if ($row->course_type == 1) {
+          // In case a core course has two course instances, suppress all but the first (better solution would be to allow a choice... see comment below)
+          if (in_array($row->course_code, $corecodes)) continue;
+          $corecodes[] = $row->course_code;
+
           $default_value = TRUE;
           $disabled = TRUE;
-          $this->selected_load += $row->credit_load;
+          $this->selected_load[$semester] += $row->credit_load;
         }
         else {
           $disabled = FALSE;
 
           if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
             $default_value = TRUE;
-            $this->selected_load += $row->credit_load;
+            $this->selected_load[$semester] += $row->credit_load;
           }
           else {
             $default_value = FALSE;
           }
-          $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+
+          if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+            $semester_for_totals = 2;
+          }
+          else {
+            $semester_for_totals = $semester;
+          }
+          $this->addscriptforcheckbox($row->course_instance, $semester, $semester_for_totals, $row->credit_load);
         }
         $this->currentlevelcis[] = $row->course_instance;
 
@@ -318,10 +320,10 @@ class courseselectionsclass {
         );
 
         if (!empty($_SESSION['eduerp_chosen_courses' . $semester]) && in_array($row->course_instance, $_SESSION['eduerp_chosen_courses' . $semester])) {
-          // Unless spec changes, removed: $this->selected_load += $row->credit_load; (and {$row->credit_load} not displayed above)
+          // Unless spec changes, removed: $this->selected_load[$semester] += $row->credit_load; (and {$row->credit_load} not displayed above)
           $this->form['chosencourses' . $semester][$row->course_instance]['#default_value'] = TRUE;
         }
-        // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $row->credit_load);
+        // Unless spec changes, removed: $this->addscriptforcheckbox($row->course_instance, $semester, $semester_for_totals, $row->credit_load);
       }
     }
   }
@@ -331,45 +333,60 @@ class courseselectionsclass {
 
     $this->scriptforpage .= '$("#max_load' . $semester . '").css("background-color", "green");';
 
-    $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
-    $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
-    $min_max_credits = db_fetch_object($result);
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+      $sql = "SELECT SUM(pls.min_credit_load) AS min_credit_load, SUM(pls.max_credit_load) AS max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND (pls.semester='1' OR pls.semester='2')";
+      $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name);
+      $min_max_credits = db_fetch_object($result);
+
+      $select_load_for_totals = $this->selected_load[1] + $this->selected_load[2];
+    }
+    else {
+      $sql = "SELECT pls.min_credit_load, pls.max_credit_load FROM {program_level_semester} pls WHERE pls.programme_id=%d AND pls.level='%s' AND pls.semester='%s'";
+      $result = db_query($sql, $user_profile->profile_first_choice, $user_profile->profile_level_name, $semester);
+      $min_max_credits = db_fetch_object($result);
+
+      $select_load_for_totals = $this->selected_load[$semester];
+    }
 
     $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
       <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
       <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
       <tr><th>Minimum Credit Load</th><td><span id="min_load' . $semester . '">' . $min_max_credits->min_credit_load . '</span></td></tr>
-      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $this->selected_load . '</span></td></tr>
+      <tr><th>Selected Credit Load</th><td><span id="selected_load' . $semester . '">' . $select_load_for_totals . '</span></td></tr>
       </table>');
 
     $this->form['#max_credit_load' . $semester] = $min_max_credits->max_credit_load;
     $this->form['#min_credit_load' . $semester] = $min_max_credits->min_credit_load;
   }
 
-  private function addscriptforcheckbox($course_instance, $semester, $credit_load) {
+  public function add_a_break() {
+    $this->form['add_a_break'] = array('#value' => '<br />');
+  }
+
+  private function addscriptforcheckbox($course_instance, $semester, $semester_for_totals, $credit_load) {
     $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
-      selected_load = parseInt($(\"#selected_load{$semester}\").text());
-      min_load = parseInt($(\"#min_load{$semester}\").text());
-      max_load = parseInt($(\"#max_load{$semester}\").text());
+      selected_load = parseInt($(\"#selected_load{$semester_for_totals}\").text());
+      min_load = parseInt($(\"#min_load{$semester_for_totals}\").text());
+      max_load = parseInt($(\"#max_load{$semester_for_totals}\").text());
 
       if (this.checked == true) {
         selected_load += {$credit_load};
-        $(\"#selected_load{$semester}\").text(selected_load);
+        $(\"#selected_load{$semester_for_totals}\").text(selected_load);
         if (selected_load > max_load) {
-          $(\"#max_load{$semester}\").css(\"background-color\", \"red\")
+          $(\"#max_load{$semester_for_totals}\").css(\"background-color\", \"red\")
         }
         if (selected_load >= min_load) {
-          $(\"#min_load{$semester}\").css(\"background-color\", \"green\")
+          $(\"#min_load{$semester_for_totals}\").css(\"background-color\", \"green\")
         }
       }
       else {
         selected_load -= {$credit_load};
-        $(\"#selected_load{$semester}\").text(selected_load);
+        $(\"#selected_load{$semester_for_totals}\").text(selected_load);
         if (selected_load <= max_load) {
-          $(\"#max_load{$semester}\").css(\"background-color\", \"green\")
+          $(\"#max_load{$semester_for_totals}\").css(\"background-color\", \"green\")
         }
         if (selected_load < min_load) {
-          $(\"#min_load{$semester}\").css(\"background-color\", \"red\")
+          $(\"#min_load{$semester_for_totals}\").css(\"background-color\", \"red\")
         }
       }
     });";
@@ -402,11 +419,13 @@ function student_clearance() {
   global $user;
   $student_id = $_POST['student_uid'];
 
+  $cleared_flag = FALSE;
+
   $row = false;
   $rs = db_query("SELECT cfs.nid FROM {content_field_student} cfs, {node} n WHERE field_student_uid=%d AND cfs.nid=n.nid AND n.type = 'student_clearance' ORDER BY nid DESC LIMIT 1", $student_id);
-  if ($rs):
+  if ($rs) {
     $row = db_fetch_object($rs);
-  endif;
+  }
 
   if ($row) {
     // node exists
@@ -415,82 +434,123 @@ function student_clearance() {
     $node['nid'] = $row->nid;
     $student_clearance = node_load($node);
 
-    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']):
+    if (isset($_POST['verify']) && $_POST['verify'] == '1' && !$student_clearance->field_staff_verification[0]['uid']) {
       $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
       $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
       drupal_set_message('Student\'s results verified');
-
-      // set post value for deferred student
-    elseif(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
+      node_save($student_clearance);
+    }
+    elseif (isset($_POST['field-defered'])) {
       $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-      content_storage('update', $student_clearance);
-
-    // set post value for uncleared student
-    elseif(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
-    && isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
-      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-      content_storage('update', $student_clearance);
-
-    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])):
+      node_save($student_clearance);
+    }
+    elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1' && !$student_clearance->field_staff_clearance[0]['uid'] && intval($student_clearance->field_staff_verification[0]['uid'])) {
       $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
       $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+      $student_clearance->field_clearance_uncleared[0]['value'] = NULL;
+      $student_clearance->field_uncleared_reasons[0]['value'] = NULL;
 
       _perform_clearance($student_id);
       student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
       drupal_set_message('Student has been cleared');
-    elseif ($_POST['clearance']):
+      $cleared_flag = TRUE;
+      node_save($student_clearance);
+
+      record_cleared($student_id, 'Cleared');
+    }
+    elseif ($_POST['clearance']) {
       drupal_set_message('You cannot clear a student whose results have not been verified', 'error');
-    endif;
+    }
+    elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
+      $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+      //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+      $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+      drupal_set_message('Student marked "Not Cleared"');
+      node_save($student_clearance);
 
-    node_save($student_clearance);
-
-  } else {
-    // node doesn't exist
+      $reasons = student_uncleared_get_reasons();
+      record_cleared($student_id, 'Not Cleared', $reasons[$_POST['field-uncleared-reasons']]);
+    }
+  }
+  else {
     if (($_POST['clearance'] == '1') || ($_POST['verify'] == '1')) {
-      $node = new stdClass;
-      $node->is_new = 1;
-      $node->uid = $user->uid;
-      $node->type = 'student_clearance';
-      $node->field_student[0]['uid'] = $student_id;
+      $student_clearance = new stdClass;
+      $student_clearance->is_new = 1;
+      $student_clearance->uid = $user->uid;
+      $student_clearance->type = 'student_clearance';
+      $student_clearance->field_student[0]['uid'] = $student_id;
 
-      if (isset($_POST['verify']) && $_POST['verify'] == '1'):
-        $node->field_staff_verification[0]['uid'] = $user->uid;
-        $node->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
+      $save_it = FALSE;
+      if (isset($_POST['verify']) && $_POST['verify'] == '1') {
+        $student_clearance->field_staff_verification[0]['uid'] = $user->uid;
+        $student_clearance->field_verification_date[0]['value'] = date('Y-m-d H:i:s');
         drupal_set_message('Student\'s results verified');
-      endif;
+        $save_it = TRUE;
+      }
 
-      // set post value for deferred student
-      if(isset($_POST['field-defered']) && variable_get('field-defered', TRUE)):
+      if (isset($_POST['field-defered'])) {
         $student_clearance->field_deferred[0]['value'] = $_POST['field-defered'];
-      endif;
+        $save_it = TRUE;
+      }
 
-      // set post value for reasons why a student is uncleared
-      if(isset($_POST['field-uncleared']) && variable_get('field-uncleared', TRUE)
-      && isset($_POST['field-uncleared-reasons']) && variable_get('field-uncleared-reasons', '')):
-        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
-        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
-        content_storage('update', $student_clearance);
-      endif;
-
-      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)):
-        $node->field_staff_clearance[0]['uid'] = $user->uid;
-        $node->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
+      if (isset($_POST['clearance']) && ($_POST['clearance'] == '1') && ($_POST['verify'] == 1)) {
+        $student_clearance->field_staff_clearance[0]['uid'] = $user->uid;
+        $student_clearance->field_clearance_date[0]['value'] = date('Y-m-d H:i:s');
 
         _perform_clearance($student_id);
         student_log_clearance($student_id, $student_clearance->field_clearance_date[0]['value'], $user->uid);
         drupal_set_message('Student has been cleared');
-      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1'):
-        drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
-      endif;
-      node_save($node);
-      if(module_exists('rules')) {
-        rules_invoke_event('student_cleared',  $user, $student_id, $node);
+        $cleared_flag = TRUE;
+        $save_it = TRUE;
+
+        record_cleared($student_id, 'Cleared');
       }
+      elseif (isset($_POST['clearance']) && $_POST['clearance'] == '1') {
+        drupal_set_message(t('You cannot clear a student whose results have not been verified'), 'error');
+      }
+      elseif (isset($_POST['field-uncleared']) && isset($_POST['field-uncleared-reasons'])) {
+        $student_clearance->field_clearance_uncleared[0]['value'] = $_POST['field-uncleared'];
+        //$student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'][0];
+        $student_clearance->field_uncleared_reasons[0]['value'] = $_POST['field-uncleared-reasons'];
+        drupal_set_message('Student marked "Not Cleared"');
+        $save_it = TRUE;
+
+        $reasons = student_uncleared_get_reasons();
+        record_cleared($student_id, 'Not Cleared', $reasons[$_POST['field-uncleared-reasons']]);
+      }
+      if ($save_it) node_save($student_clearance);
+    }
+    else {
+      drupal_set_message(t('You cannot "Clear" or "Not Clear" a student whose results have not been verified'), 'error');
     }
   }
 
-  return "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+  if ($cleared_flag && module_exists('rules')) {
+    rules_invoke_event('student_cleared', $user, $student_id, $student_clearance);
+  }
+
+  // Get the immediate clearance agreement node
+  $sql = "SELECT node.nid AS nid
+    FROM {node} node
+    LEFT JOIN {content_field_student} node_data_field_student ON node.vid = node_data_field_student.vid
+    INNER JOIN {users} users_node_data_field_student ON node_data_field_student.field_student_uid = users_node_data_field_student.uid
+    WHERE node.type in ('clearance_agreement') AND node_data_field_student.field_student_uid=%d";
+
+  $result = db_query($sql, $student_id);
+  $row = db_fetch_object($result);
+
+  if (!empty($row->nid)) {
+    $agreement_node = node_load($row->nid);
+    node_build_content($agreement_node);
+
+    $path = "user/$student_id/clearance/$row->nid/agreement/print";
+    $output = l('Click to access the clearance agreement of this student', $path, array('attributes' => array('target' => '_blank')));
+  }
+
+  $output .= "<div style='text-align:center;margin-top:1em'><button onclick='location.href=\"" . url('student/clearance') . "\"'>Continue</button></div>";
+  return $output;
 }
+
 
 // Bundle of actions to be performed on clearance
 function _perform_clearance($student_id) {
@@ -511,7 +571,7 @@ function _perform_clearance($student_id) {
   $result = db_query($sql, $user_profile->profile_first_choice);
   $row = db_fetch_object($result);
 
-  $subject = 'University Application Approved (' . variable_get('site_name', '') . ')';
+  $subject = 'University Application Approved (' . variable_get('eduerp_institution_current', '') . ')';
 
   $body = '';
   if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
@@ -520,21 +580,55 @@ function _perform_clearance($student_id) {
     $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
   }
 
-  $body .= "Your application to enrol as a Student has been approved.\n\n";
+  $body .= "Your application to enrol as a Student in " . variable_get('eduerp_current_session', '') . " session has been approved.\n\n";
   $body .= "Your Programme is: {$row->field_programme_name_value}\n\n";
-  $body .= "You now have a Matriculation Number which is: {$user_profile->profile_matno}\n\n";
-  $body .= "Please note this carefully as you will need it to access the university systems.\n";
-  $body .= "In particular, you will need it as your new Username to login to the university computer system.\n";
-  $body .= "You should continue to use the Password you entered when you Registered.\n\n";
+  $body .= "You now have an Admission Number which is: {$user_profile->profile_matno}\n\n";
+  $body .= "Please note this carefully as you will need this admission number to access the university systems.\n";
+  $body .= "This admission number replaces your previous username that you used to login to the university system.\n";
+  $body .= "Your Password remains unchanged.\n\n";
   $body .= "Your university e-mail is: {$user_profile->university_email}\n";
-  $body .= "This requires the same password\n\n";
-  $body .= variable_get('site_name', '') . "\n";
+  $body .= "To access your e-mail go to " . variable_get('eduerp_zimbra_webmail_url', '') . "\n";
+  $body .= "To login to your university e-mail use the same username and password that you have been instructed to use to access the university system.\n\n";
+  $body .= "Please see " . variable_get('eduerp_student_guidlines_url', '') . " for guidlines.\n\n";
+  $body .= variable_get('eduerp_institution_current', '') . "\n";
 
   $message = drupal_mail('student', 'newmatnumber', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
   $message['subject'] = $subject;
   $message['body'] = $body;
   drupal_mail_send($message);
 }
+
+
+function record_cleared($student_id, $action, $reason = NULL) {
+  global $user;
+
+  $user_profile = new UserProfile($student_id);
+
+  $name = '';
+  if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($user_profile->profile_middle_name)) $middle = ' ' . $user_profile->profile_middle_name;
+    $name = "{$user_profile->profile_last_name}, {$user_profile->profile_first_name}{$middle}";
+  }
+
+  $node = new stdClass();
+  $node->type                               = 'student_record';
+  $node->uid                                = 1;  // Admin
+  $node->status                             = 1;  // Published
+  $node->promote                            = 0;
+  $node->sticky                             = 0;
+  $node->comment                            = 0;
+  $node->title                              = "$name - $action";
+  $node->field_student_ref_sr[0]['uid']     = $student_id;
+  $node->field_event_sr[0]['value']         = $action;
+  $node->field_degree_sr[0]['value']        = 'None';
+  $node->field_session_sr[0]['value']       = variable_get('eduerp_current_session', '');
+  $node->field_student_program_sr[0]['nid'] = $user_profile->profile_first_choice;
+  $node->field_approver_sr[0]['uid']        = $user->uid;
+  $node->field_comment_sr[0]['value']       = !empty($reason) ? $reason : NULL;
+  node_save($node);
+}
+
 
 /**
  * Logs clearance information
@@ -553,9 +647,9 @@ function student_log_clearance($student_id, $clearance_date, $user) {
 
   $student = $user_profile->profile_first_name . ' ' . $user_profile->profile_last_name;
 
-  watchdog('Clearance', t('New clearance was successfully created by email, on studentid.'), array('email' => $user->mail, 'studentid' => $student));
-
+  watchdog('Clearance', t('New clearance was successfully created by @email, on @studentid.'), array('@email' => $user->mail, '@studentid' => $student));
 }
+
 
 function set_matriculation_number($student_id, $formerProgID=0) {
   // Generate the matriculation number for this student
@@ -723,9 +817,9 @@ function theme_student_field_uncleared() {
     '#title' => t('Not Cleared'),
     '#name' => t('field-uncleared'),
     '#id' => t('edit-field-uncleared'),
-    '#value' => 0,
-    //'#attributes' => array('checked' => ''),
-    '#return_value' => variable_get('field-uncleared', TRUE)
+    '#attributes' => array('checked' => 'CLEARANCE_UNCLEARED_OPTIONS'),
+    '#return_value' => variable_get('field-uncleared', TRUE),
+    '#parents' => array(t('field-uncleared'))
   );
   return theme('checkbox', $element);
 }
@@ -737,7 +831,6 @@ function theme_student_field_uncleared() {
  * @see student_theme()
  */
 function theme_student_field_uncleared_reasons() {
-
   $options = student_uncleared_get_reasons();
 
   $element = array(
@@ -745,12 +838,11 @@ function theme_student_field_uncleared_reasons() {
     '#name' => 'field-uncleared-reasons',
     '#id' => 'edit-field-uncleared-reasons',
     '#options' => $options,
-    '#multiple' => 1,
-    '#attributes' => array('class' => '')
+    // '#multiple' => 1, // The CCK is not setup to support multiple
+    '#attributes' => array('class' => ''),
+    '#parents' => array('field-uncleared-reasons')
   );
-
   return theme('select', $element);
-
 }
 
 /**
@@ -764,8 +856,9 @@ function theme_student_field_deferred() {
     '#title' => t('Defer to next session'),
     '#name' => 'field-defered',
     '#id' => 'edit-field-deferred',
-    '#value' => 0, // this is for setting checked="checked". We are not setting it due to theme_chechbox bug
-    '#return_value' => variable_get('field-defered', TRUE)
+    '#attributes' => array('checked' => 'checked'),
+    '#return_value' => variable_get('field-defered', TRUE),
+    '#parents' => array('field-defered')
   );
   return theme('checkbox', $element);
 }
@@ -908,9 +1001,23 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
 }
 
 function student_form_alter(&$form, $form_state, $form_id) {
+  global $user;
+
   // change the button title to display "Search" instead of "Apply" (improves user experience)
   if ($form_state['view']->name == "student_clearance") {
     $form['submit']['#value'] = t('Search');
+  }
+
+  switch ($form_id) {
+    case 'user_profile_form':
+
+      $student = db_result(db_query("SELECT r.name FROM {users_roles} ur, {role} r WHERE ur.rid=r.rid AND ur.uid=%d AND r.name IN ('Student', 'Applicant') LIMIT 1", $user->uid));
+      if ($student) {
+        $form['account']['mail']['#disabled'] = TRUE;
+        $form['account']['mail']['#required'] = FALSE;
+        $form['account']['mail']['#value'] = $form['account']['mail']['#default_value'];
+      }
+      break;
   }
 }
 
@@ -958,17 +1065,25 @@ function student_views_post_render(&$view, &$output, &$cache) {
       $node['nid'] = $row->nid;
       $student_clearance = node_load($node);
 
+      $clearance_uncleared_value = FALSE;
+      $uncleared_reasons_value = FALSE;
+      if (!empty($student_clearance->field_clearance_uncleared[0]['value'])) $clearance_uncleared_value = TRUE;
+      if (isset($student_clearance->field_uncleared_reasons[0]['value'])) $uncleared_reasons_value = $student_clearance->field_uncleared_reasons[0]['value'];
       if ($student_clearance->field_staff_verification[0]['uid']) $verified = true;
       if ($student_clearance->field_staff_clearance[0]['uid']) $cleared = true;
     }
 
-    // snippet to determine whether or not to place the checkmark to the options
-    // viz a viz results verification and student clearance
     $output = str_replace("VERIFY_OPTIONS", $verified ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
     $output = str_replace("CLEARANCE_OPTIONS", $cleared ? "disabled=\"disabled\" checked=\"checked\"" : "", $output);
+    $output = str_replace('checked="CLEARANCE_UNCLEARED_OPTIONS"', $clearance_uncleared_value ? 'checked="checked"' : '', $output);
     $output = str_replace("SUBMIT_OPTIONS", ($cleared && $verified) ? "disabled=\"disabled\"" : "", $output);
+
+    if ($uncleared_reasons_value !== FALSE) {
+      $output = str_replace('<option value="' . $uncleared_reasons_value . '">', '<option value="' . $uncleared_reasons_value . '" selected="selected">', $output);
+    }
   }
 }
+
 
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'profile') {
@@ -1020,7 +1135,7 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
       case 'presave':
         if (empty($node->nid)) {
           // A new student profile is being created
-          $node->field_profile_yearofentry[0]['value'] = date('Y');
+          $node->field_profile_yearofentry[0]['value'] = substr(variable_get('eduerp_current_session', ''), 0, 4);
           $node->field_profile_reg_session[0]['value'] = '';
           $node->field_profile_reg_semester[0]['value'] = '';
         }
@@ -1040,7 +1155,6 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           $result = db_query($sql, $node->field_profile_first_choice[0]['nid']);
 
           $level1 = '100';
-          $level2 = '200';
 
           $row = db_fetch_object($result);
           if (!empty($row->level)) {
@@ -1049,8 +1163,11 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
             if (!empty($row->level)) $level2 = $row->level;
           }
 
+          if (empty($level2)) $level2 = $level1; // If there is no 2nd Level
+
           // Set the level to 100 (probably) if the student's mode of entry is not DE, if it is DE then it's 200 (probably)
           $node->field_profile_level_name[0]['value'] = ($node->field_profile_mode_of_entry[0]['value'] != 'DE') ? $level1 : $level2;
+          if ($level1 < 100) $node->field_profile_level_name[0]['value'] = $level1; // Should be no DE for Part Time/Postgraduate
         }
         break;
 
@@ -1068,6 +1185,10 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
           if (empty($node->field_profile_sponsor_address[0]['value']) || empty($node->field_profile_sponsor_city[0]['value']) || empty($node->field_profile_sponsor_state[0]['value'])) {
             form_set_error('field_profile_sponsor_address', "If You enter a Sponsor's Name you must enter address, city and state");
           }
+        }
+        $text = $node->field_profile_first_choice[0]['nid'];
+        if (empty($text)) {
+          form_set_error('field_profile_first_choice', 'You must choose a Programme.');
         }
         break;
     }
@@ -1130,7 +1251,25 @@ function student_next_level($uid, $session) {
 
 
 function student_meets_fee_requirements($uid) {
-  return TRUE;
+
+  $fees = get_fee_items($uid);
+  if (!empty($fees)) {
+    if ($fees['amount_payable'] <= 0.0) return TRUE; // The Student is on a full Scholarship with no extras to pay
+
+    $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
+      WHERE
+        o.uid=%d AND
+        o.order_status IN ('payment_received') AND
+        o.order_id=op.order_id AND
+        SUBSTRING(op.model, 1, 16)='PRODUCT-FEE-ITEM'";
+    $result = db_query($sql, $uid);
+    while ($order = db_fetch_array($result)) {
+      $data = unserialize($order['data']);
+      if ($data['session'] == variable_get('eduerp_current_session', '')) return TRUE;
+    }
+  }
+
+  return FALSE;
 }
 
 
@@ -1205,7 +1344,12 @@ function student_course_form(&$obj) {
 
       $courseselections->addformelementsforsemester(1);
       $courseselections->addformelementsforfailedcoursesforsemester(1);
-      $courseselections->addformelementsforloadcounter(1);
+      if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+        $courseselections->add_a_break();
+      }
+      else {
+        $courseselections->addformelementsforloadcounter(1);
+      }
 
       $courseselections->addformelementsforsemester(2);
       $courseselections->addformelementsforfailedcoursesforsemester(2);
@@ -1220,7 +1364,8 @@ function student_course_form(&$obj) {
     $courseselections->finishform();
   }
   else {
-    drupal_goto('student/payment');
+    drupal_set_message('You must pay your fees before course registration!');
+    drupal_goto("user/$user->uid/fees/pay");
   }
 
   return $courseselections->form;
@@ -1303,8 +1448,14 @@ function student_course_form_validate($form, &$form_state) {
   // The test for $currentlevelcis removed (as we are now checking program/level/semester explicitly to make sure we pick up correct Credit Load with no duplicates and new failed test added)
   $result = db_query($sql, $cis1, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '1');
   $row = db_fetch_object($result);
-  if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
-  if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
+
+  if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+  }
+  else {
+    if ($row->tload < $form['#min_credit_load1']) form_set_error('Semester 1 Min', 'You have not selected enough credit load for semester 1, select more courses.');
+    if ($row->tload > $form['#max_credit_load1']) form_set_error('Semester 1 Max', 'You have selected too much credit load for semester 1, select fewer courses.');
+  }
+
   $form_state['storage']['creditload'][1] = $row->tload;
 
   if (!empty($form['#max_credit_load2'])) {
@@ -1346,10 +1497,19 @@ function student_course_form_validate($form, &$form_state) {
           )";
     $result = db_query($sql, $cis2, $user_profile->profile_first_choice, $user_profile->profile_level_name, $user->uid, variable_get('eduerp_current_session', ''), '2');
     $row = db_fetch_object($result);
-    if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
-    if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
+
+    if (variable_get('RegisterAllCoursesatStartofSession', FALSE) && variable_get('CombineCreditLoadTestsforBothSemesters', FALSE)) {
+      if (($form_state['storage']['creditload'][1] + $row->tload) < ($form['#min_credit_load1'] + $form['#min_credit_load2'])) form_set_error('Semester 1_2 Min', 'You have not selected enough credit load for semesters 1 & 2, select more courses.');
+      if (($form_state['storage']['creditload'][1] + $row->tload) > ($form['#max_credit_load1'] + $form['#max_credit_load2'])) form_set_error('Semester 1_2 Max', 'You have selected too much credit load for semesters 1 & 2, select fewer courses.');
+    }
+    else {
+      if ($row->tload < $form['#min_credit_load2']) form_set_error('Semester 2 Min', 'You have not selected enough credit load for semester 2, select more courses.');
+      if ($row->tload > $form['#max_credit_load2']) form_set_error('Semester 2 Max', 'You have selected too much credit load for semester 2, select fewer courses.');
+    }
     $form_state['storage']['creditload'][2] = $row->tload;
   }
+
+  if (form_get_errors()) drupal_goto('student/course'); // Need to completely regenerate form so that selected_load is recalculated
 }
 
 
@@ -1594,7 +1754,7 @@ function create_student_program($uid) {
   }
   $sql = "SELECT p.field_programme_name_value AS programme_name FROM {content_type_program} p WHERE p.nid=%d";
   $result = db_query($sql, $user_profile->profile_first_choice);
-  $row = db_fetch_array($result);
+  $row = db_fetch_object($result);
 
   $node->title                                      = "$name - {$row->programme_name}";
   $node->field_student_ref_sp[0]['uid']             = $uid;
@@ -1682,84 +1842,34 @@ function student_hostel_reservation(){
 
 //Israel's functions ends here
 
+
 function student_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
     eduerp_add_role($account, 'Applicant');
-    //$edit['roles'] = NULL;
     $edit['roles'] += $account->roles;
   }
 }
 
-/**
- * Retrieves hostel reservation as a uc product
- * @return <object>
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function _student_hostelreservation_product() {
-    $data = hostel_allocation_reserved_data();
-    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
-    $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
-    $uc_product = db_fetch_object($block_uc_product);
-    return $uc_product;
-}
-
-/**
- * Provides the capability to add the hostel reservation to cart
- * @global <type> $user
- * @param <type> $form_state
- * @return $form
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function student_hostelreservation_cart(&$form_state) {
-    global $user;
-    // retrieve the reserved hostel based on current student
-    $data = hostel_allocation_reserved_data();
-
-    if(empty($data)) {
-        //drupal_set_message("You have already made an hostel reservation.");
-        return TRUE;
-    }
-
-    //$block_nid = db_query("select nid from {content_type_blocks} where field_block_name_value = '%s'", $data->block_name);
-    $block_uc_product = db_query("select * from uc_products where nid = (select field_uc_product_id_nid from content_type_blocks where field_block_name_value = '%s')", $data->block_name);
-
-    $uc_product = db_fetch_object($block_uc_product);
-    $nid = $uc_product->nid;
-
-    $html = hostel_allocation_show_reserved_room($user->uid);
-    //$data_array = array();
-    $data_array[] = get_object_vars($data);
-    $form['data'] = array(
-        '#value' => $html
-    );
-     $form['add_to_cart'] = array(
-            '#type' => 'submit',
-            '#value' => 'Add to Cart',
-     );
-
-    //$form['#submit'][] = uc_cart_add_item($nid, $qty = 1, $data = NULL, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
-
-     $form['#submit'][] = 'student_hostelreservation_cart_submit';
-     return $form;
-}
-
-function student_hostelreservation_cart_submit($form, &$form_state) {
-    //dsm($form_state['values']);
-    $uc_product = _student_hostelreservation_product();
-    switch ($form_state['values']['op']) {
-        case t('Add to Cart'):
-            if (isset($form_state['values']['add_to_cart'])) {
-                $uc_product_nid = $uc_product->nid;
-                $data = get_object_vars($uc_product);
-                uc_cart_add_item($uc_product_nid, $qty = 1, $data, $cid = NULL, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
-                drupal_goto("cart");
-            }
-            break;
-    }
-}
 
 function student_init() {
-  //drupal_add_js - to add the js
   drupal_add_js(drupal_get_path('module', 'student') .'/student.js');
+}
+
+
+function student_new_student($student_uid) {
+  student_include('student');
+  $student = new student($student_uid);
+
+  return $student;
+}
+
+
+function student_include($file) {
+  static $used = array();
+  if (!isset($used[$file])) {
+    require_once './' . drupal_get_path('module', 'student') . "/includes/$file.inc";
+  }
+
+  $used[$file] = TRUE;
 }

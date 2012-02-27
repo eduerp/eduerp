@@ -1,7 +1,7 @@
 <?php
 include('fixtures.inc');
 include_once('permissions_api.module');
-include_once drupal_get_path('module', 'eduerp') . '/eduerp.api.inc';
+
 
 /**
  * initialize the permissions for roles in this module
@@ -111,6 +111,14 @@ function eduerp_install() {
   variable_set('content_profile_student_profile', unserialize('a:8:{s:6:"weight";s:1:"1";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:1;s:21:"admin_user_create_use";i:0;s:17:"registration_hide";a:0:{}}'));
   variable_set('content_profile_staff_profile', unserialize('a:8:{s:6:"weight";s:1:"2";s:12:"user_display";s:4:"full";s:9:"edit_link";i:0;s:8:"edit_tab";s:3:"sub";s:8:"add_link";i:1;s:16:"registration_use";i:0;s:21:"admin_user_create_use";i:1;s:17:"registration_hide";a:0:{}}'));
 
+  // Wording for Ubercart cart/checkout or any other required "Translations"
+  $text = array(
+    'Order information will be sent to your account e-mail listed below.'
+      => 'If you are due a Scholarship and that is not reflected in the fees above, <a href="/edupay/displaycart">click here to get a summary of fees to bring to the Scholarship Board</a>.<br />You will need to come back to this page after getting a scholarship and click <b>Send Fee Details for Processing</b><br /><br />After you have clicked <b>Send Fee Details for Processing</b> below you will be brought to a page that explains next steps for those students that need to pay fees.<br /><br />Please note that all payments made at the bank will incur an additional NGN 500 transaction charge.<br /><br />Order information will be sent to your University e-mail account (you will not be able to change this).',
+    'Review order' => 'Send Fee Details for Processing',
+  );
+  variable_set('locale_custom_strings_en', $text);
+
   drupal_set_message('eduerp module installed');
 }
 
@@ -140,6 +148,7 @@ function eduerp_enable() {
   install_other_content_type('cck_school_fees_level_types.txt', 'school_fee_level_types');
   install_other_content_type('cck_school_fees_structure_classes.txt', 'school_fee_structure_classes');
   install_other_content_type('cck_school_fees_nationality_types.txt', 'school_fee_nationality_types');
+  install_other_content_type('cck_school_fees_scholarship_types.txt', 'school_fees_scholarship_types');
 
   // execute raw queries
   db_query('CREATE INDEX field_fee_setup_session_value ON {content_type_school_fee_item_setup} (field_fee_setup_session_value)');
@@ -554,75 +563,73 @@ function eduerp_schema() {
     ),
   );
 
-  $schema['webapp_institution'] = array(
-    'description' => t('A replica table in edupay for storing all institutions'),
+  $schema['cron_edupay_send_queue'] = array(
+    'description' => t('CRON Queue for POSTS to be sent to EduPay'),
     'fields' => array(
-      'id' => array(
-        'description' => t('Institution ID'),
+      'serial_id' => array(
+        'description' => t('id used to delete processed entries'),
         'type' => 'serial',
+        'size' => 'big',
         'not null' => TRUE,
       ),
-      'name' => array(
-        'description' => t('Institution Name e.g. University of Lagos'),
-        'type' => 'varchar',
-        'length' => '100',
+      'data' => array(
+        'description' => t('Serialised data to be sent to EduPay'),
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('serial_id'),
+  );
+
+  $schema['eduerp_product_options'] = array(
+    'description' => 'UberCart Options for each Product/Program/Level/Nationality/Instalment.',
+    'fields' => array(
+      'product_nid' => array(
+        'description' => 'The UC Product',
+        'type' => 'int',
+        'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-        'code' => array(
-        'description' => t('Institution code for identification'),
-        'type' => 'varchar',
-        'length' => '32',
+      'aid' => array(
+        'description' => 'The {uc_attributes}.aid',
+        'type' => 'int',
+        'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-        'secret' => array(
-        'description' => t('A 32bit hash generated automatically using RFC 1433 standard'),
+      'oid' => array(
+        'description' => 'The option ID',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'program_nid' => array(
+        'description' => 'The Programme nid',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'level_name' => array(
+        'description' => 'The Level',
         'type' => 'varchar',
-        'length' => '32',
+        'length' => 17,
+        'not null' => TRUE,
+      ),
+      'nationality' => array(
+        'description' => 'The Nationality',
+        'type' => 'varchar',
+        'length' => 13,
+        'not null' => TRUE,
+      ),
+      'instalment' => array(
+        'description' => 'The Instalment',
+        'type' => 'varchar',
+        'length' => 11,
         'not null' => TRUE,
       ),
     ),
-    'primary key' => array('id'),
-    'unique key' => array('code' => array('code')),
+    'indexes' => array('program_nid_product_nid' => array('program_nid', 'product_nid')),
   );
 
-  return $schema;
-}
-
-/*
- * @todo This is meant to be hook_update_N.
- * To be reviewed
- */
-function eduerp_schema_6000() {
-    $schema['webapp_institution'] = array(
-    'description' => t('A replica table in edupay for storing all institutions'),
-    'fields' => array(
-      'id' => array(
-        'description' => t('Institution ID'),
-        'type' => 'serial',
-        'not null' => TRUE,
-      ),
-      'name' => array(
-        'description' => t('Institution Name e.g. University of Lagos'),
-        'type' => 'varchar',
-        'length' => '100',
-        'not null' => TRUE,
-      ),
-        'code' => array(
-        'description' => t('Institution code for identification'),
-        'type' => 'varchar',
-        'length' => '32',
-        'not null' => TRUE,
-      ),
-        'secret' => array(
-        'description' => t('A 32bit hash generated automatically using RFC 1433 standard'),
-        'type' => 'varchar',
-        'length' => '32',
-        'not null' => TRUE,
-      ),
-    ),
-    'primary key' => array('id'),
-    'unique key' => array('code' => array('code')),
-  );
   return $schema;
 }
 
@@ -640,10 +647,4 @@ function install_other_content_type($filename, $content_type_name) {
     ),
   );
   drupal_execute('content_copy_import_form', $form_state);
-}
-
-function eduerp_update_6200() {
-  // No corresponding schema API for alter statements.
-  // Using raw SQL
-  db_query("ALTER TABLE {webapp_institution} CHANGE `secret` `secret` VARCHAR( 32 ) NULL");
 }

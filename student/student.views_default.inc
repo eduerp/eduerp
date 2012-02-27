@@ -112,10 +112,9 @@ function student_views_default_views() {
   $view->name = 'student_clearance';
   $view->description = 'Student Clearance';
   $view->tag = 'student';
-  $view->view_php = '';
   $view->base_table = 'node';
-  $view->is_cacheable = FALSE;
-  $view->api_version = 2;
+  $view->core = 0;
+  $view->api_version = '2';
   $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->override_option('relationships', array(
@@ -398,6 +397,46 @@ function student_views_default_views() {
       'id' => 'field_profile_jambno_value',
       'table' => 'node_data_field_profile_jambno',
       'field' => 'field_profile_jambno_value',
+      'relationship' => 'none',
+    ),
+    'field_profile_score_details_value' => array(
+      'label' => 'Score Details',
+      'alter' => array(
+        'alter_text' => 0,
+        'text' => '',
+        'make_link' => 0,
+        'path' => '',
+        'absolute' => 0,
+        'link_class' => '',
+        'alt' => '',
+        'rel' => '',
+        'prefix' => '',
+        'suffix' => '',
+        'target' => '',
+        'help' => '',
+        'trim' => 0,
+        'max_length' => '',
+        'word_boundary' => 1,
+        'ellipsis' => 1,
+        'html' => 0,
+        'strip_tags' => 0,
+      ),
+      'empty' => '',
+      'hide_empty' => 0,
+      'empty_zero' => 0,
+      'link_to_node' => 0,
+      'label_type' => 'widget',
+      'format' => 'default',
+      'multiple' => array(
+        'group' => TRUE,
+        'multiple_number' => '',
+        'multiple_from' => '',
+        'multiple_reversed' => FALSE,
+      ),
+      'exclude' => 0,
+      'id' => 'field_profile_score_details_value',
+      'table' => 'node_data_field_profile_score_details',
+      'field' => 'field_profile_score_details_value',
       'relationship' => 'none',
     ),
     'field_profile_last_name_value' => array(

@@ -56,5 +56,145 @@ function uc_edupay_strongarm() {
   );
   $strongarms['uc_price_handler_config'] = $strongarm;
   
+  // ubercart checkout messages
+  
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_continue_shopping';
+  $strongarm->value = '<a href="[site-url]">Return to the front page.</a>';
+  $strongarms['uc_msg_continue_shopping'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_continue_shopping_format';
+  $strongarm->value = '1';
+  $strongarms['uc_msg_continue_shopping_format'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_existing_user';
+  $strongarm->value = 'Thank you for shopping at [store-name]. Your current order has been attached to the account we found matching your e-mail address.
+
+<a href="/user">Login</a> to view your current order status and order history. Remember to login when you make your next purchase for a faster checkout experience!';
+  $strongarms['uc_msg_order_existing_user'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_existing_user_format';
+  $strongarm->value = '1';
+  $strongarms['uc_msg_order_existing_user_format'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_logged_in';
+  $strongarm->value = '<p>Your Pay Fee process is now completed on this system. Your invoice has been sent to your e-mail address [order-email]. You can also print a copy of your invoice by <?php
+
+$url = url(\'user/\' . [order-uid] . \'/order/\' . [order-id] . \'/invoice/print\');
+    drupal_add_js("function open_invoice() { window.open(\'$url\', \'". t(\'Invoice\') ."\', \'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50\'); }", \'inline\');
+    $contents = \'<a href="#" onclick="open_invoice();">\'
+               . uc_store_get_icon(\'file:print\') .\' \'
+               . t(\'clicking here.\') .\'</a>\';
+    $output .= \'<div class="order-pane">\'. $contents .\'</div>\';
+    print $output;
+
+?></p>
+
+<p>You must proceed to any of the following banks to pay your invoice: [bank-list-raw].</p>
+
+<p>You must present the invoice or provide your invoice number ([invoice-number]) to pay at the bank.</p>
+
+<?php
+$timeout = [timeout-raw];
+$late_registration_date = \'[late_registration_date]\';
+
+$content = t(\'<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>\', array(\'@late_registration_date\' => $late_registration_date));
+
+$content .= t("<p>If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee (NGN @late_registration_fee).</p>", array(\'@late_registration_fee\' => [late_registration_fee]));
+
+if($timeout < 2145913199) {
+print $content;
+}
+?>
+
+<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>
+
+<p>Please note an additional NGN500 transaction charge must be paid when paying your fees.</p>';
+
+  $strongarms['uc_msg_order_logged_in'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_logged_in_format';
+  $strongarm->value = '3';
+  $strongarms['uc_msg_order_logged_in_format'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_new_user';
+  $strongarm->value = 'Thank you for shopping at [store-name]. A new account has been created for you here that you may use to view your current order status.
+
+<a href="/user">Login</a> to your new account using the following information:
+
+<strong>Username:</strong> !new_username
+<strong>Password:</strong> !new_password';
+  $strongarms['uc_msg_order_new_user'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_new_user_format';
+  $strongarm->value = '1';
+  $strongarms['uc_msg_order_new_user_format'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_submit';
+  $strongarm->value = 'Your order is complete! Your order number is [order-id].';
+  $strongarms['uc_msg_order_submit'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_msg_order_submit_format';
+  $strongarm->value = '1';
+  $strongarms['uc_msg_order_submit_format'] = $strongarm;
+  
+  // invoicing
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_cust_order_invoice_template';
+  $strongarm->value = 'student';
+  $strongarms['uc_cust_order_invoice_template'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_cust_view_order_invoices';
+  $strongarm->value = 1;
+  $strongarms['uc_cust_view_order_invoices'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_edupay_invoice_note';
+  $strongarm->value = 'Pay this invoice at: [bank-list-raw]. Present this invoice number to pay at the bank. You must make this payment before [late_registration_date] otherwise you will have to pay the late registration fee of NGN [late_registration_fee]. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.';
+  $strongarms['uc_edupay_invoice_note'] = $strongarm;
+
+  $strongarm = new stdClass;
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'uc_edupay_invoice_note_format';
+  $strongarm->value = '1';
+  $strongarms['uc_edupay_invoice_note_format'] = $strongarm;
+  
   return $strongarms;
 }

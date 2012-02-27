@@ -16,13 +16,208 @@ define('FEES_FULL', 'Full Amount');
 define('FEES_FIRST_INSTALMENT', 'Instalment1');
 define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
-require_once drupal_get_path('module', 'uc_eduerp_fees') . '/includes/utils.inc';
+
+function uc_eduerp_fees_menu() {
+  $items['edupay/callback'] = array(
+    'title' => 'Process EduPay Callback',
+    'page callback' => 'uc_eduerp_fees_update_fees',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['edupay/displaycart'] = array(
+    'title' => 'Student Fees Due to be Paid',
+    'page callback' => 'display_cart_for_scholarship',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+function uc_eduerp_fees_menu_alter(&$items) {
+  $items['user/%user/orders'] = MENU_CALLBACK;
+  unset($items['user/%user/orders']);
+}
+
+
+/**
+ * Handle Call Back from EduPay
+ *
+ */
+function uc_eduerp_fees_update_fees() {
+  $order_id = $_POST['order_id'];
+  $status = $_POST['status'];
+  $uid = $_POST['uid'];
+  $transaction_token = $_POST['transaction_token'];
+  $bank_username = $_POST['bank_username'];
+  if (empty($bank_username)) $bank_username = ' ';
+
+  if ($_SERVER['REQUEST_METHOD'] != 'POST' || empty($order_id) || empty($status) || empty($uid) || empty($transaction_token) || ($status != 'payment_received' && $status != 'canceled')) {
+    drupal_set_header('HTTP/1.1 404 Not Found');
+    $content = new stdClass();
+    $content->status = 'fail';
+    drupal_json($content);
+    exit();
+  }
+
+  $transaction_token_found = FALSE;
+  $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
+    WHERE
+      o.order_id=%d AND
+      o.order_status IN ('pending') AND
+      o.order_id=op.order_id";
+  $result = db_query($sql, $order_id);
+  if ($order = db_fetch_array($result)) { // Only need to look at one uc_order_products, transaction_token is in them all
+    $data = unserialize($order['data']);
+    if ($data['transaction_token'] == $transaction_token) $transaction_token_found = TRUE;
+  }
+
+  if (!$transaction_token_found) {
+    drupal_set_header('HTTP/1.1 404 Not Found');
+    $content = new stdClass();
+    $content->status = 'fail';
+    drupal_json($content);
+    exit();
+  }
+
+  $sql = "SELECT ctb.field_uc_product_id_nid, op.title
+    FROM {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr, {uc_order_products} op
+    WHERE
+      ctb.nid=ctr.field_block_id_nid AND
+      ctr.nid=ctrr.field_room_id_nid AND
+      ctrr.field_student_id_uid=%d AND
+      ctb.field_uc_product_id_nid=op.nid AND
+      op.order_id=%d";
+  $query_result = db_query($sql, $uid, $order_id);
+  if (db_fetch_array($query_result)) {
+    $hostel_in_order = TRUE; // Found a hostel reservation which has a product in this order
+  }
+  else {
+    $hostel_in_order = FALSE;
+  }
+
+  if ($status == 'payment_received') {
+    if ($hostel_in_order) hostel_allocation_allocate_bedspace($uid);
+
+    db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
+    db_query("UPDATE {fees_order} SET status = '$status' WHERE order_id = %d", $order_id);
+    $timestamp = time();
+    db_query("UPDATE {fees_order} SET expiry_date = %d WHERE order_id = %d", $timestamp, $order_id);
+    db_query("UPDATE {fees_order} SET email = '%s' WHERE order_id = %d", $bank_username, $order_id);
+    watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $uid)));
+  }
+
+  if ($status == 'canceled') {
+    if ($hostel_in_order) hostel_allocation_revoke_expired_reservation($uid);
+
+    db_query("UPDATE {uc_orders} set order_status = '$status' WHERE order_id = %d", $order_id);
+    db_query("UPDATE {fees_order} SET status = '$status' WHERE order_id = %d", $order_id);
+    watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $uid)));
+  }
+
+  $content = new stdClass();
+  $content->status = 'success';
+  drupal_json($content);
+  exit();
+}
+
+
+function display_cart_for_scholarship() {
+  global $user;
+
+  ob_start();
+
+  $student_profile = new UserProfile($user->uid);
+
+  $studentname = '';
+  if (!empty($student_profile->profile_first_name) && !empty($student_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($student_profile->profile_middle_name)) $middle = ' ' . $student_profile->profile_middle_name;
+    $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
+  }
+
+  $sql = "SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d";
+  $result = db_query($sql, $student_profile->profile_first_choice);
+  $row = db_fetch_object($result);
+
+  ?>
+  <br />
+  <h2><?php echo variable_get('eduerp_institution_current', '') ?></h2>
+  <?php echo variable_get('eduerp_institution_address', '') ?><br />
+  <br />
+  <h3>Name: <?php echo $studentname ?><br />
+  Admission Number: <?php echo $user->name ?></h3><br />
+  Session: <?php echo variable_get('eduerp_current_session', '') ?><br />
+  Programme: <?php echo $row->field_programme_name_value ?><br />
+  <br />
+  If you are due a scholarship, print and bring this page to the Scholarship Board.<br /><br />
+  <?php if (FALSE) { ?>(<a href="/print/edupay/displaycart">Click here for a Printer-friendly version</a> which can be used to generate a better printout.)<br /><br /><?php } ?>
+
+  <table border='1' align='center'  cellpadding="5" cellspacing="5">
+    <tr bgcolor='#ACCFCC'><td><b>Fees for <?php echo "$studentname for " . variable_get('eduerp_current_session', ''); ?></b></td></tr>
+    <tr>
+      <td><?php echo show_cart_for_student(); ?></td>
+    </tr>
+  </table>
+<?php
+  return ob_get_clean();
+}
+
+
+function show_cart_for_student() {
+  $subtotal = 0;
+
+  // Set up table header.
+  $header = array(
+    array('data' => t('Products'), 'class' => 'products'),
+    array('data' => t('Price'), 'class' => 'price'),
+  );
+
+  $context = array();
+
+  // Set up table rows.
+  $contents = uc_cart_get_contents();
+  foreach ($contents as $item) {
+    $description = uc_product_get_description($item);
+    if (!empty($description) && strpos($description, 'Fee Structure') !== FALSE) { // Don't include e.g. Hostels
+      $total = $item->price;
+      $subtotal += $total;
+
+      $description = check_plain($item->title) . $description;
+
+      // Remove node from context to prevent the price from being altered.
+      $context['revision'] = 'themed-original';
+      $context['type'] = 'amount';
+      unset($context['subject']);
+      $rows[] = array(
+        array('data' => $description, 'class' => 'products'),
+        array('data' => uc_price($total, $context), 'class' => 'price'),
+      );
+    }
+  }
+
+  // Add the subtotal as the final row.
+  $context = array(
+    'revision' => 'themed-original',
+    'type' => 'amount',
+  );
+  $rows[] = array(
+    'data' => array(array('data' => '<span id="subtotal-title">' . t('Total:') . '</span> ' . uc_price($subtotal, $context), 'colspan' => 2, 'class' => 'subtotal')),
+    'class' => 'subtotal',
+  );
+
+  return theme('table', $header, $rows, array('class' => 'cart-review'));
+}
+
 
 /**
  * Rebuild the fees items based on order state
  * of payment_received or pending
  *
  * @deprecated
+ * Not used
  */
 function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys = TRUE) {
   foreach($fees as $fee) {
@@ -52,46 +247,59 @@ function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys
  * and payment_received
  */
 function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
-  $items = array();
-  $fees = array();
   if(is_null($student_id)) return FALSE;
 
-  $status_paid = FEES_PAID;
-  $status_pending = FEES_PENDING;
-  $status = array(FEES_PAID, FEES_PENDING);
-  $result = db_query("SELECT data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $student_id, $status_paid, $status_pending);
-  while($order = db_fetch_array($result)) {
-    $order['data'] = unserialize($order['data']);
-    $items[] = $order;
-  }
-  if(is_null($items)) {
-    return $fees;
-  }
-  $types_arr = array('fees', 'hostel');
-  foreach($items as $key => $item) {
-    if(is_array($item['data'])){
-      foreach($item['data'] as $data) {
-        $types[] = $data['type'];
-        // if all values are fees and hostel is not there
-        // $fees = $fee_items['hostel']
-        if(!in_array('hostel', $types)) {
-          $fees['hostel'] = $fee_items['hostel'];
+  foreach ($fee_items['fees']['item'] as $i => $item) {
+    $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
+      WHERE
+        o.uid=%d AND
+        o.order_status IN ('payment_received', 'pending') AND
+        o.order_id=op.order_id AND
+        op.nid=%d";
+    $result = db_query($sql, $student_id, $item['product_nid']);
+    while ($order = db_fetch_array($result)) {
+      $data = unserialize($order['data']);
+      if ($data['session'] == variable_get('eduerp_current_session', '')) {
+        if (isset($item['option_id'])) {
+          if ($item['attribute_id'] == $data['attribute_id'] && $item['option_id'] == $data['option_id']) {
+            unset($fee_items['fees']['item'][$i]);
+            unset($fee_items['fees']['description'][$i]);
+          }
         }
-        // if all values are hostel and fees is not in there.
-        // $fees = $fee_items['fees'];
-        if(!in_array('fees', $types)) {
-          $fees['fees'] = $fee_items['fees'];
-        }
-        // if both items of type fees and hostel exists
-        if(array_in_array($types_arr, $types)) {
-          $fees = NULL;
+        else {
+          unset($fee_items['fees']['item'][$i]);
+          unset($fee_items['fees']['description'][$i]);
         }
       }
     }
   }
-  return $fees;
+
+  if (empty($fee_items['fees']['item'])) unset($fee_items['fees']);
+
+  if (empty($fee_items['hostel']['item'])) {
+    unset($fee_items['hostel']);
+  }
+  else {
+    $sql = "SELECT op.nid, op.data FROM {uc_orders} o, {uc_order_products} op
+      WHERE
+        o.uid=%d AND
+        o.order_status IN ('payment_received', 'pending') AND
+        o.order_id=op.order_id AND
+        op.nid=%d";
+    $result = db_query($sql, $student_id, $fee_items['hostel']['item']['product_nid']);
+    while ($order = db_fetch_array($result)) {
+      $data = unserialize($order['data']);
+      if ($data['session'] == variable_get('eduerp_current_session', '')) {
+        unset($fee_items['hostel']);
+      }
+    }
+  }
+
+  return $fee_items;
 }
 
+
+// Not Used
 function user_has_completed_order_items($student_id) {
   $status_paid = FEES_PAID;
   $status_pending = FEES_PENDING;
@@ -110,12 +318,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   global $user;
   $student_id = $user->uid;
 
-  // forcefully clear the cart if it is not empty
-  if($form_state['submitted'] == FALSE) {
-    if(uc_cart_get_contents() != NULL) {
-      uc_cart_empty($student_id);
-    }
-  }
+  uc_cart_empty($student_id);
 
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
@@ -123,7 +326,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     $fees = $fees_items;
   }
-  dsm($fees);
 
   // Check if the current user has an existing fees setup
   if(!is_fee_setup_existing_for_student($student_id)) {
@@ -146,30 +348,23 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     return FALSE;
   }
 
-  if (uc_cart_get_contents() == NULL) { // if cart is empty
-    $_SESSION['eduerp_fees_in_cart'] = FALSE;
-  }
+  // Remove any pending or paid fees...
+  $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
 
-  // paid fees
-  if(user_has_completed_order_items($student_id)) {
-    $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
-    $reprocessed = TRUE;
-  }
-  if($reprocessed && !is_null($fees['items'])) {
-    drupal_set_message('Your fees items have been updated to reflect only items you are about to pay for.');
-    //continue;
-  }
-  if($reprocessed && is_null($fees['items'])) {
-    drupal_set_message('All your fees items are currently in process or already paid for. Consult the bursary', 'error');
+  if (empty($fees['fees']['item']) && empty($fees['hostel'])) {
+    $message = 'All your fees items are currently in process or already paid for. Consult the bursary';
+
+    $rs = db_query("SELECT order_id, order_status FROM {uc_orders} WHERE uid=%d", $user->uid);
+    $firstone = TRUE;
+    while ($r = db_fetch_object($rs)){
+      if ($firstone) {
+        $message .= '<br />You may regenerate your invoices by clicking on them...';
+        $firstone = FALSE;
+      }
+      $message .= '<br /><a href="' . url('user/' . $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice: ' . $r->order_id . '</a>';
+    }
+    drupal_set_message($message, 'error');
     return FALSE;
-  }
-
-  // If the student have these items in the cart already, redirect
-  // to the /cart to prevent increment in cart quantity.
-  // Also handles irregularities when the item added to cart is incomplete
-  if($_SESSION['eduerp_fees_in_cart'] == TRUE | uc_cart_get_contents() != NULL) {
-    drupal_set_message('Welcome back! Please continue from where you left off.');
-    drupal_goto('cart');
   }
 
   if(!is_reservation_existing($student_id)) {
@@ -219,8 +414,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
         foreach(module_implements('eduerp_fees_alter') as $module) {
           // @todo - Make hook_eduerp_fees_alter argument to be options so that extras
           // can be altered with multiple items
-          $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search);
+          $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search, 'extras');
         }
+
         // @todo
         // Would be appropriate to use item_description here
         // but it is very unstructured and inconsistent
@@ -285,8 +481,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     $vkeys[] = $key;
     $values[$key] = $value;
   }
-  //dsm($vkeys);
-  //dsm($values);
   $key_search = implode(',', array_values($vkeys));
   preg_match_all('/product_item_fees_\d+/', $key_search, $matches);
   // match options for fees option
@@ -337,56 +531,61 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   if(!in_array('hostel', $vkeys)) {
     unset($cart_items['hostel_item_fees']);
   }
-  // subject = vkeys
-  // for each of $vkeys that matches regex pattern
-  // put all
-  // $items = all of its values
-  // @todo Move into a function and find alternative ways to get the
-  // cart keys. Also get the quantity of each fee item to pass to uc_cart_add_item
-  /*$cart_nids = array(
-    $vkeys[2] => array(
-      'item' => $form_state['values'][$vkeys[2]],
-      'options' => $form_state['values'][$vkeys[3]]
-    ),
-    $vkeys[6] => array(
-      'item' => $form_state['values'][$vkeys[6]],
-      'options' => $form_state['values'][$vkeys[7]]
-    ),
-  );
-  */
-  //dsm($cart_items);
+
+  $transaction_token = uniqid();
+
   $added = FALSE;
   foreach($cart_items as $product_item){
     $cart_item = $product_item;
+
     foreach($product_item['item'] as $key => $fees_values) {
       $product[$key] = $fees_values;
       $cartId = uc_cart_get_id();
       $nid = $product[$key]['product_nid'];
+
       if($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
         if(array_key_exists('attribute_id', $product[$key])){
-          $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']));
+          $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']), 'attribute_id' => $product[$key]['attribute_id'], 'option_id' => $product[$key]['option_id']);
           //array_push($option, $product_attribute);
           $options = $cart_item['options'] + $product_attribute;
         }
-        // get_fee_items reports 3 states of is_scholarship_applicable
+        else {
+          $options = $cart_item['options'];
+        }
+
+        // get_fee_items reports 2 states of is_scholarship_applicable
         // @see staff_school_fees_create_modify_fee_item_form
-        // NULL: Not set
         // 1: Yes - Scholarship is applicable
         // 2: No - Scholarship is not applicable
-        $scholarship = $product[$key]['is_scholarship_applicable'];
-        if(array_key_exists('is_scholarship_applicable', $product[$key]) && !is_null($scholarship)) { // We only care about when it is set
-          // add a new item to $options
-          if(!isset($options['has_scholarship'])) {
-            //$options['has_scholarship'] = $options['scholarship'];
-            $options['has_scholarship'] = $scholarship;
-          }
+        if (!empty($product[$key]['is_scholarship_applicable']) && $product[$key]['is_scholarship_applicable'] == '1' && is_scholarship_authorisation_existing($student_id, variable_get('eduerp_current_session', ''))) {
+          $options['has_scholarship'] = '1'; // Yes
+        }
+        else {
+          $options['has_scholarship'] = '2';
         }
       }
+
       if($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
         $options = $cart_item['options'];
       }
-    //dsm($options);
-    // only if it's a product
+
+      $options['transaction_token'] = $transaction_token;
+      $options['original_amount'] = $product[$key]['amount'];
+
+      if ($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
+        $options['scholarship_type'] = 'None';
+        $options['sponsor'] = 'None';
+      }
+      else {
+        $options['scholarship_type'] = $product[$key]['scholarship_type'];
+        $options['sponsor'] = $product[$key]['sponsor'];
+      }
+
+      $profile_items = uc_eduerp_fees_get_profile_items($cartId);
+      foreach($profile_items as $k => $v) {
+        $options[$k] = module_invoke('uc_eduerp_fees', 'eduerp_fees_alter', $v, 'options');
+      }
+
     if(!empty($product)){
       uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
       $added = TRUE;
@@ -419,8 +618,8 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     }
   }
   if($added){
-    $_SESSION['eduerp_fees_in_cart'] = TRUE;
-    $form_state['redirect'] = 'cart';
+    unset($_SESSION['cart_order']);
+    drupal_goto('cart/checkout');
   }
 }
 
@@ -453,16 +652,14 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       $description[$key] = $value['item_description'];
       $fees_item['item'][$key]['extras'] = array();
     }
-    // Add more user information since student has been cleared
-    $profile = student_load_student_profile($uid->uid);
-    //$options['jambno'] = $profile->profile_jambno;
-    $fullnames = array($profile->profile_first_name, $profile->profile_last_name);
-    //$options['fullnames'] = implode(' ', $fullnames);
 
-    // Add institution
-    module_load_include('inc', 'eduerp', 'eduerp.admin');
-    $institution = eduerp_get_institution('name');
-    //$options['institution'] = $institution->id;
+    $profile = student_load_student_profile($uid->uid);
+    $fullnames = '';
+    if (!empty($profile->profile_first_name) && !empty($profile->profile_last_name)) {
+      $middle = '';
+      if (!empty($profile->profile_middle_name)) $middle = ' ' . $profile->profile_middle_name;
+      $fullnames = "$profile->profile_last_name, $profile->profile_first_name{$middle}";
+    }
 
     $fees_item['options'] = array(
       'type' => EDUERP_FEES_NORMAL,
@@ -474,9 +671,9 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'allow_instalment' => $fees_item['instalment_payment_authorised'], // True or False
       'session' => $fees_item['session_name'],
       'late_registration' => $fees_item['late_reg_info'],
-      'jambno' => $profile->profile_jambno,
-      'fullnames' => implode(' ', $fullnames),
-      'institution' => $institution->id
+      'jambno' => $profile->profile_matno,
+      'fullnames' => $fullnames,
+      'institution' => 1
     );
     // Late registration added by Alan
     $fees_item['options']['late_registration']['last_registration_date'] = intval(strtotime($fees_item['options']['late_registration']['last_registration_date']));
@@ -486,10 +683,11 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
     $fees_item['options']['hostel'] = array(
       'nid' => $fees_item['hostel']['product_nid'],
       'type' => EDUERP_FEES_HOSTEL,
+      'session' => $fees_item['session_name'],
       'expiry_date' => intval(strtotime($fees_item['hostel']['expiry_date'])),
-      'jambno' => $profile->profile_jambno,
-      'fullnames' => implode(' ', $fullnames),
-      'institution' => $institution->id
+      'jambno' => $profile->profile_matno,
+      'fullnames' => $fullnames,
+      'institution' => 1
     );
   } else {
     $fees_item = array();
@@ -548,13 +746,23 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
  * A temporary solution is to modify the values in the array
  * to be referenced
  */
-function uc_eduerp_fees_eduerp_fees_alter($items) {
+function uc_eduerp_fees_eduerp_fees_alter($items = NULL, $context = 'extras') {
   // array search the context value
   // when gotten, inject stuffs into $extras key
-  if(!empty($items)) {
-    preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
-    foreach($matches as $key => $value) {
-      return $value;
+  if($context == 'extras') {
+    if(!is_null($items)) {
+      preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
+      foreach($matches as $key => $value) {
+        return $value;
+      }
+    }
+  }
+  if($context == 'options') {
+    if(is_string($items)) {
+      return $items;
+    }
+    if(is_array($items)) {
+      return $items;
     }
   }
 }
@@ -571,6 +779,7 @@ function uc_eduerp_fees_eduerp_fees_alter($items) {
  * and not uc_orders
  *
  * @return array
+ * Not used (except by test)
  */
 function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
   $items = array();
@@ -590,7 +799,6 @@ function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
     $order->data = unserialize($order->data);
     $items[$order->nid] = $order;
   }
-  //dsm(uc_order_module_invoke('load', $order, NULL));
   return $items;
 }
 
@@ -651,12 +859,6 @@ function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value 
   }
 }
 
-function uc_eduerp_fees_update_load($value, $schema, $field_value) {
-  // $value should remain the same. Shouldn't be passed by reference
-  $order_id = db_fetch_object(db_query("SELECT order_id FROM {$schema} WHERE tpin = '%s'", $value));
-  return $order_id;
-}
-
 function uc_eduerp_fees_update_update($value, $schema, $field_value) {
   if(db_query("UPDATE {$schema} set order_status = '$field_value' WHERE order_id = %d", $value)) {
     return TRUE;
@@ -665,90 +867,6 @@ function uc_eduerp_fees_update_update($value, $schema, $field_value) {
 
 function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
   return db_query("DELETE FROM {$schema} WHERE order_id = %d", $value);
-}
-
-/**
- * Implementation of hook_update_{hook}
- *
- * @see
- *
- * @todo Convert this to rules and triggers
- */
-function uc_eduerp_fees_update_fees($values) {
-  //$order_id = uc_eduerp_fees_update_invoke('load', 'uc_orders', $values['tpin']);
-  $order_id = $values['order_id'];
-  $order = uc_order_load($order_id);
-
-  $sql = "SELECT ctb.field_uc_product_id_nid, op.title
-    FROM {content_type_blocks} ctb, {content_type_rooms} ctr, {content_type_room_reservations} ctrr, {uc_order_products} op
-    WHERE
-      ctb.nid=ctr.field_block_id_nid AND
-      ctr.nid=ctrr.field_room_id_nid AND
-      ctrr.field_student_id_uid=%d AND
-      ctb.field_uc_product_id_nid=op.nid AND
-      op.order_id=%d";
-  $query_result = db_query($sql, $values['uid'], $order_id);
-  if (db_fetch_array($query_result)) {
-    $hostel_in_order = TRUE; // Found a hostel reservation which has a product in this order
-  }
-  else {
-    $hostel_in_order = FALSE;
-  }
-
-  // If status == payment_received
-  // load the order_id by tpin (query eduerp_transaction table to get the tpin) sent from
-  // edupay and update the ubercart order status to paid
-  // run ubercart update query here to update an order
-  if($values['status'] == FEES_PAID) { //Payment received
-
-    if ($hostel_in_order) hostel_allocation_allocate_bedspace($values['uid']);
-
-    $order_updated = uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', FEES_PAID);
-    if($order_updated) {
-      if(isset($_SESSION['eduerp_fees_in_cart'])){
-        unset($_SESSION['eduerp_fees_in_cart']);
-      }
-      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id has been successfully paid for by @uid', array('@order_id' => $order_id, '@uid' => $values['uid'])));
-      $result = array('fees paid');
-    }
-    return $result;
-  }
-
-  if($values['service'] == INVOICE_REGENERATE) {
-    // Load the order_id by edupay tpin (query eduerp_trasaction table to get the pin )
-    // uc_eduerp_fees_update_invoke('load', $values['tpin'], 'eduerp_transaction');
-    // set the order to unpaid. Parameters: uid and order id. Ubercart prefers canceled
-    // db_query('UPDATE {uc_orders} set ')
-    // get the status of the order
-    // if it is not set to cancelled or is pending or in_checkout
-    // set it to canceled
-    $order_status = $order->order_status;
-    //$possible_statuses = array('canceled', 'pending', 'in_checkout');
-    if((uc_order_status_data($order_status, 'state') == 'pending' or
-     uc_order_status_data($order_status, 'state') == 'in_checkout')) {
-      $status = 'canceled';
-      uc_eduerp_fees_update_invoke('update', $order_id, 'uc_orders', $status);
-      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id of user @uid has been canceled', array('@order_id' => $order_id, '@uid' => $values['uid'])));
-    }
-
-    // @todo: Not sure about removing this item from cart yet
-    if(uc_order_status_data($order_status, 'state') == 'canceled') {
-      //remove the order item from cart and unset all other related SESSION variables
-      //uc_eduerp_fees_update('delete', $order_id, 'uc_orders');
-      // watchdog this
-    }
-    // load and rebuild the user's order invoice
-    uc_eduerp_fees_invoice_regenerate($order_id);
-
-    if ($hostel_in_order) {
-      hostel_allocation_revoke_expired_reservation($values['uid']);
-      watchdog('uc_eduerp_fees', t('Fees item in cart with order_id of @order_id and a type of @type on user @uid', array('@order_id' => $order_id, '@type' => $values['type'], '@uid' => $values['uid'])));
-    }
-
-    // @todo send an email to user about all these actions
-    // A link to the regenerated invoice to the user can download
-    //
-  }
 }
 
 function uc_eduerp_fees_invoice_regenerate($order_id) {
@@ -858,4 +976,38 @@ function uc_eduerp_fees_views_api() {
     //'path' => drupal_get_path('module', 'uc_eduerp_fees'),
     'path' => drupal_get_path('module', 'uc_eduerp_fees') . '/includes',
   );
+}
+
+/**
+ * Get student profile items related to fees
+ */
+function uc_eduerp_fees_get_profile_items($uid) {
+  $student_profile = content_profile_load('student_profile', $uid);
+  $program = $student_profile->field_profile_first_choice;
+  $program_nid = $program[0]['nid'];
+
+  $program_obj = db_fetch_object(db_query("SELECT field_programme_name_value,
+    field_department_id_nid FROM {content_type_program} p
+    WHERE p.nid = %d", $program_nid));
+
+  if($program_obj) {
+    $dept_nid = $program_obj->field_department_id_nid;
+    $dept_result = db_result(db_query("SELECT field_college_id_nid
+      FROM {content_type_department} d
+      WHERE d.nid = %d", $dept_nid));
+
+    if($dept_result) {
+      $college_nid = $dept_result;
+      $college = db_result(db_query("SELECT field_college_name_value
+        FROM {content_type_college} c
+        WHERE c.nid = %d", $college_nid));
+    }
+  }
+
+  $profile_items = array(
+    'course' => $program_obj->field_programme_name_value,
+    'college' => $college
+  );
+
+  return $profile_items;
 }

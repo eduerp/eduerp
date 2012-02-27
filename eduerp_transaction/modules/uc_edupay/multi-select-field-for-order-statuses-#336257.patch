@@ -1,0 +1,26 @@
+diff --git a/uc_rules.rules.inc b/uc_rules.rules.inc
+index 187ff7b..6a27fc9 100644
+--- a/uc_rules.rules.inc
++++ b/uc_rules.rules.inc
+@@ -424,12 +424,7 @@ function uc_rules_load_customer_user($uc_order, $settings) {
+  * @return boolean Matchs or not
+  */
+ function uc_rules_order_has_status($uc_order, $settings) {
+-  if($uc_order->order_status == $settings['status']) {
+-    return TRUE;
+-  }
+-  else {
+-    return FALSE;
+-  }
++  return in_array($uc_order->order_status, $settings['status']);
+ }
+ 
+ /**
+@@ -449,6 +444,7 @@ function uc_rules_order_has_status_form($settings, &$form) {
+     '#type' => 'select',
+     '#title' => t('Status'),
+     '#options' => $status_list,
++    '#multiple' => TRUE,
+     '#default_value' => $settings['status'],
+     '#description' => t('Select the status on which the order must be.'),
+   );

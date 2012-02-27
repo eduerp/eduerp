@@ -14,7 +14,7 @@ function student_clearance_content_default_fields() {
       'weight' => '-2',
       'parent' => '',
       'label' => array(
-        'format' => 'hidden',
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'hidden',
@@ -57,11 +57,15 @@ function student_clearance_content_default_fields() {
 0|I Agree',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'I agree',
       'weight' => '-2',
-      'description' => '',
+      'description' => 'Only when you click the submit button will your clearance agreement be accepted.',
       'type' => 'optionwidgets_onoff',
       'module' => 'optionwidgets',
     ),
@@ -75,7 +79,7 @@ function student_clearance_content_default_fields() {
       'weight' => '8',
       'parent' => '',
       'label' => array(
-        'format' => 'hidden',
+        'format' => 'inline',
       ),
       'teaser' => array(
         'format' => 'hidden',
@@ -337,12 +341,16 @@ function student_clearance_content_default_fields() {
 0|Defer to next session',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Defer to next session',
       'weight' => '38',
       'description' => '',
-      'type' => 'optionwidgets_buttons',
+      'type' => 'optionwidgets_onoff',
       'module' => 'optionwidgets',
     ),
   );
@@ -641,12 +649,18 @@ function student_clearance_content_default_fields() {
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
-    'allowed_values' => 'Incomplete grade
-low score',
+    'max_length' => '255',
+    'allowed_values' => 'Grades do not meet entry requirements
+Incomplete grades for chosen programme
+Key subject missing for chosen programme
+Other',
     'allowed_values_php' => '',
     'widget' => array(
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Reasons not cleared',
       'weight' => '37',
