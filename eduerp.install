@@ -117,6 +117,8 @@ function eduerp_install() {
       => 'If you are due a Scholarship and that is not reflected in the fees above, <a href="/edupay/displaycart">click here to get a summary of fees to bring to the Scholarship Board</a>.<br />You will need to come back to this page after getting a scholarship and click <b>Send Fee Details for Processing</b><br /><br />After you have clicked <b>Send Fee Details for Processing</b> below you will be brought to a page that explains next steps for those students that need to pay fees.<br /><br />Please note that all payments made at the bank will incur an additional NGN 300 transaction charge.<br /><br />Order information will be sent to your University e-mail account (you will not be able to change this).',
     'Review order' => 'Send Fee Details for Processing',
   );
+  // Note that 'incur an additional NGN 300 transaction charge' is later overwritten with correct amount from "variable_get('eduerp_bank_transaction_charge', '')"
+  // ... whenever that setting is changed
   variable_set('locale_custom_strings_en', $text);
 
   drupal_set_message('eduerp module installed');

@@ -123,6 +123,13 @@ function uc_edupay_config_form($form_state) {
     '#required' => TRUE
   );
 
+  $form['uc_edupay_config']['eduerp_bank_transaction_charge'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank Transaction Charge (must include currency e.g. NGN)'),
+    '#default_value' => variable_get('eduerp_bank_transaction_charge', ''),
+    '#required' => TRUE
+  );
+
   $form['submit'] = array('#type' => 'submit', '#value' => 'Submit');
   //return system_settings_form($form);
 
@@ -168,6 +175,14 @@ function uc_edupay_config_form_submit($form, &$form_state) {
   variable_set('eduerp_institution_bank_2_name', $form_state['values']['eduerp_institution_bank_2_name']);
   variable_set('eduerp_institution_bank_2_account_name', $form_state['values']['eduerp_institution_bank_2_account_name']);
   variable_set('eduerp_institution_bank_2_account_number', $form_state['values']['eduerp_institution_bank_2_account_number']);
+
+  variable_set('eduerp_bank_transaction_charge', $form_state['values']['eduerp_bank_transaction_charge']);
+  $text = variable_get('locale_custom_strings_en', '');
+  // Replace the Transaction Charge in the Custom Translation String
+  $text['Order information will be sent to your account e-mail listed below.'] = preg_replace('/incur an additional .* transaction charge/',
+    'incur an additional ' . variable_get('eduerp_bank_transaction_charge', '') . ' NGN 300 transaction charge',
+    $text['Order information will be sent to your account e-mail listed below.']);
+  variable_set('locale_custom_strings_en', $text);
 }
 
 
@@ -1009,6 +1024,7 @@ function uc_edupay_token_values($type, $object = NULL) {
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
       $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
       $values['bank-list-raw'] = variable_get('eduerp_institution_bank_list', '');
+      $values['tcrg'] = variable_get('eduerp_bank_transaction_charge', '');
       break;
     case 'fees_order':
       $fees_order = $object;
@@ -1031,6 +1047,7 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['matric-number'] = t("The student's matric number");
     $tokens['order']['timeout-raw'] = t('Raw timeout');
     $tokens['order']['bank-list-raw'] = t('Authorized bank list');
+    $tokens['order']['tcrg'] = t('Bank Transaction Charge');
   }
   return $tokens;
 }
@@ -1342,7 +1359,8 @@ function uc_edupay_preprocess_uc_order(&$vars) {
     $vars['invoice_note'] .= $late_registration_date_string;
   }
   $vars['invoice_note'] .= t('<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>');
-  $vars['invoice_note'] .= t('<p>An additional NGN300 transaction charge must be paid when paying your fees.</p>');
+  $bank_tcrg = variable_get('eduerp_bank_transaction_charge', '');
+  $vars['invoice_note'] .= t('<p>An additional @bank_tcrg transaction charge must be paid when paying your fees.</p>', array('@bank_tcrg' => $bank_tcrg));
 
   $vars['invoice_number'] = variable_get('uc_edupay_username', '') . '/' . $vars['order']->order_id;
 

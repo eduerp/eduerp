@@ -123,7 +123,7 @@ print $content;
 
 <p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>
 
-<p>Please note an additional NGN300 transaction charge must be paid when paying your fees.</p>';
+<p>Please note an additional [tcrg] transaction charge must be paid when paying your fees.</p>';
 
   $strongarms['uc_msg_order_logged_in'] = $strongarm;
 
