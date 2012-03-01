@@ -182,19 +182,5 @@ print $content;
   $strongarm->value = 1;
   $strongarms['uc_cust_view_order_invoices'] = $strongarm;
 
-  $strongarm = new stdClass;
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'uc_edupay_invoice_note';
-  $strongarm->value = 'Pay this invoice at: [bank-list-raw]. Present this invoice number to pay at the bank. You must make this payment before [late_registration_date] otherwise you will have to pay the late registration fee of NGN [late_registration_fee]. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN300 transaction charge must be paid when paying your fees.';
-  $strongarms['uc_edupay_invoice_note'] = $strongarm;
-
-  $strongarm = new stdClass;
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'uc_edupay_invoice_note_format';
-  $strongarm->value = '1';
-  $strongarms['uc_edupay_invoice_note_format'] = $strongarm;
-
   return $strongarms;
 }
