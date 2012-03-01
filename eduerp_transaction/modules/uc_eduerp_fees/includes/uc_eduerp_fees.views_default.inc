@@ -1093,7 +1093,7 @@ $handler->override_option('filters', array(
       'use_operator' => 0,
       'operator' => 'expiry_date_op',
       'identifier' => 'date',
-      'label' => 'Payment date between',
+      'label' => 'Payment date between (YYYY-MM-DD)',
       'optional' => 1,
       'remember' => 1,
     ),
