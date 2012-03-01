@@ -183,44 +183,6 @@ function uc_edupay_config_form_submit($form, &$form_state) {
     'incur an additional ' . variable_get('eduerp_bank_transaction_charge', '') . ' transaction charge',
     $text['Order information will be sent to your account e-mail listed below.']);
   variable_set('locale_custom_strings_en', $text);
-
-
-  $strongarm->name = 'uc_msg_order_logged_in';
-  $strongarm->value = '<p>Your Pay Fee process is now completed on this system. Your invoice has been sent to your e-mail address [order-email]. You can also print a copy of your invoice by <?php
-
-$url = url(\'user/\' . [order-uid] . \'/order/\' . [order-id] . \'/invoice/print\');
-    drupal_add_js("function open_invoice() { window.open(\'$url\', \'". t(\'Invoice\') ."\', \'toolbar=0,scrollbars=1,location=0,statusbar=0,menubar=0,resizable=1,width=600,height=480,left=50,top=50\'); }", \'inline\');
-    $contents = \'<a href="#" onclick="open_invoice();">\'
-               . uc_store_get_icon(\'file:print\') .\' \'
-               . t(\'clicking here.\') .\'</a>\';
-    $output .= \'<div class="order-pane">\'. $contents .\'</div>\';
-    print $output;
-
-?></p>
-
-<p>You must proceed to any of the following banks to pay your invoice: [bank-list-raw].</p>
-
-<p>You must present the invoice or provide your invoice number ([invoice-number]) to pay at the bank.</p>
-
-<?php
-$timeout = [timeout-raw];
-$late_registration_date = \'[late_registration_date]\';
-
-$content = t(\'<p>Payment must be made on or before @late_registration_date. The bank cannot accept payment after that date.</p>\', array(\'@late_registration_date\' => $late_registration_date));
-
-$content .= t("<p>If you do not make payment by that date, you will have to come back to this system to generate a new invoice which you can then take to the bank. This new invoice may in some circumstances contain a Late Payment Fee (NGN @late_registration_fee).</p>", array(\'@late_registration_fee\' => [late_registration_fee]));
-
-if($timeout < 2145913199) {
-print $content;
-}
-?>
-
-<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>
-
-<p>Please note an additional [tcrg] transaction charge must be paid when paying your fees.</p>';
-variable_set($strongarm->name, $strongarm->value);
-
-
 }
 
 
