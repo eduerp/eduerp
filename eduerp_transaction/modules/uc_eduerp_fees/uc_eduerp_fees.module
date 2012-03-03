@@ -524,6 +524,8 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
   $transaction_token = uniqid();
 
+  uc_cart_empty($student_id);
+
   $added = FALSE;
   foreach($cart_items as $product_item){
     $cart_item = $product_item;
@@ -575,6 +577,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         $options[$k] = module_invoke('uc_eduerp_fees', 'eduerp_fees_alter', $v, 'options');
       }
 
+dsm(array('Try add' => $product[$key]['product_nid']));//ab
     if(!empty($product)){
       uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
       $added = TRUE;
@@ -597,6 +600,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     unset($_SESSION['cart_order']);
     drupal_goto('cart/checkout');
   }
+dsm(array('Not added' => 'Not added'));//ab
 }
 
 
@@ -672,14 +676,12 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 
   $fees['fees'] = array(
     'item' => $fees_item['item'],
-    //'description' => $fees_item['item']['item_description'],
     'description' => $description,
     'options' => $fees_item['options'],
     'type' => EDUERP_FEES_NORMAL,
     'title' => t('Fees'), // Human-readable name
   );
   $fees['hostel'] = array(
-    //'item' => $fees_item['hostel']['product_nid'],
     'item' => $fees_item['hostel'],
     'description' => $fees_item['hostel']['hostel_description'],
     'options' => $fees_item['options']['hostel'],
