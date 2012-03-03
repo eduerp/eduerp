@@ -457,12 +457,7 @@ function uc_edupay_invoice_form($form_state, $order) {
 
   drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
 
-  // in the form function store the link of the file in $form_state['storage']
-  // alternatively use hidden fields
-  //if(!isset($form_state['storage'])) {
-
       $invoice_form_settings = array(
-        //'pdflink' => $form_state['values']['pdflink'],
         'pdflink' => $form['pdflink']['#value'],
       );
 
@@ -470,31 +465,15 @@ function uc_edupay_invoice_form($form_state, $order) {
       //stores $invoice_form_settings into js setting
       drupal_add_js(array('uc_edupay' => $invoice_form_settings), 'setting');
 
-      // to call the javascript code that will begin the download, do either of these;
-
-      // test if js is called
-      //drupal_add_js('Drupal.behaviors.uc_edupay = function() { alert("clicked"); }', 'inline');
-
-  //}
-
   $form['invoice']['gen_invoice'] = array(
     //'#value' => '<div>' . l(t('Save Invoice'), "#", array('attributes' => array('class' => 'invoice-submit'))) . '</div>'
     '#value' => '<div>' . '<a href="javascript:void" class="invoice-submit">Save Invoice</a></div>'
   );
 
-  /*$form['invoice']['gen_invoice'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save Invoice'),
-    '#ajax' => array(
-        'enabled' => TRUE
-    ),
-    '#attributes' => array('class' => 'invoice-submit'),
-    //'#weight' => 5,
-    '#submit' => array('uc_edupay_invoice_submit'),
-  );*/
-
   return $form;
 }
+
+
 /**
  * Process invoice based on form_state order values.
  * This will be relevant if invoice processing is handled by FAPI
@@ -507,16 +486,13 @@ function uc_edupay_invoice_submit($form, &$form_state) {
   switch ($form_state['values']['op']) {
     case t('Save Invoice'):
       if (isset($form_state['values']['gen_invoice'])) {
-        //return the value of what 'pdflink' is set to
         $form_state['storage']['pdflink'] = $form_state['values']['pdflink'];
-        //$_REQUEST['destination'] = 'cart/checkout/review';
         return TRUE;
-        //drupal_goto($form_state['storage']['pdflink']);
-        //drupal_goto("invoice/pdf/" . $form_state['values']['hidden_order']->order_id);
       }
       break;
   }
 }
+
 
 /**
  * Retrieves order items and passes it to uc_edupay_service_add
