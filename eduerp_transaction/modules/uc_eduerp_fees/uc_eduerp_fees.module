@@ -464,16 +464,12 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
     '#type' => 'submit',
     '#value' => t('Pay Fees')
   );
-  $form['#submit'][] = 'uc_eduerp_fees_pay_fees_form_submit';
+  // $form['#submit'][] = 'uc_eduerp_fees_pay_fees_form_submit';
 
   return $form;
 }
 
-/**
- *
- * @todo Write all modifications of uc_eduerp_fees_pay_fees to db
- *  for retrieval. uc_eduerp_fees_load_extras need this.
- */
+
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   $student_id = $form_state['values']['uid'];
   $values = array();
@@ -496,17 +492,11 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     'hostel' => in_array('hostel', $vkeys) ? array_shift($hostel_matches) : array(),
     'hostel_options' => in_array('hostel', $vkeys) ? array_shift($hostel_option_matches) : array()
   );
-  //$matchs['fees'] = array_shift($matches);
-  /*$func = function($item, &$item_value) {
-    $fees_items = array($item => $item_value);
-    //$fees_items = array($item => 1);
-    return $fees_items;
-  };*/
+
   $product_fees = array();
   $product_hostel_fees = array();
   foreach($matchs['fees'] as $key => $value){
     $product_fees[$key] = $form_state['values'][$value];
-    //$items = array_map($func, $match, $values);
   }
   foreach($matchs['fees_options'] as $key => $value) {
     $fees_options['options'] = $form_state['values'][$value];
@@ -546,7 +536,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       if($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
         if(array_key_exists('attribute_id', $product[$key])){
           $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']), 'attribute_id' => $product[$key]['attribute_id'], 'option_id' => $product[$key]['option_id']);
-          //array_push($option, $product_attribute);
           $options = $cart_item['options'] + $product_attribute;
         }
         else {
@@ -598,19 +587,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         'extras' => serialize($product[$key]['extras']),
         'options' => serialize($options)
       );
-      // Stays in here for 6 hours
-      $form_state['storage'] = $fees;
-      // drupal_write_record is serialized by default.
-      // We don't need to care about the order
-      if(db_result(db_query("SELECT nid from {fees} WHERE nid = %d", $product[$key]['product_nid']))) {
-        drupal_write_record('fees', $fees, 'fee_id');
-      }
-      else {
-        // do an insert
-        drupal_write_record('fees', $fees);
-        // watchdog drupal write record
-        watchdog('fees', t('New fee record created by @uid', array('@uid' => $cartId)));
-      }
     }else {
       drupal_set_message(t('Sorry, you are not eligible to pay fees. Please contact bursary'), 'error');
       watchdog('fees', t('Fees insertion into cart failed on @uid', array('@uid' => $cartId)));
@@ -622,6 +598,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     drupal_goto('cart/checkout');
   }
 }
+
 
 /**
  * Implementation of hook_eduerp_fees
