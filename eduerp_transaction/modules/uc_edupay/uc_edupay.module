@@ -688,7 +688,15 @@ function uc_edupay_order($op, &$arg1, $arg2) {
     switch ($op) {
       // Called when an order is created... 'new' & 'save' are called in quick sucession from uc_cart_checkout_form_validate()
       case 'new':
-        // First, the Student may be clicking Submit multiple times, if so stop now
+
+        // First, ensure there is something in the cart (this is cleared after sucessfull transaction)
+        $cc = uc_cart_get_contents();
+        if (empty($cc)) {
+          drupal_set_message('There is nothing in the cart, please start again.', 'error');
+          drupal_goto("user/$user->uid/fees/pay");
+        }
+
+        // Second, the Student may be clicking Submit multiple times, if so stop now
         // Drupal HTTP timeout is 30 seconds... so need to allow at least that long (i.e. 50 seconds)
         $now = time();
         $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $user->uid, $arg1->order_id, $now - 50);
@@ -703,7 +711,7 @@ dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
         break;
 
         // Occurs when Submit Order is clicked
-        // However for EduERP we skip 'submit' and go directly to cart/checkout/complete "uc_cart_complete_sale()" from 'save'
+        // However for EduERP we skip 'submit' and go directly to cart/checkout/complete "uc_cart_checkout_complete()" from 'save'
         case 'submit':
 
           if ($arg1->payment_method == 'edupay') {
@@ -788,6 +796,8 @@ dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
               }
               uc_edupay_save($arg1->order_id, $field);
             }
+
+            uc_cart_empty(uc_cart_get_id()); // Do this because redirect to 'cart/checkout/complete' (uses HTTP header) might not happen
 
             $_SESSION['do_complete'] = TRUE;
             drupal_goto('cart/checkout/complete');
