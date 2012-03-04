@@ -686,12 +686,24 @@ function uc_edupay_cron() {
 function uc_edupay_order($op, &$arg1, $arg2) {
   global $user;
     switch ($op) {
-      // Called when an order is created
+      // Called when an order is created... 'new' & 'save' are called in quick sucession from uc_cart_checkout_form_validate()
       case 'new':
+        // First, the Student may be clicking Submit multiple times, if so stop now
+        // Drupal HTTP timeout is 30 seconds... so need to allow at least that long (i.e. 50 seconds)
+        $now = time();
+        $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $user->uid, $arg1->order_id, $now - 50);
+dsm(array('uid' => $user->uid, 'order_id' => $arg1->order_id, 'now' => $now));//ab
+        if ($r = db_fetch_object($rs)) {
+dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
+          drupal_set_message('You seem to have clicked on "Send Fee Details for Processing" more than once, but you can select your invoice below (or if it is not below, click "Pay Fees" again).', 'error');
+          drupal_goto("user/$user->uid/fees/pay");
+        }
+
         _uc_edupay_process_order_request($arg1);
         break;
 
         // Occurs when Submit Order is clicked
+        // However for EduERP we skip 'submit' and go directly to cart/checkout/complete "uc_cart_complete_sale()" from 'save'
         case 'submit':
 
           if ($arg1->payment_method == 'edupay') {
@@ -706,7 +718,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           }
           break;
 
-        // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
           if ($arg1->payment_method == 'edupay') {
 
@@ -714,6 +725,10 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 
             if ($_SESSION['edupay_total_amount_zero']) {
               db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $arg1->order_id);
+            }
+            else {
+              // Do this because redirect to 'cart/checkout/complete' (uses HTTP header) might not happen
+              db_query("UPDATE {uc_orders} set order_status = 'pending' WHERE order_id = %d", $arg1->order_id);
             }
 
             $level_name = student_next_level($user->uid, variable_get('eduerp_current_session', ''));
@@ -778,7 +793,9 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             drupal_goto('cart/checkout/complete');
           }
           break;
+
         // The real order object that will be put into $_SESSION['cart_order'].
+        // Not used in EduERP?
         case 'load':
           if(isset($_SESSION['transaction_id'])) {
             unset($_SESSION['transaction_id']);
@@ -786,6 +803,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           break;
     }
 }
+
 
 /**
  * Save a product to an order.

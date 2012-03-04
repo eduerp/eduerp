@@ -352,16 +352,16 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   $fees = uc_eduerp_fees_completed_order_items($student_id, $fees);
 
   if (empty($fees['fees']['item']) && empty($fees['hostel'])) {
-    $message = 'All your fees items are currently in process or already paid for. Consult the bursary';
+    $message = 'All your fees items are currently in process or already paid for. Consult the bursary.';
 
-    $rs = db_query("SELECT order_id, order_status FROM {uc_orders} WHERE uid=%d", $user->uid);
+    $rs = db_query("SELECT order_id, order_status FROM {uc_orders} WHERE uid=%d AND order_status IN ('payment_received', 'pending')", $user->uid);
     $firstone = TRUE;
     while ($r = db_fetch_object($rs)){
       if ($firstone) {
-        $message .= '<br />You may regenerate your invoices by clicking on them...';
+        $message .= '<br />You may regenerate your invoices by clicking on them (and bring to bank if you have not already done so)...';
         $firstone = FALSE;
       }
-      $message .= '<br /><a href="' . url('user/' . $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice: ' . $r->order_id . '</a>';
+      $message .= '<br /><a href="' . url('user/' . $user->uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice: ' . $r->order_id . '</a> (' . $r->order_status . ')';
     }
     drupal_set_message($message, 'error');
     return FALSE;
@@ -462,9 +462,14 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   }
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Pay Fees')
+    '#value' => t('Pay Fees (Click Once Only!)')
   );
   $form['#submit'][] = 'uc_eduerp_fees_pay_fees_form_submit';
+
+//ab delete when triggered...
+  $text = variable_get('locale_custom_strings_en', '');
+  $text['Review order'] = 'Send Fee Details for Processing (Click Once Only!)';
+  variable_set('locale_custom_strings_en', $text);
 
   return $form;
 }
