@@ -20,5 +20,5 @@ $session = variable_get('eduerp_current_session', '');
 echo "<b>Name: $studentname<br />
 Admission Number: $user->name<br />
 Program Name: $row->field_programme_name_value<br />
-Current Session: $session<br /></b>";
+Current Session: $session<br /><br /></b>";
 ?>
