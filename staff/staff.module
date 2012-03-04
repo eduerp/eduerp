@@ -6762,8 +6762,8 @@ function staff_school_fees_admin(){
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a><br />';
     $html .= '<br />';
 
-    $html .= '<b>Pending Orders</b> - Actions to be performed on Pending Orders.<br />';
-    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/removepending') . '">Specify Pending Orders to Remove</a>';
+    $html .= '<b>Pending Invoices</b> - Actions to be performed on Pending Invoices.<br />';
+    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/removepending') . '">Specify Pending Invoices to Remove</a>';
 
     $html .= '<br />';
     // $html .= '<br />';
@@ -10723,7 +10723,7 @@ function staff_school_fees_remove_pending_orders(){
   $isAuthorized = staff_has_eduerp_role($user->uid, 0, 0, array('Bursar')) ? true : false;
 
   $html = '<br /><hr /><br />';
-  $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Remove Pending Orders</font><br /><br />";
+  $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Remove Pending Invoices</font><br /><br />";
   $html .= '<hr /><br />';
   if($isAuthorized){
     $html .= "<b>Remove Pending Invoices</b> - Remove Pending Invoices that have not been paid for in the past number of days OR Cancel a Specific Pending Invoice<br />";
@@ -10743,7 +10743,7 @@ function staff_school_fees_remove_pending_orders(){
 
 
 function get_remove_pending_order_form(){
-  $form['#title'] = 'Remove Pending Order';
+  $form['#title'] = 'Remove Pending Invoices';
   $form['number_of_days'] = array(
       '#title' => 'Number of days (if there is a specific Invoice Number entered below, that takes precedence and this value will not be used)',
       '#type' => 'textfield',
