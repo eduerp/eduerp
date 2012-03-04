@@ -196,7 +196,7 @@ function staff_menu() {
   );
 
   $items['staff/removepending'] = array(
-    'title' => 'Remove Pending Orders',
+    'title' => 'Remove Pending Invoices',
     'page callback' => 'staff_school_fees_remove_pending_orders',
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
@@ -10726,7 +10726,7 @@ function staff_school_fees_remove_pending_orders(){
   $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Remove Pending Orders</font><br /><br />";
   $html .= '<hr /><br />';
   if($isAuthorized){
-    $html .= "<b>Remove Pending Orders</b> - Remove Pending Orders that have not been paid for in the past number of days.<br />";
+    $html .= "<b>Remove Pending Invoices</b> - Remove Pending Invoices that have not been paid for in the past number of days OR Cancel a Specific Pending Invoice<br />";
     $html .= '<br />';
 
       $html .= drupal_get_form('get_remove_pending_order_form');
@@ -10745,11 +10745,16 @@ function staff_school_fees_remove_pending_orders(){
 function get_remove_pending_order_form(){
   $form['#title'] = 'Remove Pending Order';
   $form['number_of_days'] = array(
-      '#title' => 'Number of days',
+      '#title' => 'Number of days (if there is a specific Invoice Number entered below, that takes precedence and this value will not be used)',
       '#type' => 'textfield',
       '#size' => 40,
       '#default_value' => 30,
-      '#required' => TRUE
+    );
+
+  $form['order_number'] = array(
+      '#title' => 'Invoice Number (Integer part only)',
+      '#type' => 'textfield',
+      '#size' => 40,
     );
 
   $form['submit'] = array(
@@ -10759,7 +10764,7 @@ function get_remove_pending_order_form(){
 
 $form['title_test'] = array(
     '#type' => 'item',
-    '#value' => "<b><font color='#ff0000'>Warning: Please only remove pending orders long after any Student might go to Bank to pay, as EduPay will still maintain a record which the Bank could access.</font></b>",
+    '#value' => "<b><font color='#ff0000'>Warning: Please only remove pending invoices long after any Student might go to Bank to pay, as EduPay will still maintain a record which the Bank could access.</font></b>",
     );
   return $form;
 }
@@ -10767,6 +10772,15 @@ $form['title_test'] = array(
 
 function get_remove_pending_order_form_validate($form, &$state){
   $values = $state['values'];
+
+  if (!empty($values['order_number'])) {
+    if (! preg_match("/^[0-9]{1,10}$/", $values['order_number'])) {
+      form_set_error('order_number', 'The Invoice Number Format is Bad');
+    }
+    else {
+      return;
+    }
+  }
 
   if(empty($values['number_of_days']) || ! preg_match("/^[0-9]{1,3}$/", $values['number_of_days'])){
     form_set_error('number_of_days', Error_Types(137));
@@ -10776,7 +10790,14 @@ function get_remove_pending_order_form_validate($form, &$state){
 
 function get_remove_pending_order_form_submit($form, &$state){
   $values = $state['values'];
-  $rs = db_query("UPDATE {uc_orders} uco, {fees_order} fo SET uco.order_status = 'canceled', fo.status = 'canceled' WHERE uco.order_status='pending' AND ((UNIX_TIMESTAMP()-uco.created)/(60*60*24)) > %d AND uco.order_id=fo.order_id", $values['number_of_days']); // Set any 'pending' orders to 'canceled' if they have been there for at least $days
+
+  if (!empty($values['order_number'])) {
+    $rs = db_query("UPDATE {uc_orders} uco, {fees_order} fo SET uco.order_status = 'canceled', fo.status = 'canceled' WHERE uco.order_status='pending' AND uco.order_id=fo.order_id AND uco.order_id=%d", $values['order_number']);
+  }
+  else {
+    $rs = db_query("UPDATE {uc_orders} uco, {fees_order} fo SET uco.order_status = 'canceled', fo.status = 'canceled' WHERE uco.order_status='pending' AND ((UNIX_TIMESTAMP()-uco.created)/(60*60*24)) > %d AND uco.order_id=fo.order_id", $values['number_of_days']); // Set any 'pending' orders to 'canceled' if they have been there for at least $days
+  }
+
   if($rs){
     $num = db_affected_rows($rs);
     if($num < 0) $num = 0;
