@@ -348,6 +348,12 @@ class courseselectionsclass {
       $select_load_for_totals = $this->selected_load[$semester];
     }
 
+    if (!$min_max_credits) {
+      $min_max_credits = new stdClass();
+      $min_max_credits->max_credit_load = 100;
+      $min_max_credits->min_credit_load = 0;
+    }
+
     $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
       <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
       <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
