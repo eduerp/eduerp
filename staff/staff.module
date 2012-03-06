@@ -1830,20 +1830,6 @@ function staff_create_edit_faculty() {
   }
 
   echo '<br /><hr /><br />';
-  //$me = me_gen_matno(947);
-  //echo $me[0];
-  //drupal_set_message(print_r($me));
-  //drupal_set_message(substr(variable_get('eduerp_current_session', ''), -3, 3));
-  //$user_profile = new UserProfile(947);
-  //$user_profile->university_email = '';
-  //$user_profile->save();
-  //drupal_set_message(print_r($user_profile));//drupal_set_message($user_profile->field_profile_mode_of_entry); //
-  //me_gen_createsession('2012/2013');
-  //VUG-BSC-09-205
-  //$student = user_load(947);
-  //$student->name = $me[0];
-  //drupal_set_message(print_r($student));
-  //print_r(user_save($student, array('name'=>'VUG-BSC-09-205')));
 
   if (! arg(2)) {
     if (! $isAuthorized) {
@@ -1873,7 +1859,6 @@ function staff_create_edit_dept() {
   echo '<br /><hr /><br />';
 
   if (! $isAuthorized) {
-    //echo Error_Types(104);
     drupal_set_message(Error_Types(104), 'error');
   }
   else {
@@ -1893,7 +1878,6 @@ function staff_create_edit_dept() {
   echo '<br /><hr /><br />';
   if (! arg(2)) {
     if (! $isAuthorized) {
-      //echo Error_Types(105);
       drupal_set_message(Error_Types(105), 'error');
     }
     else {
@@ -1905,7 +1889,6 @@ function staff_create_edit_dept() {
     }
     //display existing departments here
     echo staff_display_available_departments();
-
   }
 
   return ob_get_clean();
@@ -1913,8 +1896,6 @@ function staff_create_edit_dept() {
 
 
 function staff_create_edit_faculty_form() {
-
- //if (isset($_SESSION['eduerp_fac_nid']))$_POST['faculty_nid'] = $_SESSION['eduerp_fac_nid'];
 
   if (arg(2) && is_valid_faculty(arg(2))) {
     if (empty($_POST['faculty_name'])) {
@@ -1947,16 +1928,6 @@ function staff_create_edit_faculty_form() {
   );
   if ($fac_edit_record) $form['faculty_subdomain']['#value'] = $fac_edit_record->fac_subdomain;
 
-  /*
-  if (isset($_POST['faculty_nid'])) {
-    $form['faculty_nid'] = array(
-    '#title' => 'Faculty nid',
-    '#type' => 'hidden',
-    '#value' => $_POST['faculty_nid']
-    );
-
-  }
-  */
   $form['submit'] = array(
     '#value' => 'Create Faculty',
     '#type' => 'submit'
@@ -1996,7 +1967,6 @@ function staff_update_dept_form() {
 
 
 function staff_create_edit_faculty_form_validate($form, &$form_state) {
-  //unset($_SESSION['eduerp_fac_nid']);
 
   if (arg(2) && is_valid_faculty(arg(2))) {//validate EDIT
     if (is_Faculty_Name_Existing($form_state['values']['faculty_name'], arg(2)))
@@ -2028,7 +1998,6 @@ function staff_create_edit_faculty_form_validate($form, &$form_state) {
 
 function staff_create_edit_faculty_form_submit($form, &$form_state) {
 
-  //if (isset($form_state['values']['faculty_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['faculty_nid'])) {//the user is trying to edit a given faculty
   if(arg(2) && is_valid_faculty(arg(2))){
     $node = node_load(arg(2));
     $node->title                                  = $form_state['values']['faculty_name'];
@@ -2058,16 +2027,13 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
   node_save($node);
 
   module_invoke_all('updFacultyInfo', $node->nid, variable_get('eduerp_current_session', ''), $form_state['values']['faculty_subdomain']);
-  //unset($_SESSION['eduerp_fac_nid']);
+
   drupal_goto("staff/createeditfaculty");
-
-
 }
 
 
 function staff_create_edit_dept_form_validate($form, &$form_state) {
 
-  //if (isset($_POST['department_nid'])) {//validate EDIT
   if (arg(2)) {//validate EDIT
     if (is_Department_Name_Existing($form_state['values']['department_name'], arg(2)))
       form_set_error('department_name', Error_Types(103));
@@ -2088,13 +2054,11 @@ function staff_create_edit_dept_form_validate($form, &$form_state) {
       }
     }
   }
-
 }
 
 
 function staff_create_edit_dept_form_submit($form, &$form_state) {
 
-  //if (isset($form_state['values']['department_nid']) && ! preg_match("/^[0-9]{1,12}$/", $form_state['values']['department_nid'])) {//the user is trying to edit a given department. OK!
   if (arg(2) && is_valid_department(arg(2))) {//the user is trying to edit a given department. OK!
     $node = node_load(arg(2));
     $node->title                                = $form_state['values']['department_name'];
@@ -2118,20 +2082,16 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
     $node->field_college_id[0]['nid']        = $form_state['values']['faculty_nid'];
     $node->field_department_code[0]['value'] = $form_state['values']['department_code'];
 
-    //$department = $node->nid;
-
     drupal_set_message($form_state['values']['department_name'] . ' Department has been created!<br />');
   }
 
   node_save($node);
   drupal_goto("staff/createeditdept");
-
 }
 
 
 function staff_create_edit_dept_form() {
 
-  //if (isset($_SESSION['eduerp_dept_nid']))$_POST['department_nid'] = $_SESSION['eduerp_dept_nid'];
   if (arg(2) && is_valid_department(arg(2))) {
     if (empty($_POST['department_name'])) {
       $result = db_query('SELECT field_college_id_nid AS college_nid, field_department_name_value AS dept_name, field_department_code_value AS dept_code FROM {content_type_department} WHERE nid = %d', arg(2));
@@ -2166,15 +2126,7 @@ function staff_create_edit_dept_form() {
     //'#required' => TRUE
   );
   if ($dept_edit_record) $form['department_code']['#value'] = $dept_edit_record->dept_code;
-  /*
-  if (isset($_POST['department_nid'])) {
-    $form['department_nid'] = array(
-    '#title' => 'Department nid',
-    '#type' => 'hidden',
-    '#value' => $_POST['department_nid']
-    );
-  }
-  */
+
   $form['submit'] = array(
     '#value' => 'Create Department',
     '#type' => 'submit'
@@ -2193,7 +2145,6 @@ function staff_update_faculty_form_validate($form, &$form_state) {
 
 function staff_update_faculty_form_submit($form, &$form_state) {
 
-  //$_SESSION['eduerp_fac_nid'] = $form_state['values']['faculty_id'];
   drupal_goto("staff/createeditfaculty/" . $form_state['values']['faculty_id']);
 }
 
@@ -2206,7 +2157,6 @@ function staff_update_dept_form_validate($form, &$form_state) {
 
 function staff_update_dept_form_submit($form, &$form_state) {
 
-  //$_SESSION['eduerp_dept_nid'] = $form_state['values']['department_nid'];
    drupal_goto("staff/createeditdept/" . $form_state['values']['department_nid']);
 }
 
@@ -2219,7 +2169,6 @@ function staff_create_edit_course() {
   if (isset($_SESSION['eduerp_showFullForm'])) $_POST['showFullForm'] = 1;
   if (isset($_SESSION['eduerp_showCourseAssignment'])) $_POST['showCourseAssignment'] = 1;
 
-
   echo '<br /><hr /><br />';
   $authorizeCourseEdit = false;
   if (arg(2) && is_Valid_Department(arg(2))) {//the department is valid
@@ -2230,7 +2179,6 @@ function staff_create_edit_course() {
       $canCreateModify = true;
     }
 
-    //if ($canCreateModify) {
       //check to know if proceed with course assignment was clicked
       if (isset($_POST['showCourseAssignment']) || isset($_SESSION['eduerp_fix_course'])) {
         //allow for some easy navigation
@@ -2270,7 +2218,6 @@ function staff_create_edit_course() {
           else {
             echo "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/createeditcourse') ."'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
             echo '<br /><hr /><br />';
-            //echo Error_Types(104);
             drupal_set_message(Error_Types(104), 'error');
           }
         }
@@ -2289,14 +2236,7 @@ function staff_create_edit_course() {
           }
         }
       }//end of else of if proceed with course assignment
-    //}
-    /*
-    else {//the user cannot create records
-      echo "<font size = '1px'><a href = '/staff/semester'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '/staff/createeditcourse'>Create/Modify a Course</a>&nbsp; &raquo; &nbsp;". $departmentInfo[arg(2)] ." Department</font><br /><br />";
-      echo '<br /><hr /><br />';
-      echo Error_Types(104);
-    }
-    */
+
     if (! $hideOthers) {//only show these things in none edit mode
       echo '<br /><hr /><br />';
       if ($canCreateModify) {
@@ -2304,7 +2244,6 @@ function staff_create_edit_course() {
         echo drupal_get_form('staff_edit_course_form');
       }
       else {//user cannot modify records
-        //echo Error_Types(105);
         drupal_set_message(Error_Types(105), 'error');
       }
       //display form for proceed to Course assignment
@@ -2315,7 +2254,6 @@ function staff_create_edit_course() {
       //display existing courses in the departmens here
       echo '<br /><hr /><br />';
       echo staff_display_available_courses(variable_get('eduerp_current_session', ''), variable_get('eduerp_current_semester', ''), $departmentInfo);
-
     }
   }
   else {
@@ -2333,7 +2271,6 @@ function staff_create_edit_course() {
 
   unset($_SESSION['eduerp_showFullForm']);unset($_SESSION['eduerp_showCourseAssignment']);
   return ob_get_clean();
-
 }
 
 
@@ -2350,7 +2287,6 @@ function staff_create_edit_course_select_dept_form($form_state) {
   );
 
   return $form;
-
 }
 
 
@@ -4962,7 +4898,6 @@ function  get_progress_qualification_details() {
   $level = $_SESSION['eduerp_qualification']['level'];
 
   //arrange the CGPA
-
   $cgpa = get_students_CGPA($session, $eduerp_programme_nid, $level);
   if (db_affected_rows($cgpa) > 0) {
     $cgpa_arr = array("field_cgpa_sp_value", "field_credit_load_completed_sp_value", "field_min_credit_load_program_value", "elapsed_years",
@@ -4973,18 +4908,7 @@ function  get_progress_qualification_details() {
     }
   }
 
-  /*
-  //test data
-  $cGPA[1] = array('student_name'=>'Olu Jacobs','field_cgpa_sp_value'=>'40','field_credit_load_completed_sp_value'=>'39',
-      'field_min_credit_load_program_value'=>'30','elapsed_years'=>'1',
-      'field_duration_value'=>'4','field_max_duration_value'=>'12','field_profile_mode_of_entry_value'=>'UME', 'uid'=>'1');
-
-  $cGPA[2] = array('student_name'=>'Obi Johnson','field_cgpa_sp_value'=>'60','field_credit_load_completed_sp_value'=>'55',
-      'field_min_credit_load_program_value'=>'48','elapsed_years'=>'2',
-      'field_duration_value'=>'4','field_max_duration_value'=>'12','field_profile_mode_of_entry_value'=>'UME', 'uid'=>'2');
-  */
   //arrange the GPA
-
   $gpa = get_students_GPA($session, $eduerp_programme_nid, $level);
   if (db_affected_rows($gpa) > 0) {
     $gpa_arr = array("field_gpa_value", "field_credit_load_completed_value", "field_sess_name_gpa_value", "field_semester_name_gpa_value", "field_level_name_gpa_value", "uid");
@@ -6377,7 +6301,6 @@ function get_courses_passed_by_student($first_choice, $uid) {
          </table>";
      }
      else{
-       //$html = strip_tags(Error_Types(106));
        drupal_set_message(Error_Types(106), 'error');
      }
 
@@ -6392,8 +6315,6 @@ function staff_check_verify_programme_courses() {
       $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Check have all existing Courses required for all Programmes been Verified</font><br /><br />";
       $navi .= '<br /><hr /><br />';
 
-
-  //if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
     if (isset($_SESSION['eduerp_required']) ) {
       $str = display_verify_required_courses_for_programme() ."<br />";
 
@@ -6403,22 +6324,13 @@ function staff_check_verify_programme_courses() {
     echo drupal_get_form('get_verify_required_courses_for_programme_form');
     echo $str;
 
-
- // }
- // else {
- //   echo $navi;
- //   echo Error_Types(127);
-
- // }
   if(isset($_SESSION['eduerp_required'])) unset($_SESSION['eduerp_required']);
   return ob_get_clean();
-
 }
 
 
 function get_verify_required_courses_for_programme_form() {
   $form['#title'] = 'Verify Required Courses for A Programme';
-
 
   $form['session'] = array(
     '#type' => 'select',
@@ -6427,16 +6339,13 @@ function get_verify_required_courses_for_programme_form() {
     '#default_value'=>variable_get('eduerp_current_session', ''),
     '#required' => TRUE,
     );
-
   $form['semester'] = array(
     '#type' => 'select',
     '#options' => array(1=>'1', 2=>'2'),
     '#title' => 'Semester',
     '#default_value'=>variable_get('eduerp_current_semester', ''),
     '#required' => TRUE,
-
     );
-
   $form['showDetails'] = array(
     '#type' => 'hidden',
     '#default_value' => 1,
@@ -6448,7 +6357,6 @@ function get_verify_required_courses_for_programme_form() {
   );
 
   return $form;
-
 }
 
 
@@ -6513,8 +6421,6 @@ function display_verify_required_courses_for_programme() {
     	    <td>". $f->level ."</td>
     	    <td>". $f->course_code ."</td>
     	  </tr>";
-
-
     	}
      $html .="
       </table>
@@ -6526,12 +6432,10 @@ function display_verify_required_courses_for_programme() {
     }
     else
       drupal_set_message("All existing Course are Verified for all Programmes for ". $values['session'] ." Session and Semester ". $values['semester'] ." ");
-
 }
 
 
 function get_course_grade_weighting($course_nid = 0) {
-
   $sql = "SELECT number_of_ca, ca_approved_onebyone, max_mark_ca1, max_mark_ca2, max_mark_ca3, max_mark_ca4, max_mark_exam FROM course_grade_weightings WHERE course_id = $course_nid LIMIT 1 ";
   $result = db_query($sql);
   if (db_affected_rows($result) <= 0) {
@@ -6544,7 +6448,6 @@ function get_course_grade_weighting($course_nid = 0) {
     foreach($dbFields as $v)
       $ca[$v] = $r->$v;
   }
-
   return $ca;
 }
 
@@ -6558,63 +6461,41 @@ function create_course_weighting_entries(&$values) {
 
     $sql = "INSERT INTO course_grade_weightings (course_id, number_of_ca, ca_approved_onebyone, max_mark_ca1, max_mark_ca2, max_mark_ca3, max_mark_ca4, max_mark_exam  ) VALUES
     	(%d, %d, %d, %d, %d, %d, %d, %d) ";
-
     db_query($sql, $values['course_nid'], $values['caNum'], $values['caApproval'], $values['ca1'], $values['ca2'], $values['ca3'], $values['ca4'], $values['exam_mark']);
-
   }
-
 }
 
 
 function staff_views_api() {
-
   return array(
-
     'api' => 2,
-
     'path' => drupal_get_path('module', 'staff'),
   );
-
 }
+
 
 function staff_check_for_missing_courses(){
   global $user;
   ob_start();
 
-  //if (! staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) $isAuthorized = false; else $isAuthorized = true;
-
   echo '<br /><hr /><br />';
-
-  //if (! $isAuthorized) {
-  //  echo Error_Types(104);
-
-  //}
-  //else {
-
       	echo "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Check for Missing Courses for a Semester</font><br /><br />";
         echo '<hr /><br />';
         echo "<b>Check for Missing Courses for a Semester</b> - Please fill the form as appropriate<br />";
 
       echo drupal_get_form('staff_show_check_missing_courses_form');
-  //}
   echo '<br /><hr /><br />';
 
   if(! isset($_SESSION['eduerp_check_missing_courses'])) {
     $_SESSION['eduerp_check_missing_courses']['session'] = variable_get('eduerp_current_session', '');
     $_SESSION['eduerp_check_missing_courses']['semester'] = variable_get('eduerp_current_semester', 1);
   }
-    //echo '<br /><hr /><br />';
     echo staff_display_missing_courses_for_a_semester($_SESSION['eduerp_check_missing_courses']['session'], $_SESSION['eduerp_check_missing_courses']['semester']);
-
-  //}
   return ob_get_clean();
-
 }
 
+
 function staff_show_check_missing_courses_form() {
-
-
-
   $form['#title'] = 'Check For Missing Courses';
   $form['session'] = array(
     '#type' => 'select',
@@ -6644,12 +6525,10 @@ function staff_show_check_missing_courses_form_submit($form, &$state) {
 
   $_SESSION['eduerp_check_missing_courses']['session']  = $values['session'];
   $_SESSION['eduerp_check_missing_courses']['semester'] = $values['semester'];
-
 }
 
 
 function staff_display_missing_courses_for_a_semester($session, $semester) {
-
   $sql = "SELECT DISTINCT
         pc.level,
         c.field_code_value,
@@ -6684,8 +6563,7 @@ function staff_display_missing_courses_for_a_semester($session, $semester) {
       <th><b>Course Code</b></th>
        <th><b>Level</b></th>
     </tr>";$i = 1;
-    //$faculties = get_departments();
-    //foreach ($result as $v){
+
     while($v = db_fetch_object($result)){
       if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#FFFFFF";
         $str .= "
@@ -6699,7 +6577,6 @@ function staff_display_missing_courses_for_a_semester($session, $semester) {
          </tr>";
       }
 
-  //}
   $str .= "
   <tr>
     <td colspan=6>&nbsp;</td>
@@ -6710,8 +6587,8 @@ function staff_display_missing_courses_for_a_semester($session, $semester) {
   </table>
   </div>";
   return $str;
-
 }
+
 
 //school fees module starts here
 
@@ -6723,22 +6600,10 @@ function staff_school_fees_admin(){
   unset($_SESSION['eduerp_authorise_scholarship']); $_SESSION['eduerp_authorise_scholarship'] = null;
   unset($_SESSION['eduerp_authorise_instalment']); $_SESSION['eduerp_authorise_instalment'] = null;
 
-
   //initialize tables with default settings
   initialize_school_fee_module_tables();
 
-
-
-  //$isAuthorized = true;
-
   $html = '<br /><hr /><br />';
-
-  //if (! $isAuthorized) {
-    //echo Error_Types(104);
-  //  drupal_set_message(Error_Types(104), 'error');
-
-  //}
-  //else {
     $html .= "<font size = '1px'><a href = 'semester/'>Semester Administration</a>&nbsp; &raquo; &nbsp;School Fees Administration</font><br /><br />";
     $html .= '<hr /><br />';
 
@@ -6766,20 +6631,10 @@ function staff_school_fees_admin(){
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/removepending') . '">Specify Pending Invoices to Remove</a>';
 
     $html .= '<br />';
-    // $html .= '<br />';
-
-    //$html .= '<b>Test Cart Entries</b> - Test how ubercart adds attributes and options to cart.<br />';
-    //$html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/testattributes') . '">Proceed To Test</a>';
-    //$html .= '<br /><br />';
-
-  //}
-
   $html .= '<br /><hr /><br />';
 
   echo $html;
   return ob_get_clean();//staff_school_fees_setup
-
-
 }
 
 
@@ -6792,17 +6647,14 @@ function staff_school_fees_create_modify_school_fee_item(){
   $html = '<br /><hr /><br />';
   $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;School Fees Setup | Create / Modify School Fee Item</font><br /><br />";
   $html .= '<hr /><br />';
-  //$html .= "Welcome to <b>School Fees Setup</b>. This is where you Create/Modify Fee Items as well as Create/Modify School Fees Setup<br />";
+
   if($isAuthorized){
     $html .= ($editMode) ? '<br /><br /><b>Modify Fee Item</b> - Please modify the Item as appropriate<br /><br />' : '<br /><br /><b>Create Fee Item</b> - Please fill the form below to create Fee Item<br /><br />';
     $html .= drupal_get_form('staff_school_fees_create_modify_fee_item_form');
   }
   else{
-    //$html .= Error_Types(104);
     drupal_set_message(Error_Types(104), 'error');
   }
-
-
 
   $html .= '<br /><hr /><br />';
   if(! $editMode)
@@ -6824,7 +6676,7 @@ function staff_school_fees_create_modify_school_fee_setup(){
   $html = '<br /><hr /><br />';
   $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;School Fees Setup | Create / Modify School Fee Setup</font><br /><br />";
   $html .= '<hr /><br />';
-  //$html .= "Welcome to <b>School Fees Setup</b>. This is where you Create/Modify Fee Items as well as Create/Modify School Fees Setup<br />";
+
   if((isset($_SESSION['eduerp_page']) && $_SESSION['eduerp_page'] == 4) || (isset($_POST['eduerp_page']) && $_POST['eduerp_page']==4)){
     if($isAuthorized){
       $html .= '<b>School Fee Setup Summary (Step 4 of 4)</b> - Please verify the Fee Setup.<br /><br />';
@@ -6834,7 +6686,6 @@ function staff_school_fees_create_modify_school_fee_setup(){
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup4_form');
     }
     else{
-      //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
   }
@@ -6844,8 +6695,6 @@ function staff_school_fees_create_modify_school_fee_setup(){
     if($isAuthorized){
       $html .= ($editMode) ? '<b>Modify School Fee Setup (Step 3 of 4)</b> - Please modify the Item as appropriate<br /><br />' : '<b>Create School Fee Setup (Step 3 of 4)</b> - Please fill the form below to create Fee Setup<br /><br />';
       $html .= show_fee_setup_page_one_info(3);
-      //$html .= '<br /><hr /><br />';
-
       $html .= '<br /><br />';
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup3_form');
     }
@@ -6853,7 +6702,6 @@ function staff_school_fees_create_modify_school_fee_setup(){
       //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
-
   }
   elseif((isset($_SESSION['eduerp_page']) && $_SESSION['eduerp_page'] == 2) || (isset($_POST['eduerp_page']) && $_POST['eduerp_page']==2)){
     //for page two
@@ -6861,13 +6709,10 @@ function staff_school_fees_create_modify_school_fee_setup(){
     if($isAuthorized){
       $html .= ($editMode) ? '<b>Modify School Fee Setup (Step 2 of 4)</b> - Please modify the Item as appropriate<br /><br />' : '<b>Create School Fee Setup (Step 2 of 4)</b> - Please fill the form below to create Fee Setup<br /><br />';
       $html .= show_fee_setup_page_one_info(2);
-      //$html .= '<br /><hr /><br />';
-
       $html .= '<br /><br />';
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup2_form');
     }
     else{
-      //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
 
@@ -6880,24 +6725,16 @@ function staff_school_fees_create_modify_school_fee_setup(){
       $html .= drupal_get_form('staff_school_fees_create_modify_fee_setup1_form');
     }
     else{
-      //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
     $html .= '<br /><hr /><br />';
 
     if(! $editMode) {
-      //$html .= '<b>School Fee Setup Test</b><br /><br />';
-      //$html .= "For the test to succeed, each <b>Fee Structure Type</b> and <b>Program Name</b> pair MUST have two entries for each <b>Student Type</b> (Freshmen | Returning Student) and single entry for each <b>Nationality Type</b> (Local | International).<br /><br />";
-      //$html .= drupal_get_form('staff_school_fees_test_fee_setup_form');
-      //$html .= '<br /><hr /><br />';
       $html .= staff_display_school_fee_setup();
-
     }
-
   }
 
   echo $html;
-  //drupal_set_message("unset");
   unset($_SESSION['eduerp_page']);
   return ob_get_clean();
 }
@@ -6905,9 +6742,7 @@ function staff_school_fees_create_modify_school_fee_setup(){
 function staff_school_fees_scholarship_payment(){
   global $user;
   ob_start();
-  //echo "<pre>";
-  //print_r($_SESSION['eduerp_authorise_scholarship']);
-  //echo "</pre>";
+
   $isAuthorized = staff_has_eduerp_role($user->uid, 0, 0, array('Bursar')) ? true : false;
 
   $html = "";
@@ -6915,21 +6750,12 @@ function staff_school_fees_scholarship_payment(){
   $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Authorise Scholarship</font><br /><br />";
   $html .= '<hr /><br />';
   if(! isset($_SESSION['eduerp_authorise_scholarship']['studentUID'])){
-
-    /*
-    //get the payment summary type
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_payment_types} WHERE field_fee_payment_type_value='%s'", 'Full Payment');
-    $r = db_fetch_object($rs);
-    $_SESSION['eduerp_authorise_scholarship']['summaryPaymentType'] = $r->nid; //payment type is full payment
-    */
-
     $html .= "<b>Authorise Scholarship</b> - Please provide either the JAMB or Matrculation Number of the Student.<br />";
     $html .= '<br />';
     if($isAuthorized){
       $html .= drupal_get_form('get_scholarship_payment_student_finder_form');
     }
     else {
-      //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
 
@@ -6943,13 +6769,10 @@ function staff_school_fees_scholarship_payment(){
     $html .= show_student_info($_SESSION['eduerp_authorise_scholarship']);
     $html .= '<br /><hr /><br />';
     $html .= show_school_fees_payment_option("eduerp_authorise_scholarship", $_SESSION['eduerp_authorise_scholarship']['studentUID'], $_SESSION['eduerp_authorise_scholarship']['programNID'], $_SESSION['eduerp_authorise_scholarship']['levelType'], $_SESSION['eduerp_authorise_scholarship']['nationalityType'], $_SESSION['eduerp_authorise_scholarship']['academic_level']);
-
+    $html .="<br />";
     $html .="<br />";
 
-    $html .="<br />";
-    //$html .= "<br /><font color=#ff0000><b>By clicking 'Submit' you acknowledge that the student whose details appear above is under FULL Scholarship and that such Scholarship covers the School Fee Amount.</b></font><br /><br />";
     $html .= drupal_get_form('staff_show_pay_school_fees_scholarship_form');
-
   }
   echo $html;
   return ob_get_clean();
@@ -7192,7 +7015,6 @@ function staff_display_school_fee_setup() {
   <div id='assigned_courses'>
   <b>Available School Fee Setup - ". variable_get('eduerp_current_session', '') ." Academic Session</b><br /><br />";
 
-  //$feeSetup = get_school_fee_setup(variable_get('eduerp_current_session', ''));
   $feeSetup = load_existing_fee_structure(false);
   if(! is_array($feeSetup) || ! sizeof($feeSetup))
     return $html .= Error_Types(106) .'</div>';
@@ -7207,40 +7029,22 @@ function staff_display_school_fee_setup() {
       <th><b>Fee Structure Type</b></th>
       <th><b>Program Name</b></th>
       <th><b>Academic Level Name</b></th>
-
-
-
     </tr>";$i = 1;
-    /*
-    <th><b>Student Type</b></th>
-      <th><b>Nationality Type</b></th>
-      <th><b>Total Amount</b></th>
-    */
+
     foreach ($feeSetup as $k => $v){
       if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#E5E5E5";//FFFFFF
         $html .= "
          <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
            <td width='30px'>". $i++ ."</td>";
-           //<td><a  href='" . url("staff/createmodifyfeeitem/$k") ."'>". $v['fee_item'] ."</a></td>
+
            $html .="
            <td><a  href='" . url("staff/createmodifyfeestup/".$v['nid']) ."'><b>&raquo;</b></a></td>
            <td>". $v['fee_structure_name'] ."</td>
            <td>". $v['fee_structure_class_name'] ."</td>
            <td>". $v['program_name'] ."</td>
            <td>". $v['setup_level'] ."</td>
-
-
          </tr>";
-         /*
-         <td>". $v['level_name'] ."</td>
-           <td>". $v['nationality_name'] ."</td>
-           <td>". number_format($v['setup_total_amount'], 2) ."</td>
-         */
-         //<fieldset class='collapsible collapsed'><legend>". $v['fee_structure_name'] ." - ". $v['level_name'] ." - ". $v['nationality_name'] ." - view details</legend>";
-         //show second level here
 
-                //get the fee items
-              //$details = get_fee_setup_item_details($v['nid']);
               if($v['setup_level'] == 'All Levels'){
                 $academicLevel = 0;
               }
@@ -7249,7 +7053,6 @@ function staff_display_school_fee_setup() {
               }
               $secondLevel = get_school_fee_second_level_setup(variable_get('eduerp_current_session', ''), $v['program_nid'], $academicLevel, true);
               if(db_affected_rows($secondLevel) > 0){
-
 
                     $l=1;
                    while($sl = db_fetch_object($secondLevel)){
@@ -7263,11 +7066,8 @@ function staff_display_school_fee_setup() {
                       $html .= "<fieldset class='collapsible collapsed'><legend>". $level_text ." - ". $sl->nationality_name ." - view details</legend>";
                      }
                      else {
-
                       $html .= "<fieldset class='collapsible collapsed'><legend>". $sl->setup_level ."L - ". $sl->nationality_name ." - view details</legend>";
                      }
-
-
 
                       //show the setup details here
          $html .="
@@ -7325,14 +7125,12 @@ function staff_display_school_fee_setup() {
          $html .="
 
          ";
-
       }
 
   $html .= "
   </table>
   </div>";
   return $html;
-
 }
 
 
@@ -7343,15 +7141,12 @@ function get_school_fee_items() {
     $feeItems[$f->nid]['fee_item'] = $f->fee_item;
     $feeItems[$f->nid]['is_scholarship_applicable'] = $f->is_scholarship_applicable;
     $feeItems[$f->nid]['uc_product_nid'] = $f->uc_product_nid;
-
-
   }
   return $feeItems;
 }
 
 
 function is_fee_item_existing_in_uc_products($itemName){
-
   $rs = db_query("SELECT ctp.nid FROM {content_type_product} ctp
   	  INNER JOIN {node} n ON ctp.nid=n.nid
   	  WHERE n.title='%s' AND type='product' ", $itemName);
@@ -7363,7 +7158,6 @@ function is_fee_item_existing_in_uc_products($itemName){
 
 
 function get_fee_item_uc_products_nid($itemName){
-
   $rs = db_query("SELECT ctp.nid AS nid FROM {content_type_product} ctp
   	  INNER JOIN {node} n ON ctp.nid=n.nid
   	  WHERE n.title='%s' AND type='product' ", $itemName);
@@ -7371,20 +7165,16 @@ function get_fee_item_uc_products_nid($itemName){
   $r = db_fetch_object($rs);
 
   return $r->nid;
-
-
 }
 
 
 function get_fee_item_productNID($itemNID){
-
   $rs = db_query("SELECT IFNULL(field_uc_product_nid_nid, 0) product_nid FROM {content_type_school_fee_items} WHERE nid=%d ", $itemNID);
   return db_fetch_object($rs);
 }
 
 
 function gen_fee_product_sku(){
-
   $rs = db_query("SELECT next_num, sku_name  FROM {gen_fee_item_sku} WHERE id = 1 FOR UPDATE ");
 
   $r = db_fetch_object($rs);
@@ -7404,13 +7194,9 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
   $node = new stdClass();
   $node->type = 'product';
 
-  //node_object_prepare($node); // This sets up all the default node fields so we don't accidentally leave something off.
-
   $node->uid 		= 1;
   $node->status 	= 1;
   $node->title 		= $itemName;
-  //$node->created 	= $data->created;
-  //$node->changed 	= $data->changed;
 
   // Set Ubercart variables
   $node->model 		= gen_fee_product_sku(); // the SKU is a required field
@@ -7424,7 +7210,6 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
   $node->taxonomy 	= array();
   $node->menu 		= array();
 
-  // Save the node
   node_save($node);  // This will update the $node object with the $node->nid which is important for the next step.
 
   $productNID = $node->nid;
@@ -7434,7 +7219,6 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
   //check if attribute fee_structure exists
   if(is_uc_attribute_existing("fee_structure")){
     $attribute = get_uc_attribute_info("fee_structure");
-
   }
   else{
     //create the attribute
@@ -7443,7 +7227,6 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
     create_uc_attribute($info);
 
     $attribute = get_uc_attribute_info("fee_structure");
-
   }
 
   if($attachAttributes){
@@ -7454,23 +7237,19 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
     attach_uc_attribute_to_product($info);
   }
   return $productNID;
-
 }
 
 
 function is_uc_attribute_existing($attributeName){
-
   $rs = db_query("SELECT aid FROM {uc_attributes} WHERE name='%s'", $attributeName);
 
   if(db_affected_rows($rs) > 0) return true;
 
   return false;
-
 }
 
 
 function is_uc_attribute_attached_to_product(&$optionInfo){
-
   $rs = db_query("SELECT nid FROM {uc_product_attributes} WHERE nid=%d AND aid=%d AND label='%s' ",$optionInfo['productNID'], $optionInfo['aid'], $optionInfo['label']);
 
   if(db_affected_rows($rs) > 0) return true;
@@ -7480,7 +7259,6 @@ function is_uc_attribute_attached_to_product(&$optionInfo){
 
 
 function is_uc_option_attached_to_product(&$optionInfo){
-
   $rs = db_query("SELECT oid FROM {uc_product_options} WHERE nid=%d AND oid=%d ", $optionInfo['productNID'], $optionInfo['oid']);
 
   if(db_affected_rows($rs) > 0) return true;
@@ -7583,17 +7361,11 @@ function get_school_fee_setup($sessionName, $NID=0, $bySetupNID=true, $returnObj
   	  INNER JOIN {content_type_school_fee_nationality_types} ctsfnt ON ctsfis.field_fee_nationality_type_nid=ctsfnt.nid
   	  INNER JOIN {content_type_school_fee_structure_classes} ctsfsc ON ctsfis.field_fee_structure_type_nid=ctsfsc.nid ";
 
-  	  /*
-  	  field_fee_instalment1_amount_value AS setup_instalment1_amount,
-  	  field_fee_instalment2_amount_value AS setup_instalment2_amount,
-  	   field_fee_full_payment_amount_value AS setup_full_amount,
-  	  */
   	  $sql .= " WHERE field_fee_setup_session_value='%s' ";
   	  if($bySetupNID){
   	    if($NID !=0) {
   	      $sql .= " AND ctsfis.nid=%d ";
   	    }
-
   	  }
   	  else {
   	    if($NID !=0) {
@@ -7619,7 +7391,6 @@ function get_school_fee_setup($sessionName, $NID=0, $bySetupNID=true, $returnObj
 
       if($bySetupNID){
         $feeSetup[$f->nid][$v] = $f->$v;
-        //drupal_set_message('by nid');
       }
       else{
         $feeSetup[$f->program_nid][$v] = $f->$v;
@@ -7649,10 +7420,8 @@ function get_school_fee_second_level_setup($sessionName, $programNID, $academicL
   	  INNER JOIN {content_type_school_fee_structure_classes} ctsfsc ON ctsfis.field_fee_structure_type_nid=ctsfsc.nid
   	  WHERE field_fee_setup_session_value='%s' AND (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=%d) AND (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value='%s') ";
 
-
   	  $sql .="
   	  ORDER BY field_fee_structure_type_nid, program_name, field_fee_student_level_type_nid, field_fee_nationality_type_nid ";
-  //drupal_set_message($sql);
   $r = db_query($sql, $sessionName, $programNID, $academicLevel);
 
   if($returnObject) return $r;
@@ -7661,19 +7430,10 @@ function get_school_fee_second_level_setup($sessionName, $programNID, $academicL
   $SQLheaders = array('nid', 'program_nid', 'level_id',  'nationality_id', 'fee_structure_nid',  'session_name',
   	   'setup_total_amount', 'setup_date', 'program_name', 'level_name',  'nationality_name', 'fee_structure_name',
   	   'fee_structure_class_name', 'setup_level');
-  //'setup_instalment2_amount', 'setup_instalment1_amount',
   while ($f = db_fetch_object($r)){
     foreach($SQLheaders as $v){
-
-      //if($bySetupNID){
         $feeSetup[$f->nid][$v] = $f->$v;
-        //drupal_set_message('by nid');
-      //}
-      //else{
-      //  $feeSetup[$f->program_nid][$v] = $f->$v;
-      //}
     }
-
   }
   return $feeSetup;
 }
@@ -8316,11 +8076,11 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
        else
          drupal_goto('staff/createmodifyfeestup');
       break;
+
     case 'cancel':
       unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup'] = null;
       unset($_SESSION['eduerp_page']); $_SESSION['eduerp_page']=null;
       drupal_goto('staff/createmodifyfeestup');
-
      break;
   }
 }
@@ -8329,8 +8089,8 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
 function staff_school_fees_create_modify_fee_setup3_form() {
   $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) ? true : false;
+
   //display the list of all available fee items
-  //get fee items
   $feeItems = get_school_fee_items();
   $feeStructure = get_fee_structue_types($_SESSION['eduerp_fee_setup']['fee_structure_type']);
   $assignDefault=false;
@@ -8368,23 +8128,18 @@ function staff_school_fees_create_modify_fee_setup3_form() {
       foreach($studentNationalities as $snID => $snName){
 
         foreach($feeItems as $k => $v) {
-          //if(! isset($_POST[$slID.$snID.$k.'full_amount'])){
           if(! isset($_POST[$slID ."-". $snID ."-". $k. '-full_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-full_amount'])){
             $assignDefault=true;
-            //$selFeeItems[$slID.$snID.$k.'full_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'full_amount'];
             $selFeeItems[$slID ."-". $snID ."-". $k .'-full_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k  .'-full_amount'];
           }
 
-          //if(! isset($_POST[$slID.$snID.$k.'instalment1_amount'])){
           if(! isset($_POST[$slID ."-". $snID ."-". $k .'-instalment1_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'])){
             $assignDefault=true;
-            //$selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
             $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment1_amount'];
           }
 
           if(! isset($_POST[$slID ."-". $snID ."-". $k .'-instalment2_amount']) && isset($_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'])){
             $assignDefault=true;
-            //$selFeeItems[$slID.$snID.$k.'instalment1_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID.$snID.$k.'instalment1_amount'];
             $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment2_amount'] = $_SESSION['eduerp_fee_setup']['items'][$slID ."-". $snID ."-". $k .'-instalment2_amount'];
           }
         }
@@ -8413,7 +8168,6 @@ function staff_school_fees_create_modify_fee_setup3_form() {
     '#type' => 'item',
    );
 
- // if(empty($_SESSION['eduerp_fee_setup']['academic_level_name'] )){
     foreach($studentLevels as $slID => $slName){
       foreach($studentNationalities as $snID => $snName){
         $level_text = $slName;
@@ -8467,7 +8221,6 @@ function staff_school_fees_create_modify_fee_setup3_form() {
 		'#prefix' => '<td>',
 		'#suffix' => '</td></tr>');
 	      if ($selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount']) $form['extra'.$slID . $snID][$slID ."-". $snID ."-". $k .'-instalment1_amount']['#value'] = $selFeeItems[$slID ."-". $snID ."-". $k .'-instalment1_amount'];
-
 	    }
 
 	    $form['extra'.$slID.$snID]['sess1'] = array(
@@ -8572,7 +8325,6 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
                $totalFeeBlock[$slID][$snID] += $famount;
              }
            }
-
         }
       }
 
@@ -8595,12 +8347,10 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
             form_set_error('', Error_Types(166));
           }
         }
-    //}
     break;
   }
 
   //store the data
-  //if(empty($_SESSION['eduerp_fee_setup']['academic_level_name'])){
     foreach($studentLevels as $slID => $slName){
       foreach($studentNationalities as $snID => $snName){
         foreach($feeItems as $k => $v) {
@@ -9682,9 +9432,6 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
          <tr>
            <td colspan=9>
              <fieldset class='collapsible collapsed'><legend>". $_SESSION[$varName]['more']['fee_structure_name'] ." - ". $_SESSION[$varName]['more']['level_name'] ." - ". $_SESSION[$varName]['more']['nationality_name'] ." - View details</legend>";
-             //get the fee items
-              //$details = get_fee_setup_item_details($setupNID);
-              //if(db_affected_rows($details) > 0){
                 $html .="
                  <table>
                    <tr>
@@ -9695,7 +9442,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
                      <th>First Instalment Amount</th>
                      <th>Second Instalment Amount</th>
                    </tr>";$l=1;
-                   //while($r = db_fetch_object($details)){
+
                    foreach($_SESSION[$varName]['more']['fee_item_details'] as $e){
                      $html .="
                      <tr>
@@ -9715,7 +9462,6 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
              </fieldset>
            </td>
          </tr>";
-     // }
 
    $html .="
    </table>
@@ -9836,7 +9582,6 @@ function get_authorise_instalment_student_finder_form_validate($form, &$state){
 function get_authorise_instalment_student_finder_form_submit($form, &$state){
   global $EDUERPstudentInitiated;
   $values = $state['values'];
- // drupal_set_message('hi');
   $returnURL = 'staff/authoriseinstalment';
   ini_student_fee_profile($values['mat_number'], 'eduerp_authorise_instalment', $returnURL);
 }
@@ -9850,7 +9595,6 @@ function staff_display_instalment_authorisations($sessionName) {
   $authorisations = get_instalment_authorisations($sessionName);
   if(! is_array($authorisations) || ! sizeof($authorisations))
     return $html .= Error_Types(106) .'</div>';
-  //Please click on a Fee Item name to Edit it.<br />
   $html .="
 
   <table border=1>
@@ -9880,7 +9624,6 @@ function staff_display_instalment_authorisations($sessionName) {
 
            <td>". check_markup($v['remarks'], FILTER_FORMAT_DEFAULT, FALSE) ."</a></td>
            <td>". $v['date'] ."</a></td>
-
          </tr>";
       }
 
@@ -9892,8 +9635,6 @@ function staff_display_instalment_authorisations($sessionName) {
 
 
 function staff_show_authorise_instalment_form(){
-
-
   $form['#title'] = 'School Fees Instalment Payment';
    $form['remarks'] = array(
     '#type' => 'textarea',
@@ -10150,17 +9891,30 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   $feeOption = array();
   $feeStudentOption = array();
 
-  $setupNID = null; $forLevel = false;
+  $student_profile = new UserProfile($studentUID);
+dsm(array('studentUID' => $studentUID, 'programNID' => $programNID, 'levelType' => $levelType, 'nationalityType' => $nationalityType, 'academicLevel' => $academicLevel, 'checkFeesOnly' => $checkFeesOnly, 'showAllAmounts' => $showAllAmounts, 'profile_mode_of_entry' => $student_profile->profile_mode_of_entry));//ab
 
+  $setupNID = null; $forLevel = false;
   $programme_specific = TRUE;
 
   if ($academicLevel > 0) {
-    //test if level-specific setup exists for the student for the program
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
-    if(db_affected_rows($rs) > 0){
-      $feeSetup = db_fetch_object($rs);
-      $setupNID = $feeSetup->nid;
-      $forLevel = true;
+    // If Student is "DE" & Level "200" and All Levels setup exists, use it for this student so that they pickup special "DE" Freshman fees rather than normal "200" fees used for Returning Student.
+    $use_all_levels_Freshman_for_200_DE = FALSE;
+    if ($academicLevel == '200' && $student_profile->profile_mode_of_entry == 'DE') {
+      if (db_fetch_object(db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $nationalityType, $levelType))) {
+        $use_all_levels_Freshman_for_200_DE = TRUE;
+dsm(array('studentUID' => $studentUID, 'programNID' => $programNID, 'levelType' => $levelType, 'nationalityType' => $nationalityType, 'academicLevel' => $academicLevel, 'checkFeesOnly' => $checkFeesOnly, 'showAllAmounts' => $showAllAmounts, 'profile_mode_of_entry' => $student_profile->profile_mode_of_entry));//ab
+      }
+    }
+
+    if (!$use_all_levels_Freshman_for_200_DE) {
+      //test if level-specific setup exists for the student for the program
+      $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
+      if(db_affected_rows($rs) > 0){
+        $feeSetup = db_fetch_object($rs);
+        $setupNID = $feeSetup->nid;
+        $forLevel = true;
+      }
     }
   }
 
@@ -10174,19 +9928,29 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
   }
 
   if(empty($setupNID) && $academicLevel > 0){
-    //test Level-Specific for General Fee Structure
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=0) AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' ", variable_get('eduerp_current_session', ''), $academicLevel);
-    if(db_affected_rows($rs) > 0){
-      $feeSetup = db_fetch_object($rs);
-      $setupNID = $feeSetup->nid;
-      $forLevel = true;
+    $use_all_levels_Freshman_for_200_DE = FALSE;
+    if ($academicLevel == '200' && $student_profile->profile_mode_of_entry == 'DE') {
+      if (db_fetch_object(db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value=0) AND field_fee_setup_session_value='%s' AND field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d", variable_get('eduerp_current_session', ''), $nationalityType, $levelType))) {
+        $use_all_levels_Freshman_for_200_DE = TRUE;
+dsm(array('studentUID' => $studentUID, 'programNID' => $programNID, 'levelType' => $levelType, 'nationalityType' => $nationalityType, 'academicLevel' => $academicLevel, 'checkFeesOnly' => $checkFeesOnly, 'showAllAmounts' => $showAllAmounts, 'profile_mode_of_entry' => $student_profile->profile_mode_of_entry));//ab
+      }
     }
-    $programme_specific = FALSE;
+
+    if (!$use_all_levels_Freshman_for_200_DE) {
+      //test Level-Specific for General Fee Structure
+      $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=0) AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d", variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
+      if(db_affected_rows($rs) > 0){
+        $feeSetup = db_fetch_object($rs);
+        $setupNID = $feeSetup->nid;
+        $forLevel = true;
+      }
+      $programme_specific = FALSE;
+    }
   }
 
   if(empty($setupNID)){
     //now test if general setup exists
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value=0) AND field_fee_setup_session_value='%s' ", variable_get('eduerp_current_session', ''));
+    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value=0) AND field_fee_setup_session_value='%s' AND field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d", variable_get('eduerp_current_session', ''), $nationalityType, $levelType);
     if(db_affected_rows($rs) > 0){
       $feeSetup = db_fetch_object($rs);
       $setupNID = $feeSetup->nid;
@@ -10894,14 +10658,12 @@ function get_candidate_info_form_validate($form, &$state) {
     $programmeInfo = db_fetch_object($rs);
 
     $studInfo = array('uid'=>$studentInfo->uid, 'fname'=>$student_profile->profile_last_name .', '. $student_profile->profile_first_name .' '. $student_profile->profile_middle_name,
-         // 'level'=>$student_profile->profile_level_name,
           'current_programme_nid'=>$programmeInfo->programme_nid,
           'current_programme_name'=>$programmeInfo->programme_name
           );
 
     unset($_SESSION['eduerp_change_uncleared_info']);
     $_SESSION['eduerp_change_uncleared_on'] = 1;//keep showing the form
-    //ini_ses($studentInfo->uid, "eduerp_change_prog_info");
     $_SESSION['eduerp_change_uncleared_info'] = $studInfo;
   }
 }
