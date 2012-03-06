@@ -7257,8 +7257,10 @@ function staff_display_school_fee_setup() {
                      <tr>
                        <td colspan=9>";
                      if($v['setup_level'] == 'All Levels'){
-
-                      $html .= "<fieldset class='collapsible collapsed'><legend>". $sl->level_name ." - ". $sl->nationality_name ." - view details</legend>";
+                      $level_text = $sl->level_name;
+                      if ($level_text == 'Freshman') $level_text .= ' (& 200 DE)';
+                      if ($level_text == 'Returning Student') $level_text .= ' (& Spillover)';
+                      $html .= "<fieldset class='collapsible collapsed'><legend>". $level_text ." - ". $sl->nationality_name ." - view details</legend>";
                      }
                      else {
 
@@ -8414,10 +8416,13 @@ function staff_school_fees_create_modify_fee_setup3_form() {
  // if(empty($_SESSION['eduerp_fee_setup']['academic_level_name'] )){
     foreach($studentLevels as $slID => $slName){
       foreach($studentNationalities as $snID => $snName){
+        $level_text = $slName;
+        if ($level_text == 'Freshman') $level_text .= ' (& 200 DE)';
+        if ($level_text == 'Returning Student') $level_text .= ' (& Spillover)';
 
 	  $form["extra".$slID.$snID] = array(
 	    '#type' => 'fieldset',
-	    '#title' => $slName .' - '. $snName .' - ' . 'Available Fee Items',
+      '#title' => $level_text .' - '. $snName .' - ' . 'Available Fee Items',
 	    '#collapsed' => false,
 	    '#collapsible' => TRUE);
 	  $form["extra".$slID . $snID]["fee_item_header-".$slID."-".$snID] = array(
