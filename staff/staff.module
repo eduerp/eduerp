@@ -7201,14 +7201,12 @@ function staff_display_school_fee_setup() {
          $html .="
 
          ";
-
       }
 
   $html .= "
   </table>
   </div>";
   return $html;
-
 }
 
 
@@ -7219,15 +7217,12 @@ function get_school_fee_items() {
     $feeItems[$f->nid]['fee_item'] = $f->fee_item;
     $feeItems[$f->nid]['is_scholarship_applicable'] = $f->is_scholarship_applicable;
     $feeItems[$f->nid]['uc_product_nid'] = $f->uc_product_nid;
-
-
   }
   return $feeItems;
 }
 
 
 function is_fee_item_existing_in_uc_products($itemName){
-
   $rs = db_query("SELECT ctp.nid FROM {content_type_product} ctp
   	  INNER JOIN {node} n ON ctp.nid=n.nid
   	  WHERE n.title='%s' AND type='product' ", $itemName);
@@ -7239,7 +7234,6 @@ function is_fee_item_existing_in_uc_products($itemName){
 
 
 function get_fee_item_uc_products_nid($itemName){
-
   $rs = db_query("SELECT ctp.nid AS nid FROM {content_type_product} ctp
   	  INNER JOIN {node} n ON ctp.nid=n.nid
   	  WHERE n.title='%s' AND type='product' ", $itemName);
@@ -7247,20 +7241,16 @@ function get_fee_item_uc_products_nid($itemName){
   $r = db_fetch_object($rs);
 
   return $r->nid;
-
-
 }
 
 
 function get_fee_item_productNID($itemNID){
-
   $rs = db_query("SELECT IFNULL(field_uc_product_nid_nid, 0) product_nid FROM {content_type_school_fee_items} WHERE nid=%d ", $itemNID);
   return db_fetch_object($rs);
 }
 
 
 function gen_fee_product_sku(){
-
   $rs = db_query("SELECT next_num, sku_name  FROM {gen_fee_item_sku} WHERE id = 1 FOR UPDATE ");
 
   $r = db_fetch_object($rs);
@@ -7280,13 +7270,9 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
   $node = new stdClass();
   $node->type = 'product';
 
-  //node_object_prepare($node); // This sets up all the default node fields so we don't accidentally leave something off.
-
   $node->uid 		= 1;
   $node->status 	= 1;
   $node->title 		= $itemName;
-  //$node->created 	= $data->created;
-  //$node->changed 	= $data->changed;
 
   // Set Ubercart variables
   $node->model 		= gen_fee_product_sku(); // the SKU is a required field
@@ -7300,7 +7286,6 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
   $node->taxonomy 	= array();
   $node->menu 		= array();
 
-  // Save the node
   node_save($node);  // This will update the $node object with the $node->nid which is important for the next step.
 
   $productNID = $node->nid;
@@ -7310,7 +7295,6 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
   //check if attribute fee_structure exists
   if(is_uc_attribute_existing("fee_structure")){
     $attribute = get_uc_attribute_info("fee_structure");
-
   }
   else{
     //create the attribute
@@ -7319,7 +7303,6 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
     create_uc_attribute($info);
 
     $attribute = get_uc_attribute_info("fee_structure");
-
   }
 
   if($attachAttributes){
@@ -7330,23 +7313,19 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
     attach_uc_attribute_to_product($info);
   }
   return $productNID;
-
 }
 
 
 function is_uc_attribute_existing($attributeName){
-
   $rs = db_query("SELECT aid FROM {uc_attributes} WHERE name='%s'", $attributeName);
 
   if(db_affected_rows($rs) > 0) return true;
 
   return false;
-
 }
 
 
 function is_uc_attribute_attached_to_product(&$optionInfo){
-
   $rs = db_query("SELECT nid FROM {uc_product_attributes} WHERE nid=%d AND aid=%d AND label='%s' ",$optionInfo['productNID'], $optionInfo['aid'], $optionInfo['label']);
 
   if(db_affected_rows($rs) > 0) return true;
@@ -7356,7 +7335,6 @@ function is_uc_attribute_attached_to_product(&$optionInfo){
 
 
 function is_uc_option_attached_to_product(&$optionInfo){
-
   $rs = db_query("SELECT oid FROM {uc_product_options} WHERE nid=%d AND oid=%d ", $optionInfo['productNID'], $optionInfo['oid']);
 
   if(db_affected_rows($rs) > 0) return true;
@@ -8269,6 +8247,10 @@ function staff_school_fees_create_modify_fee_setup3_form() {
     foreach($studentLevels as $slID => $slName){
       foreach($studentNationalities as $snID => $snName){
 
+
+                      $level_text = $sl->level_name;
+                      if ($level_text == 'Freshman') $level_text .= ' (& 200 DE)';
+                      if ($level_text == 'Returning Student') $level_text .= ' (& Spillover)';
 
 
 
