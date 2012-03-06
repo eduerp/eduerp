@@ -7192,7 +7192,6 @@ function staff_display_school_fee_setup() {
   <div id='assigned_courses'>
   <b>Available School Fee Setup - ". variable_get('eduerp_current_session', '') ." Academic Session</b><br /><br />";
 
-  //$feeSetup = get_school_fee_setup(variable_get('eduerp_current_session', ''));
   $feeSetup = load_existing_fee_structure(false);
   if(! is_array($feeSetup) || ! sizeof($feeSetup))
     return $html .= Error_Types(106) .'</div>';
@@ -7207,40 +7206,22 @@ function staff_display_school_fee_setup() {
       <th><b>Fee Structure Type</b></th>
       <th><b>Program Name</b></th>
       <th><b>Academic Level Name</b></th>
-
-
-
     </tr>";$i = 1;
-    /*
-    <th><b>Student Type</b></th>
-      <th><b>Nationality Type</b></th>
-      <th><b>Total Amount</b></th>
-    */
+
     foreach ($feeSetup as $k => $v){
       if ($i%2) $rcolor = "#E5E5E5"; else $rcolor = "#E5E5E5";//FFFFFF
         $html .= "
          <tr bgcolor = \"$rcolor\" onMouseOver = \"this.bgColor = '#FDD381';\" onMouseOut = \"this.bgColor = '$rcolor';\">
            <td width='30px'>". $i++ ."</td>";
-           //<td><a  href='" . url("staff/createmodifyfeeitem/$k") ."'>". $v['fee_item'] ."</a></td>
+
            $html .="
            <td><a  href='" . url("staff/createmodifyfeestup/".$v['nid']) ."'><b>&raquo;</b></a></td>
            <td>". $v['fee_structure_name'] ."</td>
            <td>". $v['fee_structure_class_name'] ."</td>
            <td>". $v['program_name'] ."</td>
            <td>". $v['setup_level'] ."</td>
-
-
          </tr>";
-         /*
-         <td>". $v['level_name'] ."</td>
-           <td>". $v['nationality_name'] ."</td>
-           <td>". number_format($v['setup_total_amount'], 2) ."</td>
-         */
-         //<fieldset class='collapsible collapsed'><legend>". $v['fee_structure_name'] ." - ". $v['level_name'] ." - ". $v['nationality_name'] ." - view details</legend>";
-         //show second level here
 
-                //get the fee items
-              //$details = get_fee_setup_item_details($v['nid']);
               if($v['setup_level'] == 'All Levels'){
                 $academicLevel = 0;
               }
@@ -7250,22 +7231,20 @@ function staff_display_school_fee_setup() {
               $secondLevel = get_school_fee_second_level_setup(variable_get('eduerp_current_session', ''), $v['program_nid'], $academicLevel, true);
               if(db_affected_rows($secondLevel) > 0){
 
-
                     $l=1;
                    while($sl = db_fetch_object($secondLevel)){
                      $html .="
                      <tr>
                        <td colspan=9>";
                      if($v['setup_level'] == 'All Levels'){
-
-                      $html .= "<fieldset class='collapsible collapsed'><legend>". $sl->level_name ." - ". $sl->nationality_name ." - view details</legend>";
+                      $level_text = $sl->level_name;
+                      if ($level_text == 'Freshman') $level_text .= ' (& 200 DE)';
+                      if ($level_text == 'Returning Student') $level_text .= ' (& Spillover)';
+                      $html .= "<fieldset class='collapsible collapsed'><legend>". $level_text ." - ". $sl->nationality_name ." - view details</legend>";
                      }
                      else {
-
                       $html .= "<fieldset class='collapsible collapsed'><legend>". $sl->setup_level ."L - ". $sl->nationality_name ." - view details</legend>";
                      }
-
-
 
                       //show the setup details here
          $html .="
@@ -7581,17 +7560,11 @@ function get_school_fee_setup($sessionName, $NID=0, $bySetupNID=true, $returnObj
   	  INNER JOIN {content_type_school_fee_nationality_types} ctsfnt ON ctsfis.field_fee_nationality_type_nid=ctsfnt.nid
   	  INNER JOIN {content_type_school_fee_structure_classes} ctsfsc ON ctsfis.field_fee_structure_type_nid=ctsfsc.nid ";
 
-  	  /*
-  	  field_fee_instalment1_amount_value AS setup_instalment1_amount,
-  	  field_fee_instalment2_amount_value AS setup_instalment2_amount,
-  	   field_fee_full_payment_amount_value AS setup_full_amount,
-  	  */
   	  $sql .= " WHERE field_fee_setup_session_value='%s' ";
   	  if($bySetupNID){
   	    if($NID !=0) {
   	      $sql .= " AND ctsfis.nid=%d ";
   	    }
-
   	  }
   	  else {
   	    if($NID !=0) {
@@ -7617,7 +7590,6 @@ function get_school_fee_setup($sessionName, $NID=0, $bySetupNID=true, $returnObj
 
       if($bySetupNID){
         $feeSetup[$f->nid][$v] = $f->$v;
-        //drupal_set_message('by nid');
       }
       else{
         $feeSetup[$f->program_nid][$v] = $f->$v;
@@ -7647,10 +7619,8 @@ function get_school_fee_second_level_setup($sessionName, $programNID, $academicL
   	  INNER JOIN {content_type_school_fee_structure_classes} ctsfsc ON ctsfis.field_fee_structure_type_nid=ctsfsc.nid
   	  WHERE field_fee_setup_session_value='%s' AND (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=%d) AND (field_fee_setup_level_name_value IS NULL OR field_fee_setup_level_name_value='%s') ";
 
-
   	  $sql .="
   	  ORDER BY field_fee_structure_type_nid, program_name, field_fee_student_level_type_nid, field_fee_nationality_type_nid ";
-  //drupal_set_message($sql);
   $r = db_query($sql, $sessionName, $programNID, $academicLevel);
 
   if($returnObject) return $r;
@@ -7659,19 +7629,10 @@ function get_school_fee_second_level_setup($sessionName, $programNID, $academicL
   $SQLheaders = array('nid', 'program_nid', 'level_id',  'nationality_id', 'fee_structure_nid',  'session_name',
   	   'setup_total_amount', 'setup_date', 'program_name', 'level_name',  'nationality_name', 'fee_structure_name',
   	   'fee_structure_class_name', 'setup_level');
-  //'setup_instalment2_amount', 'setup_instalment1_amount',
   while ($f = db_fetch_object($r)){
     foreach($SQLheaders as $v){
-
-      //if($bySetupNID){
         $feeSetup[$f->nid][$v] = $f->$v;
-        //drupal_set_message('by nid');
-      //}
-      //else{
-      //  $feeSetup[$f->program_nid][$v] = $f->$v;
-      //}
     }
-
   }
   return $feeSetup;
 }
@@ -9677,9 +9638,6 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
          <tr>
            <td colspan=9>
              <fieldset class='collapsible collapsed'><legend>". $_SESSION[$varName]['more']['fee_structure_name'] ." - ". $_SESSION[$varName]['more']['level_name'] ." - ". $_SESSION[$varName]['more']['nationality_name'] ." - View details</legend>";
-             //get the fee items
-              //$details = get_fee_setup_item_details($setupNID);
-              //if(db_affected_rows($details) > 0){
                 $html .="
                  <table>
                    <tr>
@@ -9690,7 +9648,7 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
                      <th>First Instalment Amount</th>
                      <th>Second Instalment Amount</th>
                    </tr>";$l=1;
-                   //while($r = db_fetch_object($details)){
+
                    foreach($_SESSION[$varName]['more']['fee_item_details'] as $e){
                      $html .="
                      <tr>
@@ -9710,7 +9668,6 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
              </fieldset>
            </td>
          </tr>";
-     // }
 
    $html .="
    </table>
