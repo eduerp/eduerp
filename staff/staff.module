@@ -9898,6 +9898,7 @@ dsm(array('studentUID' => $studentUID, 'programNID' => $programNID, 'levelType' 
   $programme_specific = TRUE;
 
   if ($academicLevel > 0) {
+    // If Student is "DE" & Level "200" and All Levels setup exists, use it for this student so that they pickup special "DE" Freshman fees rather than normal "200" fees used for Returning Student.
     $use_all_levels_Freshman_for_200_DE = FALSE;
     if ($academicLevel == '200' && $student_profile->profile_mode_of_entry == 'DE') {
       if (db_fetch_object(db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_nationality_type_nid=%d AND field_fee_student_level_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $nationalityType, $levelType))) {
@@ -9907,13 +9908,13 @@ dsm(array('studentUID' => $studentUID, 'programNID' => $programNID, 'levelType' 
     }
 
     if (!$use_all_levels_Freshman_for_200_DE) {
-    //test if level-specific setup exists for the student for the program
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
-    if(db_affected_rows($rs) > 0){
-      $feeSetup = db_fetch_object($rs);
-      $setupNID = $feeSetup->nid;
-      $forLevel = true;
-    }
+      //test if level-specific setup exists for the student for the program
+      $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE field_fee_setup_program_nid_value=%d AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' AND field_fee_nationality_type_nid=%d ", $programNID, variable_get('eduerp_current_session', ''), $academicLevel, $nationalityType);
+      if(db_affected_rows($rs) > 0){
+        $feeSetup = db_fetch_object($rs);
+        $setupNID = $feeSetup->nid;
+        $forLevel = true;
+      }
     }
   }
 
@@ -9936,14 +9937,14 @@ dsm(array('studentUID' => $studentUID, 'programNID' => $programNID, 'levelType' 
     }
 
     if (!$use_all_levels_Freshman_for_200_DE) {
-    //test Level-Specific for General Fee Structure
-    $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=0) AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' ", variable_get('eduerp_current_session', ''), $academicLevel);
-    if(db_affected_rows($rs) > 0){
-      $feeSetup = db_fetch_object($rs);
-      $setupNID = $feeSetup->nid;
-      $forLevel = true;
-    }
-    $programme_specific = FALSE;
+      //test Level-Specific for General Fee Structure
+      $rs = db_query("SELECT nid FROM {content_type_school_fee_item_setup} WHERE (field_fee_setup_program_nid_value IS NULL OR field_fee_setup_program_nid_value=0) AND (field_fee_student_level_type_nid IS NULL OR field_fee_student_level_type_nid=0) AND field_fee_setup_session_value='%s' AND field_fee_setup_level_name_value='%s' ", variable_get('eduerp_current_session', ''), $academicLevel);
+      if(db_affected_rows($rs) > 0){
+        $feeSetup = db_fetch_object($rs);
+        $setupNID = $feeSetup->nid;
+        $forLevel = true;
+      }
+      $programme_specific = FALSE;
     }
   }
 
