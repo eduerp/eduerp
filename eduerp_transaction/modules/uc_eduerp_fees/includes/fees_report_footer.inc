@@ -47,7 +47,7 @@ $bank = $_SESSION['views']['fees_summary']['default']['bank'];
 if (empty($bank)) $bank = '';
 
 $sql = "
-SELECT SELECT SUM(original_amount) AS paid_incl_scholarships, SUM(price) AS paid_directly from fees_order
+SELECT SUM(original_amount) AS paid_incl_scholarships, SUM(price) AS paid_directly
 FROM node node
 LEFT JOIN fees_order fees_order ON node.nid = fees_order.nid
 LEFT JOIN content_type_school_fee_item_setup node_data_field_fee_structure_name ON node.vid = node_data_field_fee_structure_name.vid
