@@ -31,7 +31,7 @@ $scholarship_type = $_REQUEST['scholarship_type'];
 if (empty($scholarship_type)) $scholarship_type = '';
 if ($scholarship_type == 'All') $scholarship_type = '';
 
-$date = $_REQUEST['date'];
+$date = $_SESSION['views']['fees_summary']['default']['date'];
 $date_min = $date['min'];
 $date_max = $date['max'];
 if (empty($date_min) || empty ($date_max)) {
