@@ -1,6 +1,9 @@
 <?php
 // fees_report_footer.inc 20120307
 
+// NOTE: if Filters in the view are changed in any way or are added to, this code needs to be updated!!!
+// Even changing a filter to "Remember" a setting will cause issues (because $_SESSION['views']['fees_summary']['default'] will need to be used).
+
 $admission = $_REQUEST['admission'];
 if (empty($admission)) $admission = '';
 
