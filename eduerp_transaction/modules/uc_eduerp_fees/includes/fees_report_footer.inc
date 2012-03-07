@@ -67,20 +67,19 @@ WHERE
   ((fees_order.email) LIKE ('%%%s%%'))";
 
 dsm(array(
-'SESSION' => $_SESSION,
 'sql' => $sql,
-'admission' => $_REQUEST['admission'],
-'session' => $_REQUEST['session'],
-'course' => $_REQUEST['course'],
-'college' => $_REQUEST['college'],
-'sponsor' => $_REQUEST['sponsor'],
-'status' => $_SESSION['views']['fees_summary']['default']['status'],
-'level_name' => $_REQUEST['level_name'],
-'type' => $_REQUEST['type'],
-'scholarship_type' => $_REQUEST['scholarship_type'],
-'date' => $_REQUEST['date'],
-'bank' => $_SESSION['views']['fees_summary']['default']['bank'],
-));
+'admission' => $admission,
+'session' => $session,
+'course' => $course,
+'college' => $college,
+'sponsor' => $sponsor,
+'status' => $status,
+'level_name' => $level_name,
+'type' => $type,
+'scholarship_type' => $scholarship_type,
+'date' => $date,
+'bank' => $bank,
+));//ab
 
 
 $rs = db_query($sql, $admission, $session, $course, $college, $sponsor, $level_name, $type, $scholarship_type, $date_min, $date_max, $bank);
