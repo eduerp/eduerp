@@ -34,26 +34,16 @@ dsm(array(
 'college' => $_REQUEST['college'],
 'sponsor' => $_REQUEST['sponsor'],
 'status' => $_REQUEST['status'],
+'status_default' => $_SESSION['views']['fees_summary']['default']['status'],
 'level_name' => $_REQUEST['level_name'],
 'type' => $_REQUEST['type'],
 'scholarship_type' => $_REQUEST['scholarship_type'],
 'date' => $_REQUEST['date'],
 'bank' => $_REQUEST['bank'],
+'bank_default' => $_SESSION['views']['fees_summary']['default']['bank'],
 ));
 
 /*
-$_SESSION['views']['fees_summary']['default']['admission']
-$_SESSION['views']['fees_summary']['default']['session']
-$_SESSION['views']['fees_summary']['default']['course']
-$_SESSION['views']['fees_summary']['default']['college']
-$_SESSION['views']['fees_summary']['default']['sponsor']
-$_SESSION['views']['fees_summary']['default']['status']
-$_SESSION['views']['fees_summary']['default']['level_name']
-$_SESSION['views']['fees_summary']['default']['type']
-$_SESSION['views']['fees_summary']['default']['scholarship_type']
-$_SESSION['views']['fees_summary']['default']['date']
-$_SESSION['views']['fees_summary']['default']['bank']
-
 
 admission
 session
