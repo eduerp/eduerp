@@ -24,6 +24,7 @@ if (!empty($_SESSION['views']['fees_summary']['default']['coursecode']) &&
 */
 
 dsm(array(
+'fees_summary' => $_SESSION['views']['fees_summary'],
 'admission' => $_SESSION['views']['fees_summary']['default']['admission'],
 'session' => $_SESSION['views']['fees_summary']['default']['session'],
 'course' => $_SESSION['views']['fees_summary']['default']['course'],
