@@ -54,7 +54,7 @@ LEFT JOIN content_type_school_fee_item_setup node_data_field_fee_structure_name 
 WHERE
   ((fees_order.jambno) LIKE ('%%%s%%')) AND
   ((fees_order.session) LIKE ('%%%s%%')) AND
-  ((fees_order.course) LIKE ('%%%s%%')) AND "
+  ((fees_order.course) LIKE ('%%%s%%')) AND ";
   if ($college != '') $sql .= "(fees_order.college = '%s') AND "; else $sql .= '%s';
   if ($sponsor != '') $sql .= "(fees_order.sponsor IN ('%s')) AND "; else $sql .= '%s';
   if (!empty($status)) $sql .= "(fees_order.status in ('" . implode("','", $status) . "')) AND ";
