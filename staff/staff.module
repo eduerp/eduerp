@@ -4934,6 +4934,7 @@ function  get_progress_qualification_details() {
   $html = "
   <table border=1>";$i=1;
   foreach($cGPA as $k=> $v){
+    if (!isset($GPA[$k])) continue; // If no GPA for Student they have not have proceeded to pay and register courses
 
     //build cGPA
     $html .= "
@@ -5038,17 +5039,14 @@ function  get_progress_qualification_details() {
         </td>
       </tr>
       ";
-
   }
   $html .= "
   </table>";
   }
   else{
-   //$html = strip_tags(Error_Types(106));
    drupal_set_message(Error_Types(106), 'error');
   }
   return $html;
-  //unset($_SESSION['eduerp_qualification']);
 }
 
 
