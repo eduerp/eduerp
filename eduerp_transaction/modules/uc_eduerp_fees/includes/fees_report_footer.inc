@@ -5,50 +5,50 @@ global $user;
 global $base_url;
 
 /*
-if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
-    !empty($_SESSION['views']['course_grades']['default']['session']) &&
-    !empty($_SESSION['views']['course_grades']['default']['semester'])) {
+if (!empty($_SESSION['views']['fees_summary']['default']['coursecode']) &&
+    !empty($_SESSION['views']['fees_summary']['default']['session']) &&
+    !empty($_SESSION['views']['fees_summary']['default']['semester'])) {
 
-  $coursecode = $_SESSION['views']['course_grades']['default']['coursecode'];
-  $session = $_SESSION['views']['course_grades']['default']['session'];
+  $coursecode = $_SESSION['views']['fees_summary']['default']['coursecode'];
+  $session = $_SESSION['views']['fees_summary']['default']['session'];
 
-  if (empty($_SESSION['views']['course_grades']['default']['semester'])) $semester = 'All';
-  else $semester = $_SESSION['views']['course_grades']['default']['semester'];
+  if (empty($_SESSION['views']['fees_summary']['default']['semester'])) $semester = 'All';
+  else $semester = $_SESSION['views']['fees_summary']['default']['semester'];
   if ($semester === 'All') $semesterwhere = '';
   else $semesterwhere = 'AND ci.field_semester_name_value=' . (int)$semester;
 
-  if (empty($_SESSION['views']['course_grades']['default']['location'])) $location = 'All';
-  else $location = $_SESSION['views']['course_grades']['default']['location'];
+  if (empty($_SESSION['views']['fees_summary']['default']['location'])) $location = 'All';
+  else $location = $_SESSION['views']['fees_summary']['default']['location'];
   if ($location === 'All') $locationwhere = '';
   else $locationwhere = 'AND ci.field_location_value=' . (int)$location;
 */
 
 dsm(array(
-'admission' => $_SESSION['views']['course_grades']['default']['admission'],
-'session' => $_SESSION['views']['course_grades']['default']['session'],
-'course' => $_SESSION['views']['course_grades']['default']['course'],
-'college' => $_SESSION['views']['course_grades']['default']['college'],
-'sponsor' => $_SESSION['views']['course_grades']['default']['sponsor'],
-'status' => $_SESSION['views']['course_grades']['default']['status'],
-'level_name' => $_SESSION['views']['course_grades']['default']['level_name'],
-'type' => $_SESSION['views']['course_grades']['default']['type'],
-'scholarship_type' => $_SESSION['views']['course_grades']['default']['scholarship_type'],
-'date' => $_SESSION['views']['course_grades']['default']['date'],
-'bank' => $_SESSION['views']['course_grades']['default']['bank'],
+'admission' => $_SESSION['views']['fees_summary']['default']['admission'],
+'session' => $_SESSION['views']['fees_summary']['default']['session'],
+'course' => $_SESSION['views']['fees_summary']['default']['course'],
+'college' => $_SESSION['views']['fees_summary']['default']['college'],
+'sponsor' => $_SESSION['views']['fees_summary']['default']['sponsor'],
+'status' => $_SESSION['views']['fees_summary']['default']['status'],
+'level_name' => $_SESSION['views']['fees_summary']['default']['level_name'],
+'type' => $_SESSION['views']['fees_summary']['default']['type'],
+'scholarship_type' => $_SESSION['views']['fees_summary']['default']['scholarship_type'],
+'date' => $_SESSION['views']['fees_summary']['default']['date'],
+'bank' => $_SESSION['views']['fees_summary']['default']['bank'],
 ));
 
 /*
-$_SESSION['views']['course_grades']['default']['admission']
-$_SESSION['views']['course_grades']['default']['session']
-$_SESSION['views']['course_grades']['default']['course']
-$_SESSION['views']['course_grades']['default']['college']
-$_SESSION['views']['course_grades']['default']['sponsor']
-$_SESSION['views']['course_grades']['default']['status']
-$_SESSION['views']['course_grades']['default']['level_name']
-$_SESSION['views']['course_grades']['default']['type']
-$_SESSION['views']['course_grades']['default']['scholarship_type']
-$_SESSION['views']['course_grades']['default']['date']
-$_SESSION['views']['course_grades']['default']['bank']
+$_SESSION['views']['fees_summary']['default']['admission']
+$_SESSION['views']['fees_summary']['default']['session']
+$_SESSION['views']['fees_summary']['default']['course']
+$_SESSION['views']['fees_summary']['default']['college']
+$_SESSION['views']['fees_summary']['default']['sponsor']
+$_SESSION['views']['fees_summary']['default']['status']
+$_SESSION['views']['fees_summary']['default']['level_name']
+$_SESSION['views']['fees_summary']['default']['type']
+$_SESSION['views']['fees_summary']['default']['scholarship_type']
+$_SESSION['views']['fees_summary']['default']['date']
+$_SESSION['views']['fees_summary']['default']['bank']
 
 
 admission
