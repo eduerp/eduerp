@@ -67,6 +67,7 @@ WHERE
   ((fees_order.email) LIKE ('%%%s%%'))";
 
 dsm(array(
+'SESSION' => $_SESSION,
 'sql' => $sql,
 'admission' => $_REQUEST['admission'],
 'session' => $_REQUEST['session'],
