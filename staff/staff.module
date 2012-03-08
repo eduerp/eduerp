@@ -208,10 +208,16 @@ function staff_menu() {
     'access arguments' => array('staff register course'),
     'type' => MENU_CALLBACK,
   );
-  //fee menus ends here
+
+  $items['staff/archivestudent'] = array(
+    'title' => 'Archive a Student who does not yet have any Exam Marks',
+    'page callback' => 'staff_archive_student',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
-
 
 
 function _staff_ajax() {
@@ -1353,6 +1359,10 @@ function semester_admin() {
 
   echo '<a href="' . url('staff/changeuncleared') . '">Change Programme for Uncleared Candidate</a>';
   echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/archivestudent') . '">Archive a Student who does not yet have any Exam Marks</a>';
+  echo '<br /><br /><hr /><br />';
+
   return ob_get_clean();
 }
 
@@ -10714,5 +10724,127 @@ function staff_candidate_change_programme_form() {
       '#type' => 'submit'
   );
   return $form;
+}
+
+
+function staff_archive_student() {
+  global $user;
+  ob_start();
+  echo '<br /><hr /><br />';
+      $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Archive a Student who does not yet have any Exam Marks</font><br /><br />";
+      $navi .= '<br /><hr /><br />';
+
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
+      echo $navi;
+      echo drupal_get_form('staff_archive_student_form');
+  }
+  else {
+    echo $navi;
+    drupal_set_message(Error_Types(127), 'error');
+  }
+  return ob_get_clean();
+}
+
+
+function staff_archive_student_form() {
+  $form['#title'] = 'Archive a Student';
+
+  $form['jamb_no'] = array(
+    '#type' => 'textfield',
+    '#title' => 'JAMB Number',
+    '#required' => TRUE
+  );
+
+  $form['submit'] = array(
+    '#value' => 'Archive a Student',
+    '#type' => 'submit'
+  );
+
+  return $form;
+}
+
+
+function staff_archive_student_form_validate($form, &$state) {
+  $uid = $state['values']['jamb_no'];
+
+  $sql =
+    "SELECT SUM(field_ca1_value) + SUM(field_ca2_value) + SUM(field_ca3_value) + SUM(field_ca4_value) + SUM(field_exam_score_value) AS total
+    FROM {content_type_student_grades}
+    WHERE field_mat_no_uid=%d AND field_dropped_value=0";
+  $rs = db_query($sql, $uid);
+  $row = db_fetch_object($rs);
+  if (!empty($row->total)) form_set_error('jamb_no', 'This Student has Exam Marks and Cannot be Archived');
+
+  $sql = "
+    SELECT sg.nid
+    FROM {content_type_student_grades} sg, {content_type_course_instance} ci
+    WHERE
+      sg.field_mat_no_uid=%d AND
+      sg.field_course_instance_nid=ci.nid AND
+      ci.field_sess_name_value!='%s'
+    LIMIT 1";
+  $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
+  if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Exam Marks for other Sessions and Cannot be Archived');
+
+  $sql = "
+    SELECT gpa.nid
+    FROM {content_type_student_gpa} gpa
+    WHERE
+      gpa.field_student_ref_gpa_uid=%d AND
+      gpa.field_sess_name_gpa_value!='%s'
+    LIMIT 1";
+  $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
+  if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Grades for other Sessions and Cannot be Archived');
+}
+
+
+function staff_archive_student_form_submit($form, &$state) {
+  $uid = $state['values']['jamb_no'];
+
+  $student_profile = new UserProfile($uid);
+  $student_profile->profile_jambno = 'ARCHIVED' . $student_profile->profile_jambno;
+  $student_profile->save();
+
+  $student_user = user_load($uid);
+  eduerp_delete_role($student_user, 'Student');
+
+  delete_student_grades($uid, variable_get('eduerp_current_session', ''), 1);
+  delete_student_grades($uid, variable_get('eduerp_current_session', ''), 2);
+  delete_student_grades($uid, variable_get('eduerp_current_session', ''), 3);
+
+  delete_student_gpa($uid, variable_get('eduerp_current_session', ''), 1);
+  delete_student_gpa($uid, variable_get('eduerp_current_session', ''), 2);
+  delete_student_gpa($uid, variable_get('eduerp_current_session', ''), 3);
+}
+
+
+function delete_student_gpa($uid, $session, $semester) {
+  $sql = "SELECT gpa.nid
+    FROM {content_type_student_gpa} gpa
+    WHERE
+      gpa.field_student_ref_gpa_uid=%d AND
+      gpa.field_sess_name_gpa_value='%s' AND
+      gpa.field_semester_name_gpa_value=%d";
+  $result = db_query($sql, $uid, $session, $semester);
+
+  while ($row = db_fetch_object($result)) {
+    // Copied from node_delete(), but want to bypass access control.
+    $node = node_load($row->nid);
+
+    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
+    db_query('DELETE FROM {node_revisions} WHERE nid = %d', $node->nid);
+
+    // Call the node-specific callback (if any):
+    node_invoke($node, 'delete');
+    node_invoke_nodeapi($node, 'delete');
+
+    // Clear the page and block caches.
+    cache_clear_all();
+
+    // Remove this node from the search index if needed.
+    if (function_exists('search_wipe')) {
+      search_wipe($node->nid, 'node');
+    }
+  }
 }
 ?>
