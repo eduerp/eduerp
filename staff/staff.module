@@ -10731,7 +10731,7 @@ function staff_archive_student() {
   global $user;
   ob_start();
   echo '<br /><hr /><br />';
-      $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Archive a Student who does not yet have any Exam Marks</font><br /><br />";
+      $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Archive a Student who does not yet have any Exam Marks</font><br />";
       $navi .= '<br /><hr /><br />';
 
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
@@ -10765,48 +10765,64 @@ function staff_archive_student_form() {
 
 
 function staff_archive_student_form_validate($form, &$state) {
-  $uid = $state['values']['jamb_no'];
+  $row = db_fetch_object(db_query("SELECT nspro.uid uid
+  FROM {content_type_student_profile} spro
+  INNER JOIN {node} nspro ON spro.vid=nspro.vid
+  WHERE nspro.type='student_profile' AND field_profile_jambno_value='%s'", $state['values']['jamb_no']));
+  if (!$row) {
+    form_set_error('jamb_no', Error_Types(172));
+  }
+  else {
+    $uid = $row->uid;
 
-  $sql =
-    "SELECT SUM(field_ca1_value) + SUM(field_ca2_value) + SUM(field_ca3_value) + SUM(field_ca4_value) + SUM(field_exam_score_value) AS total
-    FROM {content_type_student_grades}
-    WHERE field_mat_no_uid=%d AND field_dropped_value=0";
-  $rs = db_query($sql, $uid);
-  $row = db_fetch_object($rs);
-  if (!empty($row->total)) form_set_error('jamb_no', 'This Student has Exam Marks and Cannot be Archived');
+    $sql =
+      "SELECT SUM(field_ca1_value) + SUM(field_ca2_value) + SUM(field_ca3_value) + SUM(field_ca4_value) + SUM(field_exam_score_value) AS total
+      FROM {content_type_student_grades}
+      WHERE field_mat_no_uid=%d AND field_dropped_value=0";
+    $rs = db_query($sql, $uid);
+    $row = db_fetch_object($rs);
+    if (!empty($row->total)) form_set_error('jamb_no', 'This Student has Exam Marks and Cannot be Archived');
 
-  $sql = "
-    SELECT sg.nid
-    FROM {content_type_student_grades} sg, {content_type_course_instance} ci
-    WHERE
-      sg.field_mat_no_uid=%d AND
-      sg.field_course_instance_nid=ci.nid AND
-      ci.field_sess_name_value!='%s'
-    LIMIT 1";
-  $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
-  if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Exam Marks for other Sessions and Cannot be Archived');
+    $sql = "
+      SELECT sg.nid
+      FROM {content_type_student_grades} sg, {content_type_course_instance} ci
+      WHERE
+        sg.field_mat_no_uid=%d AND
+        sg.field_course_instance_nid=ci.nid AND
+        ci.field_sess_name_value!='%s'
+      LIMIT 1";
+    $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
+    if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Exam Marks for other Sessions and Cannot be Archived');
 
-  $sql = "
-    SELECT gpa.nid
-    FROM {content_type_student_gpa} gpa
-    WHERE
-      gpa.field_student_ref_gpa_uid=%d AND
-      gpa.field_sess_name_gpa_value!='%s'
-    LIMIT 1";
-  $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
-  if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Grades for other Sessions and Cannot be Archived');
+    $sql = "
+      SELECT gpa.nid
+      FROM {content_type_student_gpa} gpa
+      WHERE
+        gpa.field_student_ref_gpa_uid=%d AND
+        gpa.field_sess_name_gpa_value!='%s'
+      LIMIT 1";
+    $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
+    if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Grades for other Sessions and Cannot be Archived');
+  }
 }
 
 
 function staff_archive_student_form_submit($form, &$state) {
-  $uid = $state['values']['jamb_no'];
+  $row = db_fetch_object(db_query("SELECT nspro.uid uid
+  FROM {content_type_student_profile} spro
+  INNER JOIN {node} nspro ON spro.vid=nspro.vid
+  WHERE nspro.type='student_profile' AND field_profile_jambno_value='%s'", $state['values']['jamb_no']));
+  $uid = $row->uid;
 
   $student_profile = new UserProfile($uid);
-  $student_profile->profile_jambno = 'ARCHIVED' . $student_profile->profile_jambno;
-  $student_profile->save();
+  if (substr($student_profile->profile_jambno, 0, 8) != 'ARCHIVED') {
+    $student_profile->profile_jambno = 'ARCHIVED' . $student_profile->profile_jambno;
+    $student_profile->save();
+  }
 
   $student_user = user_load($uid);
   eduerp_delete_role($student_user, 'Student');
+  eduerp_delete_role($student_user, 'Applicant');
 
   delete_student_grades($uid, variable_get('eduerp_current_session', ''), 1);
   delete_student_grades($uid, variable_get('eduerp_current_session', ''), 2);
