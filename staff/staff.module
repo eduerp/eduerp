@@ -10782,7 +10782,7 @@ function staff_archive_student_form_validate($form, &$state) {
         ci.field_sess_name_value='%s'
       LIMIT 1";
     $rs = db_query($sql, $uid, variable_get('eduerp_current_session', ''));
-    if ($row = db_fetch_object($rs)) form_set_error('jamb_no', 'This Student has Exam Marks for other Sessions and Cannot be Archived');
+    if ($row = db_fetch_object($rs)) form_set_error('yyjamb_no', 'This Student has Exam Marks for other Sessions and Cannot be Archived');
 
     $sql = "
       SELECT gpa.nid
