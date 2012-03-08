@@ -21,7 +21,13 @@ $imports = db_query($sql);
 $number_imported = 0;
 while ($import = db_fetch_object($imports)) {
 
-  $mat   = $import->field_profile_matno_value;
+  $mat = $import->field_profile_matno_value;
+
+  if (db_fetch_object(db_query("SELECT name FROM {users} WHERE name='%s'", $mat))) {
+    echo "SKIPPING DUP username: $mat<br />";
+    continue;
+  }
+
   $email = $mat . '@udusok.edu.ng';
 
   $dob          = $import->field_profile_dob_value;
@@ -32,6 +38,7 @@ while ($import = db_fetch_object($imports)) {
   $first        = $import->field_profile_first_name_value;
   $middle       = $import->field_profile_middle_name_value;
   $program_name = $import->field_profile_first_choice;
+  $program_nid  = $import->program_nid;
 
   if (!empty($import->field_scholarship_sponsor_value)) {
     $profile_sponsor_name = $import->field_scholarship_sponsor_value;
@@ -46,11 +53,6 @@ while ($import = db_fetch_object($imports)) {
   else {
     $profile_state_sponsor = NULL;
   }
-
-  $sql = "SELECT p.nid FROM {content_type_program} p WHERE p.field_programme_name_value='%s'";
-  $result = db_query($sql, $program_name);
-  $row = db_fetch_object($result);
-  $program_nid = $row->nid;
 
   $newUser = array(
     'name' => $mat,
@@ -110,7 +112,7 @@ while ($import = db_fetch_object($imports)) {
   $user_profile->profile_yearofentry       = $import->field_profile_yearofentry_value;
   $user_profile->profile_mode_of_entry     = $import->field_profile_mode_of_entry_value;
   $user_profile->profile_mode_of_study     = $import->field_profile_mode_of_study_value;
-  $user_profile->profile_level_name        = $import->field_profile_level_name_value;
+  $user_profile->profile_level_name        = $import->level_last_session;
   $user_profile->profile_state_name_origin = $import->field_profile_state_name_origin_value;
   $user_profile->profile_sponsor_name      = $profile_sponsor_name;
   $user_profile->profile_state_sponsor     = $profile_state_sponsor;
@@ -150,7 +152,7 @@ while ($import = db_fetch_object($imports)) {
 
   $year_1_session = 2010;
   $year_2_session = 2011;
-  for ($level = $import->field_profile_level_name_value; $year_1_session >= $import->field_profile_yearofentry_value; $level -= 100) {
+  for ($level = $import->level_last_session; $year_1_session >= $import->field_profile_yearofentry_value; $level -= 100) {
     $session = "$year_1_session/$year_2_session";
 
     foreach (array(1, 2) as $semester) {
