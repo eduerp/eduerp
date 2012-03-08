@@ -10746,7 +10746,7 @@ function staff_archive_student_form() {
   );
 
   $form['submit'] = array(
-    '#value' => 'Archive a Student',
+    '#value' => 'Archive this Student',
     '#type' => 'submit'
   );
 
@@ -10771,7 +10771,7 @@ function staff_archive_student_form_validate($form, &$state) {
       WHERE field_mat_no_uid=%d AND field_dropped_value=0";
     $rs = db_query($sql, $uid);
     $row = db_fetch_object($rs);
-    if (!empty($row->total)) form_set_error('jamb_no', 'This Student has Exam Marks and Cannot be Archived');
+    if (!empty($row->total)) form_set_error('xxjamb_no', 'This Student has Exam Marks and Cannot be Archived');
 
     $sql = "
       SELECT sg.nid
