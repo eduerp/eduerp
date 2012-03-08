@@ -137,7 +137,6 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
-  //fee menus starts here
   $items['staff/schoolfeesadmin'] = array(
     'title' => 'School Fees Administration',
     'page callback' => 'staff_school_fees_admin',
@@ -179,7 +178,6 @@ function staff_menu() {
     'access arguments' => array('student payments'),
     'type' => MENU_CALLBACK
   );
-
 
    $items['staff/testattributes'] = array(
     'title' => 'Testing Attributes and Options',
@@ -4788,7 +4786,6 @@ function staff_student_progress_qualification() {
     }
   }
    else {
-     //$str .=   Error_Types(127);
      drupal_set_message(Error_Types(127), 'error');
     }
   echo $str;
@@ -5536,9 +5533,7 @@ function staff_drop_registered_course() {
   }
   else {
     echo $navi;
-    //echo Error_Types(127);
     drupal_set_message(Error_Types(127), 'error');
-
   }
   unset($_SESSION['eduerp_drop_on']);
   return ob_get_clean();
@@ -5724,9 +5719,7 @@ function staff_manual_course_reg() {
   }
   else {
     echo $navi;
-    //echo Error_Types(127);
     drupal_set_message(Error_Types(127), 'error');
-
   }
   unset($_SESSION['eduerp_reg_on']);
   return ob_get_clean();
@@ -6080,9 +6073,7 @@ function staff_change_student_programme() {
   }
   else {
     echo $navi;
-    //echo Error_Types(127);
     drupal_set_message(Error_Types(127), 'error');
-
   }
   unset($_SESSION['eduerp_change_prog_on']);
   return ob_get_clean();
@@ -10731,15 +10722,14 @@ function staff_archive_student() {
   global $user;
   ob_start();
   echo '<br /><hr /><br />';
-      $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Archive a Student who does not yet have any Exam Marks</font><br />";
-      $navi .= '<br /><hr /><br />';
+  $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Archive a Student who does not yet have any Exam Marks</font><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
-      echo $navi;
-      echo drupal_get_form('staff_archive_student_form');
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
+    echo drupal_get_form('staff_archive_student_form');
   }
   else {
-    echo $navi;
     drupal_set_message(Error_Types(127), 'error');
   }
   return ob_get_clean();
