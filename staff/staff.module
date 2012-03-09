@@ -3893,7 +3893,6 @@ function staff_create_programme_form2_submit($form, &$form_state) {
           $level = $_SESSION['eduerp_bkinfo']->start_level * $i;
           $sql .= "('". $programme_nid ."', '". $level ."', '". $p ."', '". trim($prog_credit_load[0]) ."', '". trim($prog_credit_load[1]) ."', 0), ";
         }
-
       }
       $sql = substr($sql, 0, -2);
       db_query($sql);
@@ -3924,17 +3923,12 @@ function staff_create_programme_back_form() {
 
 function staff_create_programme_back_form_validate($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
-
-
-
 }
 
 
 function staff_create_programme_back_form_submit($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
   $_SESSION['eduerp_showOn'] = null;
-  //$_POST['showOn'] = null;
-
 }
 
 
@@ -3951,12 +3945,11 @@ function staff_create_programme_cancel_form() {
 
 function staff_create_programme_cancel_form_submit($form, &$form_state) {
   ;
-
 }
 
 
 function programme_types() {
- return array(1 => 'Full Time Undergraduate', 2 => 'Part Time Undergraduate', 3 => 'Medicine Type Grades', '-1' => 'Closed to new entrants, Full Time Undergraduate', '-2' => 'Closed to new entrants, Part Time Undergraduate', '-3' => 'Closed to new entrants, Medicine Type Grades');
+ return array(1 => 'Full Time Undergraduate', 2 => 'Part Time Undergraduate', 3 => 'Medicine Type Grades', 4 => 'Full Time Postgraduate', 5 => 'Part Time Postgraduate', '-1' => 'Closed to new entrants, Full Time Undergraduate', '-2' => 'Closed to new entrants, Part Time Undergraduate', '-3' => 'Closed to new entrants, Medicine Type Grades', '-4' => 'Closed to new entrants, Full Time Postgraduate', '-5' => 'Closed to new entrants, Part Time Postgraduate');
 }
 
 
