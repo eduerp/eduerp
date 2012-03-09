@@ -10716,10 +10716,17 @@ function staff_archive_student_form() {
 
 
 function staff_archive_student_form_validate($form, &$state) {
-  $row = db_fetch_object(db_query("SELECT nspro.uid uid
-  FROM {content_type_student_profile} spro
-  INNER JOIN {node} nspro ON spro.vid=nspro.vid
-  WHERE nspro.type='student_profile' AND field_profile_jambno_value='%s'", $state['values']['jamb_no']));
+  $rs = db_query("SELECT nspro.uid uid
+    FROM {content_type_student_profile} spro
+    INNER JOIN {node} nspro ON spro.vid=nspro.vid
+    WHERE nspro.type='student_profile' AND field_profile_jambno_value='%s'", $state['values']['jamb_no']);
+
+  if (db_affected_rows($rs) > 1) {
+    form_set_error('jamb_no', 'JAMB Number is Not Unique, Cannot Archive Student (IT support might temporarily change one of the numbers)');
+    return;
+  }
+
+  $row = db_fetch_object($rs);
   if (!$row) {
     form_set_error('jamb_no', Error_Types(172));
   }
