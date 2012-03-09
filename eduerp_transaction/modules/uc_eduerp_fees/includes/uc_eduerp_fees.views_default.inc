@@ -1172,24 +1172,9 @@ $handler->override_option('cache', array(
 $handler->override_option('header_format', '1');
 $handler->override_option('header_empty', 0);
 $handler->override_option('footer', '<?php
-$current_view = views_get_current_view();
-$args = $current_view->args;
-
-$view = views_get_view(\'fees_summary\');
-$view->set_items_per_page(0);
-$view->set_arguments($args);
-$view->execute();
-
-$paid_incl_scholarships = 0;
-$paid_directly = 0;
-foreach($view->result as $key => $value) {
-  $paid_incl_scholarships += $value->fees_order_original_amount;
-  $paid_directly += $value->fees_order_price;
-}
-$output  = "<p>Total Fees Paid by Students plus Scholarships: <b>$paid_incl_scholarships</b></p>";
-$output .= "<p>Total Fees Paid by Students Directly: <b>$paid_directly</b></p>";
-print $output;
-?>');
+require_once \'./\' . drupal_get_path(\'module\', \'eduerp\') . \'/eduerp_transaction/modules/uc_eduerp_fees/includes/fees_report_footer.inc\';
+?>
+');
 $handler->override_option('footer_format', '3');
 $handler->override_option('footer_empty', 0);
 $handler->override_option('items_per_page', 100);
