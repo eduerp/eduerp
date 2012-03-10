@@ -105,7 +105,9 @@ while ($import = db_fetch_object($imports)) {
   $user_profile->university_email          = $email;
   $user_profile->profile_reg_session       = '2010/2011';
   $user_profile->profile_reg_semester      = 2;
-  $user_profile->profile_title_name        = $import->field_profile_title_name_value;
+  if (!empty($import->field_profile_title_name_value)) {
+    $user_profile->profile_title_name      = $import->field_profile_title_name_value;
+  }
   $user_profile->profile_gender            = $import->field_profile_gender_value;
   $user_profile->profile_country_name      = $import->field_profile_country_name_value;
   $user_profile->profile_health_status     = $import->field_profile_health_status_value;
