@@ -16,7 +16,7 @@ $items['importudus/importstudents'] = array(
 function importstudents() {
   ob_start();
 
-$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND level_last_session=1 LIMIT 1";//100
+$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND level_last_session=2 LIMIT 1";//100
 $imports = db_query($sql);
 $number_imported = 0;
 while ($import = db_fetch_object($imports)) {
@@ -181,7 +181,7 @@ while ($import = db_fetch_object($imports)) {
       $node->field_credit_load_registered[0]['value']= 0;
       $node->field_credit_load_completed[0]['value'] = 0;
       $node->field_level_name_gpa[0]['value']        = $level;
-echo '>'.$level.'<';
+echo '>'.$level.'<  ';
       node_save($node);
     }
 
