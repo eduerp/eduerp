@@ -28,6 +28,11 @@ while ($import = db_fetch_object($imports)) {
     continue;
   }
 
+  if (empty($import->program_nid)) {
+    echo "SKIPPING Admission Number/Drupal name with no associated Programme: $mat<br />";
+    continue;
+  }
+
   $email = $mat . '@udusok.edu.ng';
 
   $dob          = $import->field_profile_dob_value;
