@@ -120,11 +120,16 @@ function student_registration_content_default_fields() {
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_exam_number_1][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Examination Number',
       'weight' => '32',
-      'description' => '',
+      'description' => 'For Postgraduate Applications please enter the qualification achieved (e.g. Diploma in Computer Studies). There is no need to enter examination Records.',
       'type' => 'text_textfield',
       'module' => 'text',
     ),
@@ -182,11 +187,16 @@ function student_registration_content_default_fields() {
     'widget' => array(
       'rows' => 5,
       'size' => '60',
-      'default_value' => NULL,
+      'default_value' => array(
+        '0' => array(
+          'value' => '',
+          '_error_element' => 'default_value_widget][field_profile_exam_number_2][0][value',
+        ),
+      ),
       'default_value_php' => NULL,
       'label' => 'Examination Number',
       'weight' => '38',
-      'description' => '',
+      'description' => 'For Postgraduate Applications please enter the qualification achieved (e.g. Bachelor in Computer Studies). There is no need to enter examination Records.',
       'type' => 'text_textfield',
       'module' => 'text',
     ),
@@ -524,7 +534,7 @@ sickness|Sickness',
     'module' => 'text',
     'active' => '1',
     'text_processing' => '0',
-    'max_length' => '',
+    'max_length' => '30',
     'allowed_values' => '',
     'allowed_values_php' => '',
     'widget' => array(
@@ -539,7 +549,7 @@ sickness|Sickness',
       'default_value_php' => NULL,
       'label' => 'JAMB No.',
       'weight' => '6',
-      'description' => '',
+      'description' => 'If this is a Postgraduate Application please use your application form number given to you by the University.',
       'type' => 'text_textfield',
       'module' => 'text',
     ),
@@ -1136,7 +1146,9 @@ return $rows;',
     'max_length' => '30',
     'allowed_values' => 'UTME
 DE
-MATRIC',
+MATRIC
+CIS
+Postgraduate',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
@@ -1634,7 +1646,11 @@ F',
     'allowed_values' => 'GCE-O-Level
 NABTEB
 NECO
-WAEC',
+WAEC
+Diploma
+NCE
+IJMB
+First-Degree',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
@@ -1645,7 +1661,7 @@ WAEC',
       'default_value_php' => NULL,
       'label' => 'Qualification',
       'weight' => '30',
-      'description' => '',
+      'description' => 'For Postgraduate Applications please enter your second highest qualification (Diploma, NCE, IJMB or First Degree)',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
     ),
@@ -1701,7 +1717,9 @@ NABTEB
 NCE
 NECO
 OND
-WAEC',
+WAEC
+First-Degree
+Postgraduate-Diploma',
     'allowed_values_php' => '',
     'widget' => array(
       'default_value' => array(
@@ -1712,7 +1730,7 @@ WAEC',
       'default_value_php' => NULL,
       'label' => 'Qualification',
       'weight' => '36',
-      'description' => '',
+      'description' => 'For Postgraduate Applications please enter your highest qualification (First Degree or Postgraduate Diploma)',
       'type' => 'optionwidgets_select',
       'module' => 'optionwidgets',
     ),
@@ -1915,7 +1933,7 @@ return $rows;',
       'default_value_php' => NULL,
       'label' => 'Score Details',
       'weight' => '7',
-      'description' => 'Please put in JAMB Score for UTME or Highest Qualification for DE',
+      'description' => 'Please put in JAMB Score for UTME or Highest Qualification for DE or Postgraduate',
       'type' => 'text_textfield',
       'module' => 'text',
     ),

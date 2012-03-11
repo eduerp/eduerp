@@ -223,6 +223,152 @@ function student_registration_fieldgroup_default_groups() {
     ),
   );
 
+  // Exported group: group_olevels_second
+  $groups['student_profile-group_olevels_second'] = array(
+    'group_type' => 'standard',
+    'type_name' => 'student_profile',
+    'group_name' => 'group_olevels_second',
+    'label' => 'Examination Results (Second Sitting)',
+    'settings' => array(
+      'form' => array(
+        'style' => 'fieldset',
+        'description' => '',
+      ),
+      'display' => array(
+        'weight' => '14',
+        'label' => 'above',
+        'teaser' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'full' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'description' => '',
+        '4' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '2' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '3' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '5' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'token' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+      ),
+    ),
+    'weight' => '0',
+    'fields' => array(),
+  );
+
+  // Exported group: group_sponsor_information
+  $groups['student_profile-group_sponsor_information'] = array(
+    'group_type' => 'standard',
+    'type_name' => 'student_profile',
+    'group_name' => 'group_sponsor_information',
+    'label' => 'Sponsor\'s Information',
+    'settings' => array(
+      'form' => array(
+        'style' => 'fieldset_collapsible',
+        'description' => '',
+      ),
+      'display' => array(
+        'weight' => '10',
+        'label' => 'above',
+        'teaser' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'full' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'description' => '',
+        '4' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '2' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '3' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '5' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'token' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+      ),
+    ),
+    'weight' => '55',
+    'fields' => array(),
+  );
+
+  // Exported group: group_sponsor_informationx
+  $groups['student_profile-group_sponsor_informationx'] = array(
+    'group_type' => 'standard',
+    'type_name' => 'student_profile',
+    'group_name' => 'group_sponsor_informationx',
+    'label' => 'Sponsor\'s Information',
+    'settings' => array(
+      'form' => array(
+        'style' => 'fieldset',
+        'description' => '',
+      ),
+      'display' => array(
+        'description' => '',
+        'label' => 'above',
+        'teaser' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'full' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '4' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '2' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '3' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        '5' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+        'token' => array(
+          'format' => 'fieldset',
+          'exclude' => 0,
+        ),
+      ),
+    ),
+    'weight' => '54',
+    'fields' => array(),
+  );
+
   // Exported group: group_xxx
   $groups['student_profile-group_xxx'] = array(
     'group_type' => 'standard',
@@ -282,6 +428,7 @@ function student_registration_fieldgroup_default_groups() {
 
   // Translatables
   // Included for use with string extractors like potx.
+  t('Examination Results (Second Sitting)');
   t('Health Information');
   t('Next of Kin Information');
   t('Please enter your O-level (or equivalent) Examination Results (First Sitting)');
