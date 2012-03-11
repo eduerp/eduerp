@@ -58,7 +58,7 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
   //get the candidate's program, department and faculty info
   $student_profile = new UserProfile($studUID);
 
-  $sql = "SELECT ctc.nid AS faculty_nid, ctd.nid AS department_nid, ctp.nid AS programme_nid, field_department_code_value AS department_code, field_college_abbreviation_value AS faculty_code
+  $sql = "SELECT ctc.nid AS faculty_nid, ctd.nid AS department_nid, ctp.nid AS programme_nid, ctp.field_program_type_value, field_department_code_value AS department_code, field_college_abbreviation_value AS faculty_code
   	FROM {content_type_program} ctp
   	INNER JOIN {content_type_department} ctd ON ctp.field_department_id_nid=ctd.nid
   	INNER JOIN {content_type_college} ctc ON ctd.field_college_id_nid=ctc.nid
@@ -131,6 +131,15 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
   $entryMode = strtoupper(strtolower($student_profile->profile_mode_of_entry)) == 'DE' ? '2' : '1';
   $facCode = $rsStudent->faculty_code;
   $deptCode = $rsStudent->department_code;
+  $program_type = $rsStudent->field_program_type_value;
+  $program_types = programme_types();
+
+  if ($student_profile->profile_mode_of_study == 'Part_Time') {
+    $mode_of_study = '2';
+  }
+  else {
+    $mode_of_study = '1';
+  }
 
   //because this is an open development, lets check if there exists format details...e.g prefix, separator etc.
 
@@ -145,7 +154,31 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
   }
   else{
     //now bring them together
-    $matNumber = ($entryYear . $entryMode . $facCode . $deptCode . $SerialNum);
+
+    if ($program_types[$program_type] == 'Matric') {
+      $matNumber = $entryYear . '1' . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Certificate CIS') {
+      $matNumber = $entryYear . '1' . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Diploma CIS') {
+      $matNumber = $entryYear . '2' . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate Diploma') {
+      $matNumber = $entryYear . '1' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate Masters') {
+      $matNumber = $entryYear . '2' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate PhD') {
+      $matNumber = $entryYear . '3' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate MPhil') {
+      $matNumber = $entryYear . '4' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    else {
+      $matNumber = $entryYear . $entryMode . $facCode . $deptCode . $SerialNum;
+    }
   }
 
   //generate the email
