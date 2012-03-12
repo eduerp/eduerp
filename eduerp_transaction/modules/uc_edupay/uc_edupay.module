@@ -637,8 +637,8 @@ function _uc_edupay_process_order_request($order) {
   }
   $order_parm['total_amount'] = $total_amount;
 
-//dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-//ab if (FALSE) {//ab}
+  //dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
+  //ab if (FALSE) {//ab}
   if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
@@ -703,9 +703,9 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         // Drupal HTTP timeout is 30 seconds... so need to allow at least that long (i.e. 50 seconds)
         $now = time();
         $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $user->uid, $arg1->order_id, $now - 50);
-dsm(array('uid' => $user->uid, 'order_id' => $arg1->order_id, 'now' => $now));//ab
+        //dsm(array('uid' => $user->uid, 'order_id' => $arg1->order_id, 'now' => $now));//ab
         if ($r = db_fetch_object($rs)) {
-dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
+          //dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
           drupal_set_message('You seem to have clicked on "Send Fee Details for Processing" more than once, but you can select your invoice below (or if it is not below, click "Pay Fees" again).', 'error');
           drupal_goto("user/$user->uid/fees/pay");
         }
