@@ -10534,7 +10534,15 @@ function get_remove_pending_order_form_submit($form, &$state){
   $values = $state['values'];
 
   if (!empty($values['order_number'])) {
-    $rs = db_query("UPDATE {uc_orders} uco, {fees_order} fo SET uco.order_status = 'canceled', fo.status = 'canceled' WHERE uco.order_status='pending' AND uco.order_id=fo.order_id AND uco.order_id=%d", $values['order_number']);
+    $rs = db_query("
+      UPDATE {uc_orders} uco, {fees_order} fo
+      SET uco.order_status = 'canceled', fo.status = 'canceled'
+      WHERE
+        (uco.order_status='pending'
+          OR
+        (uco.order_status='payment_received' AND fo.expiry_date IS NULL))
+        AND
+        uco.order_id=fo.order_id AND uco.order_id=%d", $values['order_number']); // Only cancel Pending Orders or Orders that involve no real Payment i.e. 'expiry_date' not set by EduPay callback
   }
   else {
     $rs = db_query("UPDATE {uc_orders} uco, {fees_order} fo SET uco.order_status = 'canceled', fo.status = 'canceled' WHERE uco.order_status='pending' AND ((UNIX_TIMESTAMP()-uco.created)/(60*60*24)) > %d AND uco.order_id=fo.order_id", $values['number_of_days']); // Set any 'pending' orders to 'canceled' if they have been there for at least $days
