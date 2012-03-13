@@ -1260,7 +1260,8 @@ function student_meets_fee_requirements($uid) {
 
   $fees = get_fee_items($uid);
   if (!empty($fees)) {
-    if ($fees['amount_payable'] <= 0.0) return TRUE; // The Student is on a full Scholarship with no extras to pay
+    // Always force Students to go through Pay fees so that Fees Report gets set (for Scholarship items) even if they have nothing to pay... Comment out...
+    //if ($fees['amount_payable'] <= 0.0) return TRUE; // The Student is on a full Scholarship with no extras to pay
 
     $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
       WHERE
