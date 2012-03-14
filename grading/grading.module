@@ -403,6 +403,18 @@ function grading_node_access_records($node) {
     else {
       error_log("Failed to find department and college records for student_grades $node->nid");
     }
+
+    if ($node->field_examscorelocked[0]['value'] == 5) { // will only be true on rebuild
+      // If this has been approved by VC, make viewable to those with permission 'universityapproved'
+      $grants[] = array(
+        'realm' => 'universityapproved',
+        'gid' => 0,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
+    }
   }
   elseif ($node->type === 'student_gpa') {
     $program = $node->field_program_ref_gpa[0]['nid'];
@@ -443,6 +455,20 @@ function grading_node_access_records($node) {
     }
     else {
       error_log("Failed to find department and college records for student_gpa $node->nid");
+    }
+
+    $sql = "SELECT nid FROM {content_type_student_grades} WHERE field_student_gpa_nid=%d AND field_examscorelocked_value=5";
+    $result = db_query($sql, $node->nid);
+    if ($row = db_fetch_object($result)) { // will only be true on rebuild
+      // If any grade for this student (they all get approved together) has been approved by VC, make viewable to those with permission 'universityapproved'
+      $grants[] = array(
+        'realm' => 'universityapproved',
+        'gid' => 0,
+        'grant_view' => TRUE,
+        'grant_update' => FALSE,
+        'grant_delete' => FALSE,
+        'priority' => 0,
+      );
     }
   }
   elseif ($node->type === 'student_program') {
