@@ -296,15 +296,6 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
   }
 }
 
-/**
- * Load a fee format by nid
- *  - Instalment1, Instalment2 or Full Amount
- */
-function _uc_edupay_load_fee_format($nid) {
-  $result = db_fetch_object(db_query("SELECT * FROM {fees} WHERE nid = %d", $nid));
-  $fee_format = unserialize($result->extras);
-  return array_shift($fee_format['fees_payment_format']);
-}
 
 function uc_edupay_fees_price_handler_format($price, $options) {
 }
@@ -637,9 +628,9 @@ function _uc_edupay_process_order_request($order) {
   }
   $order_parm['total_amount'] = $total_amount;
 
-  //dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-  //ab if (FALSE) {//ab}
-  if ($total_amount > 0.0) {
+  dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
+  if (FALSE) {//ab}
+  //ab if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
     // Try to send POST immediately, if this does not work, we will queue
@@ -747,7 +738,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             $fees = $arg1->products;
             $field = array();
             $fields = array();
-            $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
             foreach ($fees as $key => $product) {
               $fields = $product->data;
               $field['type'] = $fields['type'];
@@ -791,12 +781,15 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               $field['order_id'] = $product->order_id;
               $field['uid'] = $arg1->uid;
               $field['product_nid'] = $product->nid;
-              //$fields = $product + $items;
+
               unset($fields['has_scholarship']);
-              // alter fees_order
-              foreach(module_implements('fees_order_alter') as $module) {
-                $field = module_invoke($module, 'fees_order_alter', $field, $fields, $field['uid'], $field['product_nid'], $new_fields);
-              }
+
+              $field['course'] = $fields['course'];
+              $field['college'] = $fields['college'];
+              $field['original_amount'] = $fields['original_amount'];
+              $field['scholarship_type'] = $fields['scholarship_type'];
+              $field['sponsor'] = $fields['sponsor'];
+
               uc_edupay_save($arg1->order_id, $field);
             }
 
@@ -824,15 +817,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
  * This is a replica of uc_order_product_save
  */
 function uc_edupay_save($order_id, $product) {
-  // if fees_order does not exist
-  $ret = array();
-  if(!db_table_exists('fees_order')) {
-    $table = drupal_get_schema('fees_order');
-    db_create_table($ret, 'fees_order', $table);
-  }
-  // the schema need to be rebuilt for schema_alter to work
-  $schema = drupal_get_schema('fees_order', TRUE);
-  module_invoke('uc_edupay', 'schema_alter', $schema);
 
   if (!empty($product['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $product['attributes'], $matches)) {
     $format_sql = "AND fees_format='" . $matches[0] . "'";
@@ -863,116 +847,6 @@ function uc_edupay_save($order_id, $product) {
   }
 }
 
-/**
- * Implements hook_fees_order_field_info
- */
-function uc_edupay_fees_order_field_info() {
-  $field['fees_format'] = array(
-    'description' => t('The Fees format. E.g Instalment1, Instalment2 or Full Amount. This is very case sensitive'),
-    'type' => 'varchar',
-    'length' => '20',
-    'not null' => FALSE,
-    //'default' => ''
-  );
-  $field['college'] = array(
-    'description' => t("The college the student's programme belongs to"),
-    'type' => 'varchar',
-    'length' => '225',
-    'not null' => FALSE,
-    //'default' => ''
-  );
-  $field['course'] = array(
-    'description' => t("The student course as registered in student profile"),
-    'type' => 'varchar',
-    'length' => '225',
-    'not null' => FALSE,
-    //'default' => ''
-  );
-  $field['original_amount'] = array(
-    'description' => t('The fees order original price'),
-    'type' => 'numeric',
-    'not null' => FALSE,
-    'default' => 0,
-    'precision' => '16',
-    'scale' => '5',
-  );
-  $field['scholarship_type'] = array(
-    'description' => t("The type of the Student's Scholarship"),
-    'type' => 'varchar',
-    'length' => '60',
-    'not null' => FALSE,
-  );
-  $field['sponsor'] = array(
-    'description' => t("The Student's Scholarship Sponsor"),
-    'type' => 'varchar',
-    'length' => '60',
-    'not null' => FALSE,
-  );
-
-  return $field;
-}
-
-/**
- * Implements hook_fees_order_alter
- */
-function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_field) {
-  // if new field doesn't exist
-  // fill new_field with whatever you want
-  $formats = uc_eduerp_fees_load_extras($uid, 'fees');
-  if(!is_null($new_field)){
-    foreach($new_field as $key => $value) {
-      $result = db_query("SHOW COLUMNS FROM {fees_order} LIKE '%s'", $key);
-      $exists = (db_affected_rows() > 0)? TRUE : FALSE;
-      if(!$exists) {
-        $ret = array();
-        $schema['fees_order']['fields'][$key] = $value;
-        //$spec = module_invoke('uc_edupay', 'schema_alter', $schema);
-        db_add_field($ret, 'fees_order', $key, $value);
-        module_invoke('uc_edupay', 'schema_alter', $schema);
-      }
-      switch($key) {
-        case 'fees_format':
-          // use the product_nid to find a corresponding fees_format
-          if(array_key_exists($product_nid, $formats)) {
-            $fields[$key] = $formats[$product_nid]['fees_payment_format'][0];
-          }
-          break;
-         case 'course':
-          $fields[$key] = $data['course'];
-          break;
-         case 'college':
-          $fields[$key] = $data['college'];
-          break;
-         case 'original_amount':
-          $fields[$key] = $data['original_amount'];
-          break;
-         case 'scholarship_type':
-          $fields[$key] = $data['scholarship_type'];
-          break;
-         case 'sponsor':
-          $fields[$key] = $data['sponsor'];
-          break;
-      }
-    }
-  }
-
-  return $fields;
-}
-
-/**
- * Retrieve the type of fees order made
- *
- * @deprecated
- * @see uc_edupay_fees_order_get_item
- */
-function uc_edupay_fees_order_types() {
-  $types = array();
-  $result = db_query("SELECT DISTINCT type FROM {fees_order}");
-  while($type = db_fetch_array($result)) {
-    $types[] = $type;
-  }
-  return $types;
-}
 
 /**
  * Retrieve items from fees_order
@@ -1057,7 +931,6 @@ function uc_edupay_token_list($type = 'all') {
  */
 /*
 function uc_edupay_checkout_pane() {
-  //$fees = uc_eduerp_fees_get_fees_order();
   $items = uc_cart_get_contents();
   foreach($items as $fee) {
     $panes[$fee->title] = array(
@@ -1279,15 +1152,6 @@ function _uc_edupay_fees_order_items($order) {
   return $products;
 }
 
-
-/**
- * Implements hook_schema_alter
- */
-function uc_edupay_schema_alter(&$schema) {
-  foreach(module_invoke_all('fees_order_field_info') as $key => $value) {
-    $schema['fees_order']['fields'][$key] = $value;
-  };
-}
 
 /**
  * Alter all views exposed filters

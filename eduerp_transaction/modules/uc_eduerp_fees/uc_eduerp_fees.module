@@ -407,19 +407,18 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
           '#value' => $nid,
         );
       }
+
       foreach($items as $item) {
-        // Identify extras
         // foreach of the fees item description, parse it to extract the extras
         $key_search = $item['item_description'];
-        foreach(module_implements('eduerp_fees_alter') as $module) {
-          // @todo - Make hook_eduerp_fees_alter argument to be options so that extras
-          // can be altered with multiple items
-          $item['extras']['fees_payment_format'] = module_invoke($module, 'eduerp_fees_alter', $key_search, 'extras');
+        if(!is_null($key_search)) {
+          preg_match_all('/Full Amount|Instalment1|Instalment2/', $key_search, $matches);
+          foreach($matches as $key => $value) {
+            $item['extras']['fees_payment_format'] = $value;
+            break;
+          }
         }
 
-        // @todo
-        // Would be appropriate to use item_description here
-        // but it is very unstructured and inconsistent
         $id = $item['product_nid'];
         $form['eduerp_fees']['product_item_' . $type . '_' . $id] = array(
           '#type' => 'hidden',
@@ -579,7 +578,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
       $profile_items = uc_eduerp_fees_get_profile_items($cartId);
       foreach($profile_items as $k => $v) {
-        $options[$k] = module_invoke('uc_eduerp_fees', 'eduerp_fees_alter', $v, 'options');
+        $options[$k] = $v;
       }
 
     if(!empty($product)){
@@ -715,145 +714,11 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
   return $return;
 }
 
-/**
- * Implements hook_eduerp_fees_eduerp_fees_alter
- *
- * Passing $items by reference here won't work
- * because of a PHP bug. Occurs only in php 5.3.1+
- *
- * @see
- *  - http://stackoverflow.com/questions/2045875/pass-by-reference-problem-with-php-5-3-1
- *  - http://bugs.php.net/bug.php?id=50394
- *
- * A temporary solution is to modify the values in the array
- * to be referenced
- */
-function uc_eduerp_fees_eduerp_fees_alter($items = NULL, $context = 'extras') {
-  // array search the context value
-  // when gotten, inject stuffs into $extras key
-  if($context == 'extras') {
-    if(!is_null($items)) {
-      preg_match_all('/Full Amount|Instalment1|Instalment2/', $items, $matches);
-      foreach($matches as $key => $value) {
-        return $value;
-      }
-    }
-  }
-  if($context == 'options') {
-    if(is_string($items)) {
-      return $items;
-    }
-    if(is_array($items)) {
-      return $items;
-    }
-  }
-}
-
-/**
- * All paid fees items gotten from EduPay
- *
- * Returns an array of all fees that are paid
- *
- * @params $items
- *  Paid items
- *
- * @todo Lookup should be done fees_order table
- * and not uc_orders
- *
- * @return array
- * Not used (except by test)
- */
-function uc_eduerp_fees_paid_items($uid, $nid, $subscript = TRUE) {
-  $items = array();
-  $status_paid = FEES_PAID;
-  $status_pending = FEES_PENDING;
-  $result = db_query("SELECT * FROM {uc_order_products} WHERE nid = %d ORDER BY nid", $nid);
-  $products = db_fetch_object($result);
-
-  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $uid, $status_paid, $status_pending);
-  while($order = db_fetch_object($result)) {
-    if($subscript) {
-      $items[] = $products->nid;
-      break;
-    }
-    $order->nid = $products->nid;
-    $order->order_id = $order->order_id;
-    $order->data = unserialize($order->data);
-    $items[$order->nid] = $order;
-  }
-  return $items;
-}
-
-/**
- * Gets the fees attributes including
- *   - product_nid
- *   - attribute_id
- *   - option_id
- *
- * @todo Needs rework
- */
-function uc_eduerp_fees_fees_attributes($fees) {
-  if(!empty($fees)) {
-    foreach($fees as $fee) {
-      $attribute_id = $fee['item']['attribute_id'];
-      $attr_obj = uc_attribute_load($attribute_id);
-      /*foreach($fee['item'] as $key => $fee_item) {
-      }*/
-    }
-  }
-  return $attribute_id;
-}
-
-/**
- * Load fees extras from the database. Accepts only
- * fees and hostel types as of writing
- * NOT USED
- *
- */
-function uc_eduerp_fees_load_extras($uid, $type) {
-  switch($type) {
-    case 'fees':
-      $result = db_query("SELECT * FROM {fees} WHERE uid = %d and type = '%s'", $uid, $type);
-      while($fee_object = db_fetch_object($result)) {
-        $extras[$fee_object->nid] = unserialize($fee_object->extras);
-      }
-      return $extras;
-      break;
-    case 'hostel':
-      $result = db_query("SELECT * FROM {fees} WHERE uid = %d and type = '%s'", $uid, $type);
-      while($fee_object = db_fetch_object($result)) {
-        $extras[$fee_object->nid] = unserialize($fee_object->extras);
-      }
-      return $extras;
-      break;
-  }
-}
-
-/**
- * hook_update_invoke declaration
- */
-function uc_eduerp_fees_update_invoke($op, $value, $schema = NULL, $field_value = NULL) {
-  foreach(module_list() as $module) {
-    $function = $module . '_update_'.$op;
-    if(function_exists($function)) {
-      $function($value, $schema, $field_value);
-    }
-  }
-}
-
-function uc_eduerp_fees_update_update($value, $schema, $field_value) {
-  if(db_query("UPDATE {$schema} set order_status = '$field_value' WHERE order_id = %d", $value)) {
-    return TRUE;
-  }
-}
-
-function uc_eduerp_fees_update_delete($value, $schema, $field_value) {
-  return db_query("DELETE FROM {$schema} WHERE order_id = %d", $value);
-}
 
 function uc_eduerp_fees_invoice_regenerate($order_id) {
   return _uc_eduerp_fees_invoice_rebuild($order_id);
 }
+
 
 /**
  * load the invoice view (pdf_invoice)
@@ -869,69 +734,11 @@ function _uc_eduerp_fees_invoice_load($order_id) {
   $view[0]->uc_orders_order_status = 'canceled';
 }
 
+
 function _uc_eduerp_fees_invoice_rebuild($order_id) {
   return _uc_eduerp_fees_invoice_load($order_id);
 }
 
-/**
- * Get fees of type fees from the source
- *
- * All modifications within uc_eduerp_fees_pay_fees are
- * not available to the return items in this function
- */
-function uc_eduerp_fees_get_fees($type = 'fees') {
-  if($fees = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
-    foreach($fees as $fee){
-      if($fee['type'] == $type) {
-        $items = $fee['item'];
-      }
-    }
-     return $items;
-  }
-}
-
-/**
- * Get fees items when an order is made
- *
- * @todo test the order object to make sure it is of type fees
- */
-function uc_eduerp_fees_get_fees_order() {
-  $order_id = intval($_SESSION['cart_order']);
-  if($order_id > 0) {
-    $order = uc_order_load($order_id);
-  }
-  return $order;
-}
-
-/**
- * Loads a subset of fees by type
- *
- * @param $type
- *   fees or hostel
- *
- * @return
- *   - array
- * NOT USED
- */
-function uc_eduerp_fees_load_fee_options($type) {
-  if(!is_null($type)){
-    if($fees = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
-      $typed = $fees[$type];
-      return $typed['options'];
-    }
-  }
-}
-
-/**
- * Orders are regarded as items in UC.
- * Provides extra access to data in the order throughout
- * the life time of the ordering process.
- *
- * @param $type
- *  fees or hostel
- */
-function uc_eduerp_fees_load_item_options($type){
-}
 
 /**
  * Implements hook_form_ID_alter
@@ -949,16 +756,17 @@ function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) 
   }
 }
 
+
 /**
  * Implementation of hook_views_api().
  */
 function uc_eduerp_fees_views_api() {
   return array(
     'api' => 2,
-    //'path' => drupal_get_path('module', 'uc_eduerp_fees'),
     'path' => drupal_get_path('module', 'uc_eduerp_fees') . '/includes',
   );
 }
+
 
 /**
  * Get student profile items related to fees
