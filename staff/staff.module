@@ -10655,7 +10655,7 @@ function add_once_off_invoice_form_validate($form, &$state) {
   $row = db_fetch_object(db_query("SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d", $student_profile->profile_first_choice));
   $programme = $row->field_programme_name_value;
 
-  $data = serialize(array('type' => 'fees', 'programme' => $programme, 'fullnames' => $studentname, 'timeout' => 2145913199));
+  $data = serialize(array(0 => array('type' => 'fees', 'programme' => $programme, 'fullnames' => $studentname, 'timeout' => 2145913199)));
   db_query("INSERT INTO {uc_orders}
            (uid, order_status, order_total, product_count, primary_email, delivery_first_name, delivery_last_name, delivery_phone, delivery_company, delivery_street1, delivery_street2, delivery_city, delivery_zone, delivery_postal_code, delivery_country, billing_first_name, billing_last_name, billing_phone, billing_company, billing_street1, billing_street2, billing_city, billing_zone, billing_postal_code, billing_country, payment_method, data, created, modified, host, currency)
     VALUES ( %d,         '%s',          %f,             1,          '%s',                  '',                 '',             '',               '',               '',               '',            '',             0,                   '',              840,                 '',                '',            '',              '',              '',              '',           '',            0,                   0,             840,       'edupay', '%s',      %d,       %d, '%s',    'NGN')",
