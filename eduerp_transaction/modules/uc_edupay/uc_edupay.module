@@ -1181,11 +1181,13 @@ function uc_edupay_theme_registry_alter(&$theme_registry) {
  * Preparatory stuff for the Ubercart invoice template.
  */
 function uc_edupay_preprocess_uc_order(&$vars) {
+dsm(array('vars' => $vars));//ab
   $invoice_vars = array();
   $date = new DateTime($vars['order_date_created']);
 
   $student_uid = $vars['user_id'];
   $student_profile = content_profile_load('student_profile', $student_uid);
+dsm(array('student_profile' => $student_profile));//ab
 
   foreach($vars['order']->data as $key => $value) {
     if($value['type'] == EDUERP_FEES_NORMAL) {
