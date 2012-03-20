@@ -876,6 +876,7 @@ function uc_edupay_token_values($type, $object = NULL) {
   switch ($type) {
     case 'order':
       $order = $object;
+dsm(array('order' => $order));//ab
       $student_profile = content_profile_load('student_profile', $order->uid);
       foreach($order->data as $key => $value) {
         if($value['type'] == EDUERP_FEES_NORMAL) {
