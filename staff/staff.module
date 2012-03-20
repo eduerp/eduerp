@@ -200,6 +200,13 @@ function staff_menu() {
     'type' => MENU_CALLBACK
   );
 
+  $items['staff/add_once_off_invoice'] = array(
+    'title' => 'Add Once Off Invoice',
+    'page callback' => 'staff_add_once_off_invoice',
+    'access arguments' => array('student payments'),
+    'type' => MENU_CALLBACK
+  );
+
   $items['staff/changeuncleared']=array(
     'title'=>"Change Programme for Uncleared Candidate",
     'page callback' => 'staff_change_uncleared_candidate_programme',
@@ -6624,6 +6631,10 @@ function staff_school_fees_admin(){
 
     $html .= '<b>Pending Invoices</b> - Actions to be performed on Pending Invoices.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/removepending') . '">Specify Pending Invoices to Remove</a>';
+    $html .= '<br /><br />';
+
+    $html .= '<b>Once Off Invoice</b> - Add a Once Off Invoice for a Student.<br />';
+    $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/removepending') . '">Add a Once Off Invoice</a>';
 
     $html .= '<br />';
   $html .= '<br /><hr /><br />';
@@ -10310,7 +10321,6 @@ function staff_school_fees_create_modify_scholarship_types(){
       $html .= drupal_get_form('staff_school_fees_create_modify_scholarship_types_form');
     }
     else{
-      //$html .= Error_Types(104);
       drupal_set_message(Error_Types(104), 'error');
     }
     $html .= '<br /><hr /><br />';
@@ -10555,6 +10565,219 @@ function get_remove_pending_order_form_submit($form, &$state){
   }
   else
     drupal_set_message(Error_Types(171), 'error');
+}
+
+
+function staff_add_once_off_invoice() {
+  global $user;
+  ob_start();
+
+  $html  = '<br /><hr /><br />';
+  $html .= "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href = '". url('staff/schoolfeesadmin') ."'>School Fees Administration</a>&nbsp; &raquo; &nbsp;Add a Once Off Invoice</font><br /><br />";
+  $html .= '<hr /><br />';
+  if (staff_has_eduerp_role($user->uid, 0, 0, array('Bursary', 'Bursar'))) {
+    $html .= "<b>Add a Once Off Invoice</b> - Add a Once Off Invoice for a Student.<br />";
+    $html .= '<br />';
+
+    $html .= drupal_get_form('add_once_off_invoice_form');
+  }
+  else {
+    drupal_set_message(Error_Types(104), 'error');
+  }
+
+  $html .= '<br /><hr /><br />';
+
+  echo $html;
+  return ob_get_clean();
+}
+
+
+function add_once_off_invoice_form() {
+  $form['#title'] = 'Add a Once Off Invoice';
+  $form['admission'] = array(
+      '#title' => 'Admission Number for Student that needs to make the Payment',
+      '#type' => 'textfield',
+      '#size' => 60,
+      '#required' => TRUE,
+    );
+  $form['description'] = array(
+      '#title' => 'Description of Payment (short!)',
+      '#type' => 'textfield',
+      '#size' => 60,
+      '#required' => TRUE,
+    );
+  $form['price'] = array(
+      '#title' => 'Amount of Payment (no currency symbol, comma or decimal point)',
+      '#type' => 'textfield',
+      '#size' => 60,
+      '#required' => TRUE,
+    );
+  $form['submit'] = array(
+    '#value' => 'Create a New Once Off Invoice for this Student; Click only once!',
+    '#type' => 'submit'
+  );
+  return $form;
+}
+
+
+function add_once_off_invoice_form_validate($form, &$state) {
+  global $base_url;
+  $values = $state['values'];
+
+  $row = db_fetch_object(db_query("SELECT uid FROM {users} WHERE name='%s'", $values['admission']));
+  $uid = $row->uid;
+  if (empty($uid)) form_set_error('admission', 'Admission Number could Not be Found');
+
+  $description = check_plain($values['description']);
+
+  $price = (int)$values['price'];
+  if ($price <= 0) form_set_error('price', 'Price must be greater than Zero');
+
+  $student_user = user_load(array('uid' => $uid));
+
+  $student_profile = new UserProfile($uid);
+
+  $studentname = '';
+  if (!empty($student_profile->profile_first_name) && !empty($student_profile->profile_last_name)) {
+    $middle = '';
+    if (!empty($student_profile->profile_middle_name)) $middle = ' ' . $student_profile->profile_middle_name;
+    $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
+  }
+
+  $row = db_fetch_object(db_query("SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d", $student_profile->profile_first_choice));
+  $programme = $row->field_programme_name_value;
+
+  db_query("INSERT INTO {uc_orders}
+           (uid, order_status, order_total, product_count, primary_email, delivery_first_name, delivery_last_name, delivery_phone, delivery_company, delivery_street1, delivery_street2, delivery_city, delivery_zone, delivery_postal_code, delivery_country, billing_first_name, billing_last_name, billing_phone, billing_company, billing_street1, billing_street2, billing_city, billing_zone, billing_postal_code, billing_country, payment_method, data, created, modified, host, currency)
+    VALUES ( %d,         '%s',          %f,             1,          '%s',                  '',                 '',             '',               '',               '',               '',            '',             0,                   '',              840,                 '',                '',            '',              '',              '',              '',           '',            0,                   0,             840,       'edupay',   '',      %d,       %d, '%s',    'NGN')",
+           $uid,    'pending',      $price,         $student_user->email,                                                                                                                                                                                                                                                                                                                                                                                        time(),   time(), ip_address());
+
+  $order_id = db_last_insert_id('uc_orders', 'order_id');
+
+  // Submit might be clicked multiple times, if so stop now
+  // Drupal HTTP timeout is 30 seconds... so need to allow at least that long (i.e. 50 seconds)
+  $now = time();
+  $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $uid, $order_id, $now - 50);
+  if ($r = db_fetch_object($rs)) {
+    form_set_error('admission', 'You seem to have Submitted this form twice in rapid succession, Invoice: ' . $r->order_id . ' was already created');
+    return;
+  }
+
+  $productNID = create_uc_product($description, $price, FALSE);
+  $productNode = node_load($productNID);
+
+  $uc_order_product = new stdClass();
+  $uc_order_product->nid = $productNID;
+  $uc_order_product->title = $description;
+  $uc_order_product->manufacturer = '';
+  $uc_order_product->model = $productNode->model;
+  $uc_order_product->qty = 1;
+  $uc_order_product->cost = 0.0;
+  $uc_order_product->price = $price;
+  $uc_order_product->weight = 0;
+
+  $transaction_token = uniqid();
+  $uc_order_product->data = serialize(array('transaction_token'] => $transaction_token));
+
+  uc_order_product_save($order_id, $uc_order_product);
+
+  $fees_order = array();
+  $fees_order['product_nid'] = $productNID;
+
+  $feeStudentOption = get_fee_items($uid);
+
+  $fees_order['nid'] = $feeStudentOption['studentFeeSetupNID'];
+  $fees_order['type'] = 'fees';
+  $fees_order['cart_item_id'] = 0;
+  $fees_order['title'] = $description;
+  $fees_order['price'] = $price;
+  $fees_order['nationality'] = $feeStudentOption['nationality_name'];
+  $fees_order['programme'] =  $feeStudentOption['fee_structure_name'];
+  $fees_order['level_name'] = student_next_level($student_user->uid, variable_get('eduerp_current_session', ''));
+  $fees_order['session'] = variable_get('eduerp_current_session', '');
+  $fees_order['late_registration_date'] = 2145913199;
+  $fees_order['late_registration_amount'] = 0.00000;
+  $fees_order['late_registration_nid'] = NULL;
+  $fees_order['late_registration_description'] = NULL;
+  $fees_order['uid'] = $uid;
+  $fees_order['jambno'] = $student_user->name;
+  $fees_order['fullnames'] = $studentname;
+  $fees_order['institution'] = 1;
+  $fees_order['status'] = 'pending';
+  $fees_order['order_id'] = $order_id;
+  $fees_order['scholarship'] = 0;
+  $fees_order['allow_instalment'] = 0;
+  $fees_order['hostel_nid'] = NULL;
+  $fees_order['hostel_type'] = 'hostel';
+  $fees_order['attributes'] = NULL;
+  $fees_order['module'] = 'uc_product';
+
+  $profile_items = uc_eduerp_fees_get_profile_items($uid);
+  $fees_order['college'] = $profile_items['college'];
+  $fees_order['course'] = $profile_items['course'];
+
+  $fees_order['original_amount'] = $price;
+  $fees_order['scholarship_type'] = 'None';
+  $fees_order['sponsor'] = 'None';
+
+  unset($_SESSION['edupay_total_amount_zero']);
+
+  uc_edupay_save($order_id, $fees_order);
+
+  $fees = array();
+
+  $order_parm = array(
+    'order_id' => $order_id,
+    'transaction_token' => $transaction_token,
+    'full_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($studentname)),
+    'matriculation_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($student_user->name)),
+    'total_amount' => 0.0 + $price,
+    'currency' => 'NGN',
+    'timeout' => $fees_order['late_registration_date'],
+    'programme' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($programme)),
+    'session' => $fees_order['session'],
+    'banks' => array(
+      array(
+        'name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_name', ''))),
+        'account_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_account_name', ''))),
+        'account_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_1_account_number', ''))),
+      ),
+      array(
+        'name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_name', ''))),
+        'account_name' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_account_name', ''))),
+        'account_number' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags(variable_get('eduerp_institution_bank_2_account_number', ''))),
+      ),
+    ),
+  );
+
+  $callback_url = $base_url . '/edupay/callback';
+
+  $callback_data = array(
+    'uid' => (int)$uid
+  );
+
+  $fees[] = array(
+    'title' => str_replace(array("\r", "\n", "<", ">", "&", '"', "'", "\\"), array('', '', '', '', '', '', '', ''), strip_tags($description)),
+    'amount' => 0.0 + $price,
+    'currency' => 'NGN'
+  );
+
+  dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
+
+  // Try to send POST immediately, if this does not work, we will queue
+  $data = drupal_to_js(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
+
+  $headers = array(
+    'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
+    'Content-Type' => 'application/json');
+  $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
+
+  if ($result->code != 200) {
+    $data = serialize(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));
+    db_query("INSERT INTO cron_edupay_send_queue (data) VALUES ('%s')", $data);
+  }
+
+  drupal_set_message('<a href="' . url('user/' . $uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice ' . $order_id . ' Created for Student (click here)</a>');
 }
 
 
