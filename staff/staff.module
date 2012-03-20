@@ -10613,7 +10613,7 @@ function add_once_off_invoice_form() {
       '#required' => TRUE,
     );
   $form['submit'] = array(
-    '#value' => 'Create a New Once Off Invoice for this Student; Click only once!',
+    '#value' => 'Create a New Once Off Invoice for this Student; Click Once Only!',
     '#type' => 'submit'
   );
   return $form;
@@ -10785,7 +10785,7 @@ function add_once_off_invoice_form_validate($form, &$state) {
     db_query("INSERT INTO cron_edupay_send_queue (data) VALUES ('%s')", $data);
   }
 
-  drupal_set_message('<a href="' . url('user/' . $uid . '/order/' . $r->order_id . '/invoice/print') . '" target="_blank">Invoice ' . $order_id . ' Created for Student (click here)</a>');
+  drupal_set_message('<a href="' . url('user/' . $uid . '/order/' . $order_id . '/invoice/print') . '" target="_blank">Invoice ' . $order_id . ' Created for Student (click here)</a>');
 }
 
 
