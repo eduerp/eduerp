@@ -10623,15 +10623,23 @@ function add_once_off_invoice_form() {
 function add_once_off_invoice_form_validate($form, &$state) {
   global $base_url;
   $values = $state['values'];
+  $bad = FALSE;
 
   $row = db_fetch_object(db_query("SELECT uid FROM {users} WHERE name='%s'", $values['admission']));
   $uid = $row->uid;
-  if (empty($uid)) form_set_error('admission', 'Admission Number could Not be Found');
+  if (empty($uid)) {
+    form_set_error('admission', 'Admission Number could Not be Found');
+    $bad = TRUE;
+  }
 
   $description = check_plain($values['description']);
 
   $price = (int)$values['price'];
-  if ($price <= 0) form_set_error('price', 'Price must be greater than Zero');
+  if ($price <= 0) {
+    form_set_error('price', 'Price must be greater than Zero');
+    $bad = TRUE;
+  }
+  if ($bad) return;
 
   $student_user = user_load(array('uid' => $uid));
 
