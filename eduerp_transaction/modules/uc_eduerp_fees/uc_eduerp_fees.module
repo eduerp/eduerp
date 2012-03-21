@@ -482,7 +482,9 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     $values[$key] = $value;
   }
   $key_search = implode(',', array_values($vkeys));
+dsm(array('key_search' => $key_search));//ab
   preg_match_all('/product_item_fees_\d+/', $key_search, $matches);
+dsm(array('matches' => $matches));//ab
   // match options for fees option
   preg_match_all('/options_fees_\d+/', $key_search, $fees_option_matches);
   // find all hostel keys if it exists
@@ -496,6 +498,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     'hostel' => in_array('hostel', $vkeys) ? array_shift($hostel_matches) : array(),
     'hostel_options' => in_array('hostel', $vkeys) ? array_shift($hostel_option_matches) : array()
   );
+dsm(array('matchs' => $matchs));//ab
 
   $product_fees = array();
   $product_hostel_fees = array();
@@ -525,6 +528,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   if(!in_array('hostel', $vkeys)) {
     unset($cart_items['hostel_item_fees']);
   }
+dsm(array('cart_items' => $cart_items));//ab
 
   $transaction_token = uniqid();
 
