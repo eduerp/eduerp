@@ -11033,10 +11033,10 @@ function staff_archive_student_form_submit($form, &$state) {
 
   $student_user = user_load($uid);
 
-  $student_user->status = 0; //Block Student... user_save() in eduerp_delete_role()
-
   eduerp_delete_role($student_user, 'Student');
   eduerp_delete_role($student_user, 'Applicant');
+
+  user_save($student_user, array('status' => 0)); // Block
 
   delete_student_grades($uid, variable_get('eduerp_current_session', ''), 1);
   delete_student_grades($uid, variable_get('eduerp_current_session', ''), 2);
