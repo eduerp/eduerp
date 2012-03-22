@@ -632,6 +632,24 @@ function eduerp_schema() {
     'indexes' => array('program_nid_product_nid' => array('program_nid', 'product_nid')),
   );
 
+  $schema['student_semaphore'] = array(
+    'description' => t('Semaphores for Students'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('Student uid'),
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'semaphore_value' => array(
+        'description' => t('Semaphore'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+
   return $schema;
 }
 
