@@ -465,11 +465,6 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   );
   $form['#submit'][] = 'uc_eduerp_fees_pay_fees_form_submit';
 
-//ab delete when triggered...
-  $text = variable_get('locale_custom_strings_en', '');
-  $text['Review order'] = 'Send Fee Details for Processing (Click Once Only!)';
-  variable_set('locale_custom_strings_en', $text);
-
   return $form;
 }
 
@@ -482,9 +477,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     $values[$key] = $value;
   }
   $key_search = implode(',', array_values($vkeys));
-dsm(array('key_search' => $key_search));//ab
   preg_match_all('/product_item_fees_\d+/', $key_search, $matches);
-dsm(array('matches' => $matches));//ab
   // match options for fees option
   preg_match_all('/options_fees_\d+/', $key_search, $fees_option_matches);
   // find all hostel keys if it exists
@@ -498,7 +491,6 @@ dsm(array('matches' => $matches));//ab
     'hostel' => in_array('hostel', $vkeys) ? array_shift($hostel_matches) : array(),
     'hostel_options' => in_array('hostel', $vkeys) ? array_shift($hostel_option_matches) : array()
   );
-dsm(array('matchs' => $matchs));//ab
 
   $product_fees = array();
   $product_hostel_fees = array();
@@ -528,7 +520,6 @@ dsm(array('matchs' => $matchs));//ab
   if(!in_array('hostel', $vkeys)) {
     unset($cart_items['hostel_item_fees']);
   }
-dsm(array('cart_items' => $cart_items));//ab
 
   $transaction_token = uniqid();
 
@@ -586,7 +577,6 @@ dsm(array('cart_items' => $cart_items));//ab
       }
 
     if(!empty($product)){
-      dsm(array('Added product_nid' => $product[$key]['product_nid'], 'item_description' => $product[$key]['item_description'], 'options' => $options, 'transaction_token' => $transaction_token, 'cartId' => $cartId, 'student_id' => $student_id));//ab
       uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
       $added = TRUE;
       $fees = array(
