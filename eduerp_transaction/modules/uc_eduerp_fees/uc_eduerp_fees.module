@@ -315,12 +315,16 @@ function user_has_completed_order_items($student_id) {
  *   - Drupal form
  */
 function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
-dsm(array('HERE' => 'HERE IN uc_eduerp_fees_pay_fees form reset semaphore_value=0'));//ab
   global $user;
   $student_id = $user->uid;
 
-  db_query('INSERT IGNORE INTO {student_semaphore} VALUES (%d, 0)', $student_id);
-  db_query('UPDATE {student_semaphore} SET semaphore_value=0 WHERE uid=%d', $student_id);
+  db_query('INSERT IGNORE INTO {student_semaphore} VALUES (%d, 0, 0)', $student_id); // Only inserts if does not already exist
+
+  $row = db_fetch_object(db_query('SELECT semaphore_timestamp FROM {student_semaphore} WHERE uid=%d', $student_id));
+  if (time() > ($row->semaphore_timestamp + 10)) {
+    // Unlock the Semaphore if 10 seconds have passed
+    db_query('UPDATE {student_semaphore} SET semaphore_value=0 WHERE uid=%d', $student_id);
+  }
 
   uc_cart_empty($student_id);
 
@@ -477,11 +481,11 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   $student_id = $form_state['values']['uid'];
 
   // This is an issue because cart items can get added in parallel even though the cart will have been cleared (if someone double clicks)
-  db_query('UPDATE {student_semaphore} SET semaphore_value=semaphore_value+1 WHERE uid=%d', $student_id);
+  db_query('UPDATE {student_semaphore} SET semaphore_value=semaphore_value+1, semaphore_timestamp=%d WHERE uid=%d', time(), $student_id);
   $r = db_fetch_object(db_query('SELECT semaphore_value FROM {student_semaphore} WHERE uid=%d', $student_id));
   if ($r->semaphore_value != 1) {
     // Semaphore is locked so redirect
-    drupal_set_message('You seem to have clicked on "Pay Fees" more than once, please click "Pay Fees" again).', 'error');
+    drupal_set_message('You seem to have clicked on "Pay Fees" more than once, please wait 10 seconds and click "Pay Fees" again once only).', 'error');
     drupal_goto("user/$student_id/fees/pay");
   }
 
