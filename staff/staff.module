@@ -8794,7 +8794,6 @@ function show_fee_setup_page_two_info(){
 
 
 function get_fee_setup_item_details($setupNID){
-
   $rs = db_query('SELECT ctsfisd.nid nid, field_uc_product_nid_nid product_nid, field_fee_full_payment_amount_value full_amount, IFNULL(field_fee_instalment1_amount_value, 0) AS instalment1_amount, IFNULL(field_fee_instalment2_amount_value, 0) AS instalment2_amount, field_fee_item_value item_name, field_fee_item_fk_nid item_nid, field_is_scholarship_applicable_value is_scholarship_applicable
   	  FROM {content_type_school_fee_item_setup_details} ctsfisd
   	  INNER JOIN {content_type_school_fee_items} ctsfi ON ctsfisd.field_fee_item_fk_nid=ctsfi.nid
@@ -8804,7 +8803,6 @@ function get_fee_setup_item_details($setupNID){
 
 
 function staff_school_fees_test_fee_setup_form() {
-
     $form['#title'] = 'Test Fee Setup';
 
     $form['submit'] = array(
@@ -8817,7 +8815,6 @@ function staff_school_fees_test_fee_setup_form() {
 
 
 function get_late_registration_info(){
-
   $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value
   	  FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
 
@@ -8832,19 +8829,16 @@ function get_late_registration_info(){
 
 
 function is_second_instalment_activated(){
-
   $r = db_query("SELECT field_fee_settings_name_value settings_name, field_fee_settings_value_value settigs_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s'", "activate second instalment payment");
 
   $rs = db_fetch_object($r);
   if($rs->settigs_value == '1') return true;
 
   return false;
-
 }
 
 
 function is_uc_late_registration_existing($name){
-
   $rs = db_query("SELECT p.nid FROM node n
   	  INNER JOIN content_type_product ctp ON n.nid=ctp.nid
   	  INNER JOIN uc_products p ON ctp.nid=p.nid
@@ -8857,7 +8851,6 @@ function is_uc_late_registration_existing($name){
 
 
 function get_uc_late_registration_info($name){
-
   $rs = db_query("SELECT p.nid, title, sell_price FROM node n
   	  INNER JOIN content_type_product ctp ON n.nid=ctp.nid
   	  INNER JOIN uc_products p ON ctp.nid=p.nid
@@ -8894,20 +8887,17 @@ function is_fee_setup_correct(){
   $sql = "SELECT DISTINCT(IFNULL(field_fee_setup_program_nid_value, 0)) program_nid FROM {content_type_school_fee_item_setup} ";
   $rs = db_query($sql);
   if(db_affected_rows($rs) <= 0){
-    //form_set_error('', Error_Types(157));
     return 157;
   }
 
   while($r = db_fetch_object($rs)){
     //check the entries
 
-
     //for each, student type must appear twice, nationality must appear twice
 
     //get student types
     $rs1 = db_query("SELECT nid student_level_type_nid FROM {content_type_school_fee_level_types} ");
     if(db_affected_rows($rs1) <= 0){
-      //form_set_error('', Error_Types(158));
       return 158;
     }
 
@@ -8920,7 +8910,6 @@ function is_fee_setup_correct(){
       }
 
       if(db_affected_rows($rs2) < 2){
-        //form_set_error('', Error_Types(158));
         return 158;
       }
     }
@@ -8928,7 +8917,6 @@ function is_fee_setup_correct(){
     //get nationality types
     $rs1 = db_query("SELECT nid nationality_type_nid FROM {content_type_school_fee_nationality_types} ");
     if(db_affected_rows($rs1) <= 0){
-      //form_set_error('', Error_Types(158));
       return 158;
     }
 
@@ -8953,9 +8941,7 @@ function is_fee_setup_correct(){
 
 
 function prepare_fee_setup_for_edit($setupNID){
-
   unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup']=null;
-
 
   $feeSetup = get_school_fee_setup(variable_get('eduerp_current_session', ''), $setupNID, true);
   //tbl=>formfield
@@ -8968,7 +8954,6 @@ function prepare_fee_setup_for_edit($setupNID){
 
 
 function get_scholarship_payment_student_finder_form(){
-
   $form['#title'] = 'Student Finder';
   $form['mat_number'] = array(
       '#title' => 'Matriculation / JAMB Number',
@@ -8996,13 +8981,11 @@ function get_scholarship_payment_student_finder_form_submit($form, &$state){
 
   $returnURL = 'staff/scholarshippayment';
   ini_student_fee_profile($values['mat_number'], 'eduerp_authorise_scholarship', $returnURL);
-
 }
 
 
 function ini_student_fee_profile($studentNumber, $varName, $returnURL){
   global $EDUERPstudentInitiated;
-  //$values = $state['values'];
   if($EDUERPstudentInitiated)
      $studentInfo = user_load($EDUERPstudentInitiated);
   else
@@ -9073,7 +9056,6 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
 
 
 function show_student_info($info){
-
   $html ="
   <div id='assigned_courses'>
   <table style='width:700px;' border=1>
@@ -9139,7 +9121,6 @@ function show_student_info($info){
 
 
 function staff_show_pay_school_fees_scholarship_form(){
-
   $form['#title'] = 'School Fees Scholarship Payment';
   $form['scholarship_type'] = array(
     '#type' => 'select',
@@ -9174,7 +9155,6 @@ function staff_show_pay_school_fees_scholarship_form(){
 
 
 function get_scholarship_sponsor_organisations(){
-
  $rs =db_query("SELECT * FROM {eduerp_states} ORDER BY state_name");
 while ($row = db_fetch_object($rs)) $list[$row->state_name] = $row->state_name;
 return $list;
@@ -9252,7 +9232,6 @@ function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
 
 
 function is_scholarship_authorisation_existing($studentUID, $sessionName){
-
   $rs = db_query("SELECT nid FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s' ", $studentUID, $sessionName);
 
   if(db_affected_rows($rs) > 0) return true;
@@ -9262,7 +9241,6 @@ function is_scholarship_authorisation_existing($studentUID, $sessionName){
 
 
 function is_instalment_authorisation_existing($studentUID, $sessionName){
-
   $rs = db_query("SELECT nid FROM {content_type_school_fee_approved_instalments} WHERE field_sai_student_uid=%d AND field_sai_session_name_value='%s' ", $studentUID, $sessionName);
 
   if(db_affected_rows($rs) > 0) return true;
