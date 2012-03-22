@@ -5225,7 +5225,6 @@ function get_all_sessions() {
   }
   else
     $session[] = strip_tags(Error_Types(106));
-
   return $session;
 }
 
@@ -5267,9 +5266,7 @@ function staff_unregistered_students() {
 
   $str .= drupal_get_form('show_unregistered_course_form');
 
-
   if ($_SESSION['eduerp_unreg']) {
-
 
     $unregStudents = get_unregistered_students($sessions[$_SESSION['eduerp_unreg']['session']], $_SESSION['eduerp_unreg']['semester']);
 
@@ -5283,7 +5280,6 @@ function staff_unregistered_students() {
       drupal_set_message(Error_Types(106), 'error');
     }
   }
-
   echo $str;
   return ob_get_clean();
 }
@@ -5327,7 +5323,6 @@ function show_unregistered_course_form() {
     '#required' => TRUE,
     '#title' => 'Session');
   if ($_SESSION['eduerp_unreg']) $form['session']['#default_value'] = $_SESSION['eduerp_unreg']['session'];
-
 
   $form['semester'] = array(
     '#type' => 'select',
@@ -5390,7 +5385,6 @@ function staff_student_action_form() {
     '#form_panel_table_attributes' => array('border' => 0));
   $form['#title'] = 'Student Action';
 
-
   $form['comment'] = array(
     '#title' => 'Comment',
     '#type' => 'textfield',
@@ -5398,31 +5392,25 @@ function staff_student_action_form() {
     '#form_panel_col' => 1,
     '#form_panel_row' => 1
   );
-
   $form['uid'] = array(
     '#title' => 'uid',
     '#type' => 'hidden',
     '#default_value' => $eduerp_uid
-
   );
-
   $form['programmeName'] = array(
     '#title' => 'programmeName',
     '#type' => 'hidden',
     '#default_value' => $eduerp_programmeName
-
   );
   $form['programmeUID'] = array(
     '#title' => 'programmeUID',
     '#type' => 'hidden',
     '#default_value' => $eduerp_programme_nid
-
   );
   $form['studentName'] = array(
     '#title' => 'studentName',
     '#type' => 'hidden',
     '#default_value' => $eduerp_studentName
-
   );
   $form['event'] = array(
     '#type' => 'select',
@@ -5431,7 +5419,6 @@ function staff_student_action_form() {
     '#form_panel_col' => 2,
     '#form_panel_row' => 1
     );
-
     $form['degree'] = array(
     '#type' => 'select',
     '#options' => array('None'=>'None','First Class'=>'First Class', 'Second Class Upper'=>'Second Class Upper', 'Second Class Lower'=>'Second Class Lower','Third Class'=>'Third Class', 'Pass'=>'Pass'),
@@ -5439,7 +5426,6 @@ function staff_student_action_form() {
     '#form_panel_col' => 3,
     '#form_panel_row' => 1
     );
-
   $form['session'] = array(
     '#type' => 'select',
     '#options' => get_all_sessions(),
@@ -5447,7 +5433,6 @@ function staff_student_action_form() {
     '#form_panel_col' => 4,
     '#form_panel_row' => 1
     );
-
   $form['submit'] = array(
     '#value' => 'Add to Student Record',
     '#type' => 'submit',
@@ -5455,9 +5440,7 @@ function staff_student_action_form() {
     '#form_panel_row' => 1
   );
 
-
   return $form;
-
 }
 
 
@@ -5473,17 +5456,13 @@ function staff_student_action_form_validate($form, &$state) {
 
 
 function staff_student_action_form_submit($form, &$state) {
-
   $values = $state['values'];
-  //$programmes = get_programmes(0, true);
   // student_record CCK
 
   $studentRecord = array('title' =>  $values['studentName'] .' - '. $values['programmeName'],
   	                 'uid' => $values['uid'], 'event' => $values['event'], 'degree' => $values['degree'],
   	                 'session' => $values['session'], 'programmeUID' => $values['programmeUID'], 'comment' => $values['comment']
-
   	  );
-
   create_student_record_cck($studentRecord);
   drupal_set_message('<b>' . $values['event'] .'</b> with <b>'. $values['degree'] .'</b> for <b>'. $values['session'] .'</b> session was applied to <b>'. $values['studentName'] .'</b>');
 }
@@ -5507,7 +5486,6 @@ function create_student_record_cck(&$studentRecord) {
   $node->field_approver_sr[0]['uid']        = $user->uid; //uid of user who created this record;
   $node->field_comment_sr[0]['value'] = ! empty($studentRecord['comment']) ? $studentRecord['comment'] : null;
   node_save($node);
-
 }
 
 
@@ -5518,28 +5496,22 @@ function staff_drop_registered_course() {
       $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Mark a Course Registration as Dropped</font><br /><br />";
       $navi .= '<br /><hr /><br />';
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
-
     if (! isset($_SESSION['eduerp_drop_on']) && ! isset($_POST['eduerp_drop_on'])) {
-
       echo $navi;
       echo "<b>Get Student Registered Courses</b> - Please fill the form as appropriate<br /><br />";
       echo drupal_get_form('get_student_course_instance_form');
-
     }
     else {//show form to allow him drop courses
       $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/dropcoursereg') ."'>Mark a Course Registration as Dropped</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ."</b></font><br /><br />";
       $navi .= '<br /><hr /><br />';
       echo $navi;
-      //echo "<b></b> | <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ."</b> | <b>". $_SESSION['eduerp_drop_course_info']['session'] ." Session</b>  |  <b>Semester ". $_SESSION['eduerp_drop_course_info']['semester'] ."</b> - Select a Course to Drop it<br /><br />";
       echo "<b>List of Registered Courses by</b> | <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['mat_no'] ."</b>
       | <b>". $_SESSION['eduerp_drop_course_info']['session'] ." Session</b>  |  <b>Semester ". $_SESSION['eduerp_drop_course_info']['semester'] ."</b>
       | <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['current_programme_name'] ."</b>
       | Student current level <b>". $_SESSION['eduerp_drop_course_info']['studentInfo']['level'] ." </b>
       <br /><br />- Select a Course to Drop it<br /><br />";
       echo drupal_get_form('get_student_drop_course_form');
-
     }
-
   }
   else {
     echo $navi;
@@ -5575,15 +5547,12 @@ function get_student_drop_course_form() {
     '#title' => 'keep showing form'
   );
 
-
   $form['submit'] = array(
       '#value' => 'Drop Course',
       '#type' => 'submit'
   );
 
-
   return $form;
-
 }
 
 
@@ -5638,9 +5607,7 @@ function get_student_course_instance_form() {
       '#type' => 'submit'
   );
 
-
   return $form;
-
 }
 
 
@@ -5648,17 +5615,14 @@ function get_student_course_instance_form_validate($form, &$state) {
   $values = $state['values'];
   $studentInfo = user_load(array('name'=>$values['mat_no']));
 
-
   if( ! $studentInfo) {
     form_set_error('mat_no', Error_Types(125));
   }
   else {
-
      //check for registered course
     $registeredCourses = get_student_registered_courses($studentInfo->uid, $values['session'], $values['semester']);
     if (db_affected_rows($registeredCourses) <= 0) {
       drupal_set_message(Error_Types(124), 'error');
-
     }
     else {//course reg info exists
 
@@ -5691,8 +5655,6 @@ function get_student_registered_courses($studentUID, $session, $semester) {
   $result = db_query($sql, $session, $semester, $studentUID);
 
   return $result;
-
-
 }
 
 
@@ -5703,28 +5665,22 @@ function staff_manual_course_reg() {
       $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Manual Course Registration</font><br /><br />";
       $navi .= '<br /><hr /><br />';
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
-
     if (! isset($_SESSION['eduerp_reg_on']) && ! isset($_POST['eduerp_reg_on'])) {
-
       echo $navi;
       echo "<b>Get Student unRegistered Courses</b> - Please fill the form as appropriate<br /><br />";
       echo drupal_get_form('get_student_unreg_course_form');
-
     }
     else {//show form to allow him register courses
       $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/manualcoursereg') ."'>Manual Course Registration</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['mat_no'] ."</b></font><br /><br />";
       $navi .= '<br /><hr /><br />';
       echo $navi;
-      //echo "<b>List of unRegistered Courses</b> | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['mat_no'] ."</b> | <b>". $_SESSION['eduerp_reg_course_info']['session'] ." Session</b>  |  <b>Semester ". $_SESSION['eduerp_reg_course_info']['semester'] ."</b> - Select a Course to Register it<br /><br />";
       echo "<b>List of unRegistered Courses for</b> | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['fname'] ."</b> - <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['mat_no'] ."</b>
       | <b>". $_SESSION['eduerp_reg_course_info']['session'] ." Session</b>  |  <b>Semester ". $_SESSION['eduerp_reg_course_info']['semester'] ."</b>
       | <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['current_programme_name'] ."</b>
       |  Student current level <b>". $_SESSION['eduerp_reg_course_info']['studentInfo']['level'] ." </b>
       <br /><br />- Select a Course to Register it<br /><br />";
       echo drupal_get_form('get_student_reg_course_form');
-
     }
-
   }
   else {
     echo $navi;
@@ -5759,9 +5715,7 @@ function get_student_unreg_course_form() {
       '#type' => 'submit'
   );
 
-
   return $form;
-
 }
 
 
@@ -5769,7 +5723,6 @@ function get_student_unreg_course_form_validate($form, &$state) {
   $values = $state['values'];
 
   $studentInfo = user_load(array('name'=>$values['mat_no']));
-
 
   if( ! $studentInfo) {
     form_set_error('mat_no', Error_Types(125));
@@ -5780,14 +5733,12 @@ function get_student_unreg_course_form_validate($form, &$state) {
     $unRegisteredCourses = get_student_unregistered_courses($studentInfo->uid, $values['session'], $values['semester']);
     if (db_affected_rows($unRegisteredCourses) <= 0) {
       drupal_set_message(Error_Types(128), 'error');
-
     }
     else {//course reg info exists
       $student_profile = new UserProfile($studentInfo->uid);
 
       $rs = get_programmes($student_profile->profile_first_choice);
       $programmeInfo = db_fetch_object($rs);
-
 
       //build tableField=>formElement array
       $studInfo = array('uid'=>$studentInfo->uid, 'fname'=>$student_profile->profile_first_name, 'mat_no'=>$studentInfo->name,
@@ -5829,15 +5780,12 @@ function get_student_reg_course_form() {
     '#title' => 'keep showing form'
   );
 
-
   $form['submit'] = array(
       '#value' => 'Register Course',
       '#type' => 'submit'
   );
 
-
   return $form;
-
 }
 
 
@@ -6022,17 +5970,12 @@ function staff_change_student_programme() {
   if(isset($_SESSION['eduerp_change_prog_on'])) $_POST['eduerp_change_prog_on'] = $_SESSION['eduerp_change_prog_on'];
 
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registry', 'Registrar'))) {
-
     if (! isset($_SESSION['eduerp_change_prog_on']) && ! isset($_POST['eduerp_change_prog_on'])) {
-
       echo $navi;
       echo "<b>Get Student Info</b> - Please fill the form as appropriate<br /><br />";
       echo drupal_get_form('get_student_info_form');
-
     }
     elseif ($_POST['eduerp_change_prog_on'] == 1) {//page1
-
-
         $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/changeprogmme') ."'>Change a Student's Programme</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Select New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
@@ -6042,18 +5985,12 @@ function staff_change_student_programme() {
         <br /><br />- Select a New Programme for the Student<br /><br />";
         echo drupal_get_form('staff_student_change_programme_form');
         echo "<font color=#FF0000><b>Do NOT do this until the session in which the student will be taking courses for the new program has started (otherwise the student's level will get increased for the new session)</b></font>";
-
       }
       elseif($_POST['eduerp_change_prog_on'] == 2) { //page 2
         $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;<a href='". url('staff/changeprogmme') ."'>Change a Student's Programme</a>&nbsp; &raquo; &nbsp; Student: <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>&nbsp; &raquo; &nbsp; Effect New Programme</font><br /><br />";
         $navi .= '<br /><hr /><br />';
         echo $navi;
-        //echo "<b>Student Current Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - <b>". $_SESSION['eduerp_change_prog_info']['mat_no'] ."</b>
-        //| <b>". $_SESSION['eduerp_change_prog_info']['current_programme_name'] ."</b>
-        //| Student current level <b>". $_SESSION['eduerp_change_prog_info']['level'] ." </b> ";
 
-
-        //echo '<br /><br />';
         echo "<b>Student New Info</b> | <b>". $_SESSION['eduerp_change_prog_info']['fname'] ."</b> - ".
         $_SESSION['eduerp_change_prog_info']['new_mat_no'] ."
         | <b>". $_SESSION['eduerp_change_prog_info']['new_programme_name'] ."</b>
@@ -6073,12 +6010,8 @@ function staff_change_student_programme() {
         marked as 'Historical' so they cannot be registered by students selecting courses for a semester.<br />
         You can also click on the links below to get there faster.</p>";
 
-        //echo show_student_previous_programme_results($_SESSION['eduerp_change_prog_info']['uid'], $_SESSION['eduerp_change_prog_info']['current_programme_nid']);
         echo get_courses_passed_by_student($_SESSION['eduerp_change_prog_info']['new_programme_nid'], $_SESSION['eduerp_change_prog_info']['uid']);
-        //echo "<br /><hr /><br />- Map the new Programme<br /><br />";
-        //echo drupal_get_form('get_student_change_prog_form');
       }
-
   }
   else {
     echo $navi;
@@ -6230,11 +6163,6 @@ function staff_student_change_programme_form() {
       '#type' => 'submit'
   );
   return $form;
-}
-
-
-function show_student_previous_programme_results($studentUID, $programmeNID) {
-  ;
 }
 
 
