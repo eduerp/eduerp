@@ -54,6 +54,7 @@ function uc_eduerp_fees_update_fees() {
   $bank_username = $_POST['bank_username'];
   if (empty($bank_username)) $bank_username = ' ';
 
+/* //ab
   if ($_SERVER['REQUEST_METHOD'] != 'POST' || empty($order_id) || empty($status) || empty($uid) || empty($transaction_token) || ($status != 'payment_received' && $status != 'canceled')) {
     drupal_set_header('HTTP/1.1 404 Not Found');
     $content = new stdClass();
@@ -61,6 +62,7 @@ function uc_eduerp_fees_update_fees() {
     drupal_json($content);
     exit();
   }
+//ab */
 
   $transaction_token_found = FALSE;
   $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
@@ -75,9 +77,22 @@ function uc_eduerp_fees_update_fees() {
   }
 
   if (!$transaction_token_found) {
-    drupal_set_header('HTTP/1.1 404 Not Found');
     $content = new stdClass();
     $content->status = 'fail';
+
+    // Status was not expected 'pending', but it might be 'canceled' or 'payment_received'... Give suitable message, these are semi valid conditions
+    $sql = "SELECT o.order_status, op.data FROM {uc_orders} o, {uc_order_products} op
+      WHERE
+        o.order_id=%d AND
+        o.order_id=op.order_id";
+    $result = db_query($sql, $order_id);
+    if ($order = db_fetch_array($result)) {
+      $data = unserialize($order['data']);
+      if ($order['order_status'] == 'canceled'         && $data['transaction_token'] == $transaction_token) $content->status = 'fail-already-canceled';
+      if ($order['order_status'] == 'payment_received' && $data['transaction_token'] == $transaction_token) $content->status = 'fail-already-payment_received';
+    }
+
+    drupal_set_header('HTTP/1.1 404 Not Found');
     drupal_json($content);
     exit();
   }
