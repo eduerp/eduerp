@@ -52,13 +52,6 @@ function uc_eduerp_fees_update_fees() {
   $uid = $_POST['uid'];
   $transaction_token = $_POST['transaction_token'];
   $bank_username = $_POST['bank_username'];
-//ab[[
-  $order_id = $_REQUEST['order_id'];//ab
-  $status = $_REQUEST['status'];//ab
-  $uid = $_REQUEST['uid'];//ab
-  $transaction_token = $_REQUEST['transaction_token'];//ab
-  $bank_username = $_REQUEST['bank_username'];//ab
-//ab]]
   if (empty($bank_username)) $bank_username = ' ';
 
 /* //ab
@@ -86,7 +79,6 @@ function uc_eduerp_fees_update_fees() {
   if (!$transaction_token_found) {
     $content = new stdClass();
     $content->status = 'fail';
-$content->status = 'failnotfound'.$order_id;//ab
 
     // Status was not expected 'pending', but it might be 'canceled' or 'payment_received'... Give suitable message, these are semi valid conditions
     $sql = "SELECT o.order_status, op.data FROM {uc_orders} o, {uc_order_products} op
@@ -96,7 +88,6 @@ $content->status = 'failnotfound'.$order_id;//ab
     $result = db_query($sql, $order_id);
     if ($order = db_fetch_array($result)) {
       $data = unserialize($order['data']);
-$content->status = 'failnotfound'.$data['transaction_token'].$order['order_status'];//ab
       if ($order['order_status'] == 'canceled'         && $data['transaction_token'] == $transaction_token) $content->status = 'fail-already-canceled';
       if ($order['order_status'] == 'payment_received' && $data['transaction_token'] == $transaction_token) $content->status = 'fail-already-payment_received';
     }
