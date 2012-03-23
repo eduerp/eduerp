@@ -6084,8 +6084,7 @@ function staff_student_change_programme_form_submit($form, &$state) {
   $first_choice = $_SESSION['eduerp_change_prog_info']['new_programme_nid'];
   $level = $_SESSION['eduerp_change_prog_info']['new_programme_level'];
   //so go ahead with the change
-  change_student_program($student_profile, $first_choice, $level);
-
+  change_student_program($student_profile, $first_choice, $level, $values['dont_change_matno']);
 
   //create the content_type_student_record here
   $studentname = '';
@@ -6150,6 +6149,12 @@ function staff_student_change_programme_form() {
     '#suffix' => "</div>",
     '#disabled' => TRUE,
     '#required' => TRUE
+  );
+
+  $form['dont_change_matno'] = array(
+    '#type' => 'checkbox',
+    '#title' => "Check this if you Don't want the Student's Admission Number to be Changed",
+    '#default_value' => FALSE
   );
 
  $form['eduerp_change_prog_on'] = array(

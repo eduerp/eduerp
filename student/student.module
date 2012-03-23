@@ -657,9 +657,9 @@ function student_log_clearance($student_id, $clearance_date, $user) {
 }
 
 
-function set_matriculation_number($student_id, $formerProgID=0) {
+function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_matno = NULL) {
   // Generate the matriculation number for this student
-  $results = module_invoke_all('matno', $student_id, $formerProgID);
+  $results = module_invoke_all('matno', $student_id, $formerProgID, $dont_change_matno);
   if (is_array($results) && count($results) > 0) {
     // We don't expect more than one implementation of the hook
     // if so, we only take the first result.
@@ -667,7 +667,6 @@ function set_matriculation_number($student_id, $formerProgID=0) {
 
     // Change the username to the matno and also change the student profile
     $student = user_load($student_id);
-    //$student->name = $matno;
     user_save($student, array('name'=>$matno));
 
     $student_profile = new UserProfile($student_id);
@@ -675,6 +674,7 @@ function set_matriculation_number($student_id, $formerProgID=0) {
     $student_profile->save();
   }
 }
+
 
 /**
   these functions below define a custom field and field widget that enables
@@ -1774,7 +1774,7 @@ function create_student_program($uid) {
 }
 
 
-function change_student_program(&$user, $first_choice, $level) {
+function change_student_program(&$user, $first_choice, $level, $dont_change_matno) {
   $user_profile = new UserProfile($user->uid);
   $formerProgID = $user_profile->profile_first_choice;
   $user_profile->profile_first_choice = $first_choice;
@@ -1783,7 +1783,7 @@ function change_student_program(&$user, $first_choice, $level) {
 
   create_student_program($user->uid);
 
-  set_matriculation_number($user->uid, $formerProgID);
+  set_matriculation_number($user->uid, $formerProgID, $dont_change_matno);
 }
 
 /**
