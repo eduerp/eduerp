@@ -480,26 +480,25 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     $student_profile->save();
   }
 
-//DE-INDENT...
-    $student = user_load($studUID);
-    if (module_exists('zimbra')) {
-      $zimbra = new ZimbraSoapClient(variable_get('zimbra_soap_url', ''));
+  $student = user_load($studUID);
+  if (module_exists('zimbra')) {
+    $zimbra = new ZimbraSoapClient(variable_get('zimbra_soap_url', ''));
 
-      $oldZimbraMail = $student->name;
-      $oldUserEmail = $oldZimbraMail . '@' . variable_get('zimbra_domain', '');
-      $newZimbraMail = substr($userEmail, 0, strpos($userEmail, '@'));
+    $oldZimbraMail = $student->name;
+    $oldUserEmail = $oldZimbraMail . '@' . variable_get('zimbra_domain', '');
+    $newZimbraMail = substr($userEmail, 0, strpos($userEmail, '@'));
 
-      if (zimbra_login($zimbra) && ($id = zimbra_get_id($zimbra, $oldZimbraMail)) && ($result = zimbra_rename($zimbra, $id, $oldZimbraMail, $newZimbraMail))) {
-        user_save($student, array('mail' => $userEmail));
-        watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail));
-      }
-      else {
-        user_save($student, array('mail' => $userEmail)); // Do it anyway because the error is not for real on mis.udusok.edu.ng
-        watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail), WATCHDOG_ERROR);
-        //drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $oldUserEmail, '%name_new' => $userEmail)), 'error');
-      }
+    if (zimbra_login($zimbra) && ($id = zimbra_get_id($zimbra, $oldZimbraMail)) && ($result = zimbra_rename($zimbra, $id, $oldZimbraMail, $newZimbraMail))) {
+      user_save($student, array('mail' => $userEmail));
+      watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail));
     }
-    else drupal_set_message('Zimbra module is not loaded so Student e-mail cannot be assigned');
+    else {
+      user_save($student, array('mail' => $userEmail)); // Do it anyway because the error is not for real on mis.udusok.edu.ng
+      watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail), WATCHDOG_ERROR);
+      //drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $oldUserEmail, '%name_new' => $userEmail)), 'error');
+    }
+  }
+  else drupal_set_message('Zimbra module is not loaded so Student e-mail cannot be assigned');
 
   return $userEmail;
 }
