@@ -1,7 +1,7 @@
 <?php
 // Footer for list_students View 20120326
 
-if (!empty($_SESSION['views']['list_students']['default']['rid'])) {
+if (!empty($_SESSION['views']['list_students']['default']['rid']) && empty($_SESSION['views']['list_students']['default']['uid'])) {
 
   $rid = $_SESSION['views']['list_students']['default']['rid'];
   $where = "WHERE users_roles.rid={$rid}";
