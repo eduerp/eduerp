@@ -478,9 +478,8 @@ $handler->override_option('filters', array(
     'expose' => array(
       'use_operator' => 0,
       'operator' => 'field_profile_yearofentry_value_op',
-      'identifier' => 'field_profile_yearofentry_value',
+      'identifier' => 'yearofentry',
       'label' => 'Year of Entry',
-      'optional' => 1,
       'remember' => 1,
     ),
     'case' => 1,
@@ -622,7 +621,7 @@ $handler->override_option('cache', array(
   'type' => 'none',
 ));
 $handler->override_option('footer', '<?php
-if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'rid\'])) {
+if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'rid\']) && empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'uid\'])) {
 
   $rid = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'rid\'];
   $where = "WHERE users_roles.rid={$rid}";
