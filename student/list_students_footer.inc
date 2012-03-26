@@ -65,6 +65,5 @@ if (!empty($_SESSION['views']['list_students']['default']['rid']) && empty($_SES
   if ($row = db_fetch_object($countresults)) {
     echo "<br /><b>Total number of results: {$row->count}</b>";
   }
-dsm(array('sql' => $sql, 'SESSION' => $_SESSION, 'row' => $row));//ab
 }
 ?>
