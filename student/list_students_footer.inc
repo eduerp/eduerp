@@ -9,7 +9,7 @@ if (!empty($_SESSION['views']['list_students']['default']['rid'])) {
   if (!empty($_SESSION['views']['list_students']['default']['yearofentry'])) {
     $yearofentry = $_SESSION['views']['list_students']['default']['yearofentry'];
     $yearofentry = addslashes($yearofentry);
-    if ($yearofentry !== 'All') $where .= " AND node_users_1_node_data_field_profile_yearofentry.field_profile_yearofentry_value LIKE '{$yearofentry}'";
+    if ($yearofentry !== 'All') $where .= " AND node_users_1_node_data_field_profile_yearofentry.field_profile_yearofentry_value='{$yearofentry}'";
   }
 
   if (!empty($_SESSION['views']['list_students']['default']['level'])) {
