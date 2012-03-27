@@ -653,7 +653,7 @@ function _uc_edupay_process_order_request($order) {
 
 
 function uc_edupay_cron() {
-  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue} LIMIT 100");
+  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue}"); // Was LIMIT 100 (500 did not work properly?)
   while ($queue_item = db_fetch_object($queue_items)) {
 
     $parameters = unserialize($queue_item->data);
