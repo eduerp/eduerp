@@ -663,8 +663,9 @@ function uc_edupay_cron() {
       'Authorization' => 'Basic ' . base64_encode(variable_get('uc_edupay_username', '') . ':' . variable_get('uc_edupay_password_md5', '')),
       'Content-Type' => 'application/json');
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
+
 db_query("INSERT INTO debug_send_queue VALUES (%d, '%s', %d)", $queue_item->serial_id, $queue_item->data, $result->code);//ab
-    if ($result->code == 200) {
+    if ($result->code == 200 || $result->code == 409) { // 409 has been agreed with EduPay if it is already there (maybe response timed out)
       db_query("DELETE FROM {cron_edupay_send_queue} WHERE serial_id=%d", $queue_item->serial_id);
     }
   }
