@@ -838,6 +838,9 @@ function uc_edupay_save($order_id, $product) {
     $product['status'] = 'pending';
   }
 
+  drupal_write_record('fees_order', $product);
+  return; // Always do insert so we keep a permanent record
+
   if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid=%d AND nid=%d AND uid=%d AND session='%s' $format_sql", $product['product_nid'], $product['nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
     // This is for the same student with the same product_nid and attribute options (based on the Fee Structure nid & fees_format) in the same session
     // ... so it is OK to overwrite a 'canceled' fees_order item
