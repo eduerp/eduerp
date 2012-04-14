@@ -1366,7 +1366,20 @@ function approve_grades_vc_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_vc_form. Relevant locked fields become 5 and set the student visible exam score to the values set by the lecturer.
+ * submit hook for approve_grades_vc_form.
+ *
+ * <p>Relevant CA & Exam locked fields become 5 and so are finally approved and cannot be changed except by a 'University Grade Editor'.</p>
+ * <p>Set the student visible CA, exam, GPA and cGPA scores to the values set by the lecturer or calculated based on these.</p>
+ * <p>Create an Approval Record.</p>
+ * <p>Queue e-mails for Students.</p>
+ * <p>Make student_grades node viewable to those with permission 'departmentapproved' for this department by setting node_access entries.</p>
+ * <p>Make student_grades node viewable to those with permission 'departmentapproved' for the department that owns the course (external course from a different department) by setting node_access entries.</p>
+ * <p>Make student_grades node viewable to those with permission 'collegeapproved' for this college by setting node_access entries.</p>
+ * <p>Make student_grades node viewable to those with permission 'collegeapproved' for the college that owns the course (external course from a different college) by setting node_access entries.</p>
+ * <p>Make student_grades node viewable to those with permission 'universityapproved' by setting node_access entries.</p>
+ * <p>Make student_gpa node viewable to those with permission 'departmentapproved' for this department by setting node_access entries.</p>
+ * <p>Make student_gpa node viewable to those with permission 'collegeapproved' for this college by setting node_access entries.</p>
+ * <p>Make student_gpa node viewable to those with permission 'universityapproved' by setting node_access entries.</p>
  */
 function approve_grades_vc_form_submit($form, &$form_state) {
   global $user;
