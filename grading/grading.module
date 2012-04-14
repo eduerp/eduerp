@@ -232,9 +232,7 @@ function grading_field_access($op, $field, $account, $node = NULL) {
 
 
 /**
- * Implementation of hook_views_pre_build().
- *
- * Called before view build... we remove unneeded columns from course_grades
+ * Implementation of hook_views_pre_build(), called before view build to remove unneeded columns from course_grades.
  */
 function grading_views_pre_build(&$view) {
   if ($view->name=='course_grades') {
@@ -311,9 +309,7 @@ function grading_views_pre_build(&$view) {
 
 
 /**
- * Implementation of hook_node_access_records().
- *
- * Called on node save to add permissions for the node
+ * Implementation of hook_node_access_records(), called on node save to add permissions for the node.
  */
 function grading_node_access_records($node) {
   $grants = array();
@@ -499,9 +495,7 @@ function grading_node_access_records($node) {
 
 
 /**
- * Implementation of hook_node_grants().
- *
- * Called on node access to see if what permissions a user has
+ * Implementation of hook_node_grants(), called on node access to see if what permissions a user $account has.
  */
 function grading_node_grants($account, $op) {
   static $grantsbyuid = array(); // Cache
@@ -575,7 +569,9 @@ function grading_node_grants($account, $op) {
 }
 
 
-
+/**
+ * Form to display Grading Statistics for a Department
+ */
 function grading_stats_department_form(&$obj) {
   $sessiondefault = variable_get('eduerp_current_session', '');
   $semesterdefault = variable_get('eduerp_current_semester', 1);
@@ -672,6 +668,11 @@ function grading_stats_department_form(&$obj) {
 }
 
 
+/**
+ * Find all Faculty names.
+ *
+ * @return array of sorted strings indexed by same string (with an Any option)
+ */
 function _grading_college_list_any() {
   $names = array();
   $names['0'] = '<Any>';
@@ -684,6 +685,11 @@ function _grading_college_list_any() {
 }
 
 
+/**
+ * Find all Department names.
+ *
+ * @return array of sorted strings indexed by same string
+ */
 function _grading_department_list() {
   $names = array();
   $sql = "SELECT DISTINCT field_department_name_value AS name FROM {content_type_department} ORDER BY name ASC";
@@ -695,6 +701,11 @@ function _grading_department_list() {
 }
 
 
+/**
+ * Find all Department names.
+ *
+ * @return array of sorted strings indexed by same string (with an Any option)
+ */
 function _grading_department_list_any() {
   $names = array();
   $names['0'] = '<Any>';
@@ -707,6 +718,11 @@ function _grading_department_list_any() {
 }
 
 
+/**
+ * Find all Programme names.
+ *
+ * @return array of sorted strings indexed by same string (with an Any option)
+ */
 function _grading_programme_list_any() {
   $names = array();
   $names['0'] = '<Any>';
@@ -719,6 +735,11 @@ function _grading_programme_list_any() {
 }
 
 
+/**
+ * Find all Session names.
+ *
+ * @return array of sorted strings indexed by same string
+ */
 function _grading_session_list() {
   $names = array();
   $sql = "SELECT DISTINCT field_sess_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
@@ -730,6 +751,11 @@ function _grading_session_list() {
 }
 
 
+/**
+ * Find all Semester names.
+ *
+ * @return array of sorted strings indexed by same string
+ */
 function _grading_semester_list() {
   $names = array();
   $sql = "SELECT DISTINCT field_semester_name_value AS name FROM {content_type_course_instance} ORDER BY name ASC";
@@ -741,6 +767,11 @@ function _grading_semester_list() {
 }
 
 
+/**
+ * Find all Level names.
+ *
+ * @return array of sorted strings indexed by same string
+ */
 function _grading_level_list() {
   $names = array();
   $sql = "SELECT DISTINCT field_level_value AS name FROM {content_type_course} ORDER BY name ASC";
@@ -752,6 +783,11 @@ function _grading_level_list() {
 }
 
 
+/**
+ * Find all Level names.
+ *
+ * @return array of sorted strings indexed by same string (with an Any option)
+ */
 function _grading_level_list_any() {
   $names = array();
   $names['0'] = '<Any>';
@@ -764,11 +800,20 @@ function _grading_level_list_any() {
 }
 
 
+/**
+ * submit hook for grading_stats_department_form.
+ */
 function grading_stats_department_form_submit($form, &$state) {
   drupal_set_message('department: ' . $state['values']['department'] . '<br />');
 }
 
 
+/**
+ * AHAH callback to do the main statistics and display work for grading_stats_department_form.
+ *
+ * @global stdClass $_SESSION['eduerpregistrarapprovalform'] is set to contain values needed for approve_grades_registrar_form.
+ * @global stdClass $_SESSION['eduerpvcapprovalform'] is set to contain values needed for approve_grades_vc_form.
+ */
 function _grading_ahah_stats() {
   global $user;
   global $base_url;
@@ -1097,8 +1142,11 @@ function _grading_ahah_stats() {
 }
 
 
-// Put up form to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
-
+/**
+ * Form to allow to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
+ *
+ * @global stdClass $_SESSION['eduerpregistrarapprovalform'] already contains values needed for the form.
+ */
 function approve_grades_registrar_form($form_state) {
   $form['departmentname'] = array('#value' => '<b>Department: ' . $_SESSION['eduerpregistrarapprovalform']->department . '</b>');
 
@@ -1126,6 +1174,9 @@ function approve_grades_registrar_form($form_state) {
 }
 
 
+/**
+ * validate hook for approve_grades_registrar_form.
+ */
 function approve_grades_registrar_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
     form_set_error('comment', 'You must enter a comment for the Vice Chancellor!');
@@ -1133,6 +1184,9 @@ function approve_grades_registrar_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for approve_grades_registrar_form.
+ */
 function approve_grades_registrar_form_submit($form, &$form_state) {
   global $user;
 
@@ -1270,9 +1324,11 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
 }
 
 
-// Put up form to allow VC to approve grades (relevant locked fields will then become 5)
-// Also set the student visible exam score to the values set by the lecturer
-
+/**
+ * Form to allow to allow VC to approve grades (relevant locked fields will then become 5). Also set the student visible exam score to the values set by the lecturer.
+ *
+ * @global stdClass $_SESSION['eduerpvcapprovalform'] already contains values needed for the form.
+ */
 function approve_grades_vc_form($form_state) {
   $form['departmentname'] = array('#value' => '<b>Department: ' . $_SESSION['eduerpvcapprovalform']->department . '</b>');
 
@@ -1299,6 +1355,9 @@ function approve_grades_vc_form($form_state) {
 }
 
 
+/**
+ * validate hook for approve_grades_vc_form.
+ */
 function approve_grades_vc_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
     form_set_error('comment', 'You must enter a comment for the Record!');
@@ -1306,6 +1365,9 @@ function approve_grades_vc_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for approve_grades_vc_form. Relevant locked fields become 5 and set the student visible exam score to the values set by the lecturer.
+ */
 function approve_grades_vc_form_submit($form, &$form_state) {
   global $user;
 
