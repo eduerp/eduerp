@@ -55,9 +55,9 @@ function uc_edupay_strongarm() {
     ),
   );
   $strongarms['uc_price_handler_config'] = $strongarm;
-  
+
   // ubercart checkout messages
-  
+
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
@@ -123,7 +123,7 @@ print $content;
 
 <p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>
 
-<p>Please note an additional NGN500 transaction charge must be paid when paying your fees.</p>';
+<p>Please note an additional [tcrg] transaction charge must be paid when paying your fees.</p>';
 
   $strongarms['uc_msg_order_logged_in'] = $strongarm;
 
@@ -166,7 +166,7 @@ print $content;
   $strongarm->name = 'uc_msg_order_submit_format';
   $strongarm->value = '1';
   $strongarms['uc_msg_order_submit_format'] = $strongarm;
-  
+
   // invoicing
   $strongarm = new stdClass;
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
@@ -182,19 +182,5 @@ print $content;
   $strongarm->value = 1;
   $strongarms['uc_cust_view_order_invoices'] = $strongarm;
 
-  $strongarm = new stdClass;
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'uc_edupay_invoice_note';
-  $strongarm->value = 'Pay this invoice at: [bank-list-raw]. Present this invoice number to pay at the bank. You must make this payment before [late_registration_date] otherwise you will have to pay the late registration fee of NGN [late_registration_fee]. After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration. An additional NGN500 transaction charge must be paid when paying your fees.';
-  $strongarms['uc_edupay_invoice_note'] = $strongarm;
-
-  $strongarm = new stdClass;
-  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  $strongarm->api_version = 1;
-  $strongarm->name = 'uc_edupay_invoice_note_format';
-  $strongarm->value = '1';
-  $strongarms['uc_edupay_invoice_note_format'] = $strongarm;
-  
   return $strongarms;
 }

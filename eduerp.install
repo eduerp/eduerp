@@ -114,9 +114,11 @@ function eduerp_install() {
   // Wording for Ubercart cart/checkout or any other required "Translations"
   $text = array(
     'Order information will be sent to your account e-mail listed below.'
-      => 'If you are due a Scholarship and that is not reflected in the fees above, <a href="/edupay/displaycart">click here to get a summary of fees to bring to the Scholarship Board</a>.<br />You will need to come back to this page after getting a scholarship and click <b>Send Fee Details for Processing</b><br /><br />After you have clicked <b>Send Fee Details for Processing</b> below you will be brought to a page that explains next steps for those students that need to pay fees.<br /><br />Please note that all payments made at the bank will incur an additional NGN 500 transaction charge.<br /><br />Order information will be sent to your University e-mail account (you will not be able to change this).',
-    'Review order' => 'Send Fee Details for Processing',
+      => 'If you are due a Scholarship and that is not reflected in the fees above, <a href="/edupay/displaycart">click here to get a summary of fees to bring to the Scholarship Board</a>.<br />You will need to come back to this page after getting a scholarship and click <b>Send Fee Details for Processing</b><br /><br />After you have clicked <b>Send Fee Details for Processing</b> below you will be brought to a page that explains next steps for those students that need to pay fees.<br /><br />Please note that all payments made at the bank will incur an additional NGN 300 transaction charge.<br /><br />Order information will be sent to your University e-mail account (you will not be able to change this).',
+    'Review order' => 'Send Fee Details for Processing (Click Once Only!)',
   );
+  // Note that 'incur an additional NGN 300 transaction charge' is later overwritten with correct amount from "variable_get('eduerp_bank_transaction_charge', '')"
+  // ... whenever that setting is changed
   variable_set('locale_custom_strings_en', $text);
 
   drupal_set_message('eduerp module installed');
@@ -628,6 +630,31 @@ function eduerp_schema() {
       ),
     ),
     'indexes' => array('program_nid_product_nid' => array('program_nid', 'product_nid')),
+  );
+
+  $schema['student_semaphore'] = array(
+    'description' => t('Semaphores for Students'),
+    'fields' => array(
+      'uid' => array(
+        'description' => t('Student uid'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'semaphore_value' => array(
+        'description' => t('Semaphore'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'semaphore_timestamp' => array(
+        'description' => t('Timestamp'),
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('uid'),
   );
 
   return $schema;

@@ -23,18 +23,9 @@ function uc_edupay_menu() {
     'weight' => -2,
     'type' => MENU_LOCAL_TASK,
   );
-  $items['admin/settings/eduerp/transaction/edupay/invoice-settings'] = array(
-    'title' => 'Invoice settings',
-    'description' => 'Configure settings for Edupay invoice',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('uc_edupay_invoice_settings_form'),
-    'access arguments' => array('administer site configuration'),
-    'type' => MENU_LOCAL_TASK,
-    'weight' => -5,
-    'file' => 'uc_edupay.admin.inc',
-  );
   return $items;
 }
+
 
 function uc_edupay_config_form($form_state) {
   $form['uc_edupay_config'] = array(
@@ -67,6 +58,7 @@ function uc_edupay_config_form($form_state) {
     '#title' => t('University Address'),
     '#description' => t('Enter the Universities Postal Address.'),
     '#default_value' => variable_get('eduerp_institution_address', ''),
+    '#maxlength' => 300,
     '#required' => TRUE
   );
 
@@ -75,6 +67,7 @@ function uc_edupay_config_form($form_state) {
     '#title' => t('List of Banks'),
     '#description' => t('Enter the List of Banks where payment can be made (put an "or" between them).'),
     '#default_value' => variable_get('eduerp_institution_bank_list', ''),
+    '#maxlength' => 300,
     '#required' => TRUE
   );
   $form['uc_edupay_config']['eduerp_institution_bank_details'] = array(
@@ -82,6 +75,7 @@ function uc_edupay_config_form($form_state) {
     '#title' => t('Bank Account Names & Numbers'),
     '#description' => t('Enter the Bank account Names & Numbers for each Bank (for invoices).'),
     '#default_value' => variable_get('eduerp_institution_bank_details', ''),
+    '#maxlength' => 300,
     '#required' => TRUE
   );
 
@@ -120,6 +114,13 @@ function uc_edupay_config_form($form_state) {
     '#type' => 'textfield',
     '#title' => t('Bank 2 Account Number'),
     '#default_value' => variable_get('eduerp_institution_bank_2_account_number', ''),
+    '#required' => TRUE
+  );
+
+  $form['uc_edupay_config']['eduerp_bank_transaction_charge'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Bank Transaction Charge (must include currency e.g. NGN)'),
+    '#default_value' => variable_get('eduerp_bank_transaction_charge', ''),
     '#required' => TRUE
   );
 
@@ -168,6 +169,14 @@ function uc_edupay_config_form_submit($form, &$form_state) {
   variable_set('eduerp_institution_bank_2_name', $form_state['values']['eduerp_institution_bank_2_name']);
   variable_set('eduerp_institution_bank_2_account_name', $form_state['values']['eduerp_institution_bank_2_account_name']);
   variable_set('eduerp_institution_bank_2_account_number', $form_state['values']['eduerp_institution_bank_2_account_number']);
+
+  variable_set('eduerp_bank_transaction_charge', $form_state['values']['eduerp_bank_transaction_charge']);
+  $text = variable_get('locale_custom_strings_en', '');
+  // Replace the Transaction Charge in the Custom Translation String
+  $text['Order information will be sent to your account e-mail listed below.'] = preg_replace('/incur an additional .* transaction charge/',
+    'incur an additional ' . variable_get('eduerp_bank_transaction_charge', '') . ' transaction charge',
+    $text['Order information will be sent to your account e-mail listed below.']);
+  variable_set('locale_custom_strings_en', $text);
 }
 
 
@@ -287,15 +296,6 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
   }
 }
 
-/**
- * Load a fee format by nid
- *  - Instalment1, Instalment2 or Full Amount
- */
-function _uc_edupay_load_fee_format($nid) {
-  $result = db_fetch_object(db_query("SELECT * FROM {fees} WHERE nid = %d", $nid));
-  $fee_format = unserialize($result->extras);
-  return array_shift($fee_format['fees_payment_format']);
-}
 
 function uc_edupay_fees_price_handler_format($price, $options) {
 }
@@ -451,12 +451,7 @@ function uc_edupay_invoice_form($form_state, $order) {
 
   drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
 
-  // in the form function store the link of the file in $form_state['storage']
-  // alternatively use hidden fields
-  //if(!isset($form_state['storage'])) {
-
       $invoice_form_settings = array(
-        //'pdflink' => $form_state['values']['pdflink'],
         'pdflink' => $form['pdflink']['#value'],
       );
 
@@ -464,31 +459,15 @@ function uc_edupay_invoice_form($form_state, $order) {
       //stores $invoice_form_settings into js setting
       drupal_add_js(array('uc_edupay' => $invoice_form_settings), 'setting');
 
-      // to call the javascript code that will begin the download, do either of these;
-
-      // test if js is called
-      //drupal_add_js('Drupal.behaviors.uc_edupay = function() { alert("clicked"); }', 'inline');
-
-  //}
-
   $form['invoice']['gen_invoice'] = array(
     //'#value' => '<div>' . l(t('Save Invoice'), "#", array('attributes' => array('class' => 'invoice-submit'))) . '</div>'
     '#value' => '<div>' . '<a href="javascript:void" class="invoice-submit">Save Invoice</a></div>'
   );
 
-  /*$form['invoice']['gen_invoice'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save Invoice'),
-    '#ajax' => array(
-        'enabled' => TRUE
-    ),
-    '#attributes' => array('class' => 'invoice-submit'),
-    //'#weight' => 5,
-    '#submit' => array('uc_edupay_invoice_submit'),
-  );*/
-
   return $form;
 }
+
+
 /**
  * Process invoice based on form_state order values.
  * This will be relevant if invoice processing is handled by FAPI
@@ -501,16 +480,13 @@ function uc_edupay_invoice_submit($form, &$form_state) {
   switch ($form_state['values']['op']) {
     case t('Save Invoice'):
       if (isset($form_state['values']['gen_invoice'])) {
-        //return the value of what 'pdflink' is set to
         $form_state['storage']['pdflink'] = $form_state['values']['pdflink'];
-        //$_REQUEST['destination'] = 'cart/checkout/review';
         return TRUE;
-        //drupal_goto($form_state['storage']['pdflink']);
-        //drupal_goto("invoice/pdf/" . $form_state['values']['hidden_order']->order_id);
       }
       break;
   }
 }
+
 
 /**
  * Retrieves order items and passes it to uc_edupay_service_add
@@ -652,8 +628,8 @@ function _uc_edupay_process_order_request($order) {
   }
   $order_parm['total_amount'] = $total_amount;
 
-//dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
-//ab if (FALSE) {//ab}
+  //dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
+  //ab if (FALSE) {//ab}
   if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
@@ -677,7 +653,7 @@ function _uc_edupay_process_order_request($order) {
 
 
 function uc_edupay_cron() {
-  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue} LIMIT 500");
+  $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue}"); // Was LIMIT 100 (500 did not work properly?)
   while ($queue_item = db_fetch_object($queue_items)) {
 
     $parameters = unserialize($queue_item->data);
@@ -688,7 +664,8 @@ function uc_edupay_cron() {
       'Content-Type' => 'application/json');
     $result = drupal_http_request(variable_get('uc_edupay_transaction_url', ''), $headers, 'POST', $data);
 
-    if ($result->code == 200) {
+    // db_query("INSERT INTO debug_send_queue VALUES (%d, '%s', %d)", $queue_item->serial_id, $queue_item->data, $result->code);//ab
+    if ($result->code == 200 || $result->code == 409) { // 409 has been agreed with EduPay if it is already there (maybe response timed out)
       db_query("DELETE FROM {cron_edupay_send_queue} WHERE serial_id=%d", $queue_item->serial_id);
     }
   }
@@ -704,12 +681,32 @@ function uc_edupay_cron() {
 function uc_edupay_order($op, &$arg1, $arg2) {
   global $user;
     switch ($op) {
-      // Called when an order is created
+      // Called when an order is created... 'new' & 'save' are called in quick sucession from uc_cart_checkout_form_validate()
       case 'new':
+
+        // First, ensure there is something in the cart (this is cleared after sucessfull transaction)
+        $cc = uc_cart_get_contents();
+        if (empty($cc)) {
+          drupal_set_message('There is nothing in the cart, please start again.', 'error');
+          drupal_goto("user/$user->uid/fees/pay");
+        }
+
+        // Second, the Student may be clicking Submit multiple times, if so stop now
+        // Drupal HTTP timeout is 30 seconds... so need to allow at least that long (i.e. 50 seconds)
+        $now = time();
+        $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $user->uid, $arg1->order_id, $now - 50);
+        //dsm(array('uid' => $user->uid, 'order_id' => $arg1->order_id, 'now' => $now));//ab
+        if ($r = db_fetch_object($rs)) {
+          //dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
+          drupal_set_message('You seem to have clicked on "Send Fee Details for Processing" more than once, but you can select your invoice below (or if it is not below, click "Pay Fees" again).', 'error');
+          drupal_goto("user/$user->uid/fees/pay");
+        }
+
         _uc_edupay_process_order_request($arg1);
         break;
 
         // Occurs when Submit Order is clicked
+        // However for EduERP we skip 'submit' and go directly to cart/checkout/complete "uc_cart_checkout_complete()" from 'save'
         case 'submit':
 
           if ($arg1->payment_method == 'edupay') {
@@ -724,7 +721,6 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           }
           break;
 
-        // Occurs when Review Order is clicked. Data is inserted into uc_orders
         case 'save':
           if ($arg1->payment_method == 'edupay') {
 
@@ -733,13 +729,16 @@ function uc_edupay_order($op, &$arg1, $arg2) {
             if ($_SESSION['edupay_total_amount_zero']) {
               db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $arg1->order_id);
             }
+            else {
+              // Do this because redirect to 'cart/checkout/complete' (uses HTTP header) might not happen
+              db_query("UPDATE {uc_orders} set order_status = 'pending' WHERE order_id = %d", $arg1->order_id);
+            }
 
             $level_name = student_next_level($user->uid, variable_get('eduerp_current_session', ''));
 
             $fees = $arg1->products;
             $field = array();
             $fields = array();
-            $new_fields = module_invoke('uc_edupay', 'fees_order_field_info');
             foreach ($fees as $key => $product) {
               $fields = $product->data;
               $field['type'] = $fields['type'];
@@ -783,20 +782,27 @@ function uc_edupay_order($op, &$arg1, $arg2) {
               $field['order_id'] = $product->order_id;
               $field['uid'] = $arg1->uid;
               $field['product_nid'] = $product->nid;
-              //$fields = $product + $items;
+
               unset($fields['has_scholarship']);
-              // alter fees_order
-              foreach(module_implements('fees_order_alter') as $module) {
-                $field = module_invoke($module, 'fees_order_alter', $field, $fields, $field['uid'], $field['product_nid'], $new_fields);
-              }
+
+              $field['course'] = $fields['course'];
+              $field['college'] = $fields['college'];
+              $field['original_amount'] = $fields['original_amount'];
+              $field['scholarship_type'] = $fields['scholarship_type'];
+              $field['sponsor'] = $fields['sponsor'];
+
               uc_edupay_save($arg1->order_id, $field);
             }
+
+            uc_cart_empty(uc_cart_get_id()); // Do this because redirect to 'cart/checkout/complete' (uses HTTP header) might not happen
 
             $_SESSION['do_complete'] = TRUE;
             drupal_goto('cart/checkout/complete');
           }
           break;
+
         // The real order object that will be put into $_SESSION['cart_order'].
+        // Not used in EduERP?
         case 'load':
           if(isset($_SESSION['transaction_id'])) {
             unset($_SESSION['transaction_id']);
@@ -805,21 +811,13 @@ function uc_edupay_order($op, &$arg1, $arg2) {
     }
 }
 
+
 /**
  * Save a product to an order.
  *
  * This is a replica of uc_order_product_save
  */
 function uc_edupay_save($order_id, $product) {
-  // if fees_order does not exist
-  $ret = array();
-  if(!db_table_exists('fees_order')) {
-    $table = drupal_get_schema('fees_order');
-    db_create_table($ret, 'fees_order', $table);
-  }
-  // the schema need to be rebuilt for schema_alter to work
-  $schema = drupal_get_schema('fees_order', TRUE);
-  module_invoke('uc_edupay', 'schema_alter', $schema);
 
   if (!empty($product['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $product['attributes'], $matches)) {
     $format_sql = "AND fees_format='" . $matches[0] . "'";
@@ -840,7 +838,13 @@ function uc_edupay_save($order_id, $product) {
     $product['status'] = 'pending';
   }
 
-  if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid = %d AND uid = %d AND session = '%s' $format_sql", $product['product_nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
+  drupal_write_record('fees_order', $product);
+  return; // Always do insert so we keep a permanent record
+
+  if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid=%d AND nid=%d AND uid=%d AND session='%s' $format_sql", $product['product_nid'], $product['nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
+    // This is for the same student with the same product_nid and attribute options (based on the Fee Structure nid & fees_format) in the same session
+    // ... so it is OK to overwrite a 'canceled' fees_order item
+    // (it has to be 'canceled' because uc_eduerp_fees_completed_order_items() would have removed any 'payment_received' or 'pending' items from get_fee_items())
     $product['fees_order_id'] = $result->fees_order_id;
     drupal_write_record('fees_order', $product, 'fees_order_id');
   }
@@ -850,116 +854,6 @@ function uc_edupay_save($order_id, $product) {
   }
 }
 
-/**
- * Implements hook_fees_order_field_info
- */
-function uc_edupay_fees_order_field_info() {
-  $field['fees_format'] = array(
-    'description' => t('The Fees format. E.g Instalment1, Instalment2 or Full Amount. This is very case sensitive'),
-    'type' => 'varchar',
-    'length' => '20',
-    'not null' => FALSE,
-    //'default' => ''
-  );
-  $field['college'] = array(
-    'description' => t("The college the student's programme belongs to"),
-    'type' => 'varchar',
-    'length' => '225',
-    'not null' => FALSE,
-    //'default' => ''
-  );
-  $field['course'] = array(
-    'description' => t("The student course as registered in student profile"),
-    'type' => 'varchar',
-    'length' => '225',
-    'not null' => FALSE,
-    //'default' => ''
-  );
-  $field['original_amount'] = array(
-    'description' => t('The fees order original price'),
-    'type' => 'numeric',
-    'not null' => FALSE,
-    'default' => 0,
-    'precision' => '16',
-    'scale' => '5',
-  );
-  $field['scholarship_type'] = array(
-    'description' => t("The type of the Student's Scholarship"),
-    'type' => 'varchar',
-    'length' => '60',
-    'not null' => FALSE,
-  );
-  $field['sponsor'] = array(
-    'description' => t("The Student's Scholarship Sponsor"),
-    'type' => 'varchar',
-    'length' => '60',
-    'not null' => FALSE,
-  );
-
-  return $field;
-}
-
-/**
- * Implements hook_fees_order_alter
- */
-function uc_edupay_fees_order_alter($fields, $data, $uid, $product_nid, $new_field) {
-  // if new field doesn't exist
-  // fill new_field with whatever you want
-  $formats = uc_eduerp_fees_load_extras($uid, 'fees');
-  if(!is_null($new_field)){
-    foreach($new_field as $key => $value) {
-      $result = db_query("SHOW COLUMNS FROM {fees_order} LIKE '%s'", $key);
-      $exists = (db_affected_rows() > 0)? TRUE : FALSE;
-      if(!$exists) {
-        $ret = array();
-        $schema['fees_order']['fields'][$key] = $value;
-        //$spec = module_invoke('uc_edupay', 'schema_alter', $schema);
-        db_add_field($ret, 'fees_order', $key, $value);
-        module_invoke('uc_edupay', 'schema_alter', $schema);
-      }
-      switch($key) {
-        case 'fees_format':
-          // use the product_nid to find a corresponding fees_format
-          if(array_key_exists($product_nid, $formats)) {
-            $fields[$key] = $formats[$product_nid]['fees_payment_format'][0];
-          }
-          break;
-         case 'course':
-          $fields[$key] = $data['course'];
-          break;
-         case 'college':
-          $fields[$key] = $data['college'];
-          break;
-         case 'original_amount':
-          $fields[$key] = $data['original_amount'];
-          break;
-         case 'scholarship_type':
-          $fields[$key] = $data['scholarship_type'];
-          break;
-         case 'sponsor':
-          $fields[$key] = $data['sponsor'];
-          break;
-      }
-    }
-  }
-
-  return $fields;
-}
-
-/**
- * Retrieve the type of fees order made
- *
- * @deprecated
- * @see uc_edupay_fees_order_get_item
- */
-function uc_edupay_fees_order_types() {
-  $types = array();
-  $result = db_query("SELECT DISTINCT type FROM {fees_order}");
-  while($type = db_fetch_array($result)) {
-    $types[] = $type;
-  }
-  return $types;
-}
 
 /**
  * Retrieve items from fees_order
@@ -1009,6 +903,7 @@ function uc_edupay_token_values($type, $object = NULL) {
       $values['invoice-number'] = variable_get('uc_edupay_username', '') . '/' . $order->order_id;
       $values['matric-number'] = $student_profile->field_profile_matno[0]['value'];
       $values['bank-list-raw'] = variable_get('eduerp_institution_bank_list', '');
+      $values['tcrg'] = variable_get('eduerp_bank_transaction_charge', '');
       break;
     case 'fees_order':
       $fees_order = $object;
@@ -1031,6 +926,7 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['matric-number'] = t("The student's matric number");
     $tokens['order']['timeout-raw'] = t('Raw timeout');
     $tokens['order']['bank-list-raw'] = t('Authorized bank list');
+    $tokens['order']['tcrg'] = t('Bank Transaction Charge');
   }
   return $tokens;
 }
@@ -1042,7 +938,6 @@ function uc_edupay_token_list($type = 'all') {
  */
 /*
 function uc_edupay_checkout_pane() {
-  //$fees = uc_eduerp_fees_get_fees_order();
   $items = uc_cart_get_contents();
   foreach($items as $fee) {
     $panes[$fee->title] = array(
@@ -1266,15 +1161,6 @@ function _uc_edupay_fees_order_items($order) {
 
 
 /**
- * Implements hook_schema_alter
- */
-function uc_edupay_schema_alter(&$schema) {
-  foreach(module_invoke_all('fees_order_field_info') as $key => $value) {
-    $schema['fees_order']['fields'][$key] = $value;
-  };
-}
-
-/**
  * Alter all views exposed filters
  */
 function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
@@ -1305,7 +1191,7 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $invoice_vars = array();
   $date = new DateTime($vars['order_date_created']);
 
-  $student_uid = $vars['user_id'];
+  $student_uid = $vars['order_uid'];
   $student_profile = content_profile_load('student_profile', $student_uid);
 
   foreach($vars['order']->data as $key => $value) {
@@ -1342,7 +1228,8 @@ function uc_edupay_preprocess_uc_order(&$vars) {
     $vars['invoice_note'] .= $late_registration_date_string;
   }
   $vars['invoice_note'] .= t('<p>After payment of your fees allow 1 working day for the system to be updated with confirmation of your payment after which you will be able to proceed with your online course registration (this does not apply if this invoice only contains a Hostel payment).</p>');
-  $vars['invoice_note'] .= t('<p>An additional NGN500 transaction charge must be paid when paying your fees.</p>');
+  $bank_tcrg = variable_get('eduerp_bank_transaction_charge', '');
+  $vars['invoice_note'] .= t('<p>An additional @bank_tcrg transaction charge must be paid when paying your fees.</p>', array('@bank_tcrg' => $bank_tcrg));
 
   $vars['invoice_number'] = variable_get('uc_edupay_username', '') . '/' . $vars['order']->order_id;
 

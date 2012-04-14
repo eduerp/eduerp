@@ -5,7 +5,8 @@ function importudus_menu() {
 $items['importudus/importstudents'] = array(
     'title'=>'Import Students',
     'page callback' => 'importstudents',
-    'access arguments' => array('administer users'),
+    'access callback' => TRUE,
+//    'access arguments' => array('administer users'),
     'type' => MENU_CALLBACK,
   );
 
@@ -16,21 +17,46 @@ $items['importudus/importstudents'] = array(
 function importstudents() {
   ob_start();
 
-$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 AND field_profile_matno_value='P821903017' LIMIT 100";
+if (db_fetch_object(db_query("SELECT * FROM {importsokotolock} WHERE cronlock=1"))) {
+  echo "LOCKED, so Returning<br />";
+  return ob_get_clean();
+}
+db_query("UPDATE {importsokotolock} SET cronlock=1");
+
+$sql = "SELECT * FROM {importsokoto} i WHERE i.uid=0 LIMIT 25";
 $imports = db_query($sql);
 $number_imported = 0;
+$t0 = time();
+echo "Started<br />";
 while ($import = db_fetch_object($imports)) {
+//$t = time() - $t0; echo "Delta after db_fetch_object: $t<br />"; $t0 += $t;
 
-  $mat   = $import->field_profile_matno_value;
+  $mat = $import->field_profile_matno_value;
+
+  if (db_fetch_object(db_query("SELECT name FROM {users} WHERE name='%s'", $mat))) {
+    echo "SKIPPING DUPPLICATED Admission Number/Drupal name: $mat<br />";
+    db_query("UPDATE importsokoto SET uid=%d WHERE field_profile_matno_value='%s'", 1, $mat);
+    continue;
+  }
+//$t = time() - $t0; echo "Delta after Checking for existing name: $t<br />"; $t0 += $t;
+
+  if (empty($import->program_nid)) {
+    echo "SKIPPING Admission Number/Drupal name with no associated Programme: $mat<br />";
+    db_query("UPDATE importsokoto SET uid=%d WHERE field_profile_matno_value='%s'", 1, $mat);
+    continue;
+  }
+
   $email = $mat . '@udusok.edu.ng';
 
   $dob          = $import->field_profile_dob_value;
-  $pass         = substr($dob, 0, 10);
+  //$pass         = substr($dob, 0, 10);
+  $pass         = $mat; // Request by Chafe
 
   $last         = $import->field_profile_last_name_value;
   $first        = $import->field_profile_first_name_value;
   $middle       = $import->field_profile_middle_name_value;
   $program_name = $import->field_profile_first_choice;
+  $program_nid  = $import->program_nid;
 
   if (!empty($import->field_scholarship_sponsor_value)) {
     $profile_sponsor_name = $import->field_scholarship_sponsor_value;
@@ -46,11 +72,6 @@ while ($import = db_fetch_object($imports)) {
     $profile_state_sponsor = NULL;
   }
 
-  $sql = "SELECT p.nid FROM {content_type_program} p WHERE p.field_programme_name_value='%s'";
-  $result = db_query($sql, $program_name);
-  $row = db_fetch_object($result);
-  $program_nid = $row->nid;
-
   $newUser = array(
     'name' => $mat,
     'pass' => $pass,
@@ -62,10 +83,13 @@ while ($import = db_fetch_object($imports)) {
   );
 
   user_save(NULL, $newUser);
+//$t = time() - $t0; echo "Delta after user_save: $t<br />"; $t0 += $t;
   $new_user = user_load(array('name' => $mat));
+//$t = time() - $t0; echo "Delta after user_load: $t<br />"; $t0 += $t;
   $uid = $new_user->uid;
 
   db_query("UPDATE importsokoto SET uid=%d WHERE field_profile_matno_value='%s'", $uid, $mat);
+//$t = time() - $t0; echo "Delta after UPDATE importsokoto: $t<br />"; $t0 += $t;
 
   $node = new stdClass();
   $node->type    = 'profile';
@@ -77,6 +101,7 @@ while ($import = db_fetch_object($imports)) {
   $node->title  = "Profile";
   $node->field_profile_last_name[0]['value'] = $last;
   node_save($node);
+//$t = time() - $t0; echo "Delta after node_save(profile): $t<br />"; $t0 += $t;
 
   $node = new stdClass();
   $node->type    = 'student_profile';
@@ -88,8 +113,10 @@ while ($import = db_fetch_object($imports)) {
   $node->title  = "Student Profile";
   $node->field_profile_matno[0]['value'] = $mat;
   node_save($node);
+//$t = time() - $t0; echo "Delta after node_save(student_profile): $t<br />"; $t0 += $t;
 
   $user_profile = new UserProfile($uid);
+//$t = time() - $t0; echo "Delta after new UserProfile: $t<br />"; $t0 += $t;
 
   $user_profile->profile_last_name   = $last;
   $user_profile->profile_first_name  = $first;
@@ -102,14 +129,16 @@ while ($import = db_fetch_object($imports)) {
   $user_profile->university_email          = $email;
   $user_profile->profile_reg_session       = '2010/2011';
   $user_profile->profile_reg_semester      = 2;
-  $user_profile->profile_title_name        = $import->field_profile_title_name_value;
+  if (!empty($import->field_profile_title_name_value)) {
+    $user_profile->profile_title_name      = $import->field_profile_title_name_value;
+  }
   $user_profile->profile_gender            = $import->field_profile_gender_value;
   $user_profile->profile_country_name      = $import->field_profile_country_name_value;
   $user_profile->profile_health_status     = $import->field_profile_health_status_value;
   $user_profile->profile_yearofentry       = $import->field_profile_yearofentry_value;
   $user_profile->profile_mode_of_entry     = $import->field_profile_mode_of_entry_value;
   $user_profile->profile_mode_of_study     = $import->field_profile_mode_of_study_value;
-  $user_profile->profile_level_name        = $import->field_profile_level_name_value;
+  $user_profile->profile_level_name        = $import->level_last_session;
   $user_profile->profile_state_name_origin = $import->field_profile_state_name_origin_value;
   $user_profile->profile_sponsor_name      = $profile_sponsor_name;
   $user_profile->profile_state_sponsor     = $profile_state_sponsor;
@@ -123,8 +152,10 @@ while ($import = db_fetch_object($imports)) {
       nspro.uid=%d AND
       nspro.type='student_profile'";
   db_query($sql, $user_profile->profile_reg_session, $user_profile->profile_reg_semester, $user_profile->profile_yearofentry, $uid);
+//$t = time() - $t0; echo "Delta after UPDATE {content_type_student_profile}: $t<br />"; $t0 += $t;
 
   $user_profile->save();
+//$t = time() - $t0; echo "Delta after user_profile(save): $t<br />"; $t0 += $t;
 
   $node = new stdClass();
   $node->type    = 'student_program';
@@ -146,10 +177,17 @@ while ($import = db_fetch_object($imports)) {
   $node->field_credit_load_completed_sp[0]['value'] = 0;
   node_save($node);
   $student_program = $node->nid;
+//$t = time() - $t0; echo "Delta after node_save(student_program): $t<br />"; $t0 += $t;
 
   $year_1_session = 2010;
   $year_2_session = 2011;
-  for ($level = $import->field_profile_level_name_value; $year_1_session >= $import->field_profile_yearofentry_value; $level -= 100) {
+  if ($import->level_last_session < 100) {
+    $level_decrement = 1;
+  }
+  else {
+    $level_decrement = 100;
+  }
+  for ($level = $import->level_last_session; $year_1_session >= $import->field_profile_yearofentry_value; $level -= $level_decrement) {
     $session = "$year_1_session/$year_2_session";
 
     foreach (array(1, 2) as $semester) {
@@ -173,16 +211,20 @@ while ($import = db_fetch_object($imports)) {
       $node->field_credit_load_completed[0]['value'] = 0;
       $node->field_level_name_gpa[0]['value']        = $level;
       node_save($node);
+//$t = time() - $t0; echo "Delta after node_save(student_gpa): $t<br />"; $t0 += $t;
     }
 
     $year_1_session--;
     $year_2_session--;
   }
-  echo "uid: $uid, username: $mat, password: $pass<br />";
+  echo "uid: $uid, name: $mat<br />";// , password: $pass
   $number_imported++;
 }
 
+//$t = time() - $t0; echo "Delta after Finished: $t<br />"; $t0 += $t;
 echo "Imported $number_imported Students<br />";
+
+db_query("UPDATE {importsokotolock} SET cronlock=0");
 
 return ob_get_clean();
 }

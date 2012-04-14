@@ -4,9 +4,10 @@
 // for actions that need to be performed that are institution
 // specific
 
-// stub function for generating matriculation numbers
-function me_gen_matno($studUID, $formerProgID=0) {
-
+/**
+ * Implementation of hook_matno()
+ */
+function me_gen_matno($studUID, $formerProgID = 0, $dont_change_matno = NULL) {
   //get the institution's choice of mat num
   $sql = "SELECT mat_num_format_id AS mat_num_format, mat_num_serial_gen_type_id AS mat_num_serial_type FROM mat_num_institution_choice ";
   $rs = db_query($sql);
@@ -21,19 +22,16 @@ function me_gen_matno($studUID, $formerProgID=0) {
     break;
 
     case '2': //udusok style
-      return gen_udusok_style_matnum($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $formerProgID);
-
+      return gen_udusok_style_matnum($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $formerProgID, $dont_change_matno);
     break;
 
     default:
       return false;
-
   }
-
 }
 
 
-function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProgID=0){
+function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProgID = 0, $dont_change_matno = NULL) {
   /**
   This style of matno does not have separators
   example: 0611406096,  0621406096.
@@ -48,17 +46,14 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
 
   06-1-14-06-096
   $entryYear - $entryMode - $facCode - $deptCode - $SerialNum
-  */
 
-  /**
   The code below assumes that faculty_abbr and department_abbr will be of numeric values as above!!!
-
   */
 
   //get the candidate's program, department and faculty info
   $student_profile = new UserProfile($studUID);
 
-  $sql = "SELECT ctc.nid AS faculty_nid, ctd.nid AS department_nid, ctp.nid AS programme_nid, field_department_code_value AS department_code, field_college_abbreviation_value AS faculty_code
+  $sql = "SELECT ctc.nid AS faculty_nid, ctd.nid AS department_nid, ctp.nid AS programme_nid, ctp.field_program_type_value, field_department_code_value AS department_code, field_college_abbreviation_value AS faculty_code
   	FROM {content_type_program} ctp
   	INNER JOIN {content_type_department} ctd ON ctp.field_department_id_nid=ctd.nid
   	INNER JOIN {content_type_college} ctc ON ctd.field_college_id_nid=ctc.nid
@@ -68,8 +63,14 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
   if (db_affected_rows($rs) <= 0) return false;
   $rsStudent = db_fetch_object($rs);
 
+  // If only a Level change or specifically requested, Don't change the Mat No
+  if (($student_profile->profile_first_choice == $formerProgID) || !empty($dont_change_matno)) {
+    $return = array($student_profile->profile_matno, $student_profile->university_email);
+    return $return;
+  }
+
   //check for change of programme
-  if($formerProgID != 0){
+  if (FALSE && $formerProgID != 0) { // FALSE Because for udusok we change the Mat No no matter what (if we get this far)
     //now if the candidate is moving within the same faculty, no new mat is required
     //get the faculty of the old programme
      $sql = "SELECT ctc.nid AS faculty_nid, ctd.nid AS department_nid, ctp.nid AS programme_nid, field_department_code_value AS department_code, field_college_abbreviation_value AS faculty_code
@@ -131,6 +132,15 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
   $entryMode = strtoupper(strtolower($student_profile->profile_mode_of_entry)) == 'DE' ? '2' : '1';
   $facCode = $rsStudent->faculty_code;
   $deptCode = $rsStudent->department_code;
+  $program_type = $rsStudent->field_program_type_value;
+  $program_types = programme_types();
+
+  if ($student_profile->profile_mode_of_study == 'Part_Time') {
+    $mode_of_study = '2';
+  }
+  else {
+    $mode_of_study = '1';
+  }
 
   //because this is an open development, lets check if there exists format details...e.g prefix, separator etc.
 
@@ -145,14 +155,80 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
   }
   else{
     //now bring them together
-    $matNumber = ($entryYear . $entryMode . $facCode . $deptCode . $SerialNum);
+
+    if ($program_types[$program_type] == 'Matric') {
+      $matNumber = $entryYear . '1' . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Certificate CIS') {
+      $matNumber = $entryYear . '1' . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Diploma CIS') {
+      $matNumber = $entryYear . '2' . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate Diploma') {
+      $matNumber = $entryYear . '1' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate Masters') {
+      $matNumber = $entryYear . '2' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate PhD') {
+      $matNumber = $entryYear . '3' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    elseif ($program_types[$program_type] == 'Postgraduate MPhil') {
+      $matNumber = $entryYear . '4' . $mode_of_study . $facCode . $deptCode . $SerialNum;
+    }
+    else {
+      $matNumber = $entryYear . $entryMode . $facCode . $deptCode . $SerialNum;
+    }
   }
+
+  db_query("INSERT INTO {debug_clearance_matno} SET matno=%d, first_choice=%d, uid=%d, timest=%d, type=%d", $matNumber, $student_profile->profile_first_choice, $studUID, time(), 2); //ab Debug Instumentation
 
   //generate the email
   $email = me_gen_email($studUID, $matNumber, $formerProgID);
 
+  if ($formerProgID != 0) me_gen_send_change_email($studUID, $matNumber, $email);
+
   $return = array($matNumber, $email);
   return $return;
+}
+
+
+function me_gen_send_change_email($student_id, $matNumber, $email) {
+  global $user;
+  $user_profile = new UserProfile($student_id);
+
+  if (!empty($user_profile->personal_email)) {
+    $sql = "SELECT field_programme_name_value FROM {content_type_program} WHERE nid=%d";
+    $result = db_query($sql, $user_profile->profile_first_choice);
+    $row = db_fetch_object($result);
+
+    $subject = 'Your University Programme has been Changed';
+
+    $body = '';
+    if (!empty($user_profile->profile_first_name) && !empty($user_profile->profile_last_name)) {
+      $middle = '';
+      if (!empty($user_profile->profile_middle_name)) $middle = $user_profile->profile_middle_name . ' ';
+      $body .= "Dear $user_profile->profile_first_name {$middle}$user_profile->profile_last_name,\n\n";
+    }
+
+    $body .= "Your University Programme has been Changed.\n\n";
+    $body .= "Your new Programme is: {$row->field_programme_name_value}\n\n";
+    $body .= "You now have a new Admission Number which is: {$matNumber}\n\n";
+    $body .= "Please note this carefully as you will need this admission number to access the university systems.\n";
+    $body .= "This admission number replaces your previous admission number that you used to login to the university system.\n";
+    $body .= "Your Password remains unchanged.\n\n";
+    $body .= "Your new university e-mail is: {$user_profile->university_email}\n";
+    $body .= "To access your e-mail go to " . variable_get('eduerp_zimbra_webmail_url', '') . "\n";
+    $body .= "To login to your university e-mail use the same username and password that you have been instructed to use to access the university system.\n\n";
+    $body .= "Please see " . variable_get('eduerp_student_guidlines_url', '') . " for guidlines.\n\n";
+    $body .= variable_get('eduerp_institution_current', '') . "\n";
+
+    $message = drupal_mail('student', 'newprogramme', $user_profile->personal_email, language_default(), array(), $user->mail, FALSE);
+    $message['subject'] = $subject;
+    $message['body'] = $body;
+    drupal_mail_send($message);
+  }
 }
 
 
@@ -187,7 +263,6 @@ function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerPro
   if (db_affected_rows($rs) <= 0) return false;
   $rsStudent = db_fetch_object($rs);
 
-
   //check for change of programme
   if($formerProgID != 0){
     //now if the candidate is moving within the same faculty, no new mat is required
@@ -205,12 +280,9 @@ function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerPro
      if($rsStudent->faculty_nid == $rsFormerProg->faculty_nid){
        //the faculties are the same...so no need to proceed. Just return the current mat num
        $return = array($student_profile->profile_matno, $student_profile->university_email);
-       //$return = array($student_profile->profile_matno, $student_profile->university_email, $rsStudent->faculty_nid, $rsFormerProg->faculty_nid);
        return $return;
-
      }
   }
-
 
   //although we know that they are using institution wide serial, who knows they may have choosen faculty serial. Lets just test
   //check the serial type
@@ -230,7 +302,6 @@ function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerPro
     $sql = "UPDATE mat_num_general_serial SET next_num=next_num + 1 WHERE session_name='%s'";
     db_query($sql, variable_get('eduerp_current_session', ''));
     db_query('COMMIT');
-
   }
   else {//for Faculty Counter / Serial
     //seems they decided to change to faculty serial...ok
@@ -248,12 +319,10 @@ function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerPro
     $sql = "UPDATE mat_num_faculty_serial SET next_num=next_num + 1 WHERE faculty_nid=%d AND session_name='%s'";
     db_query($sql, $rsStudent->faculty_nid, variable_get('eduerp_current_session', ''));
     db_query('COMMIT');
-
   }
 
   $entryYear = substr(variable_get('eduerp_current_session', ''), 2, 2);
   $facCode = $rsStudent->faculty_code;
-
 
   $sql = "SELECT mat_num_institution_prefix AS prefix, mat_num_separator AS seprator  FROM mat_num_format_details WHERE mat_num_format_id=%d";
   $rs = db_query($sql, $formatID);
@@ -263,7 +332,6 @@ function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerPro
     $rsDetails = db_fetch_object($rs);
 
     $matNumber = ($rsDetails->prefix . $rsDetails->seprator . $facCode . $rsDetails->seprator . $entryYear . $rsDetails->seprator . $SerialNum);
-
   }
   else{
     //no prefix or separator info was found so just bring them together
@@ -331,7 +399,7 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
   //get the candidate's program, department and faculty info
   $student_profile = new UserProfile($studUID);
 
-  if($formerProgID != 0){
+  if (FALSE && $formerProgID != 0) { // Always change e-mail if we get this far
     //the candidate already has university email. Just return it
     return $student_profile->university_email;
   }
@@ -406,10 +474,8 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
 
   $userEmail = strtolower(strtoupper($userEmail));
 
-  if ($formerProgID == 0) {
-    $student_profile->university_email = $userEmail;
-    $student_profile->save();
-  }
+  $student_profile->university_email = $userEmail;
+  $student_profile->save();
 
   if (empty($student_profile->personal_email)) {
     $student = user_load($studUID);
@@ -418,34 +484,31 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
     $student_profile->save();
   }
 
-  if ($formerProgID == 0) {
-    $student = user_load($studUID);
-    if (module_exists('zimbra')) {
-      $zimbra = new ZimbraSoapClient(variable_get('zimbra_soap_url', ''));
+  $student = user_load($studUID);
+  if (module_exists('zimbra')) {
+    $zimbra = new ZimbraSoapClient(variable_get('zimbra_soap_url', ''));
 
-      $oldZimbraMail = $student->name;
-      $oldUserEmail = $oldZimbraMail . '@' . variable_get('zimbra_domain', '');
-      $newZimbraMail = substr($userEmail, 0, strpos($userEmail, '@'));
+    $oldZimbraMail = $student->name;
+    $oldUserEmail = $oldZimbraMail . '@' . variable_get('zimbra_domain', '');
+    $newZimbraMail = substr($userEmail, 0, strpos($userEmail, '@'));
 
-      if (zimbra_login($zimbra) && ($id = zimbra_get_id($zimbra, $oldZimbraMail)) && ($result = zimbra_rename($zimbra, $id, $oldZimbraMail, $newZimbraMail))) {
-        user_save($student, array('mail' => $userEmail));
-        watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail));
-      }
-      else {
-        user_save($student, array('mail' => $userEmail)); // Do it anyway because the error is not for real on mis.udusok.edu.ng
-        watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail), WATCHDOG_ERROR);
-        //drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $oldUserEmail, '%name_new' => $userEmail)), 'error');
-      }
+    if (zimbra_login($zimbra) && ($id = zimbra_get_id($zimbra, $oldZimbraMail)) && ($result = zimbra_rename($zimbra, $id, $oldZimbraMail, $newZimbraMail))) {
+      user_save($student, array('mail' => $userEmail));
+      watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail));
     }
-    else drupal_set_message('Zimbra module is not loaded so Student e-mail cannot be assigned');
+    else {
+      user_save($student, array('mail' => $userEmail)); // Do it anyway because the error is not for real on mis.udusok.edu.ng
+      watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail), WATCHDOG_ERROR);
+      //drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $oldUserEmail, '%name_new' => $userEmail)), 'error');
+    }
   }
+  else drupal_set_message('Zimbra module is not loaded so Student e-mail cannot be assigned');
 
   return $userEmail;
 }
 
 
 function me_gen_createsession($sessioname){
-
   //once the session changes, we should update our tables
 
   //get all facultites

@@ -97,24 +97,31 @@ $handler->override_option('fields', array(
     'relationship' => 'content_profile_rel_1',
   ),
   'name' => array(
-    'label' => 'Mat No.',
+    'label' => 'Admission No.',
     'alter' => array(
       'alter_text' => 0,
       'text' => '',
       'make_link' => 0,
       'path' => '',
+      'absolute' => 0,
       'link_class' => '',
       'alt' => '',
+      'rel' => '',
       'prefix' => '',
       'suffix' => '',
+      'target' => '',
       'help' => '',
       'trim' => 0,
       'max_length' => '',
       'word_boundary' => 1,
       'ellipsis' => 1,
-      'strip_tags' => 0,
       'html' => 0,
+      'strip_tags' => 0,
     ),
+    'empty' => '',
+    'hide_empty' => 0,
+    'empty_zero' => 0,
+    'hide_alter_empty' => 1,
     'link_to_user' => 1,
     'overwrite_anonymous' => 0,
     'anonymous_text' => '',
@@ -464,16 +471,15 @@ $handler->override_option('filters', array(
     ),
   ),
   'field_profile_yearofentry_value' => array(
-    'operator' => '=',
+    'operator' => 'contains',
     'value' => '',
     'group' => '0',
     'exposed' => TRUE,
     'expose' => array(
       'use_operator' => 0,
       'operator' => 'field_profile_yearofentry_value_op',
-      'identifier' => 'field_profile_yearofentry_value',
+      'identifier' => 'yearofentry',
       'label' => 'Year of Entry',
-      'optional' => 1,
       'remember' => 1,
     ),
     'case' => 1,
@@ -587,6 +593,25 @@ $handler->override_option('filters', array(
     'relationship' => 'field_college_id_nid',
     'reduce_duplicates' => 0,
   ),
+  'uid' => array(
+    'operator' => 'in',
+    'value' => '',
+    'group' => '0',
+    'exposed' => TRUE,
+    'expose' => array(
+      'use_operator' => 0,
+      'operator' => 'uid_op',
+      'identifier' => 'uid',
+      'label' => 'Admission Number',
+      'optional' => 1,
+      'remember' => 1,
+      'reduce' => 0,
+    ),
+    'id' => 'uid',
+    'table' => 'users',
+    'field' => 'uid',
+    'relationship' => 'none',
+  ),
 ));
 $handler->override_option('access', array(
   'type' => 'perm',
@@ -596,71 +621,7 @@ $handler->override_option('cache', array(
   'type' => 'none',
 ));
 $handler->override_option('footer', '<?php
-if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'rid\'])) {
-
-  $rid = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'rid\'];
-  $where = "WHERE users_roles.rid={$rid}";
-
-  if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'yearofentry\'])) {
-    $yearofentry = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'yearofentry\'];
-    $yearofentry = addslashes($yearofentry);
-    if ($yearofentry !== \'All\') $where .= " AND node_users_1_node_data_field_profile_yearofentry.field_profile_yearofentry_value=\'{$yearofentry}\'";
-  }
-
-  if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'level\'])) {
-    $level = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'level\'];
-    $level = addslashes($level);
-    if ($level !== \'All\') $where .= " AND node_users_1_node_data_field_profile_level_name.field_profile_level_name_value=\'{$level}\'";
-  }
-
-  if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'gender\'])) {
-    $gender = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'gender\'];
-    $gender = addslashes($gender);
-    if ($gender !== \'All\') $where .= " AND node_users_node_data_field_profile_gender.field_profile_gender_value=\'{$gender}\'";
-  }
-
-  if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'programme\'])) {
-    $programme = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'programme\'];
-    $programme = addslashes($programme);
-    if ($programme !== \'All\') $where .= " AND node_node_data_field_profile_first_choice_node_data_field_programme_name.field_programme_name_value=\'{$programme}\'";
-  }
-
-  if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'department\'])) {
-    $department = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'department\'];
-    $department = addslashes($department);
-    if ($department !== \'All\') $where .= " AND node_node_data_field_department_id_node_data_field_department_name.field_department_name_value=\'{$department}\'";
-  }
-
-  if (!empty($_SESSION[\'views\'][\'list_students\'][\'default\'][\'college\'])) {
-    $college = $_SESSION[\'views\'][\'list_students\'][\'default\'][\'college\'];
-    $college = addslashes($college);
-    if ($college !== \'All\') $where .= " AND node_node_data_field_college_id_node_data_field_college_name.field_college_name_value=\'{$college}\'";
-  }
-
-  $sql = "SELECT COUNT(users.uid) AS count
-    FROM users users
-    LEFT JOIN node node_users ON users.uid = node_users.uid AND node_users.type = \'profile\'
-    LEFT JOIN node node_users_1 ON users.uid = node_users_1.uid AND node_users_1.type = \'student_profile\'
-    LEFT JOIN content_type_student_profile node_users_1_node_data_field_profile_first_choice ON node_users_1.vid = node_users_1_node_data_field_profile_first_choice.vid
-    LEFT JOIN node node_node_data_field_profile_first_choice ON node_users_1_node_data_field_profile_first_choice.field_profile_first_choice_nid = node_node_data_field_profile_first_choice.nid
-    LEFT JOIN content_type_program node_node_data_field_profile_first_choice_node_data_field_department_id ON node_node_data_field_profile_first_choice.vid = node_node_data_field_profile_first_choice_node_data_field_department_id.vid
-    LEFT JOIN node node_node_data_field_department_id ON node_node_data_field_profile_first_choice_node_data_field_department_id.field_department_id_nid = node_node_data_field_department_id.nid
-    LEFT JOIN content_type_department node_node_data_field_department_id_node_data_field_college_id ON node_node_data_field_department_id.vid = node_node_data_field_department_id_node_data_field_college_id.vid
-    LEFT JOIN node node_node_data_field_college_id ON node_node_data_field_department_id_node_data_field_college_id.field_college_id_nid = node_node_data_field_college_id.nid
-    INNER JOIN users_roles users_roles ON users.uid = users_roles.uid
-    INNER JOIN content_type_student_profile node_users_1_node_data_field_profile_level_name ON node_users_1.vid = node_users_1_node_data_field_profile_level_name.vid
-    INNER JOIN content_type_profile node_users_node_data_field_profile_gender ON node_users.vid = node_users_node_data_field_profile_gender.vid
-    INNER JOIN content_type_program node_node_data_field_profile_first_choice_node_data_field_programme_name ON node_node_data_field_profile_first_choice.vid = node_node_data_field_profile_first_choice_node_data_field_programme_name.vid
-    INNER JOIN content_type_department node_node_data_field_department_id_node_data_field_department_name ON node_node_data_field_department_id.vid = node_node_data_field_department_id_node_data_field_department_name.vid
-    INNER JOIN content_type_college node_node_data_field_college_id_node_data_field_college_name ON node_node_data_field_college_id.vid = node_node_data_field_college_id_node_data_field_college_name.vid
-    LEFT JOIN content_type_profile node_users_node_data_field_profile_last_name ON node_users.vid = node_users_node_data_field_profile_last_name.vid
-    LEFT JOIN content_type_student_profile node_users_1_node_data_field_profile_yearofentry ON node_users_1.vid = node_users_1_node_data_field_profile_yearofentry.vid
-    {$where}";
-  $countresults = db_query($sql);
-  if ($row = db_fetch_object($countresults)) {
-    echo "<br /><b>Total number of results: {$row->count}</b>";
-  }
-}
+require_once \'./\' . drupal_get_path(\'module\', \'eduerp\') . \'/student/list_students_footer.inc\';
 ?>');
 $handler->override_option('footer_format', '3');
 $handler->override_option('footer_empty', 0);
@@ -763,6 +724,40 @@ $handler->override_option('style_options', array(
   ),
   'default' => 'name',
 ));
+$handler = $view->new_display('views_data_export', 'Data export', 'views_data_export_1');
+$handler->override_option('items_per_page', '0');
+$handler->override_option('style_plugin', 'views_data_export_xls');
+$handler->override_option('style_options', array(
+  'mission_description' => FALSE,
+  'description' => '',
+  'attach_text' => 'XLS',
+  'provide_file' => 1,
+  'filename' => '%view.xls',
+  'help' => '',
+  'parent_sort' => 0,
+));
+$handler->override_option('row_plugin', '');
+$handler->override_option('path', 'liststudents/export');
+$handler->override_option('menu', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('tab_options', array(
+  'type' => 'none',
+  'title' => '',
+  'description' => '',
+  'weight' => 0,
+  'name' => 'navigation',
+));
+$handler->override_option('displays', array(
+  'page_1' => 'page_1',
+  'default' => 0,
+));
+$handler->override_option('sitename_title', FALSE);
+$handler->override_option('use_batch', TRUE);
 $handler = $view->new_display('page', 'Page', 'page_1');
 $handler->override_option('path', 'liststudents');
 $handler->override_option('menu', array(

@@ -348,6 +348,12 @@ class courseselectionsclass {
       $select_load_for_totals = $this->selected_load[$semester];
     }
 
+    if (!$min_max_credits) {
+      $min_max_credits = new stdClass();
+      $min_max_credits->max_credit_load = 100;
+      $min_max_credits->min_credit_load = 0;
+    }
+
     $this->form['loadcounter' . $semester] = array('#value' => '<table border="1">
       <tr><th colspan="2">CREDIT LOAD COUNTER</th></tr>
       <tr><th>Maximum Credit Load</th><td><span id="max_load' . $semester . '">' . $min_max_credits->max_credit_load . '</span></td></tr>
@@ -651,9 +657,9 @@ function student_log_clearance($student_id, $clearance_date, $user) {
 }
 
 
-function set_matriculation_number($student_id, $formerProgID=0) {
+function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_matno = NULL) {
   // Generate the matriculation number for this student
-  $results = module_invoke_all('matno', $student_id, $formerProgID);
+  $results = module_invoke_all('matno', $student_id, $formerProgID, $dont_change_matno);
   if (is_array($results) && count($results) > 0) {
     // We don't expect more than one implementation of the hook
     // if so, we only take the first result.
@@ -661,14 +667,17 @@ function set_matriculation_number($student_id, $formerProgID=0) {
 
     // Change the username to the matno and also change the student profile
     $student = user_load($student_id);
-    //$student->name = $matno;
     user_save($student, array('name'=>$matno));
 
     $student_profile = new UserProfile($student_id);
     $student_profile->profile_matno = $matno;
     $student_profile->save();
+
+    db_query("INSERT INTO {debug_clearance_matno} SET matno=%d, first_choice=%d, uid=%d, timest=%d, type=%d", $matno, $student_profile->profile_first_choice, $student_id, time(), 1); //ab Debug Instumentation
+
   }
 }
+
 
 /**
   these functions below define a custom field and field widget that enables
@@ -1254,7 +1263,8 @@ function student_meets_fee_requirements($uid) {
 
   $fees = get_fee_items($uid);
   if (!empty($fees)) {
-    if ($fees['amount_payable'] <= 0.0) return TRUE; // The Student is on a full Scholarship with no extras to pay
+    // Always force Students to go through Pay fees so that Fees Report gets set (for Scholarship items) even if they have nothing to pay... Comment out...
+    //if ($fees['amount_payable'] <= 0.0) return TRUE; // The Student is on a full Scholarship with no extras to pay
 
     $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
       WHERE
@@ -1767,7 +1777,7 @@ function create_student_program($uid) {
 }
 
 
-function change_student_program(&$user, $first_choice, $level) {
+function change_student_program(&$user, $first_choice, $level, $dont_change_matno) {
   $user_profile = new UserProfile($user->uid);
   $formerProgID = $user_profile->profile_first_choice;
   $user_profile->profile_first_choice = $first_choice;
@@ -1776,7 +1786,7 @@ function change_student_program(&$user, $first_choice, $level) {
 
   create_student_program($user->uid);
 
-  set_matriculation_number($user->uid, $formerProgID);
+  set_matriculation_number($user->uid, $formerProgID, $dont_change_matno);
 }
 
 /**

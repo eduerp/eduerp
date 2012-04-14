@@ -78,6 +78,7 @@ function student_registration_strongarm() {
     'revision_information' => '3',
     'author' => '23',
     'options' => '24',
+    'comment_settings' => '30',
     'menu' => '2',
     'path' => '4',
     'print' => '25',

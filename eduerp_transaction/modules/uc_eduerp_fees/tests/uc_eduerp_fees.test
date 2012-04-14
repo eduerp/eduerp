@@ -55,19 +55,6 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
   }
   
   /**
-   * Test update of a fees order when paid for in
-   * eduerp
-   * 
-   * uc_eduerp_fees_update_update function test
-   */ 
-  public function testHookUpdateUpdate() {
-    $result_value = uc_eduerp_fees_update_update(281, 'uc_orders', 'in_checkout');
-    
-	//db_query returns TRUE or FALSE on a query
-    $this->assertEqual($result_value, TRUE);
-  }
-  
-  /**
    * uc_eduerp_fees_update_fees function test
    */ 
   public function testUpdateFeesPaidOperation() {
@@ -84,50 +71,12 @@ class UCEduerpFeesTestCase extends DrupalWebTestCase {
     $this->assertEqual($result, t('fees paid'));
   }
   
-  /**
-   * uc_eduerp_fees_update_invoke function test
-   */ 
-  public function testHookUpdateInvoke() {
-    $result = uc_eduerp_fees_update_invoke('update', 388, 'uc_orders', 'payment_received');
-    $this->assertTrue($result, t('fees order updated successfully'));
-  }
-  
-  /**
-  * Test fees items that have been paid for
-  *
-  */
-  public function testPaidFeesItems() {
-    $paid = uc_eduerp_fees_paid_items(955, 5251, TRUE);
-    // if the value of array key nid is 5251
-    /*if(in_array(5251, $paid)){
-      dsm('yes');
-    }*/
-    $this->assertNull(5251, $paid);
-  }
-  
-  public function testHostelReservation() {
-    /*if(!is_reservation_existing($student_id)) {
-      unset($fees['hostel']);
-    }*/
-    //$this->assertTrue(5251, $paid);
-  }
-  
   public function testArrayInArrayUtil() {
     $types_arr = array('fees', 'hostel');
     $data = array('fees', 'fees', 'hostel');
     
     $result = array_in_array($types_arr, $data);
     $this->assertTrue($types_arr, $result);
-  }
-  
-  /**
-   * Functional test of uc_eduerp_fees_load_extras
-   */ 
-  public function testFeesExtras() {
-    $fees_format = array(FEES_FULL, FEES_FIRST_INSTALMENT);
-    $extras = uc_eduerp_fees_load_extras(955, 'fees');
-    $result = in_array($extras[5233]['fees_payment_format'], $fees_format);
-    $this->assertTrue($fees_format, $result);
   }
   
   /**
