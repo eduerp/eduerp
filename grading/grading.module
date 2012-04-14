@@ -99,7 +99,7 @@ function grading_menu() {
 /**
  * Implementation of hook_field_access(), determines if a user $account can perform $op on field $field for this $node.
  *
- * @see content_access().
+ * @see content_access()
  */
 function grading_field_access($op, $field, $account, $node = NULL) {
   global $user;
@@ -669,7 +669,7 @@ function grading_stats_department_form(&$obj) {
 
 
 /**
- * Find all Faculty names.
+ * Find all Faculty names
  *
  * @return array of sorted strings indexed by same string (with an Any option)
  */
@@ -686,7 +686,7 @@ function _grading_college_list_any() {
 
 
 /**
- * Find all Department names.
+ * Find all Department names
  *
  * @return array of sorted strings indexed by same string
  */
@@ -702,7 +702,7 @@ function _grading_department_list() {
 
 
 /**
- * Find all Department names.
+ * Find all Department names
  *
  * @return array of sorted strings indexed by same string (with an Any option)
  */
@@ -719,7 +719,7 @@ function _grading_department_list_any() {
 
 
 /**
- * Find all Programme names.
+ * Find all Programme names
  *
  * @return array of sorted strings indexed by same string (with an Any option)
  */
@@ -736,7 +736,7 @@ function _grading_programme_list_any() {
 
 
 /**
- * Find all Session names.
+ * Find all Session names
  *
  * @return array of sorted strings indexed by same string
  */
@@ -752,7 +752,7 @@ function _grading_session_list() {
 
 
 /**
- * Find all Semester names.
+ * Find all Semester names
  *
  * @return array of sorted strings indexed by same string
  */
@@ -768,7 +768,7 @@ function _grading_semester_list() {
 
 
 /**
- * Find all Level names.
+ * Find all Level names
  *
  * @return array of sorted strings indexed by same string
  */
@@ -784,7 +784,7 @@ function _grading_level_list() {
 
 
 /**
- * Find all Level names.
+ * Find all Level names
  *
  * @return array of sorted strings indexed by same string (with an Any option)
  */
@@ -801,7 +801,7 @@ function _grading_level_list_any() {
 
 
 /**
- * submit hook for grading_stats_department_form.
+ * submit hook for grading_stats_department_form
  */
 function grading_stats_department_form_submit($form, &$state) {
   drupal_set_message('department: ' . $state['values']['department'] . '<br />');
@@ -1175,7 +1175,7 @@ function approve_grades_registrar_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_registrar_form.
+ * validate hook for approve_grades_registrar_form
  */
 function approve_grades_registrar_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -1185,7 +1185,7 @@ function approve_grades_registrar_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_registrar_form.
+ * submit hook for approve_grades_registrar_form
  */
 function approve_grades_registrar_form_submit($form, &$form_state) {
   global $user;
@@ -1356,7 +1356,7 @@ function approve_grades_vc_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_vc_form.
+ * validate hook for approve_grades_vc_form
  */
 function approve_grades_vc_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -1366,7 +1366,7 @@ function approve_grades_vc_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_vc_form.
+ * submit hook for approve_grades_vc_form
  *
  * <p>Relevant CA & Exam locked fields become 5 and so are finally approved and cannot be changed except by a 'University Grade Editor'.</p>
  * <p>Set the student visible CA, exam, GPA and cGPA scores to the values set by the lecturer or calculated based on these.</p>
@@ -1644,6 +1644,9 @@ function approve_grades_vc_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to display Grading Statistics for the University
+ */
 function grading_stats_uni_form(&$obj) {
   $sessiondefault = variable_get('eduerp_current_session', '');
   $semesterdefault = variable_get('eduerp_current_semester', 1);
@@ -1752,11 +1755,17 @@ function grading_stats_uni_form(&$obj) {
 }
 
 
+/**
+ * submit hook for grading_stats_uni_form
+ */
 function grading_stats_uni_form_submit($form, &$state) {
   drupal_set_message('Submitted<br />');
 }
 
 
+/**
+ * AHAH callback to do the main statistics and display work for grading_stats_uni_form.
+ */
 function _grading_ahah_stats_uni() {
   global $user;
   global $base_url;
@@ -1918,6 +1927,9 @@ function _grading_ahah_stats_uni() {
 }
 
 
+/**
+ * Form to select a Student and show all of the Student's Courses as well as data such as Programme and cGPA.
+ */
 function grading_student_details_form(&$obj) {
 
   $form['studentname'] = array(
@@ -1968,6 +1980,11 @@ function grading_student_details_form(&$obj) {
 }
 
 
+/**
+ * Find all Students by Name
+ *
+ * @return array of sorted strings indexed by same string
+ */
 function _grading_student_list() {
   $names = array();
   $names[0] = '';
@@ -1985,6 +2002,11 @@ function _grading_student_list() {
 }
 
 
+/**
+ * Find all Students by Matriculation Number
+ *
+ * @return array of sorted strings indexed by same string
+ */
 function _grading_mat_list() {
   $names = array();
   $names[0] = '';
@@ -2002,11 +2024,17 @@ function _grading_mat_list() {
 }
 
 
+/**
+ * submit hook for grading_student_details_form
+ */
 function grading_student_details_form_submit($form, &$state) {
   drupal_set_message('Student: ' . $state['values']['studentname'] . '<br />');
 }
 
 
+/**
+ * AHAH callback to do the main display work for grading_student_details_form.
+ */
 function _grading_ahah_studentdetails() {
   global $user;
   global $base_url;
@@ -2180,6 +2208,9 @@ function _grading_ahah_studentdetails() {
 }
 
 
+/**
+ * Implementation of hook_cron(), sends out queued student notifications.
+ */
 function grading_cron() {
   global $base_url;
 
@@ -2225,11 +2256,14 @@ function grading_cron() {
   }
 }
 
+
+/**
+ * Implementation of hook_views_api(), register view API information so include files can be loaded.
+ */
 function grading_views_api() {
   return array(
     'api' => 2,
     'path' => drupal_get_path('module', 'grading'),
   );
 }
-
 ?>
