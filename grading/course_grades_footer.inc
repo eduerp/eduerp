@@ -474,6 +474,9 @@ function approve_grades_lecturer_form($form_state) {
 }
 
 
+/**
+ * validate hook for approve_grades_lecturer_form
+ */
 function approve_grades_lecturer_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
     form_set_error('comment', 'You must enter a comment for the Head of Department!');
@@ -481,6 +484,14 @@ function approve_grades_lecturer_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for approve_grades_lecturer_form
+ *
+ * <p>Relevant CA & Exam locked fields become 1.</p>
+ * <p>Calculate GPA, cGPA  and other data if exam scores are being entered.</p>
+ * <p>Create an Approval Record.</p>
+ * <p>Send e-mails to those that need to be notified.</p>
+ */
 function approve_grades_lecturer_form_submit($form, &$form_state) {
   global $user;
   global $base_url;
@@ -821,6 +832,11 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to allow to allow HOD to unlock grades (relevant locked fields will then become 0).
+ *
+ * @global stdClass $eduerpapprovalform already contains values needed for the form.
+ */
 function unlock_grades_hod_form($form_state) {
   global $eduerpapprovalform;
 
@@ -851,6 +867,9 @@ function unlock_grades_hod_form($form_state) {
 }
 
 
+/**
+ * validate hook for unlock_grades_hod_form
+ */
 function unlock_grades_hod_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
     form_set_error('comment', 'You must enter a comment for the Lecturer!');
@@ -858,6 +877,13 @@ function unlock_grades_hod_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for unlock_grades_hod_form
+ *
+ * <p>Relevant CA & Exam locked fields become 0.</p>
+ * <p>Create an Approval Record.</p>
+ * <p>Send notification e-mail to Lecturer.</p>
+ */
 function unlock_grades_hod_form_submit($form, &$form_state) {
   global $user;
 
@@ -1022,6 +1048,11 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to allow to allow HOD to approve grades (relevant locked fields will then become 2).
+ *
+ * @global stdClass $eduerpapprovalform already contains values needed for the form.
+ */
 function approve_grades_hod_form($form_state) {
   global $eduerpapprovalform;
 
@@ -1053,6 +1084,9 @@ function approve_grades_hod_form($form_state) {
 }
 
 
+/**
+ * validate hook for approve_grades_hod_form
+ */
 function approve_grades_hod_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
     form_set_error('comment', 'You must enter a comment for the Dean!');
@@ -1060,6 +1094,15 @@ function approve_grades_hod_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for approve_grades_hod_form
+ *
+ * <p>Relevant CA & Exam locked fields become 2.</p>
+ * <p>If this is a CA approval, set the student visible CA scores to the values set by the lecturer.</p>
+ * <p>Create an Approval Record.</p>
+ * <p>Send e-mails to those that need to be notified.</p>
+ * <p>Send e-mails to Students for CA only.</p>
+ */
 function approve_grades_hod_form_submit($form, &$form_state) {
   global $user;
   global $base_url;
@@ -1270,6 +1313,11 @@ function approve_grades_hod_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to allow to allow Dean to approve grades (relevant locked fields will then become 3).
+ *
+ * @global stdClass $eduerpapprovalform already contains values needed for the form.
+ */
 function approve_grades_dean_form($form_state) {
   global $eduerpapprovalform;
 
@@ -1299,6 +1347,9 @@ function approve_grades_dean_form($form_state) {
 }
 
 
+/**
+ * validate hook for approve_grades_dean_form
+ */
 function approve_grades_dean_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
     form_set_error('comment', 'You must enter a comment for the Record!');
@@ -1306,6 +1357,12 @@ function approve_grades_dean_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for approve_grades_dean_form
+ *
+ * <p>Relevant CA & Exam locked fields become 3 (or 5 if this is for a CA only... Fully Approved).</p>
+ * <p>Create an Approval Record.</p>
+ */
 function approve_grades_dean_form_submit($form, &$form_state) {
   global $user;
   global $base_url;
@@ -1402,6 +1459,11 @@ function approve_grades_dean_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Find parameters for Course selected in the View
+ *
+ * @return array of parameters
+ */
 function findcourseparameters($coursecode, $session, $semesterwhere, $locationwhere) {
   $sql = "SELECT
       c.field_level_value AS level,
@@ -1428,6 +1490,9 @@ function findcourseparameters($coursecode, $session, $semesterwhere, $locationwh
 }
 
 
+/**
+ * Print all locations for Course selected in the View
+ */
 function listlocations($coursecode, $session, $semesterwhere, $locationwhere) {
   $sql = "SELECT DISTINCT
       ci.field_location_value AS location,
