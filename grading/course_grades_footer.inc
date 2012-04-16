@@ -488,7 +488,7 @@ function approve_grades_lecturer_form_validate($form, &$form_state) {
  * submit hook for approve_grades_lecturer_form
  *
  * <p>Relevant CA & Exam locked fields become 1.</p>
- * <p>Calculate GPA, cGPA  and other data if exam scores are being entered.</p>
+ * <p>Calculate GPA, cGPA and other data if exam scores are being entered.</p>
  * <p>Create an Approval Record.</p>
  * <p>Send e-mails to those that need to be notified.</p>
  */
