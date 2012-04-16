@@ -1,5 +1,9 @@
 <?php
-// Footer for course_grades View 20100228
+/**
+ * Footer for course_grades View 20100228
+ *
+ * @global stdClass $eduerpapprovalform is set to contain values needed for various approval forms.
+ */
 
 global $user;
 global $base_url;
@@ -435,6 +439,11 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 }
 
 
+/**
+ * Form to allow to allow Lecturer to approve grades (relevant locked fields will then become 1).
+ *
+ * @global stdClass $eduerpapprovalform already contains values needed for the form.
+ */
 function approve_grades_lecturer_form($form_state) {
   global $eduerpapprovalform;
 
