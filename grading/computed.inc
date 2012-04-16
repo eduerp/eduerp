@@ -149,59 +149,13 @@ function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 
 
 /**
- * Update the Student's GPA, cGPA and other data
+ * Update the Student's Grade and other data
  *
- * <p>This is called for the computed field "field_grade" in the student_grades CCK.</p>
-
-
-* <p>Calculate GPA, cGPA and other data if exam scores are being entered.</p>
-
-* Form to allow to allow VC to approve grades (relevant locked fields will then become 5). Also set the student visible exam score to the values set by the lecturer.
-    sg.field_grade_value='{$grade}'
-    , sg.field_gradepoint_value='{$gp}'
-
-
-    if ($examscorelocked > 0 && !empty($field_name)) { // This means that GPA/cGPA has already been calculated, so need to redo (
-
-only an  could have submitted this change)
-* <p>If a "Grade Editor" has edited then do the following...</p>
-        SET
-          sg.`field_examscoreforstudent_value`=sg.`field_exam_score_value`,
-          sg.`field_ca1forstudent_value`=sg.`field_ca1_value`,
-          sg.`field_ca2forstudent_value`=sg.`field_ca2_value`,
-          sg.`field_ca3forstudent_value`=sg.`field_ca3_value`,
-          sg.`field_ca4forstudent_value`=sg.`field_ca4_value`,
-          sg.`field_totalscoreforstudent_value`=sg.`field_total_score_value`,
-          sg.`field_gradepointforstudent_value`=sg.`field_gradepoint_value`,
-          sg.`field_gradeforstudent_value`=sg.`field_grade_value`
-        WHERE sg.field_mat_no_uid={$uid} AND sg.field_course_instance_nid={$course_instance_nid} AND sg.field_dropped_value=0";
-      db_query($sql);
-
-      // Set the GPA for this student (code below here is based on code in course_grades_footer, but is simplified to deal with a single student and a specific course_instance)
-        gpa.field_gptotal_value=gpatoset.gradepoints,
-        gpa.field_credit_load_completed_value=gpatoset.totalload,
-        gpa.field_gpa_value=IF(gpatoset.calc_type=3,
-        field_gpaforstudent_value=IF(gpatoset.calc_type=3,
-          IF(gpatoset.allpassed=0, '-', 'Pass'),
-          FORMAT(IF(gpatoset.totalload=0, 0, gpatoset.gradepoints/gpatoset.totalload), 2)
-        )
-
-      SET
-        sp.field_gptotal_sp_value=cgpatoset.gradepoints,
-        sp.field_credit_load_completed_sp_value=cgpatoset.totalload,
-        sp.field_cgpa_sp_value=IF(cgpatoset.calc_type=3,
-          IF(cgpatoset.allpassed=0, '-', 'Pass'),
-          FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
-        ),
-        field_cgpaforstudent_sp_value=IF(cgpatoset.calc_type=3,
-          IF(cgpatoset.allpassed=0, '-', 'Pass'),
-          FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
-        )
-
-      // Find the fields for the approval record
-
+ * <p>Update the Grade Point and Grade for this Student for the Course.</p>
+ * <p>If a "Grade Editor" has edited after approval, then do the following...</p>
+ * <p>Set the student visible scores etc. to the updated values</p>
+ * <p>Update GPA, cGPA and other data.</p>
  * <p>Create an Approval Record.</p>
- * <p>And also from the patched editablefields.module to be used in the patched editablefields.js to set the value in the HTML.</p>
  * @param int $gp Grade Point
  * @param int $uid Student Drupal User uid
  * @param int $course_instance_nid Drupal Node nid for Course Instance
