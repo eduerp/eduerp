@@ -1,5 +1,7 @@
 <?php
-// Footer for list_students View 20120326
+/**
+ * Footer for list_students View 20120326
+ */
 
 if (!empty($_SESSION['views']['list_students']['default']['rid']) && empty($_SESSION['views']['list_students']['default']['uid'])) {
 
