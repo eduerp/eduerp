@@ -1,4 +1,8 @@
 <?php
+
+/**
+ * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved.
+ */
 function student_menu() {
 
   $items['student/clearance/post'] = array(
@@ -45,10 +49,20 @@ function student_menu() {
   return $items;
 }
 
+
+/**
+ * Implementation of hook_perm(), to tell permissions system what to display on the permissions page for student.module
+ *
+ * <p>'access cart items' does not seem to be used.</p>
+ */
 function student_perm() {
   return array('student clearance', 'student course',  'view my grades', 'access cart items');
 }
 
+
+/**
+ * Allow a Student to select courses for Semesters
+ */
 class courseselectionsclass {
   public $form = array();
 
@@ -64,6 +78,9 @@ class courseselectionsclass {
 
   private $scriptforpage;
 
+  /**
+   * Constructor, in particular find all passed courses for this student and init JS string
+   */
   function __construct() {
     global $user;
 
@@ -90,6 +107,11 @@ class courseselectionsclass {
     $this->failedcodes = array();
   }
 
+  /**
+   * Determine if the Student is Blocked from taking a Course
+   * @param string $prerequisite_codes of comma delimited Course Codes that are prerequisites for a Course
+   * @return string|bool with Code that is blocking this Course or FALSE
+   */
   private function blockingprerequisites($prerequisite_codes) {
     $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
     foreach ($prerequisite_codes as $prerequisite_code) {
@@ -106,6 +128,12 @@ class courseselectionsclass {
     return FALSE;
   }
 
+  /**
+   * Add checkbox(s) and JS to allow Student to choose Courses for a Semester (core courses are mandatory)
+   *
+   * <p>Made assumption that core course are run only once per semester, otherwise would have to make their selection un greyed</p>
+   * @param int $semester
+   */
   public function addformelementsforsemester($semester) {
     global $user_profile;
 
@@ -198,11 +226,13 @@ class courseselectionsclass {
         '#prefix' => '<tr><td>',
         '#suffix' => "</td><td>{$row->course_title}</td><td>" . check_markup($row->course_description, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->credit_load}</td><td>" . check_markup($row->timetable, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->level}</td><td>" . check_markup($row->field_prerequisite_value, FILTER_FORMAT_DEFAULT, FALSE) . "{$block}</td></tr>"
       );
-
-      // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
     }
   }
 
+  /**
+   * Add (mandatory) checkbox(s) for any failed (and not since passed) courses that are being run
+   * @param int $semester
+   */
   public function addformelementsforfailedcoursesforsemester($semester) {
     global $user;
     global $user_profile;
@@ -328,6 +358,10 @@ class courseselectionsclass {
     }
   }
 
+  /**
+   * Add JS and form elements for calculated Credit Load
+   * @param int $semester
+   */
   public function addformelementsforloadcounter($semester) {
     global $user_profile;
 
@@ -369,6 +403,13 @@ class courseselectionsclass {
     $this->form['add_a_break'] = array('#value' => '<br />');
   }
 
+  /**
+   * Add JS for a checkbox to adjust Credit Load
+   * @param int $course_instance
+   * @param int $semester
+   * @param int $semester_for_totals may be different from $semester if Credit Loads from two Semesters are to be aggregated for the whole Session
+   * @param int $credit_load for this Course Instance
+   */
   private function addscriptforcheckbox($course_instance, $semester, $semester_for_totals, $credit_load) {
     $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
       selected_load = parseInt($(\"#selected_load{$semester_for_totals}\").text());
@@ -398,6 +439,9 @@ class courseselectionsclass {
     });";
   }
 
+  /**
+   * Complete the form and add JS string to page
+   */
   public function finishform() {
     $this->form['#currentlevelcis'] = $this->currentlevelcis;
     $this->form['#failedcodes'] = $this->failedcodes;
@@ -418,6 +462,8 @@ class courseselectionsclass {
 // (*) TAKE OUT 'header', FALSE, FALSE WHEN IT WORKS
   }
 }
+
+
 /**
  * perform student clearance
  */
@@ -693,6 +739,7 @@ function student_field_info() {
   );
 }
 
+
 function student_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
     case 'view':
@@ -706,6 +753,7 @@ function student_field($op, &$node, $field, &$items, $teaser, $page) {
       return theme('field', $node, $field, $items, $teaser, $page);
   }
 }
+
 
 function student_field_settings($op, $field) {
   switch ($op) {
@@ -751,6 +799,7 @@ function student_field_settings($op, $field) {
   }
 }
 
+
 function student_field_formatter_info() {
   return array(
     'default' => array(
@@ -760,6 +809,7 @@ function student_field_formatter_info() {
     ),
   );
 }
+
 
 function student_theme() {
   $theme_path = drupal_get_path('module', 'student') . DIRECTORY_SEPARATOR . 'theme';
@@ -786,6 +836,7 @@ function student_theme() {
   //dsm(student_clearance_node_load($student_id));
   return $custom;
 }
+
 
 /**
  * helper function to expose the templates in the module's theme folder for rendering
@@ -815,6 +866,7 @@ function _module_views_templates($templates_path) {
   return $templates;
 }
 
+
 /**
  * Theme function for theme_student_field_uncleared
  *
@@ -832,6 +884,7 @@ function theme_student_field_uncleared() {
   );
   return theme('checkbox', $element);
 }
+
 
 /**
  * Theme function for theme_student_field_uncleared_reasons
@@ -854,6 +907,7 @@ function theme_student_field_uncleared_reasons() {
   return theme('select', $element);
 }
 
+
 /**
  * Theme function for theme_student_field_deferred
  *
@@ -871,6 +925,7 @@ function theme_student_field_deferred() {
   );
   return theme('checkbox', $element);
 }
+
 
 /**
  * Get data to populate uncleared clearance
@@ -899,6 +954,7 @@ function student_uncleared_get_reasons() {
   return $allowed_values;
 }
 
+
 /**
  * A simple wrapper to call node_load for student_clearance
  * content type.
@@ -920,13 +976,16 @@ function student_clearance_node_load($student_id) {
   return $student_clearance;
 }
 
+
 function theme_student_formatter_default($element) {
   return theme('student_field', $element);
 }
 
+
 function theme_student_field($element) {
   return ($element['#item']['subject'] != "" && $element['#item']['grade'] != "") ? sprintf("%s - %s", $element['#item']['subject'], $element['#item']['grade']) : "";
 }
+
 
 function student_content_is_empty($item, $field) {
   if (empty($item['subject']) || empty($item['grade'])) {
@@ -934,6 +993,7 @@ function student_content_is_empty($item, $field) {
   }
   return FALSE;
 }
+
 
 function student_widget_info() {
   return array(
@@ -946,6 +1006,7 @@ function student_widget_info() {
     ),
   );
 }
+
 
 function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   $element = array();
@@ -973,6 +1034,7 @@ function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
 
   return $element;
 }
+
 
 /**
  * adapted from the cck content_allowed_values to support
@@ -1009,6 +1071,7 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
   return $allowed_values[$cid];
 }
 
+
 function student_form_alter(&$form, $form_state, $form_id) {
   global $user;
 
@@ -1030,6 +1093,7 @@ function student_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+
 /**
  * Gets the current student being cleared from the
  * current rendered view. We prefer not not call views_get_view
@@ -1049,6 +1113,8 @@ function student_views_get_current_student() {
   $student_id = $view[0]->users_uid;
   return $student_id;
 }
+
+
 /**
  * Implementing the hook_views_post_render to mutate the student_clearance
  * so as to enable appending the clearance form
@@ -1789,6 +1855,7 @@ function change_student_program(&$user, $first_choice, $level, $dont_change_matn
   set_matriculation_number($user->uid, $formerProgID, $dont_change_matno);
 }
 
+
 /**
  * Loads a complete user profile of the student.
  *
@@ -1807,6 +1874,7 @@ function student_load_student_profile($student_id) {
     return $user_profile;
   }
 }
+
 
 //Israel's functions starts here
 function student_hostel_reservation(){
