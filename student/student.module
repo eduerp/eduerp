@@ -465,7 +465,19 @@ class courseselectionsclass {
 
 
 /**
- * perform student clearance
+ * Perform Student Clearance and/or mark Student as Verified or Not Cleared
+ *
+ * @see student/theme/views-view-table--student-clearance--page-1.tpl.php
+ * <p>The above file contains a theme for the 'student_clearance' Drupal View. It has an explicit (non-Drupal) POST to 'student/clearance/post' which is handled by this function.</p>
+ * <p>This function does...</p>
+ * <p>Create/Update the Student's 'student_clearance' CCK.</p>
+ * <p>Create a 'clearance_agreement' CCK.</p>
+ * <p>Create a 'student_record' CCK.</p>
+ * <p>Create/Update the Student's 'program' CCK.</p>
+ * <p>Set Matriculation Number and create e-mail address for Student.</p>
+ * <p>Change role of the student from Applicant to Student.</p>
+ * <p>e-mail the Student.</p>
+ * @return string $output HTML to display including Student's Clearance Agreement
  */
 function student_clearance() {
   global $user;
@@ -604,7 +616,14 @@ function student_clearance() {
 }
 
 
-// Bundle of actions to be performed on clearance
+/**
+ * Actions to be performed on Student Clearance
+ *
+ * <p>Create/Update the Student's 'program' CCK.</p>
+ * <p>Set Matriculation Number and create e-mail address for Student.</p>
+ * <p>Change role of the student from Applicant to Student.</p>
+ * <p>e-mail the Student.</p>
+ */
 function _perform_clearance($student_id) {
   global $user;
 
@@ -651,6 +670,9 @@ function _perform_clearance($student_id) {
 }
 
 
+/**
+ * Record a Student Clearance or Not Cleared in a 'student_record' CCK
+ */
 function record_cleared($student_id, $action, $reason = NULL) {
   global $user;
 
@@ -683,11 +705,12 @@ function record_cleared($student_id, $action, $reason = NULL) {
 
 
 /**
- * Logs clearance information
- * @global  $user
- * @param <type> $student_id
- * @param <type> $clearance_date
- * @param  $user
+ * Log Student Clearance information
+ *
+ * @param int $student_id
+ * @param string $clearance_date
+ * @param int $user
+ * @global $user
  */
 function student_log_clearance($student_id, $clearance_date, $user) {
   global $user;
@@ -703,6 +726,13 @@ function student_log_clearance($student_id, $clearance_date, $user) {
 }
 
 
+/**
+ * Set Matriculation Number and create e-mail address for Student
+ *
+ * @param int $student_id
+ * @param int $formerProgID if non-zero this is a 'program' CCK Drupal Node nid that the Student is changing from
+ * @param bool $dont_change_matno TRUE if the Matriculation Number should not be changed (so nothing will be done)
+ */
 function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_matno = NULL) {
   // Generate the matriculation number for this student
   $results = module_invoke_all('matno', $student_id, $formerProgID, $dont_change_matno);
@@ -720,16 +750,13 @@ function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_m
     $student_profile->save();
 
     db_query("INSERT INTO {debug_clearance_matno} SET matno=%d, first_choice=%d, uid=%d, timest=%d, type=%d", $matno, $student_profile->profile_first_choice, $student_id, time(), 1); //ab Debug Instumentation
-
   }
 }
 
 
 /**
-  these functions below define a custom field and field widget that enables
-  the student profile content type to store subject/grade pairs as one field
-  in the content type.
-*/
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field_info() {
   return array(
     'exam_record' => array(
@@ -740,6 +767,9 @@ function student_field_info() {
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
     case 'view':
@@ -755,6 +785,9 @@ function student_field($op, &$node, $field, &$items, $teaser, $page) {
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field_settings($op, $field) {
   switch ($op) {
     case 'form':
@@ -800,6 +833,9 @@ function student_field_settings($op, $field) {
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field_formatter_info() {
   return array(
     'default' => array(
@@ -811,6 +847,9 @@ function student_field_formatter_info() {
 }
 
 
+/**
+ * Implementation of hook_theme()
+ */
 function student_theme() {
   $theme_path = drupal_get_path('module', 'student') . DIRECTORY_SEPARATOR . 'theme';
 
@@ -833,14 +872,12 @@ function student_theme() {
   );
 
   $custom = array_merge($custom, _module_views_templates($theme_path));
-  //dsm(student_clearance_node_load($student_id));
   return $custom;
 }
 
 
 /**
- * helper function to expose the templates in the module's theme folder for rendering
- * views
+ * Helper function to expose the templates in the module's theme folder for rendering views
  */
 function _module_views_templates($templates_path) {
   $templates = array();
@@ -868,9 +905,7 @@ function _module_views_templates($templates_path) {
 
 
 /**
- * Theme function for theme_student_field_uncleared
- *
- * Renders student_field_uncleared checkbox
+ * Theme function for theme_student_field_uncleared, renders student_field_uncleared checkbox
  * @see student_theme()
  */
 function theme_student_field_uncleared() {
@@ -887,9 +922,7 @@ function theme_student_field_uncleared() {
 
 
 /**
- * Theme function for theme_student_field_uncleared_reasons
- *
- * Renders student_field_uncleared_reasons
+ * Theme function for theme_student_field_uncleared_reasons, renders student_field_uncleared_reasons
  * @see student_theme()
  */
 function theme_student_field_uncleared_reasons() {
@@ -909,9 +942,7 @@ function theme_student_field_uncleared_reasons() {
 
 
 /**
- * Theme function for theme_student_field_deferred
- *
- * Renders student_field_deferred checkbox
+ * Theme function for theme_student_field_deferred, renders student_field_deferred checkbox
  * @see student_theme()
  */
 function theme_student_field_deferred() {
@@ -928,7 +959,7 @@ function theme_student_field_deferred() {
 
 
 /**
- * Get data to populate uncleared clearance
+ * Get reasons for which a Student may be "Not Cleared"
  * @return array
  */
 function student_uncleared_get_reasons() {
@@ -956,9 +987,7 @@ function student_uncleared_get_reasons() {
 
 
 /**
- * A simple wrapper to call node_load for student_clearance
- * content type.
- *
+ * A simple wrapper to call node_load for 'student_clearance' CCK
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function student_clearance_node_load($student_id) {
@@ -977,16 +1006,25 @@ function student_clearance_node_load($student_id) {
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function theme_student_formatter_default($element) {
   return theme('student_field', $element);
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function theme_student_field($element) {
   return ($element['#item']['subject'] != "" && $element['#item']['grade'] != "") ? sprintf("%s - %s", $element['#item']['subject'], $element['#item']['grade']) : "";
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_content_is_empty($item, $field) {
   if (empty($item['subject']) || empty($item['grade'])) {
     return TRUE;
@@ -995,6 +1033,9 @@ function student_content_is_empty($item, $field) {
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_widget_info() {
   return array(
     'exam_record_exam_record' => array(
@@ -1008,6 +1049,9 @@ function student_widget_info() {
 }
 
 
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   $element = array();
   $element['subject'] = array(
@@ -1037,8 +1081,9 @@ function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
 
 
 /**
- * adapted from the cck content_allowed_values to support
- * multiple section allowed_values
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ *
+ * <p>Adapted from the CCK content_allowed_values to support multiple section allowed_values</p>
  */
 function _student_content_allowed_values($field, $section, $flatten = TRUE) {
   static $allowed_values;
@@ -1072,6 +1117,9 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
 }
 
 
+/**
+ * Implementation of hook_form_alter(), change 'student_clearance' View Button text and Stop 'Applicant'/'Student' from changing their e-mail
+ */
 function student_form_alter(&$form, $form_state, $form_id) {
   global $user;
 
@@ -1095,12 +1143,10 @@ function student_form_alter(&$form, $form_state, $form_id) {
 
 
 /**
- * Gets the current student being cleared from the
- * current rendered view. We prefer not not call views_get_view
- * here to improve performance
+ * Get the current student being cleared from the current rendered view
  *
- * @param <type> $view
- * @return <type>
+ * <p>We prefer not not call views_get_view here to improve performance.</p>
+ * @return int
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -1116,8 +1162,7 @@ function student_views_get_current_student() {
 
 
 /**
- * Implementing the hook_views_post_render to mutate the student_clearance
- * so as to enable appending the clearance form
+ * Implementation of hook_views_post_render(), mutate the View 'student_clearance' so as to enable appending the clearance form
  */
 function student_views_post_render(&$view, &$output, &$cache) {
   if ($view->name == "student_clearance") {
@@ -1160,6 +1205,12 @@ function student_views_post_render(&$view, &$output, &$cache) {
 }
 
 
+/**
+ * Implementation of hook_nodeapi(), perform Validation for CCK 'profile', 'student_profile' & 'staff_profile' and special Pre-Save handling for 'student_profile'
+ *
+ * <p>In student_profile, field_profile_level_name is initially set based on the Student's Programme and Mode of Entry.</p>
+ * <p>Also field_profile_yearofentry, field_profile_reg_session & field_profile_reg_semester are initialised and protected from being overwritten</p>
+ */
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'profile') {
     if ($op == 'validate') {
@@ -1271,6 +1322,9 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
 }
 
 
+/**
+ * Implementation of hook_views_api(), register view API information so include files can be loaded.
+ */
 function student_views_api() {
   return array(
     'api' => 2,
@@ -1279,13 +1333,14 @@ function student_views_api() {
 }
 
 
+/**
+ * Find the new Level a Student will be entering into when they first register courses
+ *
+ * @param int $uid Student's Drupal uid
+ * @param string $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
+ * @return string|bool FALSE, if they are not eligible to register for the program because they have graduated or left the university; Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
+ */
 function student_next_level($uid, $session) {
-  // This takes the student uid and also the session they are going to pay for and returns...
-  //  FALSE, if they are not eligible to register for the program because they have graduated or left the university.
-  //  Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
-
-  // $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
-
   $user_profile = new UserProfile($uid);
 
   $gotonextlevel = TRUE;
@@ -1325,6 +1380,12 @@ function student_next_level($uid, $session) {
 }
 
 
+/**
+ * Has a Student paid sufficient to be allowed Register Courses for the current Session?
+ *
+ * @param int $uid Student's Drupal uid
+ * @return bool
+ */
 function student_meets_fee_requirements($uid) {
 
   $fees = get_fee_items($uid);
