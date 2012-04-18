@@ -1410,6 +1410,9 @@ function student_meets_fee_requirements($uid) {
 }
 
 
+/**
+ * Form to allow a Student to select courses for one or both Semesters, if the student has paid set their new Level, Session and Semester
+ */
 function student_course_form(&$obj) {
   global $user;
   global $user_profile;
@@ -1509,6 +1512,9 @@ function student_course_form(&$obj) {
 }
 
 
+/**
+ * validate hook for grading_stats_department_form
+ */
 function student_course_form_validate($form, &$form_state) {
   global $user;
   $user_profile = new UserProfile($user->uid);
@@ -1650,6 +1656,9 @@ function student_course_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for student_course_form, create/update 'student_gpa' (contains GPA) and 'student_grades' (Grades for a Course Instance) CCKs
+ */
 function student_course_form_submit($form, &$form_state) {
   global $user;
   $user_profile = new UserProfile($user->uid);
@@ -1692,11 +1701,26 @@ function student_course_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Go to 'listcourses' View for Student
+ */
 function student_courses() {
   drupal_goto('listcourses');
 }
 
 
+/**
+ * Create/update 'student_gpa' (contains GPA) CCK
+ *
+ * @param stdClass $student_user Drupal account for Student
+ * @param UserProfile $user_profile
+ * @param string $studentname
+ * @param int $student_program Drupal node nid for 'program' CCK
+ * @param string $session
+ * @param int $semester
+ * @param int $creditload
+ * @return int Drupal node nid for 'student_gpa' CCK
+ */
 function create_student_gpa($student_user, $user_profile, $studentname, $student_program, $session, $semester, $creditload) {
   // Check if there is an existing student_gpa, must avoid a duplicate
   $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
@@ -1735,6 +1759,16 @@ function create_student_gpa($student_user, $user_profile, $studentname, $student
 }
 
 
+/**
+ * Create 'student_grades' (Student's Grades for a Course Instance) CCK
+ *
+ * @param stdClass $student_user Drupal account for Student
+ * @param stdClass $course_instance
+ * @param int $student_gpa Drupal node nid for 'student_gpa' CCK
+ * @param string $studentname
+ * @param int $student_program Drupal node nid for 'program' CCK
+ * @param int $program_type to set Grade Calculation Type
+ */
 function create_student_grades($student_user, $course_instance, $student_gpa, $studentname, $program_type) {
 
   // student_grades CCK
@@ -1828,6 +1862,13 @@ function create_student_grades($student_user, $course_instance, $student_gpa, $s
 }
 
 
+/**
+ * Delete all 'student_grades' CCKs for this Session and Semester
+ *
+ * @param int $uid Drupal uid for Student
+ * @param string $session
+ * @param int $semester
+ */
 function delete_student_grades($uid, $session, $semester) {
   $sql = "SELECT sg.nid
     FROM {content_type_student_grades} sg, {content_type_course_instance} ci
@@ -1862,6 +1903,11 @@ function delete_student_grades($uid, $session, $semester) {
 }
 
 
+/**
+ * Create/update 'student_program' (contains cGPA) CCK
+ *
+ * @param int $uid Drupal uid for Student
+ */
 function create_student_program($uid) {
   $user_profile = new UserProfile($uid);
 
@@ -1904,6 +1950,14 @@ function create_student_program($uid) {
 }
 
 
+/**
+ * Change a Student to a different Programme and/or different Level
+ *
+ * @param stdClass $user Drupal account for Student
+ * @param int $first_choice Drupal node nid for new 'program' CCK
+ * @param string $level new Level
+ * @param bool $dont_change_matno TRUE if the Matriculation Number should not be changed (so nothing will be done)
+ */
 function change_student_program(&$user, $first_choice, $level, $dont_change_matno) {
   $user_profile = new UserProfile($user->uid);
   $formerProgID = $user_profile->profile_first_choice;
@@ -1920,8 +1974,8 @@ function change_student_program(&$user, $first_choice, $level, $dont_change_matn
 /**
  * Loads a complete user profile of the student.
  *
- * @param $student_id
- *  - Current student
+ * @param $student_id Drupal uid
+ * @return UserProfile
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -1937,7 +1991,12 @@ function student_load_student_profile($student_id) {
 }
 
 
-//Israel's functions starts here
+/**
+ * Reserve a Hostel Place for a Student
+ *
+ * @global int $EDUERPstudentInitiated set to indicate Student initiated reservation
+ * @return string of HTML
+ */
 function student_hostel_reservation(){
   global $user, $EDUERPstudentInitiated;
 
@@ -1979,9 +2038,10 @@ function student_hostel_reservation(){
   return ob_get_clean();
 }
 
-//Israel's functions ends here
 
-
+/**
+ * Implementation of hook_user(), make newly inserted user with role 'anonymous user' an 'Applicant'
+ */
 function student_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
@@ -1991,11 +2051,20 @@ function student_user($op, &$edit, &$account, $category = NULL) {
 }
 
 
+/**
+ * Implementation of hook_init(), Add student.js JS to all pages (ideally should be only added to specific pages)
+ */
 function student_init() {
   drupal_add_js(drupal_get_path('module', 'student') .'/student.js');
 }
 
 
+/**
+ * Instantiate a student
+ *
+ * @param int $student_uid Drupal uid
+ * @return student
+ */
 function student_new_student($student_uid) {
   student_include('student');
   $student = new student($student_uid);
@@ -2004,6 +2073,11 @@ function student_new_student($student_uid) {
 }
 
 
+/**
+ * Require a file from includes folder
+ *
+ * @param string $file
+ */
 function student_include($file) {
   static $used = array();
   if (!isset($used[$file])) {
