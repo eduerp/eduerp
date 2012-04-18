@@ -1,6 +1,9 @@
 <?php
 include(drupal_get_path('module', 'eduerp') . '/eduerp_global.inc');
 
+/**
+ * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved.
+ */
 function staff_menu() {
   $items['staff/semester'] = array(
     'title' => 'Semester Administration',
@@ -225,6 +228,9 @@ function staff_menu() {
 }
 
 
+/**
+ * Call back to handle AJAX POSTs to update data in the HTML of a Drupal page. Handling is controlled by the '#ahah' part of a Drupal form element
+ */
 function _staff_ajax() {
   global $user;
   $task = arg(2);
@@ -463,11 +469,13 @@ function _staff_ajax() {
 }
 
 
-/*
-  This function is largely based on the poll module, its been simplified for reuse.
-  $fields is the specific form elements you want to attach via ahah,
-  $name is the form fields array key... e.g. the name for $form['title'] is "title"
-*/
+/**
+ * Render form elements for AHAH call back (this function is largely based on the poll module, its been simplified for reuse)
+ *
+ * @param array $fields is the specific form elements you want to attach via AHAH
+ * @param string $name is the form fields array key... e.g. the name for $form['title'] is "title"
+ * @return string HTML
+ */
 function _staff_ahah_render($fields, $name) {
 
   $form_state = array();
@@ -501,12 +509,20 @@ function _staff_ahah_render($fields, $name) {
 }
 
 
-/*Function to get the staff permission.*/
+/**
+ * Implementation of hook_perm(), to tell permissions system what to display on the permissions page for staff.module
+ */
 function staff_perm() {
   return array('staff register','staff assign role','staff register course','staff view lecturer','staff department list','staff list', 'student data', 'staff data', 'student payments', 'student list students', 'view grading');
 }
 
 
+/**
+ * Handles 'staff/assignrole' menu to assign EduERP roles for Staff
+ *
+ * @global stdClass $_SESSION['eduerpassignrole'] is set to contain values needed for subforms
+ * @return string HTML
+ */
 function staff_assign_role() {
   global $user;
   if (!staff_has_eduerp_role($user->uid, 0, 0, array('Role Assigner'))) {
@@ -557,6 +573,12 @@ function staff_assign_role() {
 }
 
 
+/**
+ * Form to assign EduERP Roles for a Department
+ *
+ * @global stdClass $_SESSION['eduerpassignrole'] has been set to contain values needed
+ * @return array Drupal Form
+ */
 function department_role_form($form_state) {
   $form['top'] = array('#value' => "Give another Department role to {$_SESSION['eduerpassignrole']->name}:");
 
@@ -582,6 +604,12 @@ function department_role_form($form_state) {
 }
 
 
+/**
+ * Form to assign EduERP Roles for a Faculty
+ *
+ * @global stdClass $_SESSION['eduerpassignrole'] has been set to contain values needed
+ * @return array Drupal Form
+ */
 function faculty_role_form($form_state) {
   $form['top'] = array('#value' => "Give another Faculty role to {$_SESSION['eduerpassignrole']->name}:");
 
@@ -607,6 +635,12 @@ function faculty_role_form($form_state) {
 }
 
 
+/**
+ * Form to assign EduERP Roles University wide
+ *
+ * @global stdClass $_SESSION['eduerpassignrole'] has been set to contain values needed
+ * @return array Drupal Form
+ */
 function university_role_form($form_state) {
   $form['top'] = array('#value' => "Give another University role to {$_SESSION['eduerpassignrole']->name}:");
 
@@ -624,6 +658,11 @@ function university_role_form($form_state) {
 }
 
 
+/**
+ * List EduERP Roles for Department
+ *
+ * @return array
+ */
 function eduerp_department_roles() {
   $options = array(
     'Department Examination Officer' => 'Department Examination Officer',
@@ -634,6 +673,11 @@ function eduerp_department_roles() {
 }
 
 
+/**
+ * List EduERP Roles for Faculty
+ *
+ * @return array
+ */
 function eduerp_faculty_roles() {
   $options = array(
     'Faculty Examination Officer' => 'Faculty Examination Officer',
@@ -644,6 +688,11 @@ function eduerp_faculty_roles() {
 }
 
 
+/**
+ * List EduERP Roles University wide
+ *
+ * @return array
+ */
 function eduerp_university_roles() {
   $options = array(
     'Non-Academic Staff' => 'Non-Academic Staff',
@@ -662,6 +711,15 @@ function eduerp_university_roles() {
 }
 
 
+/**
+ * Determine if Staff member has one or more EduERP roles
+ *
+ * @parm int $uid
+ * @parm int $department_id 'department' CCK Drupal node nid (or 0)
+ * @parm int $faculty_id 'college' CCK Drupal node nid (or 0)
+ * @parm array $roles
+ * @return bool
+ */
 function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
   $result = db_query("SELECT er.role FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d", $uid, $department_id, $faculty_id);
 
@@ -672,6 +730,12 @@ function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
 }
 
 
+/**
+ * Find Faculties
+ *
+ * @parm int $facultyNID 'college' CCK Drupal node nid (or 0)
+ * @return array of nid => Name for all Faculties or one (if 0)
+ */
 function faculty($facultyNID=0) {
   static $options;
   if (!$options) {
@@ -688,6 +752,12 @@ function faculty($facultyNID=0) {
 }
 
 
+/**
+ * Form to allow some or all of a Staff member's EduERP Roles to be removed
+ *
+ * @global stdClass $_SESSION['eduerpassignrole'] has been set to contain values needed
+ * @return array Drupal Form
+ */
 function current_roles_list_form($form_state) {
   $form['top'] = array('#value' => "All current roles for {$_SESSION['eduerpassignrole']->name}:<br />");
 
@@ -721,6 +791,12 @@ function current_roles_list_form($form_state) {
 }
 
 
+/**
+ * Form to allow a Staff member's Department to be changed (this has mimimal import Currently in EduERP, Department EduERP Roles are more important)
+ *
+ * @global stdClass $_SESSION['eduerpassignrole'] has been set to contain values needed
+ * @return array Drupal Form
+ */
 function move_department_form($form_state) {
   $user_profile = new UserProfile($_SESSION['eduerpassignrole']->uid);
   if (empty($user_profile->profile_department_id)) {
@@ -748,21 +824,38 @@ function move_department_form($form_state) {
 }
 
 
+/**
+ * submit hook for department_role_form
+ */
 function department_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], $form_state['values']['department'], 0, $form_state['values']['role']);
 }
 
 
+/**
+ * submit hook for faculty_role_form
+ */
 function faculty_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], 0, $form_state['values']['faculty'], $form_state['values']['role']);
 }
 
 
+/**
+ * submit hook for university_role_form
+ */
 function university_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], 0, 0, $form_state['values']['role']);
 }
 
 
+/**
+ * Add an EduERP Role to a Staff member along with a relevant Drupal Role if required
+ *
+ * @param int $uid
+ * @param int $department_id 'department' CCK Drupal node nid (or 0)
+ * @param int $college_id 'college' CCK Drupal node nid (or 0)
+ * @param string $role
+ */
 function addrole($uid, $department_id, $college_id, $role) {
   $result = db_query("SELECT 1 FROM {eduerp_roles} er WHERE er.uid=%d AND er.department_id=%d AND er.college_id=%d AND er.role='%s'",
     $uid, $department_id, $college_id, $role);
@@ -788,6 +881,12 @@ function addrole($uid, $department_id, $college_id, $role) {
 }
 
 
+/**
+ * Add a Drupal Role to a Staff member
+ *
+ * @param int $uid
+ * @param string $role
+ */
 function assign_drupal_role($uid, $role) {
   $result = db_query("SELECT rid FROM {role} WHERE name='%s'", $role);
   $row = db_fetch_object($result);
@@ -800,6 +899,9 @@ function assign_drupal_role($uid, $role) {
 }
 
 
+/**
+ * submit hook for current_roles_list_form (Drop any checked EduERP Roles)
+ */
 function current_roles_list_form_submit($form, &$form_state) {
   $i = 0;
   if (!empty($form_state['values']['roles'])) {
@@ -816,6 +918,12 @@ function current_roles_list_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Drop an EduERP Role from a Staff member along with a relevant Drupal Role if required
+ *
+ * @param int $uid
+ * @param int $eduerp_role_id
+ */
 function droprole($uid, $eduerp_role_id) {
   $result = db_query("SELECT role FROM {eduerp_roles} WHERE eduerp_role_id=%d", $eduerp_role_id);
   if ($row = db_fetch_object($result)) {
@@ -838,6 +946,12 @@ function droprole($uid, $eduerp_role_id) {
 }
 
 
+/**
+ * Drop a Drupal Role to a Staff member
+ *
+ * @param int $uid
+ * @param string $role
+ */
 function drop_drupal_role($uid, $role) {
   $result = db_query("SELECT rid FROM {role} WHERE name='%s'", $role);
   $row = db_fetch_object($result);
@@ -850,6 +964,9 @@ function drop_drupal_role($uid, $role) {
 }
 
 
+/**
+ * submit hook for move_department_form (Move a Staff member to a different Department)
+ */
 function move_department_form_submit($form, &$form_state) {
   $user_profile = new UserProfile($form_state['values']['uid']);
   $user_profile->profile_department_id = $form_state['values']['department'];
@@ -859,10 +976,14 @@ function move_department_form_submit($form, &$form_state) {
 }
 
 
+
+/**
+ * Handles 'staff/list' menu
+ *
+ * @return string HTML
+ */
 function search_staff_list() {
   ob_start();
-
-//  echo  drupal_get_form('staff_search_form');
 
   staff_search_list();
 
@@ -870,6 +991,11 @@ function search_staff_list() {
 }
 
 
+/**
+ * Handles 'staff/viewlecturer' menu to Display Courses and Lecturers for a Department for the Current Session
+ *
+ * @return string HTML
+ */
 function staff_course_list() {
   ob_start();
   for ($i = 1; $i <= 3; $i++) {
@@ -931,6 +1057,11 @@ function staff_course_list() {
 }
 
 
+/**
+ * Handles 'staff/department' menu to Display Department, Head of Department and a link to Courses for the Department
+ *
+ * @return string HTML
+ */
 function staff_department_list() {
   ob_start();
   $r = db_query("SELECT
@@ -963,6 +1094,9 @@ function staff_department_list() {
 }
 
 
+/**
+ * Display Staff, their EduERP Roles and a link to Assign Roles for the Staff member (along with description of all EduERP roles)
+ */
 function staff_search_list() {
   /*
   $search_keys = array('gender', 'department_id', 'staff_type_id', 'grade_level_id', 'state');
@@ -1020,6 +1154,9 @@ function staff_search_list() {
 }
 
 
+/**
+ * Display description of all EduERP roles
+ */
 function describeroles() {
   echo "<br />
 <b>Description of roles</b><br />
@@ -1142,6 +1279,11 @@ They can create or modify Faculties or Departments.<br />";
 }
 
 
+/**
+ * Handles 'staff/view' menu to display some Staff data
+ *
+ * @return array Druapl Form
+ */
 function staff_view_form(&$obj) {
   $query = "SELECT
       CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS staff_name,
@@ -1188,6 +1330,11 @@ function staff_view_form(&$obj) {
 }
 
 
+/**
+ * Find all Course Codes
+ *
+ * @return array of sorted strings indexed Drupal node nid (with a blank option)
+ */
 function staff_course() {
   $titles[''] = '';
   $r = db_query("SELECT nid, field_code_value AS value FROM {content_type_course} ORDER BY field_level_value, field_semester_value, field_code_value ");
@@ -1198,6 +1345,12 @@ function staff_course() {
 }
 
 
+/**
+ * Find Departments
+ *
+ * @parm int $department_nid 'department' CCK Drupal node nid (or 0)
+ * @return array of nid => Name for all Departments or one (if 0)
+ */
 function department($department_nid=0) {
 
     $titles = array();
@@ -1212,13 +1365,18 @@ function department($department_nid=0) {
 }
 
 
+/**
+ * Find Programmes
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid (or 0)
+ * @param bool $forSelectList
+ * @return array|mysqli_result if $forSelectList is TRUE array of nid => Name for all Programmes or one (if 0); otherwise MYSQL Result Set
+ */
 function get_programmes($programme_nid = 0, $forSelectList = false) {
     $where = ""; $args = "";
 
     if ($programme_nid != 0) {
       $where = " WHERE p.nid=$programme_nid ";
-      //$args = "";
-      //$args = $programme_nid;
     }
     $r = db_query("SELECT p.nid programme_nid, field_college_name_value faculty_name, d.nid department_nid, field_department_name_value AS department_name,
           field_programme_name_value programme_name, c.nid faculty_nid,
@@ -1245,8 +1403,13 @@ function get_programmes($programme_nid = 0, $forSelectList = false) {
 }
 
 
+/**
+ * Find Programmes
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid (or 0)
+ * @return array of nid => Name(Abbreviation) for all Programmes or one (if 0)
+ */
 function programme($programme_nid=0) {
-
 
     if($programme_nid !=0)
       $r = db_query("SELECT nid, CONCAT(field_programme_name_value, ' (', field_programme_abbr_value, ')') AS value FROM { content_type_program} WHERE nid=%d ORDER BY field_programme_name_value", $programme_nid);
@@ -1265,6 +1428,13 @@ function programme($programme_nid=0) {
 }
 
 
+/**
+ * Find Courses in a Department
+ *
+ * @parm int $department_nid 'department' CCK Drupal node nid
+ * @parm int $semester (or 0)
+ * @return array of nid => Code for all Courses (Courses normally in this Semester are first in the list)
+ */
 function course($department_nid, $semester = 0) {
 
   $course = array();
@@ -1297,6 +1467,11 @@ function course($department_nid, $semester = 0) {
 }
 
 
+/**
+ * Handles 'staff/semester'/Semester Administration menu
+ *
+ * @return string HTML
+ */
 function semester_admin() {
   ob_start();
 
@@ -1372,6 +1547,11 @@ function semester_admin() {
 }
 
 
+/**
+ * Form to set the Session and Semester
+ *
+ * @return array Drupal Form
+ */
 function set_session_form($form_state) {
   global $user;
 
@@ -1407,6 +1587,9 @@ function set_session_form($form_state) {
 }
 
 
+/**
+ * submit hook for set_session_form
+ */
 function set_session_form_submit($form, &$form_state) {
 
   variable_set('eduerp_current_session', $form_state['values']['eduerp_current_session']);
@@ -1425,6 +1608,11 @@ function set_session_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to Open or Close Registration of New Student Applicant Accounts
+ *
+ * @return array Drupal Form
+ */
 function open_close_student_registration_form($form_state) {
   global $user;
 
@@ -1447,6 +1635,9 @@ function open_close_student_registration_form($form_state) {
 }
 
 
+/**
+ * submit hook for open_close_student_registration_form
+ */
 function open_close_student_registration_form_submit($form, &$form_state) {
 
   if (variable_get('user_register', 1)) {
@@ -1458,6 +1649,11 @@ function open_close_student_registration_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to Open or Close Student Course Registrations for particular Programmes or All
+ *
+ * @return array Drupal Form
+ */
 function open_close_student_course_registration_form($form_state) {
   global $user;
 
@@ -1495,6 +1691,11 @@ function open_close_student_course_registration_form($form_state) {
 }
 
 
+/**
+ * Find Open Programmes(Level) for current Semester
+ *
+ * @return string
+ */
 function listofopenprogrammes() {
   $semester = variable_get('eduerp_current_semester', 1);
 
@@ -1511,6 +1712,11 @@ function listofopenprogrammes() {
 }
 
 
+/**
+ * Find Not Opened Programmes/Level for current Semester
+ *
+ * @return array|bool if not FALSE sorted array of id => Name(Level) (including 'ALL' option)
+ */
 function selectlistofprogrammestoopen() {
   $semester = variable_get('eduerp_current_semester', 1);
 
@@ -1533,6 +1739,11 @@ function selectlistofprogrammestoopen() {
 }
 
 
+/**
+ * Find Opened Programmes/Level for current Semester
+ *
+ * @return array|bool if not FALSE sorted array of id => Name(Level) (including 'ALL' option)
+ */
 function selectlistofprogrammestoclose() {
   $semester = variable_get('eduerp_current_semester', 1);
 
@@ -1555,6 +1766,9 @@ function selectlistofprogrammestoclose() {
 }
 
 
+/**
+ * submit hook for open_close_student_course_registration_form
+ */
 function open_close_student_course_registration_form_submit($form, &$form_state) {
   $semester = variable_get('eduerp_current_semester', 1);
 
@@ -1589,6 +1803,11 @@ function open_close_student_course_registration_form_submit($form, &$form_state)
 }
 
 
+/**
+ * Find Faculties
+ *
+ * @return array of nid => array of Name etc.
+ */
 function get_faculties() {
   $r = db_query("SELECT nid, field_college_name_value AS name, field_college_abbreviation_value AS abbr, field_college_email_subdomain_value AS fac_email_subdomain FROM {content_type_college} ORDER BY field_college_name_value");
   while ($f = db_fetch_object($r)){
@@ -1601,6 +1820,11 @@ function get_faculties() {
 }
 
 
+/**
+ * Find Departments
+ *
+ * @return array of nid => array of Name etc.
+ */
 function get_departments() {
   $r = db_query("SELECT d.nid nid, field_department_name_value AS dept_name, field_college_name_value AS fac_name, field_college_abbreviation_value AS fac_abbr, field_department_code_value AS dept_code
       FROM {content_type_department} d INNER JOIN {content_type_college} c ON d.field_college_id_nid=c.nid
@@ -1617,6 +1841,13 @@ function get_departments() {
 }
 
 
+/**
+ * Find Courses in a Department
+ *
+ * @parm int $department_nid 'department' CCK Drupal node nid (or 0)
+ * @parm int $course_nid 'course' CCK Drupal node nid (or 0)
+ * @return mysqli_result
+ */
 function get_Available_Courses($department_nid = 0, $course_nid = 0) {
   $where = ""; $arg = 0;
   if ($department_nid != 0) {
@@ -1642,6 +1873,15 @@ function get_Available_Courses($department_nid = 0, $course_nid = 0) {
 }
 
 
+/**
+ * Find Courses (for display) according to criteria and highlight any issues
+ *
+ * @parm string $session
+ * @parm int $semester
+ * @parm array $departmentInfo
+ * @parm int $type
+ * @return string HTML
+ */
 function staff_display_available_courses($session, $semester, $departmentInfo = array(), $type = 0) {
   //$type; 0=available course, 1=assigned courses, 2=unassigned courses
   $department_nid = 0;$forassigned=false;
@@ -1767,6 +2007,11 @@ function staff_display_available_courses($session, $semester, $departmentInfo = 
 }
 
 
+/**
+ * Find Programmes (for display)
+ *
+ * @return string HTML
+ */
 function staff_display_available_programmes() {
 
   $str  = "<b>Available Programme</b><br />";
@@ -1811,10 +2056,14 @@ function staff_display_available_programmes() {
       </table>";
   }
   return $str;
-
 }
 
 
+/**
+ * Handles 'staff/createeditfaculty' menu to Create/Update a Faculty
+ *
+ * @return string HTML
+ */
 function staff_create_edit_faculty() {
   global $user;
   ob_start();
@@ -1860,6 +2109,11 @@ function staff_create_edit_faculty() {
 }
 
 
+/**
+ * Handles 'staff/createeditdept' menu to Create/Update a Department
+ *
+ * @return string HTML
+ */
 function staff_create_edit_dept() {
   global $user;
   ob_start();
@@ -1905,6 +2159,11 @@ function staff_create_edit_dept() {
 }
 
 
+/**
+ * Form to Create/Update a Faculty
+ *
+ * @return array Drupal Form
+ */
 function staff_create_edit_faculty_form() {
 
   if (arg(2) && is_valid_faculty(arg(2))) {
@@ -1948,6 +2207,11 @@ function staff_create_edit_faculty_form() {
 }
 
 
+/**
+ * Form to Update a Faculty
+ *
+ * @return array Drupal Form
+ */
 function staff_update_faculty_form() {
   $form['#title'] = 'Update Faculty';
   $form['faculty_id'] = array(
@@ -1962,6 +2226,11 @@ function staff_update_faculty_form() {
 }
 
 
+/**
+ * Form to Update a Department
+ *
+ * @return array Drupal Form
+ */
 function staff_update_dept_form() {
   $form['#title'] = 'Update Department';
   $form['department_nid'] = array(
@@ -1976,6 +2245,9 @@ function staff_update_dept_form() {
 }
 
 
+/**
+ * validate hook for staff_create_edit_faculty_form
+ */
 function staff_create_edit_faculty_form_validate($form, &$form_state) {
 
   if (arg(2) && is_valid_faculty(arg(2))) {//validate EDIT
@@ -2006,6 +2278,9 @@ function staff_create_edit_faculty_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for staff_create_edit_faculty_form
+ */
 function staff_create_edit_faculty_form_submit($form, &$form_state) {
 
   if(arg(2) && is_valid_faculty(arg(2))){
@@ -2042,6 +2317,9 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * validate hook for staff_create_edit_dept_form
+ */
 function staff_create_edit_dept_form_validate($form, &$form_state) {
 
   if (arg(2)) {//validate EDIT
@@ -2067,6 +2345,9 @@ function staff_create_edit_dept_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for staff_create_edit_dept_form
+ */
 function staff_create_edit_dept_form_submit($form, &$form_state) {
 
   if (arg(2) && is_valid_department(arg(2))) {//the user is trying to edit a given department. OK!
@@ -2100,6 +2381,11 @@ function staff_create_edit_dept_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to Create/Update a Department
+ *
+ * @return array Drupal Form
+ */
 function staff_create_edit_dept_form() {
 
   if (arg(2) && is_valid_department(arg(2))) {
@@ -2108,7 +2394,6 @@ function staff_create_edit_dept_form() {
       $dept_edit_record = db_fetch_object($result);
     }
   }
-
 
   $form['#title'] = 'Create New Department';
   $form['faculty_nid'] = array(
@@ -2147,30 +2432,52 @@ function staff_create_edit_dept_form() {
 }
 
 
+/**
+ * validate hook for staff_update_faculty_form
+ */
 function staff_update_faculty_form_validate($form, &$form_state) {
   if ($form_state['values']['faculty_id'] == 0)
     form_set_error('faculty_id', Error_Types(114));
 }
 
 
+/**
+ * submit hook for staff_update_faculty_form
+ */
 function staff_update_faculty_form_submit($form, &$form_state) {
 
   drupal_goto("staff/createeditfaculty/" . $form_state['values']['faculty_id']);
 }
 
 
+/**
+ * validate hook for staff_update_dept_form
+ */
 function staff_update_dept_form_validate($form, &$form_state) {
   if ($form_state['values']['department_nid'] == 0)
     form_set_error('department_nid', Error_Types(114));
 }
 
 
+/**
+ * submit hook for staff_update_dept_form
+ */
 function staff_update_dept_form_submit($form, &$form_state) {
 
    drupal_goto("staff/createeditdept/" . $form_state['values']['department_nid']);
 }
 
 
+
+/**
+ * Handles 'staff/createeditcourse' menu to Create/Update a Course
+ *
+ * @global $departmentInfo
+ * @global $canCreateModify;
+ * @global $_SESSION['eduerp_showFullForm']
+ * @global $_SESSION['eduerp_showCourseAssignment']
+ * @return string HTML
+ */
 function staff_create_edit_course() {
   global $user, $departmentInfo, $canCreateModify;
   ob_start();
@@ -2278,12 +2585,16 @@ function staff_create_edit_course() {
     echo staff_display_available_departments();
   }
 
-
   unset($_SESSION['eduerp_showFullForm']);unset($_SESSION['eduerp_showCourseAssignment']);
   return ob_get_clean();
 }
 
 
+/**
+ * Form to Select a Department for Course editing
+ *
+ * @return array Drupal Form
+ */
 function staff_create_edit_course_select_dept_form($form_state) {
 
   $form['#title'] = 'Select Department';
@@ -2300,17 +2611,28 @@ function staff_create_edit_course_select_dept_form($form_state) {
 }
 
 
+/**
+ * validate staff_create_edit_course_select_dept_form
+ */
 function staff_create_edit_course_select_dept_form_validate($form, $form_state) {
   if ($form_state['values']['department_nid'] == 0)
     form_set_error('programme_nid', Error_Types(114));
 }
 
 
+/**
+ * submit staff_create_edit_course_select_dept_form
+ */
 function staff_create_edit_course_select_dept_form_submit($form, $form_state) {
   drupal_goto("staff/createeditcourse/" . $form_state['values']['department_nid']);
 }
 
 
+/**
+ * Find Faculties (for display)
+ *
+ * @return string HTML
+ */
 function staff_display_available_faculties() {
   $str = "<b>Available Faculties</b><br />
   <table border=1>
@@ -2337,6 +2659,11 @@ function staff_display_available_faculties() {
 }
 
 
+/**
+ * Find Faculty/Departments (for display)
+ *
+ * @return string HTML
+ */
 function staff_display_available_departments() {
   $str = "
   <div id='assigned_courses'>
@@ -2378,6 +2705,13 @@ function staff_display_available_departments() {
 }
 
 
+/**
+ * Does Faculty Name exist?
+ *
+ * @param string $faculty_name
+ * @param int $nid Drupal node nid for 'college' CCK if this is Update (otherwise 0)
+ * @return bool
+ */
 function is_Faculty_Name_Existing($faculty_name, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -2391,6 +2725,13 @@ function is_Faculty_Name_Existing($faculty_name, $nid = 0) {
 }
 
 
+/**
+ * Does Programme Name exist?
+ *
+ * @param string $programme_name
+ * @param int $nid Drupal node nid for 'program' CCK if this is Update (otherwise 0)
+ * @return bool
+ */
 function is_Programme_Name_Existing($programme_name, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -2404,6 +2745,13 @@ function is_Programme_Name_Existing($programme_name, $nid = 0) {
 }
 
 
+/**
+ * Does Programme Abbreviation exist?
+ *
+ * @param string $programme_abbr
+ * @param int $nid Drupal node nid for 'program' CCK if this is Update (otherwise 0)
+ * @return bool
+ */
 function is_Programme_Abbr_Existing($programme_abbr, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -2417,6 +2765,13 @@ function is_Programme_Abbr_Existing($programme_abbr, $nid = 0) {
 }
 
 
+/**
+ * Does Faculty Abbreviation exist?
+ *
+ * @param string $faculty_abbreviation
+ * @param int $nid Drupal node nid for 'college' CCK if this is Update (otherwise 0)
+ * @return bool
+ */
 function is_Faculty_Abbreviation_Existing($faculty_abbreviation, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -2430,6 +2785,13 @@ function is_Faculty_Abbreviation_Existing($faculty_abbreviation, $nid = 0) {
 }
 
 
+/**
+ * Does Department Name exist?
+ *
+ * @param string $department_name
+ * @param int $nid Drupal node nid for 'department' CCK if this is Update (otherwise 0)
+ * @return bool
+ */
 function is_Department_Name_Existing($department_name, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -2443,6 +2805,13 @@ function is_Department_Name_Existing($department_name, $nid = 0) {
 }
 
 
+/**
+ * Does Course Code exist?
+ *
+ * @param string $course_code
+ * @param int $nid Drupal node nid for 'course' CCK if this is Update (otherwise 0)
+ * @return bool
+ */
 function is_Course_Code_Existing($course_code, $nid = 0) {
   //now if nid is zero then the check is coming from CREATE else it is coming from UPDATE
   if ($nid != 0)
@@ -2456,6 +2825,12 @@ function is_Course_Code_Existing($course_code, $nid = 0) {
 }
 
 
+/**
+ * Return Error Message
+ *
+ * @param int $num
+ * @return string HTML
+ */
 function Error_Types($num = 0) {
   $prifix1 = "Sorry, "; $prifix2 = "Warning! "; $prifix3 = "Test failed! ";
   switch($num){
@@ -2537,13 +2912,19 @@ function Error_Types($num = 0) {
   case '176': $msg = $prifix1 . "This Block has no free space for you!<br />"; break;
   case '177': $msg = $prifix1 . "There was a problem. Kindly restart the entire process again!<br />"; break;
 
-
   default:
     $msg =  $prifix2 .'Something fatal occured!<br /><br /><br />';
   }
   return $msg;
 }
 
+
+/**
+ * Valid Faculty?
+ *
+ * @param int $faculty_nid Drupal node nid for 'college' CCK
+ * @return bool
+ */
 function is_Valid_Faculty ($faculty_nid) {
   $result = db_query("SELECT nid FROM {content_type_college} WHERE nid =%d ", $faculty_nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -2552,6 +2933,12 @@ function is_Valid_Faculty ($faculty_nid) {
 }
 
 
+/**
+ * Valid Department?
+ *
+ * @param int $department_nid Drupal node nid for 'department' CCK
+ * @return bool
+ */
 function is_Valid_Department ($department_nid) {
   $result = db_query("SELECT nid FROM {content_type_department} WHERE nid =%d ", $department_nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -2560,6 +2947,12 @@ function is_Valid_Department ($department_nid) {
 }
 
 
+/**
+ * Valid Programme?
+ *
+ * @param int $programme_nid Drupal node nid for 'program' CCK
+ * @return bool
+ */
 function is_valid_programme ($programme_nid) {
   $result = db_query("SELECT nid FROM {content_type_program} WHERE nid =%d ", $programme_nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -2568,6 +2961,13 @@ function is_valid_programme ($programme_nid) {
 }
 
 
+/**
+ * Valid Entry in 'program_course' table which assigns Courses to a Programme?
+ *
+ * @param int $programme_nid Drupal node nid for 'program' CCK
+ * @param int $programme_course_nid id for 'program_course' table
+ * @return bool
+ */
 function is_valid_programme_course_id ($programme_nid, $programme_course_nid) {
   $result = db_query("SELECT program_course_id FROM {program_course} WHERE program_course_id=%d AND programme_id=%d ", $programme_course_nid, $programme_nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -2576,30 +2976,45 @@ function is_valid_programme_course_id ($programme_nid, $programme_course_nid) {
 }
 
 
+/**
+ * Valid Course?
+ *
+ * @param int $course_nid Drupal node nid for 'course' CCK
+ * @return bool
+ */
 function is_valid_course($course_nid) {
   $result = db_query("SELECT nid FROM {content_type_course} WHERE nid =%d ", $course_nid);
   if (db_affected_rows($result) > 0 ) return true;
 
   return false;
-
 }
 
 
+/**
+ * Valid Course Instance?
+ *
+ * @param int $instance_nid Drupal node nid for 'course_instance' CCK
+ * @return bool
+ */
 function is_valid_course_instance($instance_nid) {
   $result = db_query("SELECT nid FROM {content_type_course_instance} WHERE nid =%d ", $instance_nid);
   if (db_affected_rows($result) > 0 ) return true;
 
   return false;
-
 }
 
 
+/**
+ * Valid Course Code?
+ *
+ * @param string $course_code
+ * @return bool
+ */
 function is_valid_course_code($course_code) {
   $result = db_query("SELECT nid FROM {content_type_course} WHERE field_code_value ='%s' ", $course_code);
   if (db_affected_rows($result) > 0 ) return true;
 
   return false;
-
 }
 
 
@@ -2608,7 +3023,6 @@ function course_belongs_to_department($department_nid, $course_nid) {
   if (db_affected_rows($result) > 0 ) return true;
 
   return false;
-
 }
 
 
@@ -2620,7 +3034,6 @@ function course_instance_match_department_and_session($department_nid, $course_i
   if (db_affected_rows($result) > 0 ) return true;
 
   return false;
-
 }
 
 
@@ -2666,7 +3079,6 @@ function staff_create_course_form() {
   );
   if ($course) $form['course_description']['#value'] = $course->course_description;
 
-
   $form['credit_load'] = array(
     '#title' => 'Credit Load',
     '#type' => 'textfield',
@@ -2682,7 +3094,6 @@ function staff_create_course_form() {
 
   );
   if ($course) $form['prerequisites_codes']['#value'] = $course->prerequisite_codes;
-
 
     $form['prerequisite_desc'] = array(
     '#title' => 'Prerequisite Description - Description of prerequisites',
@@ -2706,7 +3117,6 @@ function staff_create_course_form() {
     '#type' => 'hidden',
     '#default_value'=> 1
    );
-
   }
  $form['assessment'] = array(
       '#type' => 'fieldset',
@@ -2715,7 +3125,7 @@ function staff_create_course_form() {
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
     );
- //print_r($_SESSION['eduerp_course_grade_weightings']);
+
  $caApproval = array (0 => 'Approved Along with Exams', 1 => 'Approved Individually');
  $caNum = array(0=>'0', 1=>'1', 2=>'2', 3=>'3', 4=>'4');
 
@@ -2740,7 +3150,6 @@ function staff_create_course_form() {
  $form['assessment']['exam_mark'] = array('#type' => 'textfield', '#title' => t('Max. Exam Mark'), '#description' => t('Note: If the exam is a repeat, this will be overridden to 100'), '#required' => True);
  if(isset($_SESSION['eduerp_course_grade_weightings'])) $form['assessment']['exam_mark']['#default_value'] = $_SESSION['eduerp_course_grade_weightings']['max_mark_exam'];
 
-
  if(isset($_SESSION['eduerp_course_grade_weightings'])) unset($_SESSION['eduerp_course_grade_weightings']);
 
   $form['submit'] = array(
@@ -2750,7 +3159,6 @@ function staff_create_course_form() {
   if ($authorizeCourseEdit) $form['submit']['#value'] = 'Update Course';
 
   return $form;
-
 }
 
 
@@ -4041,11 +4449,9 @@ function staff_specify_course_for_programme() {
     if (! is_valid_programme_course_id(arg(2), arg(3)))
       drupal_goto("/staff/specifycourse/". arg(2));
     else {
-        $sql = "SELECT course_id, programme_id, level, semester, course_type, lecturer_id  FROM {program_course} WHERE program_course_id=%d";
         $sql = "SELECT course_id, programme_id, level, semester, course_type, lecturer_id, credit_load FROM {program_course} WHERE program_course_id=%d";
         $rs = db_query($sql, arg(3));
         $progCourse = db_fetch_object($rs);
-
     }
   }
 
