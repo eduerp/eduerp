@@ -2473,7 +2473,7 @@ function staff_update_dept_form_submit($form, &$form_state) {
  * Handles 'staff/createeditcourse' menu to Create/Update a Course
  *
  * @global $departmentInfo
- * @global $canCreateModify;
+ * @global $canCreateModify
  * @global $_SESSION['eduerp_showFullForm']
  * @global $_SESSION['eduerp_showCourseAssignment']
  * @return string HTML
@@ -3430,7 +3430,7 @@ function course_levels() {
 /**
  * Valid normal Semesters
  *
- * @return array Semester => Semester
+ * @return array of Semester => Semester
  */
 function semesters() {
   foreach (range(1, 2) as $number) {
@@ -3878,7 +3878,7 @@ function get_Assigned_Courses($session, $department_nid, $semester) {
 
 
 /**
- * Find Courses in a Department which may or may not have a Course Instance for a Session and Semester
+ * Find Courses in a Department which may or may not ('clean_nid' is NULL) have a Course Instance for a Session and Semester
  *
  * @parm string $session
  * @parm int $department_nid 'department' CCK Drupal node nid
@@ -3956,6 +3956,14 @@ function get_unassigned_courses($session, $department_nid = 0) {
 }
 
 
+/**
+ * Find Maximum Location Value for any Course Instance matching a Course in a Session and Semester
+ *
+ * @parm int $course_nid 'course' CCK Drupal node nid
+ * @param int $semester
+ * @parm string $session
+ * @return StdClass
+ */
 function get_Max_Location_ID($course_nid, $semester, $session) {
   $result = db_query("SELECT IFNULL(MAX(field_location_value), 0) num FROM {content_type_course_instance}
       WHERE field_course_id_nid=%d AND field_semester_name_value='%s' AND field_sess_name_value='%s' ", $course_nid, $semester, $session);
@@ -3963,6 +3971,17 @@ function get_Max_Location_ID($course_nid, $semester, $session) {
 }
 
 
+/**
+ * Does a Matching Course Instance Exist?
+ *
+ * @parm int $course_nid 'course' CCK Drupal node nid
+ * @param int $semester
+ * @parm string $session
+ * @parm string $timetable
+ * @parm string $instance_nid  'course_instance' CCK Drupal node nid (or 0)
+ * @parm bool $for_location_checks
+ * @return bool
+ */
 function is_course_assignment_existing($course_nid, $semester, $session, $timetable, $instance_nid = 0, $for_location_checks=false) {
   if ($for_location_checks) {//no need to include timetable
     if ($instance_nid != 0) {
@@ -3991,6 +4010,12 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
 }
 
 
+/**
+ * Get Course Instance
+ *
+ * @parm int $course_instance_nid 'course_instance' CCK Drupal node nid
+ * @return mysqli_result
+ */
 function get_Course_Instance($course_instance_nid) {
   $result = db_query("SELECT field_code_value course_code, ci.nid, ci.field_lecturer_uid, ci.field_sess_name_value, ci.field_semester_name_value, ci.field_lecturer_alternate_uid, ci.field_repeat_value, ci.field_course_id_nid,  ci.field_location_value, ci.field_timetable_value
       FROM {content_type_course_instance} ci
@@ -4000,6 +4025,16 @@ function get_Course_Instance($course_instance_nid) {
 }
 
 
+/**
+ * Handles 'staff/createmodifyprog' menu to Create/Update a Programme
+ *
+ * @global stdClass $programmeInfo
+ * @global bool $canCreateModify
+ * @global bool $authorizeEdit;
+ * @global int $_SESSION['eduerp_showOn']
+ * @global int $_SESSION['eduerp_showCourseAssignment']
+ * @return string HTML
+ */
 function staff_create_edit_programme() {
   global $user, $programmeInfo, $canCreateModify, $authorizeEdit;
   $canCreateModify = false;
@@ -4098,6 +4133,15 @@ function staff_create_edit_programme() {
 }
 
 
+/**
+ * Form to Create/UPdate a Programme
+ *
+ * @global stdClass $programmeInfo
+ * @global bool $authorizeEdit;
+ * @global int $_SESSION['eduerp_goBack']
+ * @global int $_SESSION['eduerp_bkinfo']
+ * @return array Drupal Form
+ */
 function staff_create_programme_form() {
   global $authorizeEdit, $programmeInfo;
 
@@ -4200,6 +4244,11 @@ function staff_create_programme_form() {
 }
 
 
+/**
+ * validate hook for staff_create_programme_form
+ *
+ * @global int $_SESSION['eduerp_bkinfo']
+ */
 function staff_create_programme_form_validate($form, &$form_state) {
   global $user;
   unset($_SESSION['eduerp_bkinfo']);
@@ -4224,13 +4273,8 @@ function staff_create_programme_form_validate($form, &$form_state) {
     }
 
     //validate for int entry
-
     if(! preg_match("/^[0-9]{1,2}$/", trim($form_state['values']['duration'])) || $form_state['values']['duration'] <= 0) form_set_error('duration', Error_Types(107));
-
-
     if(! preg_match("/^[0-9]{1,2}$/", trim($form_state['values']['max_duration'])) || $form_state['values']['max_duration'] <= 0) form_set_error('max_duration', Error_Types(107));
-
-
     if(! preg_match("/^[0-9]{1,3}$/", trim($form_state['values']['min_credit_load'])) || $form_state['values']['min_credit_load'] <= 0) form_set_error('min_credit_load', Error_Types(107));
 
     // Security checks
@@ -4252,6 +4296,12 @@ function staff_create_programme_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * validate hook for staff_create_programme_form
+ *
+ * @global int $_SESSION['eduerp_showOn']
+ * @global int $_SESSION['eduerp_bkinfo']
+ */
 function staff_create_programme_form_submit($form, &$form_state) {
 
   //the form has been validated. put all in a session variable and show the next form
@@ -4263,6 +4313,13 @@ function staff_create_programme_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to Create/Update a Programme... Edit the 'program_level_semester' table
+ *
+ * @global bool $authorizeEdit;
+ * @global int $_SESSION['eduerp_bkinfo']
+ * @return array Drupal Form
+ */
 function staff_create_programme_form2() {
   global $authorizeEdit;
   if (isset($_SESSION['eduerp_bkinfo'])) {
@@ -4312,6 +4369,11 @@ function staff_create_programme_form2() {
 }
 
 
+/**
+ * validate hook for staff_create_programme_form2
+ *
+ * @global int $_SESSION['eduerp_bkinfo']
+ */
 function staff_create_programme_form2_validate($form, &$form_state) {
 
   for ($i = 1; $i <= $_SESSION['eduerp_bkinfo']->duration; $i++) {
@@ -4335,6 +4397,11 @@ function staff_create_programme_form2_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for staff_create_programme_form2
+ *
+ * @global int $_SESSION['eduerp_bkinfo']
+ */
 function staff_create_programme_form2_submit($form, &$form_state) {
 
   if(arg(2)){
@@ -4424,6 +4491,11 @@ function staff_create_programme_form2_submit($form, &$form_state) {
 }
 
 
+/**
+ * Form to Go Back for Programme Create/Update
+ *
+ * @return array Drupal Form
+*/
 function staff_create_programme_back_form() {
   //$form['#title'] = 'Create New Programme Back';
   $form['showOn'] = array(//keep showing the form
@@ -4441,17 +4513,33 @@ function staff_create_programme_back_form() {
 }
 
 
+/**
+ * validate hook for staff_create_programme_back_form
+ *
+ * @global int $_SESSION['eduerp_goBack']
+ */
 function staff_create_programme_back_form_validate($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
 }
 
 
+/**
+ * submit hook for staff_create_programme_back_form
+ *
+ * @global int $_SESSION['eduerp_goBack']
+ * @global int $_SESSION['eduerp_showOn']
+ */
 function staff_create_programme_back_form_submit($form, &$form_state) {
   $_SESSION['eduerp_goBack'] = 1;
   $_SESSION['eduerp_showOn'] = null;
 }
 
 
+/**
+ * Form to Cnacel for Programme Create/Update
+ *
+ * @return array Drupal Form
+ */
 function staff_create_programme_cancel_form() {
   $form['#title'] = 'Create New Programme Cancel';
   $form['submit'] = array(
@@ -4468,6 +4556,11 @@ function staff_create_programme_cancel_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Find all Programme Types
+ *
+ * @return array Type => Name
+ */
 function programme_types() {
   return array(
     1  => 'Undergraduate',
@@ -4493,9 +4586,13 @@ function programme_types() {
 }
 
 
+/**
+ * Form to Select Programme to Update
+ *
+ * @return array Drupal Form
+ */
 function staff_modify_programme_form(){
   $form['#title'] = 'Modify Programme';
-
 
     $form['programme_nid'] = array(
       '#type' => 'select',
@@ -4511,6 +4608,11 @@ function staff_modify_programme_form(){
 }
 
 
+/**
+ * validate hook for staff_modify_programme_form
+ *
+ * @global int $_SESSION['eduerp_bkinfo']
+ */
 function staff_modify_programme_form_validate($form, &$form_state) {
   global $user;
   unset($_SESSION['eduerp_bkinfo']);
@@ -4531,11 +4633,22 @@ function staff_modify_programme_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for staff_modify_programme_form
+ */
 function staff_modify_programme_form_submit($form, &$form_state) {
   drupal_goto("staff/createmodifyprog/" . $form_state['values']['programme_nid']);
 }
 
 
+/**
+ * Specify or Modify Courses for a Programme and add JS to page
+ *
+ * @global stdClass $programmeInfo
+ * @global bool $canCreateModify
+ * @global stdClass $progCourse
+ * @return string HTML
+ */
 function staff_specify_course_for_programme() {
   global $user, $programmeInfo, $canCreateModify, $progCourse;
   ob_start();
@@ -4621,6 +4734,15 @@ EOD;
 }
 
 
+/**
+ * Handles 'staff/verifycourse' menu to Verify all Courses needed for a Programme are being run for a Session and Semester
+ *
+ * @global array $all_sessions
+ * @global stdClass $programmeInfo
+ * @global array $_SESSION['eduerp_verify']
+ * @global string $_SESSION['eduerp_return_url']
+ * @return string HTML
+ */
 function staff_verify_assigned_course() {
   global $user, $all_sessions, $programmeInfo;
   ob_start();
@@ -4667,8 +4789,14 @@ function staff_verify_assigned_course() {
 }
 
 
+/**
+ * Recreate all 'program_course_instance' table entries for a Programme in a Session and Semester so that there is an entry for each Course Instance that is running that matches a Course in the Programme
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param string $session
+ * @param int $semester
+ */
 function verify_assigned_courses($programme_nid, $session, $semester) {
-
   db_query("DELETE FROM {program_course_instance} WHERE session='%s' AND semester='%s' AND programme_id=%d", $session, $semester, $programme_nid);
    $sql = "INSERT INTO {program_course_instance}
      SELECT DISTINCT
@@ -4689,9 +4817,11 @@ function verify_assigned_courses($programme_nid, $session, $semester) {
 }
 
 
+/**
+ * ALAN 20110109 Does not seem to be used, verify and remove
+ * @deprecated
+ */
 function show_verified_assigned_courses(&$result) {
-  // ALAN 20110109 Does not seem to be used, verify and remove
-
   $html = "
   <table border ='1'>
     <tr>
@@ -4726,8 +4856,15 @@ function show_verified_assigned_courses(&$result) {
 }
 
 
+/**
+ * Find Courses in a Programme which may or may not ('clean_nid' is NULL) have a Course Instance for a Session and Semester
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param string $session
+ * @param int $semester
+ * @return mysqli_result
+ */
 function get_programme_running_courses ($programme_nid, $session, $semester) {
-
    $sql = "SELECT DISTINCT
         pc.level,
         c.field_code_value course_code,
@@ -4761,6 +4898,13 @@ function get_programme_running_courses ($programme_nid, $session, $semester) {
 }
 
 
+/**
+ * Find Courses in a Programme which may or may not ('clean_nid' is NULL) have a Course Instance for a Session and all Semesters
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param string $session
+ * @return mysqli_result
+ */
 function get_programme_running_courses_all_semesters($programme_nid, $session) {
    $sql = "SELECT DISTINCT
         pc.level,
@@ -4795,6 +4939,13 @@ function get_programme_running_courses_all_semesters($programme_nid, $session) {
 }
 
 
+/**
+ * Display Courses in a Programme, highlighting those ('clean_nid' is NULL) that do not have a Course Instance, adding JS which will jump to "Assign Lecturers and Timetables"
+ *
+ * @parm mysqli_result $result
+ * @param bool $formissing
+ * @global stdClass $programmeInfo
+ */
 function display_course_result(&$result, $formissing = false) {
   global $programmeInfo;
   $department_nid = $programmeInfo->department_nid;
@@ -4828,7 +4979,6 @@ EOD;
     if ($f->clean_nid == "") {
       $found = true;
       $rowColor = "color='#FF0000'";
-
     }
     else
       $rowColor = "color='#000000'";
@@ -4854,6 +5004,13 @@ EOD;
 }
 
 
+/**
+ * Form to Add a Course to a Programme (or Update added Course)
+ *
+ * @global stdClass $programmeInfo
+ * @global stdClass $progCourse
+ * @return array Drupal Form
+ */
 function staff_assign_course_to_programme_form() {
   global $programmeInfo, $progCourse;
 
@@ -4977,6 +5134,9 @@ function staff_assign_course_to_programme_form() {
 }
 
 
+/**
+ * validate hook for staff_assign_course_to_programme_form
+ */
 function staff_assign_course_to_programme_form_validate($form, &$form_state) {
  $values = $form_state['values'];
 
@@ -5001,6 +5161,9 @@ function staff_assign_course_to_programme_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for staff_assign_course_to_programme_form
+ */
 function staff_assign_course_to_programme_form_submit($form, &$state) {
   $values = $state['values'];
 
@@ -5037,6 +5200,12 @@ function staff_assign_course_to_programme_form_submit($form, &$state) {
 }
 
 
+/**
+ * Find Levels for a Programme
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @return array of Level => Level
+ */
 function get_levels_from_programme_level_semester($programme_nid) {
   $return = array();
   $result = db_query("SELECT DISTINCT(level) level, programme_id FROM {program_level_semester} WHERE programme_id=%d ORDER BY level", $programme_nid);
@@ -5049,6 +5218,12 @@ function get_levels_from_programme_level_semester($programme_nid) {
 }
 
 
+/**
+ * Find Semesters for a Programme
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @return array of Semester => Semester
+ */
 function get_semester_from_programme_level_semester($programme_nid) {
   $result = db_query("SELECT DISTINCT(semester) semester, programme_id FROM {program_level_semester} WHERE programme_id=%d ORDER BY semester", $programme_nid);
   if (db_affected_rows($result) > 0){
@@ -5063,6 +5238,11 @@ function get_semester_from_programme_level_semester($programme_nid) {
 }
 
 
+/**
+ * Form to start Specifying Courses for A Programme
+ *
+ * @return array Drupal Form
+ */
 function staff_specify_course_proceed_form() {
   $form['#title'] = 'Start Specifying Courses';
 
@@ -5083,11 +5263,19 @@ function staff_specify_course_proceed_form() {
 }
 
 
+/**
+ * submit hook for staff_specify_course_proceed_form
+ */
 function staff_specify_course_proceed_form_submit($form, &$form_state) {
   drupal_goto("staff/specifycourse/" . $form_state['values']['sprogramme_nid']);
 }
 
 
+/**
+ * Form to start verifying all Courses needed for a Programme are being run for a Session and Semester
+ *
+ * @return array Drupal Form
+ */
 function staff_verify_course_proceed_form() {
   $form['#title'] = 'Start Verifying Courses';
 
@@ -5119,6 +5307,11 @@ function staff_verify_course_proceed_form() {
 }
 
 
+/**
+ * submit hook for staff_verify_course_proceed_form
+ *
+ * @global array $_SESSION['eduerp_verify']
+ */
 function staff_verify_course_proceed_form_submit($form, &$form_state) {
   $_SESSION['eduerp_verify']['semester'] = $form_state['values']['semester'];
   $_SESSION['eduerp_verify']['session'] = $form_state['values']['session'];
@@ -5126,6 +5319,12 @@ function staff_verify_course_proceed_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Display Courses for a Programme, highlighting those ('clean_nid' is NULL) that do not have a Course Instance, adding JS which will allow the Course to be Removed from the Programme (made "Historical") or have its assignment Edited
+ *
+ * @param mysqli_result $r
+ * @global $canCreateModify
+ */
 function course_specify_list(&$r) {
   global $canCreateModify;
 
@@ -5185,6 +5384,13 @@ function course_specify_list(&$r) {
 }
 
 
+/**
+ * Display "Historical" Courses for a Programme, adding JS which will allow the Course to be Added back to the Programme (no longer "Historical")
+ *
+ * <p>Note: Historical Courses not available for new Course Registrations, but do continue to allow grades and credit load to be counted for students that passed the course in the past.</p>
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @global $canCreateModify
+ */
 function historical_course_list($programme_nid) {
   global $user_profile, $canCreateModify;
 
@@ -5212,7 +5418,6 @@ function historical_course_list($programme_nid) {
     ORDER BY level_name, semester";
   $r = db_query($query, $programme_nid);
   if (db_affected_rows($r) <= 0) {
-    //echo  strip_tags(Error_Types(106));
     drupal_set_message(Error_Types(106), 'error');
     return;
   }
@@ -5259,6 +5464,16 @@ function historical_course_list($programme_nid) {
 }
 
 
+/**
+ * Handles 'staff/studentprogress' menu to Display Student Progress towards Graduation
+ *
+ * @global array $eduerp_levels
+ * @global array $eduerp_sessions
+ * @global array $eduerp_programmes
+ * @global string $eduerp_programmeName
+ * @global string $_SESSION['eduerp_return_msg']
+ * @return string HTML
+ */
 function staff_student_progress_qualification() {
   global $eduerp_levels, $eduerp_sessions, $eduerp_programmes, $eduerp_programmeName, $user;
   ob_start();
@@ -5302,6 +5517,14 @@ function staff_student_progress_qualification() {
 }
 
 
+/**
+ * Form to Select Session/Programme/Level in order to Display Student Progress towards Graduation
+ *
+ * @global array $eduerp_levels
+ * @global array $eduerp_sessions
+ * @global array $eduerp_programmes
+ * @return array Drupal Form
+ */
 function show_progress_qualification_form() {
   global $eduerp_levels, $eduerp_sessions, $eduerp_programmes;
   $form['#title'] = 'Create New Programme';
@@ -5340,6 +5563,11 @@ function show_progress_qualification_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for show_progress_qualification_form
+ *
+ * @global array $_SESSION['eduerp_qualification']
+ */
 function show_progress_qualification_form_submit($form, &$form_state) {
   $values = $form_state['values'];
   $_SESSION['eduerp_qualification']['session'] = $values['session'];
@@ -5348,6 +5576,13 @@ function show_progress_qualification_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Return HTML for Student Progress towards Graduation for a Session/Programme/Level; ALAN 20120419 Does not seem to be used, verify and remove
+ *
+ * @deprecated
+ * @param mysqli_result
+ * @return string HTML
+ */
 function display_progress_towards_qualification(&$result) {
   $html = "
   <table border ='1'>
@@ -5403,6 +5638,16 @@ function display_progress_towards_qualification(&$result) {
 }
 
 
+/**
+ * Return HTML for Student Progress towards Graduation for a Session/Programme/Level
+ *
+ * @global int $eduerp_uid
+ * @global string $eduerp_programmeName
+ * @global int $eduerp_programme_nid
+ * @global string $eduerp_studentName
+ * @global array $_SESSION['eduerp_qualification']
+ * @return string HTML
+ */
 function  get_progress_qualification_details() {
   global $eduerp_uid, $eduerp_programmeName, $eduerp_programme_nid, $eduerp_studentName;
 
@@ -5563,6 +5808,14 @@ function  get_progress_qualification_details() {
 }
 
 
+/**
+ * Find cGPA etc. for Students in Session/Programme/Level
+ *
+ * @parm string $session
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @parm string $level
+ * @return mysqli_result
+ */
 function get_students_CGPA($session, $programme_nid, $level) {
   $sql = "SELECT
         sp.field_student_ref_sp_uid AS uid,
@@ -5597,6 +5850,14 @@ function get_students_CGPA($session, $programme_nid, $level) {
 }
 
 
+/**
+ * Find GPAs etc. for Students in Session/Programme/Level
+ *
+ * @parm string $session
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @parm string $level
+ * @return mysqli_result
+ */
 function get_students_GPA($session, $programme_nid, $level) {
   $sql = "SELECT
         gpa.field_student_ref_gpa_uid AS uid,
@@ -5625,8 +5886,15 @@ function get_students_GPA($session, $programme_nid, $level) {
 }
 
 
+/**
+ * Find any Failed (and not since passed) Courses for each Student in Session/Programme/Level
+ *
+ * @parm string $session
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @parm string $level
+ * @return mysqli_result
+ */
 function get_cumulative_list_of_failed_courses($session, $programme_nid, $level) {
-  // Find any failed (and not since passed) courses for each student in this program/session/level
     // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
     $sql = "SELECT
         failedcourses.uid,
@@ -5713,6 +5981,11 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
 }
 
 
+/**
+ * Find all Sessions
+ *
+ * @return array of Session => Session
+ */
 function get_all_sessions() {
   $result = db_query($sql = "SELECT session_id, sess_name FROM {session} ORDER BY sess_name DESC ");
   if (db_affected_rows($result) > 0) {
@@ -5725,6 +5998,14 @@ function get_all_sessions() {
 }
 
 
+/**
+ * Find Courses in a Programme which do not have a Course Instance for a Session and a Semester
+ *
+ * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param string $session
+ * @param int $semester
+ * @return mysqli_result
+ */
 function get_unassigned_for_programme($programme, $session, $semester) {
   $sql ="
   SELECT DISTINCT
@@ -5748,6 +6029,13 @@ function get_unassigned_for_programme($programme, $session, $semester) {
 }
 
 
+/**
+ * Handles 'staff/unregstudents' menu to List of Students who have Not Registered for a Semester
+ *
+ * @global array $sessions
+ * @global array $_SESSION['eduerp_unreg']
+ * @return string HTML
+ */
 function staff_unregistered_students() {
  global $sessions;
   ob_start();
@@ -5781,6 +6069,12 @@ function staff_unregistered_students() {
 }
 
 
+/**
+ * Return HTML for List of Students who have Not Registered for a Semester
+ *
+ * @param mysqli_result $result
+ * @return string HTML
+ */
 function display_list_of_unregistered_students(&$result) {
   $html = "
   <table border ='1'>
@@ -5809,6 +6103,12 @@ function display_list_of_unregistered_students(&$result) {
 }
 
 
+/**
+ * Form to Select Session/Semester for List of Students who have Not Registered for a Semester
+ *
+ * @global array $_SESSION['eduerp_unreg']
+ * @return array Drupal Form
+ */
 function show_unregistered_course_form() {
   global $sessions;
   $form['#title'] = 'Unregistered Course form';
@@ -5835,6 +6135,11 @@ function show_unregistered_course_form() {
 }
 
 
+/**
+ * submit hook for show_unregistered_course_form
+ *
+ * @global array $_SESSION['eduerp_unreg']
+ */
 function show_unregistered_course_form_submit($form, &$form_state) {
   $values = $form_state['values'];
   $_SESSION['eduerp_unreg']['session'] = $values['session'];
@@ -5842,6 +6147,13 @@ function show_unregistered_course_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Find List of Students who have Not Registered for a Semester
+ *
+ * @param string $session
+ * @param int $semester
+ * @return mysqli_result
+ */
 function get_unregistered_students($session, $semester) {
   $sql = "
   SELECT DISTINCT
@@ -5874,6 +6186,15 @@ function get_unregistered_students($session, $semester) {
 }
 
 
+/**
+ * Form to Add a Student Record Entry (CCK 'student_record')
+ *
+ * @global int $eduerp_uid
+ * @global string $eduerp_programmeName
+ * @global int $eduerp_programme_nid
+ * @global string $eduerp_studentName
+ * @return array Drupal Form
+ */
 function staff_student_action_form() {
   global $eduerp_uid, $eduerp_programmeName, $eduerp_programme_nid, $eduerp_studentName;
   $form = array(
@@ -5940,6 +6261,9 @@ function staff_student_action_form() {
 }
 
 
+/**
+ * validate hook for staff_student_action_form
+ */
 function staff_student_action_form_validate($form, &$state) {
   $values = $state['values'];
 
@@ -5951,6 +6275,9 @@ function staff_student_action_form_validate($form, &$state) {
 }
 
 
+/**
+ * submit hook for staff_student_action_form
+ */
 function staff_student_action_form_submit($form, &$state) {
   $values = $state['values'];
   // student_record CCK
@@ -5964,6 +6291,11 @@ function staff_student_action_form_submit($form, &$state) {
 }
 
 
+/**
+ * Add a Student Record Entry (CCK 'student_record')
+ *
+ * @param int $studentRecord
+ */
 function create_student_record_cck(&$studentRecord) {
   global $user;
   $node = new stdClass();
@@ -5985,6 +6317,13 @@ function create_student_record_cck(&$studentRecord) {
 }
 
 
+/**
+ * Handles 'staff/dropcoursereg' menu to Mark a Course Registration as Dropped
+ *
+ * @global stdClass $_SESSION['eduerp_drop_on']
+ * @global stdClass $_SESSION['eduerp_drop_course_info']
+ * @return string HTML
+ */
 function staff_drop_registered_course() {
   global $user;
   ob_start();
@@ -6018,6 +6357,12 @@ function staff_drop_registered_course() {
 }
 
 
+/**
+ * Form to Mark a Student's Course Registration as Dropped
+ *
+ * @global stdClass $_SESSION['eduerp_drop_course_info']
+ * @return array Drupal Form
+ */
 function get_student_drop_course_form() {
   $form['#title'] = 'Drop Course Form';
   $courses = array();
@@ -6052,6 +6397,12 @@ function get_student_drop_course_form() {
 }
 
 
+/**
+ * validate hook for get_student_drop_course_form
+ *
+ * @global stdClass $_SESSION['eduerp_drop_on']
+ * @global stdClass $_SESSION['eduerp_drop_course_info']
+ */
 function get_student_drop_course_form_validate($form, &$state) {
   $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
 
@@ -6062,6 +6413,12 @@ function get_student_drop_course_form_validate($form, &$state) {
 }
 
 
+/**
+ * submit hook for get_student_drop_course_form
+ *
+ * @global stdClass $_SESSION['eduerp_drop_on']
+ * @global stdClass $_SESSION['eduerp_drop_course_info']
+ */
 function get_student_drop_course_form_submit($form, &$state) {
   $values = $state['values'];
   $_SESSION['eduerp_drop_on'] = 1;//keep showing the form
@@ -6079,6 +6436,11 @@ function get_student_drop_course_form_submit($form, &$state) {
 }
 
 
+/**
+ * Form to Select a Student in order to Mark a Course Registration as Dropped
+ *
+ * @return array Drupal Form
+ */
 function get_student_course_instance_form() {
   $form['#title'] = 'Get Student Registered Courses By Session and Semester ';
 
@@ -6107,6 +6469,12 @@ function get_student_course_instance_form() {
 }
 
 
+/**
+ * validate hook for get_student_course_instance_form
+ *
+ * @global stdClass $_SESSION['eduerp_drop_on']
+ * @global stdClass $_SESSION['eduerp_drop_course_info']
+ */
 function get_student_course_instance_form_validate($form, &$state) {
   $values = $state['values'];
   $studentInfo = user_load(array('name'=>$values['mat_no']));
@@ -6142,6 +6510,14 @@ function get_student_course_instance_form_validate($form, &$state) {
 }
 
 
+/**
+ * Find Courses Registered for a Student in a Session/Semester
+ *
+ * @parm int $studentUID Drupal uid
+ * @parm string $session
+ * @parm string $semester
+ * @return mysqli_result
+ */
 function get_student_registered_courses($studentUID, $session, $semester) {
   $sql = "SELECT g.nid nid, t.nid ctci_nid, c.field_code_value course_code
   FROM {content_type_student_grades} g
@@ -6154,6 +6530,13 @@ function get_student_registered_courses($studentUID, $session, $semester) {
 }
 
 
+/**
+ * Handles 'staff/manualcoursereg' menu to Manually Register a Student in a Course
+ *
+ * @global stdClass $_SESSION['eduerp_reg_on']
+ * @global stdClass $_SESSION['eduerp_reg_course_info']
+ * @return string HTML
+ */
 function staff_manual_course_reg() {
   global $user;
   ob_start();
@@ -6187,6 +6570,11 @@ function staff_manual_course_reg() {
 }
 
 
+/**
+ * Form to Select a Student in order to Manually Register a Student in a Course
+ *
+ * @return array Drupal Form
+ */
 function get_student_unreg_course_form() {
   $form['#title'] = 'Get Student unRegistered Courses By Session and Semester ';
 
@@ -6215,6 +6603,12 @@ function get_student_unreg_course_form() {
 }
 
 
+/**
+ * validate hook for get_student_unreg_course_form
+ *
+ * @global stdClass $_SESSION['eduerp_reg_on']
+ * @global stdClass $_SESSION['eduerp_reg_course_info']
+ */
 function get_student_unreg_course_form_validate($form, &$state) {
   $values = $state['values'];
 
@@ -6251,6 +6645,12 @@ function get_student_unreg_course_form_validate($form, &$state) {
 }
 
 
+/**
+ * Form to Select a Course Instance in order to Manually Register a Student in a Course
+ *
+ * @global stdClass $_SESSION['eduerp_reg_course_info']
+ * @return array Drupal Form
+ */
 function get_student_reg_course_form() {
   $form['#title'] = 'Register Course Form';
   $courses = array();
@@ -6285,6 +6685,12 @@ function get_student_reg_course_form() {
 }
 
 
+/**
+ * validate hook for get_student_reg_course_form
+ *
+ * @global stdClass $_SESSION['eduerp_reg_on']
+ * @global stdClass $_SESSION['eduerp_reg_course_info']
+ */
 function get_student_reg_course_form_validate($form, &$state) {
   $_SESSION['eduerp_reg_on'] = 1;//keep showing the form
 
@@ -6314,6 +6720,12 @@ function get_student_reg_course_form_validate($form, &$state) {
 }
 
 
+/**
+ * submit hook for get_student_reg_course_form
+ *
+ * @global stdClass $_SESSION['eduerp_reg_on']
+ * @global stdClass $_SESSION['eduerp_reg_course_info']
+ */
 function get_student_reg_course_form_submit($form, &$state) {
   $_SESSION['eduerp_reg_on'] = 1;//keep showing the form
   $values = $state['values'];
@@ -6358,6 +6770,14 @@ function get_student_reg_course_form_submit($form, &$state) {
 }
 
 
+/**
+ * Find Courses Not Registered for a Student in a Session/Semester
+ *
+ * @parm int $studentUID Drupal uid
+ * @parm string $session
+ * @parm string $semester
+ * @return mysqli_result
+ */
 function get_student_unregistered_courses($studentUID, $session, $semester) {
   //get the student's profile info
   $student_profile = new UserProfile($studentUID);
@@ -6398,6 +6818,13 @@ function get_student_unregistered_courses($studentUID, $session, $semester) {
 }
 
 
+/**
+ * Update the Credit Load for a Student in a Session/Semester
+ *
+ * @parm int $uid Drupal uid
+ * @parm string $session
+ * @parm string $semester
+ */
 function update_credit_load_registered($uid, $session, $semester) {
   $sql = "
     SELECT SUM(sg.field_credit_load_sg_value) AS total_registered
@@ -6457,6 +6884,13 @@ function update_credit_load_registered($uid, $session, $semester) {
 }
 
 
+/**
+ * Handles 'staff/changeprogmme' menu to Change a Student's Programme
+ *
+ * @global stdClass $_SESSION['eduerp_change_prog_on']
+ * @global stdClass $_SESSION['eduerp_change_prog_info']
+ * @return string HTML
+ */
 function staff_change_student_programme() {
   global $user;
   ob_start();
@@ -6518,6 +6952,11 @@ function staff_change_student_programme() {
 }
 
 
+/**
+ * Form to Select a Student in order to Change a Student's Programme
+ *
+ * @return array Drupal Form
+ */
 function get_student_info_form() {
   $form['#title'] = 'Get Student Information ';
 
@@ -6532,12 +6971,16 @@ function get_student_info_form() {
       '#type' => 'submit'
   );
 
-
   return $form;
-
 }
 
 
+/**
+ * validate hook for get_student_info_form
+ *
+ * @global stdClass $_SESSION['eduerp_change_prog_on']
+ * @global stdClass $_SESSION['eduerp_change_prog_info']
+ */
 function get_student_info_form_validate($form, &$state) {
   $values = $state['values'];
   $studentInfo = user_load(array('name'=>$values['mat_no']));
@@ -6568,6 +7011,12 @@ function get_student_info_form_validate($form, &$state) {
 }
 
 
+/**
+ * submit hook for staff_student_change_programme_form
+ *
+ * @global stdClass $_SESSION['eduerp_change_prog_on']
+ * @global stdClass $_SESSION['eduerp_change_prog_info']
+ */
 function staff_student_change_programme_form_submit($form, &$state) {
   $values = $state['values'];
   $rs = get_programmes($values['programme_nid']);
@@ -6617,12 +7066,20 @@ function staff_student_change_programme_form_submit($form, &$state) {
 }
 
 
+/**
+ * validate hook for staff_student_change_programme_form
+ */
 function staff_student_change_programme_form_validate($form, &$state) {
   if (empty($state['values']['programme_nid'])) form_set_error('programme_nid', 'You must Select a Programme');
   if (empty($state['values']['level_name'])) form_set_error('level_name', 'You must Select a Level');
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_student_change_programme_form() {
   $form['#title'] = "Change a Student's Programme";
 
@@ -6760,6 +7217,11 @@ function staff_check_verify_programme_courses() {
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function get_verify_required_courses_for_programme_form() {
   $form['#title'] = 'Verify Required Courses for A Programme';
 
@@ -6791,6 +7253,9 @@ function get_verify_required_courses_for_programme_form() {
 }
 
 
+/**
+ * submit hook for
+ */
 function get_verify_required_courses_for_programme_form_submit($form, &$state) {
   $values = $state['values'];
 
@@ -6897,6 +7362,9 @@ function create_course_weighting_entries(&$values) {
 }
 
 
+/**
+ * Implementation of hook_views_api(), register view API information so include files can be loaded.
+ */
 function staff_views_api() {
   return array(
     'api' => 2,
@@ -6926,6 +7394,11 @@ function staff_check_for_missing_courses(){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_show_check_missing_courses_form() {
   $form['#title'] = 'Check For Missing Courses';
   $form['session'] = array(
@@ -6951,6 +7424,9 @@ function staff_show_check_missing_courses_form() {
   return $form;
 }
 
+/**
+ * submit hook for
+ */
 function staff_show_check_missing_courses_form_submit($form, &$state) {
   $values = $state['values'];
 
@@ -7253,6 +7729,11 @@ function staff_school_fees_authorise_instalment_payment(){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_create_modify_fee_item_form() {
   $editMode = (arg(2) && is_fee_item_existing(arg(2))) ? true : false;
   if ($editMode) {
@@ -7289,6 +7770,9 @@ function staff_school_fees_create_modify_fee_item_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_fee_item_form
+ */
 function staff_school_fees_create_modify_fee_item_form_validate($form, &$state) {
 
   $values = $state['values'];
@@ -7313,6 +7797,9 @@ function staff_school_fees_create_modify_fee_item_form_validate($form, &$state) 
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_fee_item_form
+ */
 function staff_school_fees_create_modify_fee_item_form_submit($form, &$state) {
 
   $values = $state['values'];
@@ -8132,6 +8619,11 @@ function is_fee_setting_existing($settingsNID){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_modify_fee_settings_form() {
   $editMode = (arg(2) && is_fee_setting_existing(arg(2))) ? true : false;
   if ($editMode) {
@@ -8182,6 +8674,9 @@ function staff_school_fees_modify_fee_settings_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_fee_item_form
+ */
 function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
   $values = $state['values'];
   //for start date and late reg date make sure they are of type date
@@ -8215,6 +8710,9 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_fee_item_form
+ */
 function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
   $values = $state['values'];
 
@@ -8245,6 +8743,11 @@ function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_create_modify_fee_setup1_form() {
 
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
@@ -8292,6 +8795,9 @@ function staff_school_fees_create_modify_fee_setup1_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_fee_setup1_form
+ */
 function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state){
   //make sure that fee items exists first before going to the second page
   $values = $state['values'];
@@ -8317,6 +8823,9 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_fee_setup1_form
+ */
 function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
 
   $_SESSION['eduerp_fee_setup']['page_two_assigned'] = false;
@@ -8351,6 +8860,11 @@ function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_create_modify_fee_setup2_form() {
   global $selFeeItems;
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''))) ? true : false;
@@ -8427,6 +8941,9 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_fee_setup2_form
+ */
 function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state) {
   $values = $state['values'];
 
@@ -8452,6 +8969,9 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_fee_setup2_form
+ */
 function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) {
   $values = $state['values'];
   $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
@@ -8493,6 +9013,11 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_create_modify_fee_setup3_form() {
   $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) ? true : false;
@@ -8663,6 +9188,9 @@ function staff_school_fees_create_modify_fee_setup3_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_fee_setup3_form
+ */
 function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state) {
   $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
   $editMode = ((arg(2) || is_numeric(arg(2))) && is_fee_setup_existing(arg(2), variable_get('eduerp_current_session', ''), $academicLevels)) ? true : false;
@@ -8789,6 +9317,9 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_fee_setup3_form
+ */
 function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) {
 
   $_SESSION['eduerp_fee_setup']['page_two_assigned'] = false;
@@ -8821,6 +9352,11 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_create_modify_fee_setup4_form() {
   $form['#title'] = 'School Fee Setup Page 4';
   $form['eduerp_page'] = array(
@@ -8845,6 +9381,9 @@ function staff_school_fees_create_modify_fee_setup4_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_fee_setup4_form
+ */
 function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state) {
    $values = $state['values'];
   //make sure that the combination is not existing
@@ -8868,6 +9407,9 @@ function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_fee_setup4_form
+ */
 function staff_school_fees_create_modify_fee_setup4_form_submit($form, &$state) {
   global $user;
   $values = $state['values'];
@@ -9295,6 +9837,11 @@ function get_fee_setup_item_details($setupNID){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_test_fee_setup_form() {
     $form['#title'] = 'Test Fee Setup';
 
@@ -9363,6 +9910,9 @@ function get_uc_late_registration_info($name){
 }
 
 
+/**
+ * submit hook for staff_school_fees_test_fee_setup_form
+ */
 function staff_school_fees_test_fee_setup_form_submit($form, &$state) {
 
   $val = is_fee_setup_correct();
@@ -9446,6 +9996,11 @@ function prepare_fee_setup_for_edit($setupNID){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function get_scholarship_payment_student_finder_form(){
   $form['#title'] = 'Student Finder';
   $form['mat_number'] = array(
@@ -9468,6 +10023,9 @@ function get_scholarship_payment_student_finder_form_validate($form, &$state){
 }
 
 
+/**
+ * submit hook for get_scholarship_payment_student_finder_form
+ */
 function get_scholarship_payment_student_finder_form_submit($form, &$state){
   global $EDUERPstudentInitiated;
   $values = $state['values'];
@@ -9613,6 +10171,11 @@ function show_student_info($info){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_show_pay_school_fees_scholarship_form(){
   $form['#title'] = 'School Fees Scholarship Payment';
   $form['scholarship_type'] = array(
@@ -9654,6 +10217,9 @@ return $list;
 }
 
 
+/**
+ * validate hook for staff_show_pay_school_fees_scholarship_form
+ */
 function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
   $values = $state['values'];
 
@@ -9686,6 +10252,9 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
 }
 
 
+/**
+ * submit hook for staff_show_pay_school_fees_scholarship_form
+ */
 function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
   global $user;
   $values = $state['values'];
@@ -9938,6 +10507,11 @@ function get_instalment_authorisations($sessionName) {
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function get_authorise_instalment_student_finder_form(){
 
   $form['#title'] = 'Student Finder';
@@ -9962,6 +10536,9 @@ function get_authorise_instalment_student_finder_form_validate($form, &$state){
 }
 
 
+/**
+ * submit hook for get_authorise_instalment_student_finder_form
+ */
 function get_authorise_instalment_student_finder_form_submit($form, &$state){
   global $EDUERPstudentInitiated;
   $values = $state['values'];
@@ -10017,6 +10594,11 @@ function staff_display_instalment_authorisations($sessionName) {
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_show_authorise_instalment_form(){
   $form['#title'] = 'School Fees Instalment Payment';
    $form['remarks'] = array(
@@ -10068,6 +10650,9 @@ function staff_show_authorise_instalment_form(){
 }
 
 
+/**
+ * validate hook for staff_show_authorise_instalment_form
+ */
 function staff_show_authorise_instalment_form_validate($form, &$state){
   $values = $state['values'];
 
@@ -10096,6 +10681,9 @@ function staff_show_authorise_instalment_form_validate($form, &$state){
 }
 
 
+/**
+ * submit hook for staff_show_authorise_instalment_form
+ */
 function staff_show_authorise_instalment_form_submit($form, &$state){
   global $user;
   $values = $state['values'];
@@ -10735,6 +11323,11 @@ function staff_school_fees_create_modify_scholarship_types(){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_school_fees_create_modify_scholarship_types_form() {
 
   $editMode = (arg(2) && is_valid_scholarship_type(arg(2))) ? true : false;
@@ -10766,6 +11359,9 @@ function staff_school_fees_create_modify_scholarship_types_form() {
 }
 
 
+/**
+ * validate hook for staff_school_fees_create_modify_scholarship_types_form
+ */
 function staff_school_fees_create_modify_scholarship_types_form_validate($form, &$form_state){
   $values = $form_state['values'];
   if(arg(2) && is_numeric(arg(2))){
@@ -10781,6 +11377,9 @@ function staff_school_fees_create_modify_scholarship_types_form_validate($form, 
 }
 
 
+/**
+ * submit hook for staff_school_fees_create_modify_scholarship_types_form
+ */
 function staff_school_fees_create_modify_scholarship_types_form_submit($form, &$form_state){
   if(arg(2) && is_numeric(arg(2)) && is_valid_scholarship_type(arg(2))){
     $node = node_load(arg(2));
@@ -10893,6 +11492,11 @@ function staff_school_fees_remove_pending_orders(){
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function get_remove_pending_order_form(){
   $form['#title'] = 'Remove Pending Invoices';
   $form['number_of_days'] = array(
@@ -10921,6 +11525,9 @@ $form['title_test'] = array(
 }
 
 
+/**
+ * validate hook for get_remove_pending_order_form
+ */
 function get_remove_pending_order_form_validate($form, &$state){
   $values = $state['values'];
 
@@ -10939,6 +11546,9 @@ function get_remove_pending_order_form_validate($form, &$state){
 }
 
 
+/**
+ * submit hook for get_remove_pending_order_form_validate
+ */
 function get_remove_pending_order_form_submit($form, &$state){
   $values = $state['values'];
 
@@ -10991,6 +11601,11 @@ function staff_add_once_off_invoice() {
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function add_once_off_invoice_form() {
   $form['#title'] = 'Add a Once Off Invoice';
   $form['admission'] = array(
@@ -11019,6 +11634,9 @@ function add_once_off_invoice_form() {
 }
 
 
+/**
+ * validate hook for add_once_off_invoice_form
+ */
 function add_once_off_invoice_form_validate($form, &$state) {
   global $base_url;
   $values = $state['values'];
@@ -11225,6 +11843,11 @@ function staff_change_uncleared_candidate_programme() {
   return ob_get_clean();
 }
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function get_candidate_info_form() {
   $form['#title'] = 'Get Candidate Information ';
 
@@ -11243,6 +11866,9 @@ function get_candidate_info_form() {
 }
 
 
+/**
+ * validate hook for get_candidate_info_form
+ */
 function get_candidate_info_form_validate($form, &$state) {
   $values = $state['values'];
 
@@ -11281,6 +11907,9 @@ function get_candidate_info_form_validate($form, &$state) {
 }
 
 
+/**
+ * submit hook for staff_candidate_change_programme_form
+ */
 function staff_candidate_change_programme_form_submit($form, &$state) {
   $values = $state['values'];
   $rs = get_programmes($values['programme_nid']);
@@ -11301,11 +11930,19 @@ function staff_candidate_change_programme_form_submit($form, &$state) {
 }
 
 
+/**
+ * validate hook for staff_candidate_change_programme_form
+ */
 function staff_candidate_change_programme_form_validate($form, &$state) {
   if (empty($state['values']['programme_nid'])) form_set_error('programme_nid', 'You must Select a Programme');
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_candidate_change_programme_form() {
   $form['#title'] = "Change a Candidate's Programme";
 
@@ -11314,7 +11951,6 @@ function staff_candidate_change_programme_form() {
     '#options' => array(''=>'') + get_programmes(0, true),
     '#title' => 'New Programme for Candidate',
     '#required' => TRUE
-
   );
 
  $form['eduerp_change_uncleared_on'] = array(
@@ -11349,6 +11985,11 @@ function staff_archive_student() {
 }
 
 
+/**
+ * Form to
+ *
+ * @return array Drupal Form
+ */
 function staff_archive_student_form() {
   $form['#title'] = 'Archive a Student';
 
@@ -11367,6 +12008,9 @@ function staff_archive_student_form() {
 }
 
 
+/**
+ * validate hook for staff_archive_student_form
+ */
 function staff_archive_student_form_validate($form, &$state) {
   $rs = db_query("SELECT nspro.uid uid
     FROM {content_type_student_profile} spro
@@ -11417,6 +12061,9 @@ function staff_archive_student_form_validate($form, &$state) {
 }
 
 
+/**
+ * submit hook for staff_archive_student_form
+ */
 function staff_archive_student_form_submit($form, &$state) {
   $row = db_fetch_object(db_query("SELECT nspro.uid uid
   FROM {content_type_student_profile} spro
