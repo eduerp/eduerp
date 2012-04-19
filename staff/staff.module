@@ -6823,7 +6823,7 @@ function get_student_unregistered_courses($studentUID, $session, $semester) {
  *
  * @parm int $uid Drupal uid
  * @parm string $session
- * @parm string $semester
+ * @parm int $semester
  */
 function update_credit_load_registered($uid, $session, $semester) {
   $sql = "
@@ -7012,7 +7012,7 @@ function get_student_info_form_validate($form, &$state) {
 
 
 /**
- * submit hook for staff_student_change_programme_form
+ * submit hook for staff_student_change_programme_form, Change Programme and Add Student Record(s)
  *
  * @global stdClass $_SESSION['eduerp_change_prog_on']
  * @global stdClass $_SESSION['eduerp_change_prog_info']
@@ -7076,7 +7076,7 @@ function staff_student_change_programme_form_validate($form, &$state) {
 
 
 /**
- * Form to
+ * Form to Change a Student's Programme
  *
  * @return array Drupal Form
  */
@@ -7089,7 +7089,6 @@ function staff_student_change_programme_form() {
     '#title' => 'New Programme for Student',
     '#ahah' => array('path' => 'staff/ajax/programmelevel', 'event' => 'change', 'method' => 'replace', 'wrapper' => 'programmelevels'),
     '#required' => TRUE
-
   );
 
  $form['level_name'] = array(
@@ -7124,6 +7123,10 @@ function staff_student_change_programme_form() {
 }
 
 
+/**
+ * ALAN 20120419 Does not seem to be used, verify and remove
+ * @deprecated
+ */
 function get_student_current_GPA($studentUID, $level) {
   //note we do not need to apply session here because the student may have come after say 2 years to continue. We only need to use his last ever level
 
@@ -7133,6 +7136,10 @@ function get_student_current_GPA($studentUID, $level) {
 }
 
 
+/**
+ * ALAN 20120419 Does not seem to be used, verify and remove
+ * @deprecated
+ */
 function get_programme_faculty($programm_nid) {
   $sql = "SELECT f.nid FROM {content_type_program} p
     INNER JOIN {content_type_department} d ON p.field_department_id_nid = d.nid
@@ -7145,6 +7152,13 @@ function get_programme_faculty($programm_nid) {
 }
 
 
+/**
+ * Find all Courses passed by A Student, indicating those whose Grades count towards cGPA and Credit Load in a Programme
+ *
+ * @parm int $first_choice 'program' CCK Drupal node nid
+ * @parm int $uid Drupal uid
+ * @return string HTML
+ */
 function get_courses_passed_by_student($first_choice, $uid) {
   $sql = "SELECT DISTINCT c.field_code_value, pc.course_id
        FROM {content_type_student_grades} sg,
@@ -7196,6 +7210,13 @@ function get_courses_passed_by_student($first_choice, $uid) {
 }
 
 
+/**
+ * Handles 'staff/checkverifyprogmme' menu to Check have all existing Courses required for all Programmes been Verified ('program_course_instance' table entry exists for each Course Instance that matches a Course in the Programme for a Semester)
+ *
+ * <p>Note there could be Course Instances missing for a Semester which is checked for separately in staff_check_for_missing_courses()</p>
+ * @global array $_SESSION['eduerp_required']
+ * @return string HTML
+ */
 function staff_check_verify_programme_courses() {
   global $user;
   ob_start();
@@ -7205,7 +7226,6 @@ function staff_check_verify_programme_courses() {
 
     if (isset($_SESSION['eduerp_required']) ) {
       $str = display_verify_required_courses_for_programme() ."<br />";
-
     }
     echo $navi;
     echo "<b>Verify Courses for all Programmes</b> - Please fill the form as appropriate<br /><br />";
@@ -7218,7 +7238,7 @@ function staff_check_verify_programme_courses() {
 
 
 /**
- * Form to
+ * Form to select Session/Semester in order to check have all existing Courses required for all Programmes been Verified
  *
  * @return array Drupal Form
  */
@@ -7254,7 +7274,9 @@ function get_verify_required_courses_for_programme_form() {
 
 
 /**
- * submit hook for
+ * submit hook for get_verify_required_courses_for_programme_form
+ *
+ * @global array $_SESSION['eduerp_required']
  */
 function get_verify_required_courses_for_programme_form_submit($form, &$state) {
   $values = $state['values'];
@@ -7264,6 +7286,13 @@ function get_verify_required_courses_for_programme_form_submit($form, &$state) {
 }
 
 
+/**
+ * Find all existing Courses required for all Programmes in a Semester that have NOT been Verified ('program_course_instance' table entry does NOT exist)
+ *
+ * <p>Note there could be Course Instances missing for a Semester which is checked for separately in staff_display_missing_courses_for_a_semester()</p>
+ * @global array $_SESSION['eduerp_required']
+ * @return string HTML
+ */
 function display_verify_required_courses_for_programme() {
   $values = $_SESSION['eduerp_required'];
 
@@ -7331,6 +7360,12 @@ function display_verify_required_courses_for_programme() {
 }
 
 
+/**
+ * Find Grade Weighting etc. for a Course
+ *
+ * @param int $course_nid 'course' CCK Drupal node nid (or 0)
+ * @return array of Field Name => Value
+ */
 function get_course_grade_weighting($course_nid = 0) {
   $sql = "SELECT number_of_ca, ca_approved_onebyone, max_mark_ca1, max_mark_ca2, max_mark_ca3, max_mark_ca4, max_mark_exam FROM course_grade_weightings WHERE course_id = $course_nid LIMIT 1 ";
   $result = db_query($sql);
@@ -7348,6 +7383,11 @@ function get_course_grade_weighting($course_nid = 0) {
 }
 
 
+/**
+ * Set Grade Weighting etc. for a Course
+ *
+ * @param array $values
+ */
 function create_course_weighting_entries(&$values) {
 
   if ($values['course_nid'] != 0) {
@@ -7373,6 +7413,12 @@ function staff_views_api() {
 }
 
 
+/**
+ * Handles 'staff/missingcourses' menu to Check for Missing Course Instances for a Semester (a Programme needs the Course, but no Lecturer/Timetable assigned)
+ *
+ * @global array $_SESSION['eduerp_check_missing_courses']
+ * @return string HTML
+ */
 function staff_check_for_missing_courses(){
   global $user;
   ob_start();
@@ -7395,8 +7441,9 @@ function staff_check_for_missing_courses(){
 
 
 /**
- * Form to
+ * Form to Select Session/Semester in order to check for Missing Course Instances for a Semester (a Programme needs the Course, but no Lecturer/Timetable assigned)
  *
+ * @global array $_SESSION['eduerp_check_missing_courses']
  * @return array Drupal Form
  */
 function staff_show_check_missing_courses_form() {
@@ -7425,7 +7472,9 @@ function staff_show_check_missing_courses_form() {
 }
 
 /**
- * submit hook for
+ * submit hook for staff_show_check_missing_courses_form
+ *
+ * @global array $_SESSION['eduerp_check_missing_courses']
  */
 function staff_show_check_missing_courses_form_submit($form, &$state) {
   $values = $state['values'];
@@ -7435,6 +7484,13 @@ function staff_show_check_missing_courses_form_submit($form, &$state) {
 }
 
 
+/**
+ * Find Missing Course Instances for a Semester (a Programme needs the Course, but no Lecturer/Timetable assigned)
+ *
+ * @parm string $session
+ * @parm int $semester
+ * @return string HTML
+ */
 function staff_display_missing_courses_for_a_semester($session, $semester) {
   $sql = "SELECT DISTINCT
         pc.level,
@@ -7497,8 +7553,14 @@ function staff_display_missing_courses_for_a_semester($session, $semester) {
 }
 
 
-//school fees module starts here
-
+/**
+ * Handles 'staff/schoolfeesadmin' menu for School Fees Administration
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_authorise_scholarship']
+ * @global array $_SESSION['eduerp_authorise_instalment']
+ * @return string HTML
+ */
 function staff_school_fees_admin(){
  global $user;
   ob_start();
@@ -7524,11 +7586,9 @@ function staff_school_fees_admin(){
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/updatesettings') . '">Update Fee Settings</a><br />';
     $html .= '<br />';
 
-
     $html .= '<b>Authorise Scholarship</b> - Enable a Student as being sponsored via Scholarship for the Current Session only.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/scholarshippayment') . '">Authorise Scholarship</a><br />';
     $html .= '<br />';
-
 
     $html .= '<b>Authorise Instalment Payment</b> - Enable a Student to pay his/her Fees in instalments  for the Current Session only.<br />';
     $html .= '&nbsp;&nbsp;&nbsp;<a href="' . url('staff/authoriseinstalment') . '">Authorise Instalment Payment</a><br />';
@@ -7549,6 +7609,11 @@ function staff_school_fees_admin(){
 }
 
 
+/**
+ * Handles 'staff/createmodifyfeeitem' menu to Create / Modify School Fee Item
+ *
+ * @return string HTML
+ */
 function staff_school_fees_create_modify_school_fee_item(){
   global $user;
   ob_start();
@@ -7576,6 +7641,12 @@ function staff_school_fees_create_modify_school_fee_item(){
 }
 
 
+/**
+ * Handles 'staff/createmodifyfeestup' menu to Create / Modify School Fee Setup
+ *
+ * @global int $_SESSION['eduerp_page']
+ * @return string HTML
+ */
 function staff_school_fees_create_modify_school_fee_setup(){
   global $user, $selFeeItems;
   ob_start();
@@ -7625,7 +7696,6 @@ function staff_school_fees_create_modify_school_fee_setup(){
     else{
       drupal_set_message(Error_Types(104), 'error');
     }
-
   }
   else{
     //show page one
@@ -7649,6 +7719,13 @@ function staff_school_fees_create_modify_school_fee_setup(){
   return ob_get_clean();
 }
 
+
+/**
+ * Handles 'staff/scholarshippayment' menu to Authorise Scholarship
+ *
+ * @global array $_SESSION['eduerp_authorise_scholarship']
+ * @return string HTML
+ */
 function staff_school_fees_scholarship_payment(){
   global $user;
   ob_start();
@@ -7688,6 +7765,12 @@ function staff_school_fees_scholarship_payment(){
 }
 
 
+/**
+ * Handles 'staff/authoriseinstalment' menu to Authorise Instalment Payment
+ *
+ * @global array $_SESSION['eduerp_authorise_instalment']
+ * @return string HTML
+ */
 function staff_school_fees_authorise_instalment_payment(){
   global $user;
   ob_start();
@@ -7712,7 +7795,6 @@ function staff_school_fees_authorise_instalment_payment(){
     //show those on scholarship for the current session
     $html .= '<br /><hr /><br />';
     $html .= staff_display_instalment_authorisations(variable_get('eduerp_current_session', ''));
-
   }
   else{
     //show summary
@@ -7722,7 +7804,6 @@ function staff_school_fees_authorise_instalment_payment(){
 
     $html .="<br />";
     $html .= drupal_get_form('staff_show_authorise_instalment_form');
-
   }
   echo $html;
   return ob_get_clean();
@@ -7730,7 +7811,7 @@ function staff_school_fees_authorise_instalment_payment(){
 
 
 /**
- * Form to
+ * Form to Create / Modify School Fee Item
  *
  * @return array Drupal Form
  */
@@ -7798,7 +7879,7 @@ function staff_school_fees_create_modify_fee_item_form_validate($form, &$state) 
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_item_form
+ * submit hook for staff_school_fees_create_modify_fee_item_form to Create/Update Ubercart Product and 'school_fee_items' CCK
  */
 function staff_school_fees_create_modify_fee_item_form_submit($form, &$state) {
 
@@ -7873,6 +7954,11 @@ function staff_school_fees_create_modify_fee_item_form_submit($form, &$state) {
 }
 
 
+/**
+ * Find Fee Items
+ *
+ * @return string HTML
+ */
 function staff_display_school_fee_items() {
   $html = "
   <div id='assigned_courses'>
@@ -7912,6 +7998,11 @@ function staff_display_school_fee_items() {
 }
 
 
+/**
+ * Return for Display Detailed Fee Structures
+ *
+ * @return string HTML
+ */
 function staff_display_school_fee_setup() {
   $html = "
   <script type='text/javascript' src='../misc/drupal.js'></script>
@@ -8038,6 +8129,11 @@ function staff_display_school_fee_setup() {
 }
 
 
+/**
+ * Find Fee Items
+ *
+ * @return array
+ */
 function get_school_fee_items() {
   $r = db_query("SELECT nid, field_fee_item_value AS fee_item, IF(field_is_scholarship_applicable_value = 1, 'Yes', 'No') AS is_scholarship_applicable, field_uc_product_nid_nid AS uc_product_nid FROM {content_type_school_fee_items} ORDER BY field_fee_item_value ");
   $feeItems = array();
@@ -8050,6 +8146,12 @@ function get_school_fee_items() {
 }
 
 
+/**
+ * Does a UberCart Product exist?
+ *
+ * @param string $itemName
+ * @return bool
+ */
 function is_fee_item_existing_in_uc_products($itemName){
   $rs = db_query("SELECT ctp.nid FROM {content_type_product} ctp
   	  INNER JOIN {node} n ON ctp.nid=n.nid
@@ -8061,23 +8163,39 @@ function is_fee_item_existing_in_uc_products($itemName){
 }
 
 
+/**
+ * Find a UberCart Product
+ *
+ * @param string $itemName
+ * @return int Drupal node nid for Ubercart Product
+ */
 function get_fee_item_uc_products_nid($itemName){
   $rs = db_query("SELECT ctp.nid AS nid FROM {content_type_product} ctp
   	  INNER JOIN {node} n ON ctp.nid=n.nid
   	  WHERE n.title='%s' AND type='product' ", $itemName);
-
   $r = db_fetch_object($rs);
 
   return $r->nid;
 }
 
 
+/**
+ * Find a UberCart Product node nid
+ *
+ * @param int $itemNID Drupal node nid of 'school_fee_items' CCK
+ * @return stdClass
+ */
 function get_fee_item_productNID($itemNID){
   $rs = db_query("SELECT IFNULL(field_uc_product_nid_nid, 0) product_nid FROM {content_type_school_fee_items} WHERE nid=%d ", $itemNID);
   return db_fetch_object($rs);
 }
 
 
+/**
+ * Generate an SKU Name
+ *
+ * @return string
+ */
 function gen_fee_product_sku(){
   $rs = db_query("SELECT next_num, sku_name  FROM {gen_fee_item_sku} WHERE id = 1 FOR UPDATE ");
 
@@ -8092,6 +8210,14 @@ function gen_fee_product_sku(){
 }
 
 
+/**
+ * Create a UberCart Product
+ *
+ * @param string $itemName
+ * @param string $amount
+ * @param bool $attachAttributes
+ * @return int UberCart Product node nid
+ */
 function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
 
   //generate SKU for this product
@@ -8144,6 +8270,12 @@ function create_uc_product($itemName, $amount=0.00, $attachAttributes=true){
 }
 
 
+/**
+ * Does an UberCart Attribute exist?
+ *
+ * @param string $attributeName
+ * @return bool
+ */
 function is_uc_attribute_existing($attributeName){
   $rs = db_query("SELECT aid FROM {uc_attributes} WHERE name='%s'", $attributeName);
 
@@ -8153,6 +8285,12 @@ function is_uc_attribute_existing($attributeName){
 }
 
 
+/**
+ * Is an UberCart Attribute attached to a UberCart Product?
+ *
+ * @param array $optionInfo
+ * @return bool
+ */
 function is_uc_attribute_attached_to_product(&$optionInfo){
   $rs = db_query("SELECT nid FROM {uc_product_attributes} WHERE nid=%d AND aid=%d AND label='%s' ",$optionInfo['productNID'], $optionInfo['aid'], $optionInfo['label']);
 
@@ -8162,6 +8300,12 @@ function is_uc_attribute_attached_to_product(&$optionInfo){
 }
 
 
+/**
+ * Is an UberCart Option attached to a UberCart Product?
+ *
+ * @param array $optionInfo
+ * @return bool
+ */
 function is_uc_option_attached_to_product(&$optionInfo){
   $rs = db_query("SELECT oid FROM {uc_product_options} WHERE nid=%d AND oid=%d ", $optionInfo['productNID'], $optionInfo['oid']);
 
@@ -8171,6 +8315,12 @@ function is_uc_option_attached_to_product(&$optionInfo){
 }
 
 
+/**
+ * Get a UberCart Attribute
+ *
+ * @param string $attributeName
+ * @return array
+ */
 function get_uc_attribute_info($attributeName){
   $rs = db_query("SELECT aid, name, label FROM {uc_attributes} WHERE name='%s'", $attributeName);
 
@@ -8188,13 +8338,11 @@ function get_uc_attribute_info($attributeName){
 
 
 function create_uc_attribute(&$info){
-
   db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display) VALUES ('%s', '%s', 0, 1, 1 ) ", $info['name'], $info['label']);
 }
 
 
 function create_uc_attribute_option($aid, $name, $price, $product_nid, $program_nid, $level_name, $nationality, $instalment) {
-
   db_query("INSERT INTO {uc_attribute_options} (aid, name, price) VALUES (%d, '%s', '%s')", $aid, $name, $price);
   $oid = db_last_insert_id('uc_attribute_options', 'oid');
 
@@ -8205,25 +8353,21 @@ function create_uc_attribute_option($aid, $name, $price, $product_nid, $program_
 
 
 function attach_uc_option_to_product(&$info){
-
   db_query("INSERT INTO {uc_product_options} (nid, oid, price) VALUES (%d, %d, '%s') ", $info['productNID'], $info['oid'], $info['price']);
 }
 
 
 function update_uc_attribute_option($oid, $price){
-
   db_query("UPDATE {uc_attribute_options} SET price = '%s' WHERE oid=%d", $price, $oid);
 }
 
 
 function update_uc_product_option(&$info){
-
   db_query("UPDATE {uc_product_options} SET price = '%s' WHERE nid=%d AND oid=%d ", $info['price'], $info['productNID'], $info['oid']);
 }
 
 
 function get_uc_attribute_option_info($product_nid, $program_nid, $level_name, $nationality, $instalment) {
-
   $rs = db_query("
     SELECT uco.oid, uco.aid, uco.name, uco.price FROM {eduerp_product_options} epo, {uc_attribute_options} uco
     WHERE epo.product_nid=%d AND epo.program_nid=%d AND epo.level_name='%s' AND epo.nationality='%s' AND epo.instalment='%s' AND epo.oid=uco.oid",
@@ -8675,7 +8819,7 @@ function staff_school_fees_modify_fee_settings_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_fee_item_form
+ * validate hook for staff_school_fees_modify_fee_settings_form
  */
 function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
   $values = $state['values'];
@@ -8711,7 +8855,7 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_item_form
+ * submit hook for staff_school_fees_modify_fee_settings_form
  */
 function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
   $values = $state['values'];
