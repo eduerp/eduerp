@@ -8337,11 +8337,28 @@ function get_uc_attribute_info($attributeName){
 }
 
 
+/**
+ * Create a UberCart Attribute
+ *
+ * @param array $info
+ */
 function create_uc_attribute(&$info){
   db_query("INSERT INTO {uc_attributes} (name, label, ordering, required, display) VALUES ('%s', '%s', 0, 1, 1 ) ", $info['name'], $info['label']);
 }
 
 
+/**
+ * Create an Option for a UberCart Attribute along with an 'eduerp_product_options' table entry
+ *
+ * @param int $aid Attribute
+ * @param string $name Option Name
+ * @param string $price
+ * @param int $product_nid UberCart Product
+ * @param int $program_nid Drupal node nid for 'program' CCK
+ * @param string $level_name
+ * @param string $nationality
+ * @param string $instalment
+ */
 function create_uc_attribute_option($aid, $name, $price, $product_nid, $program_nid, $level_name, $nationality, $instalment) {
   db_query("INSERT INTO {uc_attribute_options} (aid, name, price) VALUES (%d, '%s', '%s')", $aid, $name, $price);
   $oid = db_last_insert_id('uc_attribute_options', 'oid');
@@ -8352,16 +8369,32 @@ function create_uc_attribute_option($aid, $name, $price, $product_nid, $program_
 }
 
 
+/**
+ * Attach an Option to a UberCart Product
+ *
+ * @param array $info
+ */
 function attach_uc_option_to_product(&$info){
   db_query("INSERT INTO {uc_product_options} (nid, oid, price) VALUES (%d, %d, '%s') ", $info['productNID'], $info['oid'], $info['price']);
 }
 
 
+/**
+ * Update Price for an Ubercart Option
+ *
+ * @param string $oid Option
+ * @param string $price
+ */
 function update_uc_attribute_option($oid, $price){
   db_query("UPDATE {uc_attribute_options} SET price = '%s' WHERE oid=%d", $price, $oid);
 }
 
 
+/**
+ * Update Price for an Ubercart Product Option
+ *
+ * @param array $info
+  */
 function update_uc_product_option(&$info){
   db_query("UPDATE {uc_product_options} SET price = '%s' WHERE nid=%d AND oid=%d ", $info['price'], $info['productNID'], $info['oid']);
 }
