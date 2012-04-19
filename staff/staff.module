@@ -8394,12 +8394,22 @@ function update_uc_attribute_option($oid, $price){
  * Update Price for an Ubercart Product Option
  *
  * @param array $info
-  */
+ */
 function update_uc_product_option(&$info){
   db_query("UPDATE {uc_product_options} SET price = '%s' WHERE nid=%d AND oid=%d ", $info['price'], $info['productNID'], $info['oid']);
 }
 
 
+/**
+ * Get UberCart Attribute Option Info
+ *
+ * @param int $product_nid UberCart Product
+ * @param int $program_nid Drupal node nid for 'program' CCK
+ * @param string $level_name
+ * @param string $nationality
+ * @param string $instalment
+ * @return array
+ */
 function get_uc_attribute_option_info($product_nid, $program_nid, $level_name, $nationality, $instalment) {
   $rs = db_query("
     SELECT uco.oid, uco.aid, uco.name, uco.price FROM {eduerp_product_options} epo, {uc_attribute_options} uco
@@ -8421,6 +8431,11 @@ function get_uc_attribute_option_info($product_nid, $program_nid, $level_name, $
 }
 
 
+/**
+ * Attach an Attribute to a UberCart Product
+ *
+ * @param array $info
+ */
 function attach_uc_attribute_to_product(&$info){
   db_query("INSERT INTO {uc_product_attributes} (nid, aid, label, ordering, required, display) VALUES (%d, %d, '%s', 0, 1, 1 ) ", $info['productNID'], $info['aid'], $info['label']);
 }
@@ -8521,7 +8536,6 @@ function get_school_fee_second_level_setup($sessionName, $programNID, $academicL
 
 
 function is_fee_item_existing($item, $byName=false, $forEditNID=0){
-
   $sql = "SELECT nid, field_fee_item_value AS fee_item FROM {content_type_school_fee_items} WHERE ";
   $sql .= ($byName) ? " field_fee_item_value='%s' " : " nid=%d ";
 
@@ -8561,7 +8575,6 @@ function is_fee_setup_existing($item, $sessionName, $levelName='-1'){
 
 
 function is_fee_setup_combination_existing($programNID, $sessionName, $levelName){
-
   //first update all null values
   $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_program_nid_value = 0 WHERE field_fee_setup_program_nid_value IS NULL ";
   db_query($sql);
@@ -8586,7 +8599,6 @@ Start Update Defaults Here
 
 */
 function initialize_school_fee_module_tables(){
-
   //the following tables need to be populated
   /**
 
@@ -8685,7 +8697,6 @@ function initialize_school_fee_module_tables(){
 
 /**
 End Update Defaults Here
-
 */
 
 
@@ -8785,7 +8796,6 @@ function staff_display_school_fee_settings() {
 
 
 function is_fee_setting_existing($settingsNID){
-
   $sql = "SELECT nid FROM {content_type_school_fee_settings} WHERE nid=%d";
 
   $r = db_query($sql, $settingsNID);
