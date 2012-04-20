@@ -714,10 +714,10 @@ function eduerp_university_roles() {
 /**
  * Determine if Staff member has one or more EduERP roles
  *
- * @parm int $uid
- * @parm int $department_id 'department' CCK Drupal node nid (or 0)
- * @parm int $faculty_id 'college' CCK Drupal node nid (or 0)
- * @parm array $roles
+ * @param int $uid
+ * @param int $department_id 'department' CCK Drupal node nid (or 0)
+ * @param int $faculty_id 'college' CCK Drupal node nid (or 0)
+ * @param array $roles
  * @return bool
  */
 function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
@@ -733,7 +733,7 @@ function staff_has_eduerp_role($uid, $department_id, $faculty_id, $roles) {
 /**
  * Find Faculties
  *
- * @parm int $facultyNID 'college' CCK Drupal node nid (or 0)
+ * @param int $facultyNID 'college' CCK Drupal node nid (or 0)
  * @return array of nid => Name for all Faculties or one (if 0)
  */
 function faculty($facultyNID=0) {
@@ -1348,7 +1348,7 @@ function staff_course() {
 /**
  * Find Departments
  *
- * @parm int $department_nid 'department' CCK Drupal node nid (or 0)
+ * @param int $department_nid 'department' CCK Drupal node nid (or 0)
  * @return array of nid => Name for all Departments or one (if 0)
  */
 function department($department_nid=0) {
@@ -1368,7 +1368,7 @@ function department($department_nid=0) {
 /**
  * Find Programmes
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid (or 0)
+ * @param int $programme_nid 'program' CCK Drupal node nid (or 0)
  * @param bool $forSelectList
  * @return array|mysqli_result if $forSelectList is TRUE array of nid => Name for all Programmes or one (if 0); otherwise MYSQL Result Set
  */
@@ -1406,7 +1406,7 @@ function get_programmes($programme_nid = 0, $forSelectList = false) {
 /**
  * Find Programmes
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid (or 0)
+ * @param int $programme_nid 'program' CCK Drupal node nid (or 0)
  * @return array of nid => Name(Abbreviation) for all Programmes or one (if 0)
  */
 function programme($programme_nid=0) {
@@ -1431,8 +1431,8 @@ function programme($programme_nid=0) {
 /**
  * Find Courses in a Department
  *
- * @parm int $department_nid 'department' CCK Drupal node nid
- * @parm int $semester (or 0)
+ * @param int $department_nid 'department' CCK Drupal node nid
+ * @param int $semester (or 0)
  * @return array of nid => Code for all Courses (Courses normally in this Semester are first in the list)
  */
 function course($department_nid, $semester = 0) {
@@ -1844,8 +1844,8 @@ function get_departments() {
 /**
  * Find Courses in a Department
  *
- * @parm int $department_nid 'department' CCK Drupal node nid (or 0)
- * @parm int $course_nid 'course' CCK Drupal node nid (or 0)
+ * @param int $department_nid 'department' CCK Drupal node nid (or 0)
+ * @param int $course_nid 'course' CCK Drupal node nid (or 0)
  * @return mysqli_result
  */
 function get_Available_Courses($department_nid = 0, $course_nid = 0) {
@@ -1876,10 +1876,10 @@ function get_Available_Courses($department_nid = 0, $course_nid = 0) {
 /**
  * Find Courses (for display) according to criteria and highlight any issues
  *
- * @parm string $session
- * @parm int $semester
- * @parm array $departmentInfo
- * @parm int $type
+ * @param string $session
+ * @param int $semester
+ * @param array $departmentInfo
+ * @param int $type
  * @return string HTML
  */
 function staff_display_available_courses($session, $semester, $departmentInfo = array(), $type = 0) {
@@ -3856,8 +3856,8 @@ function staff_edit_assigned_course_form_submit($form, $form_state) {
 /**
  * Find Course Instances in this Department for a Session and Semester
  *
- * @parm string $session
- * @parm int $department_nid 'department' CCK Drupal node nid
+ * @param string $session
+ * @param int $department_nid 'department' CCK Drupal node nid
  * @param int $semester
  * @return mysqli_result
  */
@@ -3880,8 +3880,8 @@ function get_Assigned_Courses($session, $department_nid, $semester) {
 /**
  * Find Courses in a Department which may or may not ('clean_nid' is NULL) have a Course Instance for a Session and Semester
  *
- * @parm string $session
- * @parm int $department_nid 'department' CCK Drupal node nid
+ * @param string $session
+ * @param int $department_nid 'department' CCK Drupal node nid
  * @param int $semester (or 0)
  * @return mysqli_result
  */
@@ -3959,9 +3959,9 @@ function get_unassigned_courses($session, $department_nid = 0) {
 /**
  * Find Maximum Location Value for any Course Instance matching a Course in a Session and Semester
  *
- * @parm int $course_nid 'course' CCK Drupal node nid
+ * @param int $course_nid 'course' CCK Drupal node nid
  * @param int $semester
- * @parm string $session
+ * @param string $session
  * @return StdClass
  */
 function get_Max_Location_ID($course_nid, $semester, $session) {
@@ -3974,12 +3974,12 @@ function get_Max_Location_ID($course_nid, $semester, $session) {
 /**
  * Does a Matching Course Instance Exist?
  *
- * @parm int $course_nid 'course' CCK Drupal node nid
+ * @param int $course_nid 'course' CCK Drupal node nid
  * @param int $semester
- * @parm string $session
- * @parm string $timetable
- * @parm string $instance_nid  'course_instance' CCK Drupal node nid (or 0)
- * @parm bool $for_location_checks
+ * @param string $session
+ * @param string $timetable
+ * @param string $instance_nid  'course_instance' CCK Drupal node nid (or 0)
+ * @param bool $for_location_checks
  * @return bool
  */
 function is_course_assignment_existing($course_nid, $semester, $session, $timetable, $instance_nid = 0, $for_location_checks=false) {
@@ -4013,7 +4013,7 @@ function is_course_assignment_existing($course_nid, $semester, $session, $timeta
 /**
  * Get Course Instance
  *
- * @parm int $course_instance_nid 'course_instance' CCK Drupal node nid
+ * @param int $course_instance_nid 'course_instance' CCK Drupal node nid
  * @return mysqli_result
  */
 function get_Course_Instance($course_instance_nid) {
@@ -4792,7 +4792,7 @@ function staff_verify_assigned_course() {
 /**
  * Recreate all 'program_course_instance' table entries for a Programme in a Session and Semester so that there is an entry for each Course Instance that is running that matches a Course in the Programme
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $session
  * @param int $semester
  */
@@ -4859,7 +4859,7 @@ function show_verified_assigned_courses(&$result) {
 /**
  * Find Courses in a Programme which may or may not ('clean_nid' is NULL) have a Course Instance for a Session and Semester
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $session
  * @param int $semester
  * @return mysqli_result
@@ -4901,7 +4901,7 @@ function get_programme_running_courses ($programme_nid, $session, $semester) {
 /**
  * Find Courses in a Programme which may or may not ('clean_nid' is NULL) have a Course Instance for a Session and all Semesters
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $session
  * @return mysqli_result
  */
@@ -4942,7 +4942,7 @@ function get_programme_running_courses_all_semesters($programme_nid, $session) {
 /**
  * Display Courses in a Programme, highlighting those ('clean_nid' is NULL) that do not have a Course Instance, adding JS which will jump to "Assign Lecturers and Timetables"
  *
- * @parm mysqli_result $result
+ * @param mysqli_result $result
  * @param bool $formissing
  * @global stdClass $programmeInfo
  */
@@ -5203,7 +5203,7 @@ function staff_assign_course_to_programme_form_submit($form, &$state) {
 /**
  * Find Levels for a Programme
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @return array of Level => Level
  */
 function get_levels_from_programme_level_semester($programme_nid) {
@@ -5221,7 +5221,7 @@ function get_levels_from_programme_level_semester($programme_nid) {
 /**
  * Find Semesters for a Programme
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @return array of Semester => Semester
  */
 function get_semester_from_programme_level_semester($programme_nid) {
@@ -5388,7 +5388,7 @@ function course_specify_list(&$r) {
  * Display "Historical" Courses for a Programme, adding JS which will allow the Course to be Added back to the Programme (no longer "Historical")
  *
  * <p>Note: Historical Courses not available for new Course Registrations, but do continue to allow grades and credit load to be counted for students that passed the course in the past.</p>
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @global $canCreateModify
  */
 function historical_course_list($programme_nid) {
@@ -5811,9 +5811,9 @@ function  get_progress_qualification_details() {
 /**
  * Find cGPA etc. for Students in Session/Programme/Level
  *
- * @parm string $session
- * @parm int $programme_nid 'program' CCK Drupal node nid
- * @parm string $level
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
  * @return mysqli_result
  */
 function get_students_CGPA($session, $programme_nid, $level) {
@@ -5853,9 +5853,9 @@ function get_students_CGPA($session, $programme_nid, $level) {
 /**
  * Find GPAs etc. for Students in Session/Programme/Level
  *
- * @parm string $session
- * @parm int $programme_nid 'program' CCK Drupal node nid
- * @parm string $level
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
  * @return mysqli_result
  */
 function get_students_GPA($session, $programme_nid, $level) {
@@ -5889,9 +5889,9 @@ function get_students_GPA($session, $programme_nid, $level) {
 /**
  * Find any Failed (and not since passed) Courses for each Student in Session/Programme/Level
  *
- * @parm string $session
- * @parm int $programme_nid 'program' CCK Drupal node nid
- * @parm string $level
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
  * @return mysqli_result
  */
 function get_cumulative_list_of_failed_courses($session, $programme_nid, $level) {
@@ -6001,7 +6001,7 @@ function get_all_sessions() {
 /**
  * Find Courses in a Programme which do not have a Course Instance for a Session and a Semester
  *
- * @parm int $programme_nid 'program' CCK Drupal node nid
+ * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $session
  * @param int $semester
  * @return mysqli_result
@@ -6513,9 +6513,9 @@ function get_student_course_instance_form_validate($form, &$state) {
 /**
  * Find Courses Registered for a Student in a Session/Semester
  *
- * @parm int $studentUID Drupal uid
- * @parm string $session
- * @parm string $semester
+ * @param int $studentUID Drupal uid
+ * @param string $session
+ * @param string $semester
  * @return mysqli_result
  */
 function get_student_registered_courses($studentUID, $session, $semester) {
@@ -6773,9 +6773,9 @@ function get_student_reg_course_form_submit($form, &$state) {
 /**
  * Find Courses Not Registered for a Student in a Session/Semester
  *
- * @parm int $studentUID Drupal uid
- * @parm string $session
- * @parm string $semester
+ * @param int $studentUID Drupal uid
+ * @param string $session
+ * @param string $semester
  * @return mysqli_result
  */
 function get_student_unregistered_courses($studentUID, $session, $semester) {
@@ -6821,9 +6821,9 @@ function get_student_unregistered_courses($studentUID, $session, $semester) {
 /**
  * Update the Credit Load for a Student in a Session/Semester
  *
- * @parm int $uid Drupal uid
- * @parm string $session
- * @parm int $semester
+ * @param int $uid Drupal uid
+ * @param string $session
+ * @param int $semester
  */
 function update_credit_load_registered($uid, $session, $semester) {
   $sql = "
@@ -7155,8 +7155,8 @@ function get_programme_faculty($programm_nid) {
 /**
  * Find all Courses passed by A Student, indicating those whose Grades count towards cGPA and Credit Load in a Programme
  *
- * @parm int $first_choice 'program' CCK Drupal node nid
- * @parm int $uid Drupal uid
+ * @param int $first_choice 'program' CCK Drupal node nid
+ * @param int $uid Drupal uid
  * @return string HTML
  */
 function get_courses_passed_by_student($first_choice, $uid) {
@@ -7487,8 +7487,8 @@ function staff_show_check_missing_courses_form_submit($form, &$state) {
 /**
  * Find Missing Course Instances for a Semester (a Programme needs the Course, but no Lecturer/Timetable assigned)
  *
- * @parm string $session
- * @parm int $semester
+ * @param string $session
+ * @param int $semester
  * @return string HTML
  */
 function staff_display_missing_courses_for_a_semester($session, $semester) {
@@ -8441,6 +8441,15 @@ function attach_uc_attribute_to_product(&$info){
 }
 
 
+/**
+ * Get a Fee setup for a Session
+ *
+ * @param string $sessionName
+ * @param int $NID Drupal node nid of 'school_fee_item_setup' CCK (or 0)
+ * @param bool $bySetupNID
+ * @param bool $returnObject
+ * @return array of array
+ */
 function get_school_fee_setup($sessionName, $NID=0, $bySetupNID=true, $returnObject=false) {
   $sql="SELECT ctsfis.nid nid, IFNULL(field_fee_setup_program_nid_value, 0) program_nid, IFNULL(field_fee_student_level_type_nid, 0) level_id,
   	  field_fee_nationality_type_nid nationality_id,
@@ -8492,12 +8501,20 @@ function get_school_fee_setup($sessionName, $NID=0, $bySetupNID=true, $returnObj
         $feeSetup[$f->program_nid][$v] = $f->$v;
       }
     }
-
   }
   return $feeSetup;
 }
 
 
+/**
+ * Get a Fee second level setup for a Session
+ *
+ * @param string $sessionName
+ * @param int $programNID Drupal node nid of 'program' CCK
+ * @param string $academicLevel
+ * @param bool $returnObject
+ * @return array of array
+ */
 function get_school_fee_second_level_setup($sessionName, $programNID, $academicLevel, $returnObject=false) {
   $academicLevel = ($academicLevel == 'N/A') ? 0 : $academicLevel;
   $sql="SELECT ctsfis.nid nid, IFNULL(field_fee_setup_program_nid_value, 0) program_nid, IFNULL(field_fee_student_level_type_nid, 0) level_id,
@@ -8535,6 +8552,14 @@ function get_school_fee_second_level_setup($sessionName, $programNID, $academicL
 }
 
 
+/**
+ * Does a Fee Item exist?
+ *
+ * @param string $item
+ * @param bool $byName
+ * @param int $forEditNID Drupal node nid of 'school_fee_items' CCK
+ * @return bool
+ */
 function is_fee_item_existing($item, $byName=false, $forEditNID=0){
   $sql = "SELECT nid, field_fee_item_value AS fee_item FROM {content_type_school_fee_items} WHERE ";
   $sql .= ($byName) ? " field_fee_item_value='%s' " : " nid=%d ";
@@ -8551,6 +8576,14 @@ function is_fee_item_existing($item, $byName=false, $forEditNID=0){
 }
 
 
+/**
+ * Does a Fee Setup exist?
+ *
+ * @param string $item
+ * @param string $sessionName
+ * @param string $levelName
+ * @return bool
+ */
 function is_fee_setup_existing($item, $sessionName, $levelName='-1'){
   //first update all null values
   $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_program_nid_value = 0 WHERE field_fee_setup_program_nid_value IS NULL ";
@@ -8574,6 +8607,14 @@ function is_fee_setup_existing($item, $sessionName, $levelName='-1'){
 }
 
 
+/**
+ * Does a Fee Setup combination exist?
+ *
+ * @param int $programNID Drupal node nid of 'program' CCK
+ * @param string $sessionName
+ * @param string $levelName
+ * @return bool
+ */
 function is_fee_setup_combination_existing($programNID, $sessionName, $levelName){
   //first update all null values
   $sql = "UPDATE content_type_school_fee_item_setup SET field_fee_setup_program_nid_value = 0 WHERE field_fee_setup_program_nid_value IS NULL ";
@@ -8595,23 +8636,19 @@ function is_fee_setup_combination_existing($programNID, $sessionName, $levelName
 
 
 /**
-Start Update Defaults Here
-
-*/
+ * Initialise School Fee Module Tables
+ *
+ * <p>The following tables need to be populated...</p>
+ * <p>content_type_school_fee_level_types</p>
+ * <p>content_type_school_fee_nationality_types</p>
+ * <p>content_type_school_fee_payment_status</p>
+ * <p>content_type_school_fee_payment_types</p>
+ * <p>content_type_school_fee_settings</p>
+ * <p>content_type_school_fee_structure_classes</p>
+ * <p>content_type_schoo_fee_payment_sponsors</p>
+ * <p>And "Late Registration Charges" UberCart Product is created.</p>
+ */
 function initialize_school_fee_module_tables(){
-  //the following tables need to be populated
-  /**
-
-  content_type_school_fee_level_types
-  content_type_school_fee_nationality_types
-  content_type_school_fee_payment_status
-  content_type_school_fee_payment_types
-  content_type_school_fee_settings
-  content_type_school_fee_structure_classes
-  content_type_schoo_fee_payment_sponsors
-
-  */
-
   //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_level_types}');
   if(db_affected_rows($rs) <= 0){
@@ -8650,7 +8687,6 @@ function initialize_school_fee_module_tables(){
       node_save($node);
     }
   }
-
 
     //make sure that the table is not empty
   $rs = db_query('SELECT nid FROM {content_type_school_fee_settings}');
@@ -8695,11 +8731,12 @@ function initialize_school_fee_module_tables(){
   }
 }
 
+
 /**
-End Update Defaults Here
-*/
-
-
+ * Handles 'staff/updatesettings' menu to Update Fee Settings
+ *
+ * @return string HTML
+ */
 function staff_school_fees_update_settings(){
   global $user;
   ob_start();
@@ -8732,6 +8769,12 @@ function staff_school_fees_update_settings(){
 }
 
 
+/**
+ * Get Fee Settings
+ *
+ * @param int $settingsNID Drupal node nid of 'school_fee_settings' CCK (or 0)
+ * @return array of array
+ */
 function get_school_fee_settings($settingsNID=0) {
   if($settingsNID != 0)
     $r = db_query("SELECT nid, field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value FROM {content_type_school_fee_settings} WHERE nid=%d  ", $settingsNID);
@@ -8747,6 +8790,11 @@ function get_school_fee_settings($settingsNID=0) {
 }
 
 
+/**
+ * Return HTML to display Fee Settings
+ *
+ * @return string HTML
+ */
 function staff_display_school_fee_settings() {
   $html = "
   <div id='assigned_courses'>
@@ -8795,6 +8843,12 @@ function staff_display_school_fee_settings() {
 }
 
 
+/**
+ * Does a Fee Setting exist?
+ *
+ * @param int $settingsNID Drupal node nid of 'school_fee_settings' CCK
+ * @return bool
+ */
 function is_fee_setting_existing($settingsNID){
   $sql = "SELECT nid FROM {content_type_school_fee_settings} WHERE nid=%d";
 
@@ -8807,7 +8861,7 @@ function is_fee_setting_existing($settingsNID){
 
 
 /**
- * Form to
+ * Form to Modift Fee Settings
  *
  * @return array Drupal Form
  */
@@ -8931,8 +8985,9 @@ function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
 
 
 /**
- * Form to
+ * Form to Create/Update Fee Setup (1)
  *
+ * @global array $_SESSION['eduerp_fee_setup']
  * @return array Drupal Form
  */
 function staff_school_fees_create_modify_fee_setup1_form() {
@@ -8984,6 +9039,9 @@ function staff_school_fees_create_modify_fee_setup1_form() {
 
 /**
  * validate hook for staff_school_fees_create_modify_fee_setup1_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state){
   //make sure that fee items exists first before going to the second page
@@ -9012,6 +9070,9 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
 
 /**
  * submit hook for staff_school_fees_create_modify_fee_setup1_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
 
@@ -9048,8 +9109,9 @@ function staff_school_fees_create_modify_fee_setup1_form_submit($form, &$state){
 
 
 /**
- * Form to
+ * Form to Create/Update Fee Setup (2)
  *
+ * @global array $_SESSION['eduerp_fee_setup']
  * @return array Drupal Form
  */
 function staff_school_fees_create_modify_fee_setup2_form() {
@@ -9130,6 +9192,9 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 
 /**
  * validate hook for staff_school_fees_create_modify_fee_setup2_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state) {
   $values = $state['values'];
@@ -9158,6 +9223,9 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
 
 /**
  * submit hook for staff_school_fees_create_modify_fee_setup2_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) {
   $values = $state['values'];
@@ -9201,8 +9269,9 @@ function staff_school_fees_create_modify_fee_setup2_form_submit($form, &$state) 
 
 
 /**
- * Form to
+ * Form to Create/Update Fee Setup (3)
  *
+ * @global array $_SESSION['eduerp_fee_setup']
  * @return array Drupal Form
  */
 function staff_school_fees_create_modify_fee_setup3_form() {
@@ -9377,6 +9446,9 @@ function staff_school_fees_create_modify_fee_setup3_form() {
 
 /**
  * validate hook for staff_school_fees_create_modify_fee_setup3_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state) {
   $academicLevels = (! empty($_SESSION['eduerp_fee_setup']['academic_level_name'])   && $_SESSION['eduerp_fee_setup']['academic_level_name'] != 'N/A') ? $_SESSION['eduerp_fee_setup']['academic_level_name'] : '0';
@@ -9506,6 +9578,9 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
 
 /**
  * submit hook for staff_school_fees_create_modify_fee_setup3_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) {
 
@@ -9540,7 +9615,7 @@ function staff_school_fees_create_modify_fee_setup3_form_submit($form, &$state) 
 
 
 /**
- * Form to
+ * Form to Create/Update Fee Setup (4)
  *
  * @return array Drupal Form
  */
@@ -9570,6 +9645,9 @@ function staff_school_fees_create_modify_fee_setup4_form() {
 
 /**
  * validate hook for staff_school_fees_create_modify_fee_setup4_form
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state) {
    $values = $state['values'];
@@ -9595,7 +9673,10 @@ function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_setup4_form
+ * submit hook for staff_school_fees_create_modify_fee_setup4_form to Create/Update CCKs 'school_fee_item_setup' & 'school_fee_item_setup_details' and Attach/Update appropriate options with prices to UberCart Products
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @global array $_SESSION['eduerp_page']
  */
 function staff_school_fees_create_modify_fee_setup4_form_submit($form, &$state) {
   global $user;
@@ -9823,8 +9904,14 @@ function staff_school_fees_create_modify_fee_setup4_form_submit($form, &$state) 
 }
 
 
+/**
+ * Get Fee Structure Types
+ *
+ * @param int $nid Drupal node nid of 'school_fee_structure_classes' CCK (or 0)
+ * @param bool $forCombo
+ * @return array
+ */
 function get_fee_structue_types($nid=0, $forCombo=false) {
-
   $sql = "SELECT nid, field_structure_class_value name FROM {content_type_school_fee_structure_classes}  ";
   if($nid != 0) $sql .= " WHERE nid=%d ";
 
@@ -9839,7 +9926,6 @@ function get_fee_structue_types($nid=0, $forCombo=false) {
       }
       else{
         $return[$row->nid] = $row->name;
-
       }
     }
   }
@@ -9850,6 +9936,13 @@ function get_fee_structue_types($nid=0, $forCombo=false) {
 }
 
 
+/**
+ * Get Fee Structure Level Types
+ *
+ * @param int $nid Drupal node nid of 'school_fee_level_types' CCK (or 0)
+ * @param bool $forCombo
+ * @return array
+ */
 function get_fee_student_level_types($nid=0, $forCombo=false) {
   $sql = "SELECT nid, field_level_type_value name FROM {content_type_school_fee_level_types}  ";
   if($nid != 0) $sql .= " WHERE nid=%d ";
@@ -9875,8 +9968,14 @@ function get_fee_student_level_types($nid=0, $forCombo=false) {
 }
 
 
+/**
+ * Get Fee Structure Nationality Types
+ *
+ * @param int $nid Drupal node nid of 'school_fee_nationality_types' CCK (or 0)
+ * @param bool $forCombo
+ * @return array
+ */
 function get_fee_student_nationality_types($nid=0, $forCombo=false) {
-
   $sql = "SELECT nid, field_nationality_type_value name FROM {content_type_school_fee_nationality_types}  ";
   if($nid != 0) $sql .= " WHERE nid=%d ";
   $result = db_query($sql, $nid);
@@ -9901,8 +10000,14 @@ function get_fee_student_nationality_types($nid=0, $forCombo=false) {
 }
 
 
+/**
+ * Return HTML for display of Fee Setup page 1
+ *
+ * @param int $pageNum
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @return string HTML
+ */
 function show_fee_setup_page_one_info($pageNum){
-
   if(! isset($_SESSION['eduerp_fee_setup']) || ! sizeof($_SESSION['eduerp_fee_setup']))
     drupal_goto('staff/createmodifyfeestup');
 
@@ -9936,7 +10041,6 @@ function show_fee_setup_page_one_info($pageNum){
         <td >Program Name:</td>
         <td><b>". $row->programme_name ."</b></td>
       </tr>";
-
     }
 
     if(isset($_SESSION['eduerp_fee_setup']['academic_level_name'])){
@@ -9946,7 +10050,6 @@ function show_fee_setup_page_one_info($pageNum){
         <td >Academic Level Name:</td>
         <td><b>". $x = ($_SESSION['eduerp_fee_setup']['academic_level_name']  == 0 ? '--All Levels--' : $_SESSION['eduerp_fee_setup']['academic_level_name'] )."</b></td>
       </tr>";
-
     }
   }
 
@@ -9958,8 +10061,13 @@ function show_fee_setup_page_one_info($pageNum){
 }
 
 
+/**
+ * Return HTML for display of Fee Setup page 2
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ * @return string HTML
+ */
 function show_fee_setup_page_two_info(){
-
   if(! isset($_SESSION['eduerp_fee_setup']) || ! sizeof($_SESSION['eduerp_fee_setup']))
     drupal_goto('staff/createmodifyfeestup');
 
@@ -10015,6 +10123,12 @@ function show_fee_setup_page_two_info(){
 }
 
 
+/**
+ * Get Fee Setup Item Details
+ *
+ * @param int $setupNID Drupal node nid of 'school_fee_item_setup_details' CCK
+ * @return mysqli_result
+ */
 function get_fee_setup_item_details($setupNID){
   $rs = db_query('SELECT ctsfisd.nid nid, field_uc_product_nid_nid product_nid, field_fee_full_payment_amount_value full_amount, IFNULL(field_fee_instalment1_amount_value, 0) AS instalment1_amount, IFNULL(field_fee_instalment2_amount_value, 0) AS instalment2_amount, field_fee_item_value item_name, field_fee_item_fk_nid item_nid, field_is_scholarship_applicable_value is_scholarship_applicable
   	  FROM {content_type_school_fee_item_setup_details} ctsfisd
@@ -10025,9 +10139,8 @@ function get_fee_setup_item_details($setupNID){
 
 
 /**
- * Form to
- *
- * @return array Drupal Form
+ * ALAN 20120420 Does not seem to be used, verify and remove
+ * @deprecated
  */
 function staff_school_fees_test_fee_setup_form() {
     $form['#title'] = 'Test Fee Setup';
@@ -10041,6 +10154,11 @@ function staff_school_fees_test_fee_setup_form() {
 }
 
 
+/**
+ * Get Late Registration Info
+ *
+ * @return array of Name => Value
+ */
 function get_late_registration_info(){
   $r = db_query("SELECT field_fee_settings_name_value AS settings_name, field_fee_settings_value_value AS settings_value
   	  FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s' OR field_fee_settings_name_value='%s'", "Last Date For Fee Payment Without Late Registration Charges", "Late Registration Amount");
@@ -10055,6 +10173,11 @@ function get_late_registration_info(){
 }
 
 
+/**
+ * Have we reached the Second Instalment Period
+ *
+ * @return bool
+ */
 function is_second_instalment_activated(){
   $r = db_query("SELECT field_fee_settings_name_value settings_name, field_fee_settings_value_value settigs_value FROM {content_type_school_fee_settings} WHERE field_fee_settings_name_value='%s'", "activate second instalment payment");
 
@@ -10065,6 +10188,11 @@ function is_second_instalment_activated(){
 }
 
 
+/**
+ * Does the Late Registration Product exist?
+ *
+ * @return bool
+ */
 function is_uc_late_registration_existing($name){
   $rs = db_query("SELECT p.nid FROM node n
   	  INNER JOIN content_type_product ctp ON n.nid=ctp.nid
@@ -10077,6 +10205,11 @@ function is_uc_late_registration_existing($name){
 }
 
 
+/**
+ * Get UberCart Late Registration Info
+ *
+ * @return array of Name => Value
+ */
 function get_uc_late_registration_info($name){
   $rs = db_query("SELECT p.nid, title, sell_price FROM node n
   	  INNER JOIN content_type_product ctp ON n.nid=ctp.nid
@@ -10090,15 +10223,14 @@ function get_uc_late_registration_info($name){
     $info['name'] = $r->title;
     $info['amount'] = $r->sell_price;
     return $info;
-
   }
-
   return 0;
 }
 
 
 /**
- * submit hook for staff_school_fees_test_fee_setup_form
+ * ALAN 20120420 Does not seem to be used, verify and remove
+ * @deprecated
  */
 function staff_school_fees_test_fee_setup_form_submit($form, &$state) {
 
@@ -10111,8 +10243,11 @@ function staff_school_fees_test_fee_setup_form_submit($form, &$state) {
 }
 
 
+/**
+ * ALAN 20120420 Does not seem to be used, verify and remove
+ * @deprecated
+ */
 function is_fee_setup_correct(){
-
   //get all fee item setup
   $sql = "SELECT DISTINCT(IFNULL(field_fee_setup_program_nid_value, 0)) program_nid FROM {content_type_school_fee_item_setup} ";
   $rs = db_query($sql);
@@ -10170,6 +10305,11 @@ function is_fee_setup_correct(){
 }
 
 
+/**
+ * Prepare Fee Setup for Edit
+ *
+ * @global array $_SESSION['eduerp_fee_setup']
+ */
 function prepare_fee_setup_for_edit($setupNID){
   unset($_SESSION['eduerp_fee_setup']); $_SESSION['eduerp_fee_setup']=null;
 
@@ -10184,7 +10324,7 @@ function prepare_fee_setup_for_edit($setupNID){
 
 
 /**
- * Form to
+ * Form to find Student to give Scholarship
  *
  * @return array Drupal Form
  */
@@ -10222,6 +10362,9 @@ function get_scholarship_payment_student_finder_form_submit($form, &$state){
 }
 
 
+/**
+ * Helper function for get_authorise_instalment_student_finder_form_submit() and get_scholarship_payment_student_finder_form_submit()
+ */
 function ini_student_fee_profile($studentNumber, $varName, $returnURL){
   global $EDUERPstudentInitiated;
   if($EDUERPstudentInitiated)
@@ -10293,6 +10436,11 @@ function ini_student_fee_profile($studentNumber, $varName, $returnURL){
 }
 
 
+/**
+ * Show Student Info for Instalment and Scholarship
+ *
+ * @return string HTML
+ */
 function show_student_info($info){
   $html ="
   <div id='assigned_courses'>
@@ -10354,12 +10502,11 @@ function show_student_info($info){
   </div>";
 
   return $html;
-
 }
 
 
 /**
- * Form to
+ * Form to Give a Scholarship
  *
  * @return array Drupal Form
  */
@@ -10397,6 +10544,11 @@ function staff_show_pay_school_fees_scholarship_form(){
 }
 
 
+/**
+ * Find Scholarship Sponsor Organisations
+ *
+ * @return array of Name => Name
+ */
 function get_scholarship_sponsor_organisations(){
  $rs =db_query("SELECT * FROM {eduerp_states} ORDER BY state_name");
 while ($row = db_fetch_object($rs)) $list[$row->state_name] = $row->state_name;
@@ -10406,6 +10558,8 @@ return $list;
 
 /**
  * validate hook for staff_show_pay_school_fees_scholarship_form
+ *
+ * @global array $_SESSION['eduerp_authorise_scholarship']
  */
 function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
   $values = $state['values'];
@@ -10440,7 +10594,9 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
 
 
 /**
- * submit hook for staff_show_pay_school_fees_scholarship_form
+ * submit hook for staff_show_pay_school_fees_scholarship_form, Create CCK 'school_fee_approved_scholarships'
+ *
+ * @global array $_SESSION['eduerp_authorise_scholarship']
  */
 function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
   global $user;
@@ -10480,6 +10636,13 @@ function staff_show_pay_school_fees_scholarship_form_submit($form, &$state){
 }
 
 
+/**
+ * Does this Student have a Scholarship for this Session?
+ *
+ * @param int $studentUID
+ * @param string $sessionName
+ * @return bool
+ */
 function is_scholarship_authorisation_existing($studentUID, $sessionName){
   $rs = db_query("SELECT nid FROM {content_type_school_fee_approved_scholarships} WHERE field_sas_student_uid=%d AND field_sas_session_name_value='%s' ", $studentUID, $sessionName);
 
@@ -10489,6 +10652,13 @@ function is_scholarship_authorisation_existing($studentUID, $sessionName){
 }
 
 
+/**
+ * Is this Student Authorised for Instalments for this Session
+ *
+ * @param int $studentUID
+ * @param string $sessionName
+ * @return bool
+ */
 function is_instalment_authorisation_existing($studentUID, $sessionName){
   $rs = db_query("SELECT nid FROM {content_type_school_fee_approved_instalments} WHERE field_sai_student_uid=%d AND field_sai_session_name_value='%s' ", $studentUID, $sessionName);
 
@@ -10498,8 +10668,13 @@ function is_instalment_authorisation_existing($studentUID, $sessionName){
 }
 
 
+/**
+ * Get Student Info
+ *
+ * @param string $jambno
+ * @return mysqli_result
+ */
 function get_student_info_by_jamb_number($jambno){
-
  $sql ="SELECT nspro.uid uid
    FROM {node} nspro
    INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
@@ -10508,6 +10683,17 @@ function get_student_info_by_jamb_number($jambno){
 }
 
 
+/**
+ * Return HTML to Show Student Fee Info
+ *
+ * @param string $varName $_SESSION variable
+ * @param int $studentUID Drupal uid
+ * @param int $programNID Drupal node nid of 'program' CCK
+ * @param string $levelType
+ * @param string $nationalityType
+ * @param string $academicLevel
+ * @return string HTML
+ */
 function show_school_fees_payment_option($varName, $studentUID, $programNID, $levelType, $nationalityType, $academicLevel){
   $feeOption = array();
 
@@ -10609,6 +10795,13 @@ function show_school_fees_payment_option($varName, $studentUID, $programNID, $le
 }
 
 
+/**
+ * Return HTML to Display Scholarship Authorisations for Session
+ *
+ * <p>This is too slow and needs to be turned into a paged Drupal View.</p>
+ * @param string $sessionName
+ * @return string HTML
+ */
 function staff_display_scholarship_authorisations($sessionName) {
   $html = "
   <div id='assigned_courses'>
@@ -10660,6 +10853,12 @@ function staff_display_scholarship_authorisations($sessionName) {
 }
 
 
+/**
+ * Find Scholarship Authorisations for Session
+ *
+ * @param string $sessionName
+ * @return array of array
+ */
 function get_scholarship_authorisations($sessionName) {
   $r = db_query("SELECT nid, field_sas_student_uid AS student_uid, field_sas_session_name_value AS session_name, field_sas_remarks_value AS remarks, DATE_FORMAT(field_sas_date_value, '%%D %%b %%Y') AS date, IFNULL(field_scholarship_sponsor_value, 'N/A') sponsor_name, IFNULL(field_scholarship_type_value, 'N/A') sponsor_type
   FROM {content_type_school_fee_approved_scholarships}
@@ -10674,12 +10873,17 @@ function get_scholarship_authorisations($sessionName) {
     $rs[$f->nid]['date'] = $f->date;
     $rs[$f->nid]['sponsor_type'] = $f->sponsor_type;
     $rs[$f->nid]['sponsor_name'] = $f->sponsor_name;
-
   }
   return $rs;
 }
 
 
+/**
+ * Find Instalment Authorisations for Session
+ *
+ * @param string $sessionName
+ * @return array of array
+ */
 function get_instalment_authorisations($sessionName) {
   $r = db_query("SELECT nid, field_sai_student_uid AS student_uid, field_sai_session_name_value AS session_name, field_sai_remarks_value AS remarks, DATE_FORMAT(field_sai_date_value, '%%D %%b %%Y') AS date FROM {content_type_school_fee_approved_instalments} WHERE field_sai_session_name_value='%s' ORDER BY field_sai_session_name_value ", $sessionName);
   $rs = array();
@@ -10688,14 +10892,13 @@ function get_instalment_authorisations($sessionName) {
     $rs[$f->nid]['session_name'] = $f->session_name;
     $rs[$f->nid]['remarks'] = $f->remarks;
     $rs[$f->nid]['date'] = $f->date;
-
   }
   return $rs;
 }
 
 
 /**
- * Form to
+ * Form to Find a Student in order to Authorise an Instalment
  *
  * @return array Drupal Form
  */
@@ -10734,6 +10937,13 @@ function get_authorise_instalment_student_finder_form_submit($form, &$state){
 }
 
 
+/**
+ * Return HTML to Display Instalment Authorisations for Session
+ *
+ * <p>This is too slow and needs to be turned into a paged Drupal View.</p>
+ * @param string $sessionName
+ * @return string HTML
+ */
 function staff_display_instalment_authorisations($sessionName) {
   $html = "
   <div id='assigned_courses'>
@@ -10782,8 +10992,9 @@ function staff_display_instalment_authorisations($sessionName) {
 
 
 /**
- * Form to
+ * Form to Authorise an Instalment for a Student
  *
+ * @global array $_SESSION['eduerp_authorise_instalment']
  * @return array Drupal Form
  */
 function staff_show_authorise_instalment_form(){
@@ -10820,7 +11031,6 @@ function staff_show_authorise_instalment_form(){
     );
   }
   else{
-    //drupal_set_message(Error_Types(174), 'error');
     $form['title_err'] = array(
     '#type' => 'item',
     '#value' => "<b><font color='#ff0000'>". Error_Types(174) ."</font></b>",
@@ -10839,6 +11049,8 @@ function staff_show_authorise_instalment_form(){
 
 /**
  * validate hook for staff_show_authorise_instalment_form
+ *
+ * @global array $_SESSION['eduerp_authorise_instalment']
  */
 function staff_show_authorise_instalment_form_validate($form, &$state){
   $values = $state['values'];
@@ -10869,7 +11081,7 @@ function staff_show_authorise_instalment_form_validate($form, &$state){
 
 
 /**
- * submit hook for staff_show_authorise_instalment_form
+ * submit hook for staff_show_authorise_instalment_form, Create CCK 'school_fee_approved_instalments'
  */
 function staff_show_authorise_instalment_form_submit($form, &$state){
   global $user;
@@ -10904,10 +11116,12 @@ function staff_show_authorise_instalment_form_submit($form, &$state){
 }
 
 
-//school fee module ends here
-
+/**
+ * Delete a node (copied from node_delete()), want to bypass access control
+ *
+ * @param int $nodeID
+ */
 function delete_node($nodeID){
-   //node_delete() copied from student.module
   $node = node_load($nodeID);
 
    db_query('DELETE FROM {node} WHERE nid = %d', $node->nid);
@@ -10927,8 +11141,13 @@ function delete_node($nodeID){
 }
 
 
+/**
+ * Find Country Info
+ *
+ * @param int $countryID
+ * @return array of ID => Name
+ */
 function get_country_info($countryID=0){
-
   $sql = "SELECT country_id, country_name FROM {eduerp_countries} ";
   if($countryID != 0) $sql .= " WHERE country_id=%d ";
 
@@ -10945,8 +11164,13 @@ function get_country_info($countryID=0){
 }
 
 
+/**
+ * Find Student Info needed for calculating Fees
+ *
+ * @param int $studentUID
+ * @return array
+ */
 function fees_ini_student_profile($studentUID){
-
       $student_profile = new UserProfile($studentUID);
 
       if(! is_object($student_profile)) return 0;
@@ -11045,6 +11269,18 @@ function fees_ini_student_profile($studentUID){
 }
 
 
+/**
+ * Find All School Fees (& Hostel Fees) that need to be paid by a Student along with Metadata
+ *
+ * @param int $studentUID Drupal uid
+ * @param int $programNID Drupal node nid for CCK 'program'
+ * @param int $levelType
+ * @param int $nationalityType
+ * @param string $academicLevel
+ * @param bool $checkFeesOnly
+ * @param bool $showAllAmounts
+ * @return array
+ */
 function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nationalityType, $academicLevel, $checkFeesOnly=false, $showAllAmounts=false){
   $feeOption = array();
   $feeStudentOption = array();
@@ -11345,6 +11581,12 @@ function fees_ini_student_fee_option($studentUID, $programNID, $levelType, $nati
 }
 
 
+/**
+ * Has the Student Paid or Pending Fees for this Session?
+ *
+ * @param int $student_id Drupal uid
+ * @return bool
+ */
 function _student_has_paid_or_pendingpaid_fees($student_id) {
   $sql = "SELECT op.data FROM {uc_orders} o, {uc_order_products} op
     WHERE
@@ -11362,6 +11604,12 @@ function _student_has_paid_or_pendingpaid_fees($student_id) {
 }
 
 
+/**
+ * Find All School Fees (& Hostel Fees) that need to be paid by a Student along with Metadata
+ *
+ * @param int $studentUID Drupal uid
+ * @return array
+ */
 function get_fee_items($studentUID){
   $studentFeeProfile = fees_ini_student_profile($studentUID);
   if(! is_array($studentFeeProfile) || ! sizeof($studentFeeProfile)) return array();
@@ -11372,6 +11620,12 @@ function get_fee_items($studentUID){
 }
 
 
+/**
+ * Does this Student have valid Fees Setup?
+ *
+ * @param int $studentUID Drupal uid
+ * @return bool
+ */
 function is_fee_setup_existing_for_student($studentUID){
   $studentFeeProfile = fees_ini_student_profile($studentUID);
 
@@ -11385,6 +11639,12 @@ function is_fee_setup_existing_for_student($studentUID){
 }
 
 
+/**
+ * Load Fee Structures
+ *
+ * @param bool $forCombo
+ * @return array of array
+ */
 function load_existing_fee_structure($forCombo=true){
   $feeSetup = get_school_fee_setup(variable_get('eduerp_current_session', ''));
 
@@ -11420,7 +11680,6 @@ function load_existing_fee_structure($forCombo=true){
           }
           else
             $return[$h['nid']][$j] = $h[$j];
-
         }
       }
     }
@@ -11429,6 +11688,12 @@ function load_existing_fee_structure($forCombo=true){
 }
 
 
+/**
+ * Load a Fee Setup
+ *
+ * @param int $setupNID
+ * @global $_SESSION['eduerp_fee_setup']
+ */
 function load_from_existing($setupNID){
 
   prepare_fee_setup_for_edit($setupNID);
@@ -11452,6 +11717,13 @@ function load_from_existing($setupNID){
 }
 
 
+/**
+ * Get Scholarship Types
+ *
+ * @param int $typeID
+ * @param bool $forSelectList
+ * @return array|mysqli_result if $forSelectList is TRUE array of nid => Type for all Programmes or one (if 0); otherwise MYSQL Result Set
+ */
 function get_scholarship_types($typeID=0, $forSelectList=true) {
     $where = ""; $args = "";
     $sql = "SELECT nid, field_scholarship_types_value scholarship_types FROM content_type_school_fees_scholarship_types ";
@@ -11477,6 +11749,14 @@ function get_scholarship_types($typeID=0, $forSelectList=true) {
    return $r;
 }
 
+
+
+/**
+ * Handles 'staff/createmodifschlshptypes' menu to Create/Update Scholarship Types
+ *
+ * @global $_SESSION['eduerp_page']
+ * @return string HTML
+ */
 function staff_school_fees_create_modify_scholarship_types(){
   global $user, $selFeeItems;
   ob_start();
@@ -11511,7 +11791,7 @@ function staff_school_fees_create_modify_scholarship_types(){
 
 
 /**
- * Form to
+ * Form to Create/Update Scholarship Types
  *
  * @return array Drupal Form
  */
@@ -11565,7 +11845,7 @@ function staff_school_fees_create_modify_scholarship_types_form_validate($form, 
 
 
 /**
- * submit hook for staff_school_fees_create_modify_scholarship_types_form
+ * submit hook for staff_school_fees_create_modify_scholarship_types_form, create CCK 'school_fees_scholarship_types'
  */
 function staff_school_fees_create_modify_scholarship_types_form_submit($form, &$form_state){
   if(arg(2) && is_numeric(arg(2)) && is_valid_scholarship_type(arg(2))){
@@ -11596,6 +11876,13 @@ function staff_school_fees_create_modify_scholarship_types_form_submit($form, &$
 }
 
 
+/**
+ * Does a Scholarship Type Name exist?
+ *
+ * @param string $name
+ * @param int Drupal node nid for CCK 'school_fees_scholarship_types'
+ * @return bool
+ */
 function is_scholarship_type_name_existing($name, $nid = 0){
   if ($nid != 0)
     $sql = "SELECT nid FROM {content_type_school_fees_scholarship_types} WHERE field_scholarship_types_value = '%s' AND nid != %d ";
@@ -11610,6 +11897,12 @@ function is_scholarship_type_name_existing($name, $nid = 0){
 }
 
 
+/**
+ * Is a Scholarship Type valid?
+ *
+ * @param int $nid Drupal node nid for CCK 'school_fees_scholarship_types'
+ * @return bool
+ */
 function is_valid_scholarship_type($nid) {
   $result = db_query("SELECT nid FROM {content_type_school_fees_scholarship_types} WHERE nid =%d ", $nid);
   if (db_affected_rows($result) > 0 ) return true;
@@ -11618,8 +11911,12 @@ function is_valid_scholarship_type($nid) {
 }
 
 
+/**
+ * Return HTML to Display Scholarship Types
+ *
+ * @return string HTML
+ */
 function staff_display_available_scholarships() {
-
   $str  = "<b>Available Scholarship Types</b><br />";
 
   $sql = "SELECT nid, field_scholarship_types_value scholarship_type FROM {content_type_school_fees_scholarship_types} ORDER BY field_scholarship_types_value ";
@@ -11628,7 +11925,6 @@ function staff_display_available_scholarships() {
     $str .= Error_Types(106);
   }
   else {
-
     $str .= "
     Please click on a Scholarship Type name to Modify it.<br />
     <table width = '50%' border=1>
@@ -11653,6 +11949,11 @@ function staff_display_available_scholarships() {
 }
 
 
+/**
+ * Handles 'staff/removepending' menu to Remove Pending Invoices
+ *
+ * @return string HTML
+ */
 function staff_school_fees_remove_pending_orders(){
   global $user;
   ob_start();
@@ -11680,7 +11981,7 @@ function staff_school_fees_remove_pending_orders(){
 
 
 /**
- * Form to
+ * Form to Remove Pending Invoices
  *
  * @return array Drupal Form
  */
@@ -11734,7 +12035,7 @@ function get_remove_pending_order_form_validate($form, &$state){
 
 
 /**
- * submit hook for get_remove_pending_order_form_validate
+ * submit hook for get_remove_pending_order_form_validate, mark 'uc_orders' and 'fees_order' as 'canceled' to Cancel Invoice
  */
 function get_remove_pending_order_form_submit($form, &$state){
   $values = $state['values'];
@@ -11764,6 +12065,11 @@ function get_remove_pending_order_form_submit($form, &$state){
 }
 
 
+/**
+ * Handles 'staff/add_once_off_invoice' menu to Add Once Off Invoice
+ *
+ * @return string HTML
+ */
 function staff_add_once_off_invoice() {
   global $user;
   ob_start();
@@ -11789,7 +12095,7 @@ function staff_add_once_off_invoice() {
 
 
 /**
- * Form to
+ * Form to Add Once Off Invoice
  *
  * @return array Drupal Form
  */
@@ -11822,7 +12128,7 @@ function add_once_off_invoice_form() {
 
 
 /**
- * validate hook for add_once_off_invoice_form
+ * validate hook for add_once_off_invoice_form, After Validation, Add the Invoice and Send to EduPay
  */
 function add_once_off_invoice_form_validate($form, &$state) {
   global $base_url;
@@ -11994,6 +12300,13 @@ function add_once_off_invoice_form_validate($form, &$state) {
 }
 
 
+/**
+ * Handles 'staff/changeuncleared' menu to Change Programme for Uncleared Candidate
+ *
+ * @global int $_SESSION['eduerp_change_uncleared_on']
+ * @global array $_SESSION['eduerp_change_uncleared_info']
+ * @return string HTML
+ */
 function staff_change_uncleared_candidate_programme() {
   global $user;
   ob_start();
@@ -12031,7 +12344,7 @@ function staff_change_uncleared_candidate_programme() {
 }
 
 /**
- * Form to
+ * Form to Find Student in order to Change Programme for Uncleared Candidate
  *
  * @return array Drupal Form
  */
@@ -12055,6 +12368,9 @@ function get_candidate_info_form() {
 
 /**
  * validate hook for get_candidate_info_form
+ *
+ * @global int $_SESSION['eduerp_change_uncleared_on']
+ * @global array $_SESSION['eduerp_change_uncleared_info']
  */
 function get_candidate_info_form_validate($form, &$state) {
   $values = $state['values'];
@@ -12096,6 +12412,8 @@ function get_candidate_info_form_validate($form, &$state) {
 
 /**
  * submit hook for staff_candidate_change_programme_form
+ *
+ * @global array $_SESSION['eduerp_change_uncleared_info']
  */
 function staff_candidate_change_programme_form_submit($form, &$state) {
   $values = $state['values'];
@@ -12126,7 +12444,7 @@ function staff_candidate_change_programme_form_validate($form, &$state) {
 
 
 /**
- * Form to
+ * Form to Change Programme for Uncleared Candidate
  *
  * @return array Drupal Form
  */
@@ -12154,6 +12472,11 @@ function staff_candidate_change_programme_form() {
 }
 
 
+/**
+ * Handles 'staff/archivestudent' menu to Archive a Student who does not yet have any Exam Marks
+ *
+ * @return string HTML
+ */
 function staff_archive_student() {
   global $user;
   ob_start();
@@ -12173,7 +12496,7 @@ function staff_archive_student() {
 
 
 /**
- * Form to
+ * Form to Archive a Student who does not yet have any Exam Marks
  *
  * @return array Drupal Form
  */
@@ -12249,7 +12572,7 @@ function staff_archive_student_form_validate($form, &$state) {
 
 
 /**
- * submit hook for staff_archive_student_form
+ * submit hook for staff_archive_student_form, Archive the Student
  */
 function staff_archive_student_form_submit($form, &$state) {
   $row = db_fetch_object(db_query("SELECT nspro.uid uid
@@ -12283,6 +12606,13 @@ function staff_archive_student_form_submit($form, &$state) {
 }
 
 
+/**
+ * Delete nodes for CCK 'student_gpa' for a Student in a Session/Semester
+ *
+ * @param int $uid
+ * @param string $session
+ * @param int $semester
+ */
 function delete_student_gpa($uid, $session, $semester) {
   $sql = "SELECT gpa.nid
     FROM {content_type_student_gpa} gpa
