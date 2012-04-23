@@ -442,6 +442,8 @@ if (!empty($_SESSION['views']['course_grades']['default']['coursecode']) &&
 /**
  * Form to allow to allow Lecturer to approve grades (relevant locked fields will then become 1).
  *
+ * @uses approve_grades_lecturer_form_validate()
+ * @uses approve_grades_lecturer_form_submit()
  * @global stdClass $eduerpapprovalform already contains values needed for the form.
  */
 function approve_grades_lecturer_form($form_state) {
@@ -835,6 +837,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
 /**
  * Form to allow to allow HOD to unlock grades (relevant locked fields will then become 0).
  *
+ * @uses unlock_grades_hod_form_validate()
+ * @uses unlock_grades_hod_form_submit()
  * @global stdClass $eduerpapprovalform already contains values needed for the form.
  */
 function unlock_grades_hod_form($form_state) {
@@ -1051,6 +1055,8 @@ function unlock_grades_hod_form_submit($form, &$form_state) {
 /**
  * Form to allow to allow HOD to approve grades (relevant locked fields will then become 2).
  *
+ * @uses approve_grades_hod_form_validate()
+ * @uses approve_grades_hod_form_submit()
  * @global stdClass $eduerpapprovalform already contains values needed for the form.
  */
 function approve_grades_hod_form($form_state) {
@@ -1316,6 +1322,8 @@ function approve_grades_hod_form_submit($form, &$form_state) {
 /**
  * Form to allow to allow Dean to approve grades (relevant locked fields will then become 3).
  *
+ * @uses approve_grades_dean_form_validate()
+ * @uses approve_grades_dean_form_submit()
  * @global stdClass $eduerpapprovalform already contains values needed for the form.
  */
 function approve_grades_dean_form($form_state) {

@@ -571,6 +571,9 @@ function grading_node_grants($account, $op) {
 
 /**
  * Form to display Grading Statistics for a Department
+ *
+ * @uses grading_stats_department_form_submit()
+ * @uses _grading_ahah_stats()
  */
 function grading_stats_department_form(&$obj) {
   $sessiondefault = variable_get('eduerp_current_session', '');
@@ -1145,6 +1148,8 @@ function _grading_ahah_stats() {
 /**
  * Form to allow to allow Registrar to approve grades (relevant locked fields will then become 4 (1 is lecturer approval, 2 is HOD approval, 3 is Dean approval)).
  *
+ * @uses approve_grades_registrar_form_validate()
+ * @uses approve_grades_registrar_form_submit()
  * @global stdClass $_SESSION['eduerpregistrarapprovalform'] already contains values needed for the form.
  */
 function approve_grades_registrar_form($form_state) {
@@ -1327,6 +1332,8 @@ function approve_grades_registrar_form_submit($form, &$form_state) {
 /**
  * Form to allow to allow VC to approve grades (relevant locked fields will then become 5). Also set the student visible exam score to the values set by the lecturer.
  *
+ * @uses approve_grades_vc_form_validate()
+ * @uses approve_grades_vc_form_submit()
  * @global stdClass $_SESSION['eduerpvcapprovalform'] already contains values needed for the form.
  */
 function approve_grades_vc_form($form_state) {
@@ -1646,6 +1653,9 @@ function approve_grades_vc_form_submit($form, &$form_state) {
 
 /**
  * Form to display Grading Statistics for the University
+ *
+ * @uses grading_stats_uni_form_submit()
+ * @uses _grading_ahah_stats_uni()
  */
 function grading_stats_uni_form(&$obj) {
   $sessiondefault = variable_get('eduerp_current_session', '');
@@ -1929,6 +1939,9 @@ function _grading_ahah_stats_uni() {
 
 /**
  * Form to select a Student and show all of the Student's Courses as well as data such as Programme and cGPA.
+ *
+ * @uses grading_student_details_form_submit()
+ * @uses _grading_ahah_studentdetails()
  */
 function grading_student_details_form(&$obj) {
 
