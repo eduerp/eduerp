@@ -825,7 +825,7 @@ function move_department_form($form_state) {
 
 
 /**
- * submit hook for department_role_form
+ * submit hook for {@link department_role_form()}
  */
 function department_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], $form_state['values']['department'], 0, $form_state['values']['role']);
@@ -833,7 +833,7 @@ function department_role_form_submit($form, &$form_state) {
 
 
 /**
- * submit hook for faculty_role_form
+ * submit hook for {@link faculty_role_form()}
  */
 function faculty_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], 0, $form_state['values']['faculty'], $form_state['values']['role']);
@@ -841,7 +841,7 @@ function faculty_role_form_submit($form, &$form_state) {
 
 
 /**
- * submit hook for university_role_form
+ * submit hook for {@link university_role_form()}
  */
 function university_role_form_submit($form, &$form_state) {
   addrole($form_state['values']['uid'], 0, 0, $form_state['values']['role']);
@@ -900,7 +900,7 @@ function assign_drupal_role($uid, $role) {
 
 
 /**
- * submit hook for current_roles_list_form (Drop any checked EduERP Roles)
+ * submit hook for {@link current_roles_list_form()} (Drop any checked EduERP Roles)
  */
 function current_roles_list_form_submit($form, &$form_state) {
   $i = 0;
@@ -965,7 +965,7 @@ function drop_drupal_role($uid, $role) {
 
 
 /**
- * submit hook for move_department_form (Move a Staff member to a different Department)
+ * submit hook for {@link move_department_form()} (Move a Staff member to a different Department)
  */
 function move_department_form_submit($form, &$form_state) {
   $user_profile = new UserProfile($form_state['values']['uid']);
@@ -1588,7 +1588,7 @@ function set_session_form($form_state) {
 
 
 /**
- * submit hook for set_session_form
+ * submit hook for {@link set_session_form()}
  */
 function set_session_form_submit($form, &$form_state) {
 
@@ -1636,7 +1636,7 @@ function open_close_student_registration_form($form_state) {
 
 
 /**
- * submit hook for open_close_student_registration_form
+ * submit hook for {@link open_close_student_registration_form()}
  */
 function open_close_student_registration_form_submit($form, &$form_state) {
 
@@ -1767,7 +1767,7 @@ function selectlistofprogrammestoclose() {
 
 
 /**
- * submit hook for open_close_student_course_registration_form
+ * submit hook for {@link open_close_student_course_registration_form()}
  */
 function open_close_student_course_registration_form_submit($form, &$form_state) {
   $semester = variable_get('eduerp_current_semester', 1);
@@ -2246,7 +2246,7 @@ function staff_update_dept_form() {
 
 
 /**
- * validate hook for staff_create_edit_faculty_form
+ * validate hook for {@link staff_create_edit_faculty_form()}
  */
 function staff_create_edit_faculty_form_validate($form, &$form_state) {
 
@@ -2279,7 +2279,7 @@ function staff_create_edit_faculty_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_create_edit_faculty_form
+ * submit hook for {@link staff_create_edit_faculty_form()}
  */
 function staff_create_edit_faculty_form_submit($form, &$form_state) {
 
@@ -2318,7 +2318,7 @@ function staff_create_edit_faculty_form_submit($form, &$form_state) {
 
 
 /**
- * validate hook for staff_create_edit_dept_form
+ * validate hook for {@link staff_create_edit_dept_form()}
  */
 function staff_create_edit_dept_form_validate($form, &$form_state) {
 
@@ -2346,7 +2346,7 @@ function staff_create_edit_dept_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_create_edit_dept_form
+ * submit hook for {@link staff_create_edit_dept_form()}
  */
 function staff_create_edit_dept_form_submit($form, &$form_state) {
 
@@ -2433,7 +2433,7 @@ function staff_create_edit_dept_form() {
 
 
 /**
- * validate hook for staff_update_faculty_form
+ * validate hook for {@link staff_update_faculty_form()}
  */
 function staff_update_faculty_form_validate($form, &$form_state) {
   if ($form_state['values']['faculty_id'] == 0)
@@ -2442,7 +2442,7 @@ function staff_update_faculty_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_update_faculty_form
+ * submit hook for {@link staff_update_faculty_form()}
  */
 function staff_update_faculty_form_submit($form, &$form_state) {
 
@@ -2451,7 +2451,7 @@ function staff_update_faculty_form_submit($form, &$form_state) {
 
 
 /**
- * validate hook for staff_update_dept_form
+ * validate hook for {@link staff_update_dept_form()}
  */
 function staff_update_dept_form_validate($form, &$form_state) {
   if ($form_state['values']['department_nid'] == 0)
@@ -2460,7 +2460,7 @@ function staff_update_dept_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_update_dept_form
+ * submit hook for {@link staff_update_dept_form()}
  */
 function staff_update_dept_form_submit($form, &$form_state) {
 
@@ -3181,7 +3181,7 @@ function staff_create_course_form() {
 
 
 /**
- * validate hook for staff_create_course_form
+ * validate hook for {@link staff_create_course_form()}
  */
 function staff_create_course_form_validate($form, $form_state) {
   if (isset($form_state['values']['showFullForm'])) $_POST['showFullForm'] = $form_state['values']['showFullForm'];
@@ -3292,7 +3292,7 @@ function staff_create_course_form_validate($form, $form_state) {
 
 
 /**
- * submit hook for staff_create_course_form
+ * submit hook for {@link staff_create_course_form()}
  *
  * @global $_SESSION['eduerp_course_grade_weightings']
  * @global $_SESSION['eduerp_showFullForm']
@@ -3391,7 +3391,7 @@ function staff_edit_course_form(){
 
 
 /**
- * validate hook for staff_edit_course_form
+ * validate hook {@link for staff_edit_course_form()}
  */
 function staff_edit_course_form_validate($form, $form_state){
   if ($form_state['values']['course_nid'] == 0)
@@ -3400,7 +3400,7 @@ function staff_edit_course_form_validate($form, $form_state){
 
 
 /**
- * submit hook for staff_edit_course_form
+ * submit hook for {@link staff_edit_course_form()}
  *
  * @global $_SESSION['eduerp_course_grade_weightings']
  */
@@ -3458,7 +3458,7 @@ function staff_create_course_mini_form() {
 
 
 /**
- * submit hook for staff_create_course_mini_form
+ * submit hook for {@link staff_create_course_mini_form()}
  *
  * @global $_SESSION['eduerp_showFullForm']
  * @global $_SESSION['eduerp_course_grade_weightings']
@@ -3695,7 +3695,7 @@ function staff_assign_course_proceed_form() {
 
 
 /**
- * submit hook for staff_assign_course_proceed_form
+ * submit hook for {@link staff_assign_course_proceed_form()}
  *
  * @global $_SESSION['eduerp_assign_course_session']
  * @global $_SESSION['eduerp_assign_course_semester']
@@ -3710,7 +3710,7 @@ function staff_assign_course_proceed_form_submit($form, &$state) {
 
 
 /**
- * validate hook for staff_assign_course_form
+ * validate hook for {@link staff_assign_course_form()}
  */
 function staff_assign_course_form_validate($form, &$form_state) {
   if ($form_state['values']['course_nid'] == 0) form_set_error('course_nid', 'Course Code is required.');
@@ -3738,7 +3738,7 @@ function staff_assign_course_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_assign_course_form
+ * submit hook for {@link staff_assign_course_form()}
  *
  * @global $_SESSION['eduerp_showCourseAssignment']
  */
@@ -3834,7 +3834,7 @@ function staff_edit_assigned_course_form(){
 
 
 /**
- * validate hook for staff_edit_assigned_course_form
+ * validate hook for {@link staff_edit_assigned_course_form()}
  */
 function staff_edit_assigned_course_form_validate($form, &$form_state) {
   if ($form_state['values']['course_instance_nid'] == '0')
@@ -3843,7 +3843,7 @@ function staff_edit_assigned_course_form_validate($form, &$form_state) {
 
 
 /**
- * validate hook for staff_edit_assigned_course_form
+ * validate hook for {@link staff_edit_assigned_course_form()}
  *
  * @global $_SESSION['eduerp_showCourseAssignment']
  */
@@ -4245,7 +4245,7 @@ function staff_create_programme_form() {
 
 
 /**
- * validate hook for staff_create_programme_form
+ * validate hook for {@link staff_create_programme_form()}
  *
  * @global int $_SESSION['eduerp_bkinfo']
  */
@@ -4297,7 +4297,7 @@ function staff_create_programme_form_validate($form, &$form_state) {
 
 
 /**
- * validate hook for staff_create_programme_form
+ * validate hook for {@link staff_create_programme_form()}
  *
  * @global int $_SESSION['eduerp_showOn']
  * @global int $_SESSION['eduerp_bkinfo']
@@ -4370,7 +4370,7 @@ function staff_create_programme_form2() {
 
 
 /**
- * validate hook for staff_create_programme_form2
+ * validate hook for {@link staff_create_programme_form2()}
  *
  * @global int $_SESSION['eduerp_bkinfo']
  */
@@ -4398,7 +4398,7 @@ function staff_create_programme_form2_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_create_programme_form2
+ * submit hook for {@link staff_create_programme_form2()}
  *
  * @global int $_SESSION['eduerp_bkinfo']
  */
@@ -4514,7 +4514,7 @@ function staff_create_programme_back_form() {
 
 
 /**
- * validate hook for staff_create_programme_back_form
+ * validate hook for {@link staff_create_programme_back_form()}
  *
  * @global int $_SESSION['eduerp_goBack']
  */
@@ -4524,7 +4524,7 @@ function staff_create_programme_back_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_create_programme_back_form
+ * submit hook for {@link staff_create_programme_back_form()}
  *
  * @global int $_SESSION['eduerp_goBack']
  * @global int $_SESSION['eduerp_showOn']
@@ -4609,7 +4609,7 @@ function staff_modify_programme_form(){
 
 
 /**
- * validate hook for staff_modify_programme_form
+ * validate hook for {@link staff_modify_programme_form()}
  *
  * @global int $_SESSION['eduerp_bkinfo']
  */
@@ -4634,7 +4634,7 @@ function staff_modify_programme_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_modify_programme_form
+ * submit hook for {@link staff_modify_programme_form()}
  */
 function staff_modify_programme_form_submit($form, &$form_state) {
   drupal_goto("staff/createmodifyprog/" . $form_state['values']['programme_nid']);
@@ -5135,7 +5135,7 @@ function staff_assign_course_to_programme_form() {
 
 
 /**
- * validate hook for staff_assign_course_to_programme_form
+ * validate hook for {@link staff_assign_course_to_programme_form()}
  */
 function staff_assign_course_to_programme_form_validate($form, &$form_state) {
  $values = $form_state['values'];
@@ -5162,7 +5162,7 @@ function staff_assign_course_to_programme_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for staff_assign_course_to_programme_form
+ * submit hook for {@link staff_assign_course_to_programme_form()}
  */
 function staff_assign_course_to_programme_form_submit($form, &$state) {
   $values = $state['values'];
@@ -5264,7 +5264,7 @@ function staff_specify_course_proceed_form() {
 
 
 /**
- * submit hook for staff_specify_course_proceed_form
+ * submit hook for {@link staff_specify_course_proceed_form()}
  */
 function staff_specify_course_proceed_form_submit($form, &$form_state) {
   drupal_goto("staff/specifycourse/" . $form_state['values']['sprogramme_nid']);
@@ -5308,7 +5308,7 @@ function staff_verify_course_proceed_form() {
 
 
 /**
- * submit hook for staff_verify_course_proceed_form
+ * submit hook for {@link staff_verify_course_proceed_form()}
  *
  * @global array $_SESSION['eduerp_verify']
  */
@@ -5564,7 +5564,7 @@ function show_progress_qualification_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for show_progress_qualification_form
+ * submit hook for {@link show_progress_qualification_form()}
  *
  * @global array $_SESSION['eduerp_qualification']
  */
@@ -6136,7 +6136,7 @@ function show_unregistered_course_form() {
 
 
 /**
- * submit hook for show_unregistered_course_form
+ * submit hook for {@link show_unregistered_course_form()}
  *
  * @global array $_SESSION['eduerp_unreg']
  */
@@ -6262,7 +6262,7 @@ function staff_student_action_form() {
 
 
 /**
- * validate hook for staff_student_action_form
+ * validate hook for {@link staff_student_action_form()}
  */
 function staff_student_action_form_validate($form, &$state) {
   $values = $state['values'];
@@ -6276,7 +6276,7 @@ function staff_student_action_form_validate($form, &$state) {
 
 
 /**
- * submit hook for staff_student_action_form
+ * submit hook for {@link staff_student_action_form()}
  */
 function staff_student_action_form_submit($form, &$state) {
   $values = $state['values'];
@@ -6398,7 +6398,7 @@ function get_student_drop_course_form() {
 
 
 /**
- * validate hook for get_student_drop_course_form
+ * validate hook for {@link get_student_drop_course_form()}
  *
  * @global stdClass $_SESSION['eduerp_drop_on']
  * @global stdClass $_SESSION['eduerp_drop_course_info']
@@ -6414,7 +6414,7 @@ function get_student_drop_course_form_validate($form, &$state) {
 
 
 /**
- * submit hook for get_student_drop_course_form
+ * submit hook for {@link get_student_drop_course_form()}
  *
  * @global stdClass $_SESSION['eduerp_drop_on']
  * @global stdClass $_SESSION['eduerp_drop_course_info']
@@ -6470,7 +6470,7 @@ function get_student_course_instance_form() {
 
 
 /**
- * validate hook for get_student_course_instance_form
+ * validate hook for {@link get_student_course_instance_form()}
  *
  * @global stdClass $_SESSION['eduerp_drop_on']
  * @global stdClass $_SESSION['eduerp_drop_course_info']
@@ -6604,7 +6604,7 @@ function get_student_unreg_course_form() {
 
 
 /**
- * validate hook for get_student_unreg_course_form
+ * validate hook for {@link get_student_unreg_course_form()}
  *
  * @global stdClass $_SESSION['eduerp_reg_on']
  * @global stdClass $_SESSION['eduerp_reg_course_info']
@@ -6686,7 +6686,7 @@ function get_student_reg_course_form() {
 
 
 /**
- * validate hook for get_student_reg_course_form
+ * validate hook for {@link get_student_reg_course_form()}
  *
  * @global stdClass $_SESSION['eduerp_reg_on']
  * @global stdClass $_SESSION['eduerp_reg_course_info']
@@ -6721,7 +6721,7 @@ function get_student_reg_course_form_validate($form, &$state) {
 
 
 /**
- * submit hook for get_student_reg_course_form
+ * submit hook for {@link get_student_reg_course_form()}
  *
  * @global stdClass $_SESSION['eduerp_reg_on']
  * @global stdClass $_SESSION['eduerp_reg_course_info']
@@ -6976,7 +6976,7 @@ function get_student_info_form() {
 
 
 /**
- * validate hook for get_student_info_form
+ * validate hook for {@link get_student_info_form()}
  *
  * @global stdClass $_SESSION['eduerp_change_prog_on']
  * @global stdClass $_SESSION['eduerp_change_prog_info']
@@ -7012,7 +7012,7 @@ function get_student_info_form_validate($form, &$state) {
 
 
 /**
- * submit hook for staff_student_change_programme_form, Change Programme and Add Student Record(s)
+ * submit hook for {@link staff_student_change_programme_form()}, Change Programme and Add Student Record(s)
  *
  * @global stdClass $_SESSION['eduerp_change_prog_on']
  * @global stdClass $_SESSION['eduerp_change_prog_info']
@@ -7067,7 +7067,7 @@ function staff_student_change_programme_form_submit($form, &$state) {
 
 
 /**
- * validate hook for staff_student_change_programme_form
+ * validate hook for {@link staff_student_change_programme_form()}
  */
 function staff_student_change_programme_form_validate($form, &$state) {
   if (empty($state['values']['programme_nid'])) form_set_error('programme_nid', 'You must Select a Programme');
@@ -7274,7 +7274,7 @@ function get_verify_required_courses_for_programme_form() {
 
 
 /**
- * submit hook for get_verify_required_courses_for_programme_form
+ * submit hook for {@link get_verify_required_courses_for_programme_form()}
  *
  * @global array $_SESSION['eduerp_required']
  */
@@ -7472,7 +7472,7 @@ function staff_show_check_missing_courses_form() {
 }
 
 /**
- * submit hook for staff_show_check_missing_courses_form
+ * submit hook for {@link staff_show_check_missing_courses_form()}
  *
  * @global array $_SESSION['eduerp_check_missing_courses']
  */
@@ -7852,7 +7852,7 @@ function staff_school_fees_create_modify_fee_item_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_fee_item_form
+ * validate hook for {@link staff_school_fees_create_modify_fee_item_form()}
  */
 function staff_school_fees_create_modify_fee_item_form_validate($form, &$state) {
 
@@ -7879,7 +7879,7 @@ function staff_school_fees_create_modify_fee_item_form_validate($form, &$state) 
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_item_form to Create/Update Ubercart Product and 'school_fee_items' CCK
+ * submit hook for {@link staff_school_fees_create_modify_fee_item_form()} to Create/Update Ubercart Product and 'school_fee_items' CCK
  */
 function staff_school_fees_create_modify_fee_item_form_submit($form, &$state) {
 
@@ -8916,7 +8916,7 @@ function staff_school_fees_modify_fee_settings_form() {
 
 
 /**
- * validate hook for staff_school_fees_modify_fee_settings_form
+ * validate hook for {@link staff_school_fees_modify_fee_settings_form()}
  */
 function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
   $values = $state['values'];
@@ -8952,7 +8952,7 @@ function staff_school_fees_modify_fee_settings_form_validate($form, &$state){
 
 
 /**
- * submit hook for staff_school_fees_modify_fee_settings_form
+ * submit hook for {@link staff_school_fees_modify_fee_settings_form()}
  */
 function staff_school_fees_modify_fee_settings_form_submit($form, &$state){
   $values = $state['values'];
@@ -9038,7 +9038,7 @@ function staff_school_fees_create_modify_fee_setup1_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_fee_setup1_form
+ * validate hook for {@link staff_school_fees_create_modify_fee_setup1_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9069,7 +9069,7 @@ function staff_school_fees_create_modify_fee_setup1_form_validate($form, &$state
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_setup1_form
+ * submit hook for {@link staff_school_fees_create_modify_fee_setup1_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9191,7 +9191,7 @@ function staff_school_fees_create_modify_fee_setup2_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_fee_setup2_form
+ * validate hook for {@link staff_school_fees_create_modify_fee_setup2_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9222,7 +9222,7 @@ function staff_school_fees_create_modify_fee_setup2_form_validate($form, &$state
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_setup2_form
+ * submit hook for {@link staff_school_fees_create_modify_fee_setup2_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9445,7 +9445,7 @@ function staff_school_fees_create_modify_fee_setup3_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_fee_setup3_form
+ * validate hook for {@link staff_school_fees_create_modify_fee_setup3_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9577,7 +9577,7 @@ function staff_school_fees_create_modify_fee_setup3_form_validate($form, &$state
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_setup3_form
+ * submit hook for {@link staff_school_fees_create_modify_fee_setup3_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9644,7 +9644,7 @@ function staff_school_fees_create_modify_fee_setup4_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_fee_setup4_form
+ * validate hook for {@link staff_school_fees_create_modify_fee_setup4_form()}
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -9673,7 +9673,7 @@ function staff_school_fees_create_modify_fee_setup4_form_validate($form, &$state
 
 
 /**
- * submit hook for staff_school_fees_create_modify_fee_setup4_form to Create/Update CCKs 'school_fee_item_setup' & 'school_fee_item_setup_details' and Attach/Update appropriate options with prices to UberCart Products
+ * submit hook for {@link staff_school_fees_create_modify_fee_setup4_form()} to Create/Update CCKs 'school_fee_item_setup' & 'school_fee_item_setup_details' and Attach/Update appropriate options with prices to UberCart Products
  *
  * @global array $_SESSION['eduerp_fee_setup']
  * @global array $_SESSION['eduerp_page']
@@ -10351,7 +10351,7 @@ function get_scholarship_payment_student_finder_form_validate($form, &$state){
 
 
 /**
- * submit hook for get_scholarship_payment_student_finder_form
+ * submit hook for {@link get_scholarship_payment_student_finder_form()}
  */
 function get_scholarship_payment_student_finder_form_submit($form, &$state){
   global $EDUERPstudentInitiated;
@@ -10557,7 +10557,7 @@ return $list;
 
 
 /**
- * validate hook for staff_show_pay_school_fees_scholarship_form
+ * validate hook for {@link staff_show_pay_school_fees_scholarship_form()}
  *
  * @global array $_SESSION['eduerp_authorise_scholarship']
  */
@@ -10594,7 +10594,7 @@ function staff_show_pay_school_fees_scholarship_form_validate($form, &$state){
 
 
 /**
- * submit hook for staff_show_pay_school_fees_scholarship_form, Create CCK 'school_fee_approved_scholarships'
+ * submit hook for {@link staff_show_pay_school_fees_scholarship_form()}, Create CCK 'school_fee_approved_scholarships'
  *
  * @global array $_SESSION['eduerp_authorise_scholarship']
  */
@@ -10927,7 +10927,7 @@ function get_authorise_instalment_student_finder_form_validate($form, &$state){
 
 
 /**
- * submit hook for get_authorise_instalment_student_finder_form
+ * submit hook for {@link get_authorise_instalment_student_finder_form()}
  */
 function get_authorise_instalment_student_finder_form_submit($form, &$state){
   global $EDUERPstudentInitiated;
@@ -11048,7 +11048,7 @@ function staff_show_authorise_instalment_form(){
 
 
 /**
- * validate hook for staff_show_authorise_instalment_form
+ * validate hook for {@link staff_show_authorise_instalment_form()}
  *
  * @global array $_SESSION['eduerp_authorise_instalment']
  */
@@ -11081,7 +11081,7 @@ function staff_show_authorise_instalment_form_validate($form, &$state){
 
 
 /**
- * submit hook for staff_show_authorise_instalment_form, Create CCK 'school_fee_approved_instalments'
+ * submit hook for {@link staff_show_authorise_instalment_form()}, Create CCK 'school_fee_approved_instalments'
  */
 function staff_show_authorise_instalment_form_submit($form, &$state){
   global $user;
@@ -11827,7 +11827,7 @@ function staff_school_fees_create_modify_scholarship_types_form() {
 
 
 /**
- * validate hook for staff_school_fees_create_modify_scholarship_types_form
+ * validate hook for {@link staff_school_fees_create_modify_scholarship_types_form()}
  */
 function staff_school_fees_create_modify_scholarship_types_form_validate($form, &$form_state){
   $values = $form_state['values'];
@@ -11845,7 +11845,7 @@ function staff_school_fees_create_modify_scholarship_types_form_validate($form, 
 
 
 /**
- * submit hook for staff_school_fees_create_modify_scholarship_types_form, create CCK 'school_fees_scholarship_types'
+ * submit hook {@link for staff_school_fees_create_modify_scholarship_types_form()}, create CCK 'school_fees_scholarship_types'
  */
 function staff_school_fees_create_modify_scholarship_types_form_submit($form, &$form_state){
   if(arg(2) && is_numeric(arg(2)) && is_valid_scholarship_type(arg(2))){
@@ -12014,7 +12014,7 @@ $form['title_test'] = array(
 
 
 /**
- * validate hook for get_remove_pending_order_form
+ * validate hook for {@link get_remove_pending_order_form()}
  */
 function get_remove_pending_order_form_validate($form, &$state){
   $values = $state['values'];
@@ -12035,7 +12035,7 @@ function get_remove_pending_order_form_validate($form, &$state){
 
 
 /**
- * submit hook for get_remove_pending_order_form_validate, mark 'uc_orders' and 'fees_order' as 'canceled' to Cancel Invoice
+ * submit hook for {@link get_remove_pending_order_form_validate()}, mark 'uc_orders' and 'fees_order' as 'canceled' to Cancel Invoice
  */
 function get_remove_pending_order_form_submit($form, &$state){
   $values = $state['values'];
@@ -12128,7 +12128,7 @@ function add_once_off_invoice_form() {
 
 
 /**
- * validate hook for add_once_off_invoice_form, After Validation, Add the Invoice and Send to EduPay
+ * validate hook for {@link add_once_off_invoice_form()}, After Validation, Add the Invoice and Send to EduPay
  */
 function add_once_off_invoice_form_validate($form, &$state) {
   global $base_url;
@@ -12367,7 +12367,7 @@ function get_candidate_info_form() {
 
 
 /**
- * validate hook for get_candidate_info_form
+ * validate hook for {@link get_candidate_info_form()}
  *
  * @global int $_SESSION['eduerp_change_uncleared_on']
  * @global array $_SESSION['eduerp_change_uncleared_info']
@@ -12411,7 +12411,7 @@ function get_candidate_info_form_validate($form, &$state) {
 
 
 /**
- * submit hook for staff_candidate_change_programme_form
+ * submit hook for {@link staff_candidate_change_programme_form()}
  *
  * @global array $_SESSION['eduerp_change_uncleared_info']
  */
@@ -12436,7 +12436,7 @@ function staff_candidate_change_programme_form_submit($form, &$state) {
 
 
 /**
- * validate hook for staff_candidate_change_programme_form
+ * validate hook for {@link staff_candidate_change_programme_form()}
  */
 function staff_candidate_change_programme_form_validate($form, &$state) {
   if (empty($state['values']['programme_nid'])) form_set_error('programme_nid', 'You must Select a Programme');
@@ -12519,7 +12519,7 @@ function staff_archive_student_form() {
 
 
 /**
- * validate hook for staff_archive_student_form
+ * validate hook for {@link staff_archive_student_form()}
  */
 function staff_archive_student_form_validate($form, &$state) {
   $rs = db_query("SELECT nspro.uid uid
@@ -12572,7 +12572,7 @@ function staff_archive_student_form_validate($form, &$state) {
 
 
 /**
- * submit hook for staff_archive_student_form, Archive the Student
+ * submit hook for {@link staff_archive_student_form()}, Archive the Student
  */
 function staff_archive_student_form_submit($form, &$state) {
   $row = db_fetch_object(db_query("SELECT nspro.uid uid

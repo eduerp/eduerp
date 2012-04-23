@@ -801,7 +801,7 @@ function _grading_level_list_any() {
 
 
 /**
- * submit hook for grading_stats_department_form
+ * submit hook for {@link grading_stats_department_form()}
  */
 function grading_stats_department_form_submit($form, &$state) {
   drupal_set_message('department: ' . $state['values']['department'] . '<br />');
@@ -809,11 +809,10 @@ function grading_stats_department_form_submit($form, &$state) {
 
 
 /**
- * AHAH callback to do the main statistics and display work for {@link grading_stats_department_form()}.
+ * AHAH callback to do the main statistics and display work for {@link grading_stats_department_form()}
  *
  * @global stdClass $_SESSION['eduerpregistrarapprovalform'] is set to contain values needed for approve_grades_registrar_form.
  * @global stdClass $_SESSION['eduerpvcapprovalform'] is set to contain values needed for approve_grades_vc_form.
- * @see grading_stats_department_form()
  */
 function _grading_ahah_stats() {
   global $user;
@@ -1176,7 +1175,7 @@ function approve_grades_registrar_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_registrar_form
+ * validate hook for {@link approve_grades_registrar_form()}
  */
 function approve_grades_registrar_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -1186,7 +1185,7 @@ function approve_grades_registrar_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_registrar_form
+ * submit hook for {@link approve_grades_registrar_form()}
  */
 function approve_grades_registrar_form_submit($form, &$form_state) {
   global $user;
@@ -1357,7 +1356,7 @@ function approve_grades_vc_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_vc_form
+ * validate hook for {@link approve_grades_vc_form()}
  */
 function approve_grades_vc_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -1367,7 +1366,7 @@ function approve_grades_vc_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_vc_form
+ * submit hook for {@link approve_grades_vc_form()}
  *
  * <p>Relevant CA & Exam locked fields become 5 and so are finally approved and cannot be changed except by a 'University Grade Editor'.</p>
  * <p>Set the student visible CA, exam, GPA and cGPA scores to the values set by the lecturer or calculated based on these.</p>
@@ -1757,7 +1756,7 @@ function grading_stats_uni_form(&$obj) {
 
 
 /**
- * submit hook for grading_stats_uni_form
+ * submit hook for {@link grading_stats_uni_form()}
  */
 function grading_stats_uni_form_submit($form, &$state) {
   drupal_set_message('Submitted<br />');
@@ -1765,7 +1764,7 @@ function grading_stats_uni_form_submit($form, &$state) {
 
 
 /**
- * AHAH callback to do the main statistics and display work for grading_stats_uni_form.
+ * AHAH callback to do the main statistics and display work for {@link grading_stats_uni_form()}
  */
 function _grading_ahah_stats_uni() {
   global $user;
@@ -2026,7 +2025,7 @@ function _grading_mat_list() {
 
 
 /**
- * submit hook for grading_student_details_form
+ * submit hook for {@link grading_student_details_form()}
  */
 function grading_student_details_form_submit($form, &$state) {
   drupal_set_message('Student: ' . $state['values']['studentname'] . '<br />');
@@ -2034,7 +2033,7 @@ function grading_student_details_form_submit($form, &$state) {
 
 
 /**
- * AHAH callback to do the main display work for grading_student_details_form.
+ * AHAH callback to do the main display work for {@link grading_student_details_form}
  */
 function _grading_ahah_studentdetails() {
   global $user;

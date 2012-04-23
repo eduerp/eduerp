@@ -475,7 +475,7 @@ function approve_grades_lecturer_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_lecturer_form
+ * validate hook for {@link approve_grades_lecturer_form()}
  */
 function approve_grades_lecturer_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -485,7 +485,7 @@ function approve_grades_lecturer_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_lecturer_form
+ * submit hook for {@link approve_grades_lecturer_form()}
  *
  * <p>Relevant CA & Exam locked fields become 1.</p>
  * <p>Calculate GPA, cGPA and other data if exam scores are being entered.</p>
@@ -868,7 +868,7 @@ function unlock_grades_hod_form($form_state) {
 
 
 /**
- * validate hook for unlock_grades_hod_form
+ * validate hook for {@link unlock_grades_hod_form()}
  */
 function unlock_grades_hod_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -878,7 +878,7 @@ function unlock_grades_hod_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for unlock_grades_hod_form
+ * submit hook for {@link unlock_grades_hod_form()}
  *
  * <p>Relevant CA & Exam locked fields become 0.</p>
  * <p>Create an Approval Record.</p>
@@ -1085,7 +1085,7 @@ function approve_grades_hod_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_hod_form
+ * validate hook for {@link approve_grades_hod_form()}
  */
 function approve_grades_hod_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -1095,7 +1095,7 @@ function approve_grades_hod_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_hod_form
+ * submit hook for {@link approve_grades_hod_form()}
  *
  * <p>Relevant CA & Exam locked fields become 2.</p>
  * <p>If this is a CA approval, set the student visible CA scores to the values set by the lecturer.</p>
@@ -1348,7 +1348,7 @@ function approve_grades_dean_form($form_state) {
 
 
 /**
- * validate hook for approve_grades_dean_form
+ * validate hook for {@link approve_grades_dean_form()}
  */
 function approve_grades_dean_form_validate($form, &$form_state) {
   if (empty($form_state['values']['comment'])) {
@@ -1358,7 +1358,7 @@ function approve_grades_dean_form_validate($form, &$form_state) {
 
 
 /**
- * submit hook for approve_grades_dean_form
+ * submit hook for {@link approve_grades_dean_form()}
  *
  * <p>Relevant CA & Exam locked fields become 3 (or 5 if this is for a CA only... Fully Approved).</p>
  * <p>Create an Approval Record.</p>
