@@ -477,6 +477,9 @@ class courseselectionsclass {
  * <p>Set Matriculation Number and create e-mail address for Student.</p>
  * <p>Change role of the student from Applicant to Student.</p>
  * <p>e-mail the Student.</p>
+ * @uses record_cleared()
+ * @uses _perform_clearance()
+ * @uses student_log_clearance()
  * @return string $output HTML to display including Student's Clearance Agreement
  */
 function student_clearance() {
@@ -623,6 +626,8 @@ function student_clearance() {
  * <p>Set Matriculation Number and create e-mail address for Student.</p>
  * <p>Change role of the student from Applicant to Student.</p>
  * <p>e-mail the Student.</p>
+ * @uses create_student_program()
+ * @uses set_matriculation_number()
  */
 function _perform_clearance($student_id) {
   global $user;
@@ -732,6 +737,7 @@ function student_log_clearance($student_id, $clearance_date, $user) {
  * @param int $student_id
  * @param int $formerProgID if non-zero this is a 'program' CCK Drupal Node nid that the Student is changing from
  * @param bool $dont_change_matno TRUE if the Matriculation Number should not be changed (so nothing will be done)
+ * @uses me_gen_matno()
  */
 function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_matno = NULL) {
   // Generate the matriculation number for this student
@@ -924,6 +930,7 @@ function theme_student_field_uncleared() {
 /**
  * Theme function for theme_student_field_uncleared_reasons, renders student_field_uncleared_reasons
  * @see student_theme()
+ * @uses student_uncleared_get_reasons()
  */
 function theme_student_field_uncleared_reasons() {
   $options = student_uncleared_get_reasons();
@@ -1051,6 +1058,8 @@ function student_widget_info() {
 
 /**
  * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ *
+ * @uses _student_content_allowed_values()
  */
 function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   $element = array();
@@ -1383,6 +1392,7 @@ function student_next_level($uid, $session) {
 /**
  * Has a Student paid sufficient to be allowed Register Courses for the current Session?
  *
+ * @uses get_fee_items()
  * @param int $uid Student's Drupal uid
  * @return bool
  */
@@ -1415,6 +1425,14 @@ function student_meets_fee_requirements($uid) {
  *
  * @uses student_course_form_validate()
  * @uses student_course_form_submit()
+ * @uses student_meets_fee_requirements()
+ * @uses courseselectionsclass::
+ * @uses courseselectionsclass::addformelementsforsemester()
+ * @uses courseselectionsclass::addformelementsforfailedcoursesforsemester()
+ * @uses courseselectionsclass::add_a_break()
+ * @uses courseselectionsclass::addformelementsforloadcounter()
+ * @uses courseselectionsclass::finishform()
+ * @uses courseselectionsclass::$form
  */
 function student_course_form(&$obj) {
   global $user;
@@ -1661,6 +1679,9 @@ function student_course_form_validate($form, &$form_state) {
 
 /**
  * submit hook for {@link student_course_form()}, create/update 'student_gpa' (contains GPA) and 'student_grades' (Grades for a Course Instance) CCKs
+ * @uses create_student_gpa()
+ * @uses delete_student_grades()
+ * @uses create_student_grades()
  */
 function student_course_form_submit($form, &$form_state) {
   global $user;
@@ -1956,6 +1977,8 @@ function create_student_program($uid) {
 /**
  * Change a Student to a different Programme and/or different Level
  *
+ * @uses create_student_program()
+ * @uses set_matriculation_number()
  * @param stdClass $user Drupal account for Student
  * @param int $first_choice Drupal node nid for new 'program' CCK
  * @param string $level new Level
@@ -1997,6 +2020,11 @@ function student_load_student_profile($student_id) {
 /**
  * Reserve a Hostel Place for a Student
  *
+ * @uses is_allocation_existing()
+ * @uses hostel_allocation_show_allocated_room()
+ * @uses is_reservation_existing()
+ * @uses hostel_allocation_show_reserved_room()
+ * @uses hostel_allocation_direct_room_reservation()
  * @global int $EDUERPstudentInitiated set to indicate Student initiated reservation
  * @return string of HTML
  */
