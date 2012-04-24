@@ -7,6 +7,8 @@
 /**
  * Implementation of hook_matno() to generate Student Matriculation Number and e-mail based on Institution (University) specific data
  *
+ * @uses gen_veritas_style_matnum()
+ * @uses gen_udusok_style_matnum()
  * @param int $studUID
  * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
  * @param bool $dont_change_matno, TRUE if Staff have decided (in UI) not to change Matriculation Number when changing a particular Student's Programme
@@ -39,6 +41,8 @@ function me_gen_matno($studUID, $formerProgID = 0, $dont_change_matno = NULL) {
 /**
  * Generate a particular style of Student Matriculation Number and e-mail based on Institution specific data
  *
+ * @uses programme_types()
+ * @uses me_gen_send_change_email()
  * @param int $formatID
  * @param int $serialTypeID
  * @param int $studUID
