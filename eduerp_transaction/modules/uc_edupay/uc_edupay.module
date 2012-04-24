@@ -562,6 +562,7 @@ function uc_edupay_ctools_plugin_api($module, $api) {
 /**
  * Send HTTP request to EduPay (or if this failes Queue for later handling by cron), (if Total is Zero do not do HTTP request)
  *
+ * @uses _uc_edupay_fees_order_items()
  * @param stdClass $order
  */
 function _uc_edupay_process_order_request($order) {
@@ -682,10 +683,13 @@ function uc_edupay_cron() {
 
 
 /**
- * Implementation of hook_order() (UberCart), called when an order is created... 'new' & 'save' are called in quick sucession from uc_cart_checkout_form_validate()
+ * Implementation of hook_order() (UberCart), called when an order is created... 'new' & 'save' are called in quick succession from uc_cart_checkout_form_validate()
  *
  * <p>'new' sends a HTTP request to EduPay.</p>
  * <p>'save' writes a 'fees_order' table entry and redirects to 'cart/checkout/complete'.</p>
+ * @uses _uc_edupay_process_order_request()
+ * @uses student_next_level()
+ * @uses uc_edupay_save()
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_order($op, &$arg1, $arg2) {
@@ -892,6 +896,8 @@ function uc_edupay_fees_order_get_item($field) {
 
 /**
  * Implementation of hook_token_values(). (token.module)
+ *
+ * @uses get_late_registration_info()
  */
 function uc_edupay_token_values($type, $object = NULL) {
   $values = array();
