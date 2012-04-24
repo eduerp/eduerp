@@ -493,6 +493,7 @@ function approve_grades_lecturer_form_validate($form, &$form_state) {
  * <p>Calculate GPA, cGPA and other data if exam scores are being entered.</p>
  * <p>Create an Approval Record.</p>
  * <p>Send e-mails to those that need to be notified.</p>
+ * @uses findcourseparameters()
  */
 function approve_grades_lecturer_form_submit($form, &$form_state) {
   global $user;
@@ -887,6 +888,7 @@ function unlock_grades_hod_form_validate($form, &$form_state) {
  * <p>Relevant CA & Exam locked fields become 0.</p>
  * <p>Create an Approval Record.</p>
  * <p>Send notification e-mail to Lecturer.</p>
+ * @uses findcourseparameters()
  */
 function unlock_grades_hod_form_submit($form, &$form_state) {
   global $user;
@@ -1108,6 +1110,7 @@ function approve_grades_hod_form_validate($form, &$form_state) {
  * <p>Create an Approval Record.</p>
  * <p>Send e-mails to those that need to be notified.</p>
  * <p>Send e-mails to Students for CA only.</p>
+ * @uses findcourseparameters()
  */
 function approve_grades_hod_form_submit($form, &$form_state) {
   global $user;
@@ -1370,6 +1373,7 @@ function approve_grades_dean_form_validate($form, &$form_state) {
  *
  * <p>Relevant CA & Exam locked fields become 3 (or 5 if this is for a CA only... Fully Approved).</p>
  * <p>Create an Approval Record.</p>
+ * @uses findcourseparameters()
  */
 function approve_grades_dean_form_submit($form, &$form_state) {
   global $user;
