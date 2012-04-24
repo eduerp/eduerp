@@ -1,6 +1,135 @@
 <?php
-// $Id$
 
+/**
+ * This Block Links to the Key Entry Points into EduERP (mostly Menus) so they can be easily found in the code
+ *
+ * <p>Semester Administration Menu...</p>
+ * @see semester_admin()
+ *
+ * <p>Menu to display Staff, their EduERP Roles and a link to Assign Roles for the Staff member...</p>
+ * @see search_staff_list()
+ *
+ * <p>Menu to assign EduERP roles for Staff...</p>
+ * @see staff_assign_role()
+ *
+ * <p>Menu to Display Courses and Lecturers for a Department for the Current Session...</p>
+ * @see staff_course_list()
+ *
+ * <p>Menu to Display Department, Head of Department and a link to Courses for the Department...</p>
+ * @see staff_department_list()
+ *
+ * <p>Menu to display some Staff data...</p>
+ * @see staff_view_form()
+ *
+ * <p>Menu to Create/Update a Faculty...</p>
+ * @see staff_create_edit_faculty()
+ *
+ * <p>Menu to Create/Update a Department...</p>
+ * @see staff_create_edit_dept()
+ *
+ * <p>Menu to Create/Update a Course...</p>
+ * @see staff_create_edit_course()
+ *
+ * <p>Menu to Create/Update a Programme...</p>
+ * @see staff_create_edit_programme()
+ *
+ * <p>Menu to Verify all Courses needed for a Programme are being run for a Session and Semester...</p>
+ * @see staff_verify_assigned_course()
+ *
+ * <p>Menu to Check for Missing Course Instances for a Semester ...</p>
+ * @see staff_check_for_missing_courses()
+ *
+ * <p>Menu to Check have all existing Courses required for all Programmes been Verified...</p>
+ * @see staff_check_verify_programme_courses()
+ *
+ * <p>Menu to Display Student Progress towards Graduation...</p>
+ * @see staff_student_progress_qualification()
+ *
+ * <p>Menu to List of Students who have Not Registered for a Semester...</p>
+ * @see staff_unregistered_students()
+ *
+ * <p>Menu to Mark a Course Registration as Dropped...</p>
+ * @see staff_drop_registered_course()
+ *
+ * <p>Menu to Manually Register a Student in a Course...</p>
+ * @see staff_manual_course_reg()
+ *
+ * <p>Menu to Change a Student's Programme...</p>
+ * @see staff_change_student_programme()
+ *
+ * <p>Menu to Change Programme for Uncleared Candidate...</p>
+ * @see staff_change_uncleared_candidate_programme()
+ *
+ * <p>Menu for School Fees Administration...</p>
+ * @see staff_school_fees_admin()
+ *
+ * <p>Menu to Update Fee Settings...</p>
+ * @see staff_school_fees_update_settings()
+ *
+ * <p>Menu to Create / Modify School Fee Item...</p>
+ * @see staff_school_fees_create_modify_school_fee_item()
+ *
+ * <p>Menu to Create / Modify School Fee Setup...</p>
+ * @see staff_school_fees_create_modify_school_fee_setup()
+ *
+ * <p>Menu to Create/Update Scholarship Types...</p>
+ * @see staff_school_fees_create_modify_scholarship_types()
+ *
+ * <p>Menu to Authorise Scholarship...</p>
+ * @see staff_school_fees_scholarship_payment()
+ *
+ * <p>Menu to Authorise Instalment Payment...</p>
+ * @see staff_school_fees_authorise_instalment_payment()
+ *
+ * <p>Menu to Remove Pending Invoices...</p>
+ * @see staff_school_fees_remove_pending_orders()
+ *
+ * <p>Menu to Add Once Off Invoice...</p>
+ * @see staff_add_once_off_invoice()
+ *
+ * <p>Menu to Archive a Student who does not yet have any Exam Marks...</p>
+ * @see staff_archive_student()
+ *
+ * <p>Menus for Grading Statistics/Details(/Approvals)...</p>
+ * @see grading_stats_department_form()
+ * @see grading_stats_uni_form()
+ *
+ * <p>For various levels of Submission/Approval of Grades...</p>
+ * @see approve_grades_lecturer_form()
+ * @see unlock_grades_hod_form()
+ * @see approve_grades_hod_form()
+ * @see approve_grades_dean_form()
+ * @see approve_grades_registrar_form()
+ * @see approve_grades_vc_form()
+ *
+ * <p>Menu for Student Details...</p>
+ * @see grading_student_details_form()
+ *
+ * <p>Handle Student Clearance...</p>
+ * @see student_clearance()
+ *
+ * <p>For Student Registration of Courses...</p>
+ * @see student_course_form()
+ *
+ * <p>Menu for a Student to Reserve a Hostel place...</p>
+ * @see student_hostel_reservation()
+ *
+ * <p>Menu for a Student to start the Fees Payment process...</p>
+ * @see function uc_eduerp_fees_pay_fees()
+ *
+ * <p>Handling POST from EduPay Server to indicate Payment Received or Cancelled...</p>
+ * @see uc_eduerp_fees_update_fees()
+ *
+ * <p>Form to configure settings for EduPay Communication...</p>
+ * @see uc_edupay_config_form()
+ *
+ * <p>Menu to for EduERP settings...</p>
+ * @see function eduerp_admin_settings()
+ */
+
+/**
+ * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved
+ */
 function eduerp_menu() {
 
   $items['admin/settings/eduerp'] = array (
@@ -31,6 +160,9 @@ function eduerp_simpletest() {
 }
 
 
+/**
+ * System Settings Form to handle 'admin/settings/eduerp' menu to for EduERP settings
+ */
 function eduerp_admin_settings() {
   $form['RegisterAllCoursesatStartofSession'] = array(
     '#type' => 'checkbox',
@@ -113,6 +245,7 @@ function eduerp_load_profile($uid, $profile_type = 'profile') {
   }
 }
 
+
 /**
  * saves a user profile node - nothing fanciful just a wrapper
  *
@@ -123,6 +256,7 @@ function eduerp_load_profile($uid, $profile_type = 'profile') {
 function eduerp_save_profile($node) {
   node_save($node);
 }
+
 
 /**
  * class definition for User profiles
