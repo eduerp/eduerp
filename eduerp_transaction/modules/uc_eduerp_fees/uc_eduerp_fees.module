@@ -49,6 +49,8 @@ function uc_eduerp_fees_menu_alter(&$items) {
 
 /**
  * Handles 'edupay/callback' menu callback to handle POST from EduPay Server to indicate Payment Received or Cancelled for an Invoice, returning JSON packet to EduPay
+ * @uses hostel_allocation_allocate_bedspace()
+ * @uses hostel_allocation_revoke_expired_reservation()
  */
 function uc_eduerp_fees_update_fees() {
   $order_id = $_POST['order_id'];
@@ -144,6 +146,7 @@ function uc_eduerp_fees_update_fees() {
 /**
  * Return HTML for Display of Fees that a Student is due to Pay (to be used for Scholarship authorisation purposes), also add Student data
  *
+ * @uses show_cart_for_student()
  * @return string HTML
  */
 function display_cart_for_scholarship() {
@@ -351,6 +354,12 @@ function user_has_completed_order_items($student_id) {
  * <p>Generate a form which stores all this fee data.</p>
  * <p>Allow the Student to deselect the Hostel Payment for now.</p>
  * @uses uc_eduerp_fees_pay_fees_form_submit()
+ * @uses uc_eduerp_fees_eduerp_fees()
+ * @uses is_fee_setup_existing_for_student()
+ * @uses student_clearance_performed()
+ * @uses student_next_level()
+ * @uses uc_eduerp_fees_completed_order_items()
+ * @uses is_reservation_existing()
  * @param array $form_state
  * @param int $student_id This Parameter is generated when module setup at admin/build/modules is saved and is always wrong (it is the user who enabled the module)!
  * @return array Drupal Form
@@ -521,6 +530,9 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 
 /**
  * submit hook for {@link uc_eduerp_fees_pay_fees_form()} to parse the Form data, empty the UberCart Shopping Cart, add items to the Cart and go to UberCart Checkout
+ *
+ * @uses is_scholarship_authorisation_existing()
+ * @uses uc_eduerp_fees_get_profile_items()
  */
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   $student_id = $form_state['values']['uid'];
@@ -669,6 +681,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
  *
  * <p>Should really be a called as uc_eduerp_fees_eduerp_fees(), no need for call as hook: "module_invoke('uc_eduerp_fees', 'eduerp_fees')".</p>
  * <p>In fact whole array should be flattened and simplified when it is first generated.</p>
+ * @uses student_load_student_profile()
  * @param array $fees
  * @return array
  */
@@ -710,7 +723,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'fullnames' => $fullnames,
       'institution' => 1
     );
-    // Late registration added by Alan
+
     $fees_item['options']['late_registration']['last_registration_date'] = intval(strtotime($fees_item['options']['late_registration']['last_registration_date']));
 
     // hostel
