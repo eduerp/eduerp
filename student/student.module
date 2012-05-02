@@ -628,6 +628,7 @@ function student_clearance() {
  * <p>e-mail the Student.</p>
  * @uses create_student_program()
  * @uses set_matriculation_number()
+ * @uses eduerp_set_role()
  */
 function _perform_clearance($student_id) {
   global $user;
@@ -1999,6 +2000,7 @@ function change_student_program(&$user, $first_choice, $level, $dont_change_matn
 /**
  * Loads a complete user profile of the student.
  *
+ * @uses eduerp_has_role()
  * @param $student_id Drupal uid
  * @return UserProfile
  *
@@ -2071,6 +2073,9 @@ function student_hostel_reservation(){
 
 /**
  * Implementation of hook_user(), make newly inserted user with role 'anonymous user' an 'Applicant'
+ *
+ * @uses eduerp_has_role()
+ * @uses eduerp_add_role()
  */
 function student_user($op, &$edit, &$account, $category = NULL) {
   global $user;
