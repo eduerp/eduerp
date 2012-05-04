@@ -18,7 +18,7 @@ function create_fees_order_callback() {
   ob_start();
 
   $n = 0;
-  $missed orders = 0;
+  $missed_orders = 0;
   $fees_order_n = 0;
 
   $orders = $_REQUEST['orders'];
@@ -30,7 +30,7 @@ dsm(array('uc_orders' => $uc_orders));
     if (db_fetch_object(db_query("SELECT * FROM {fees_order} WHERE order_id=%d", $order_id))) {
       echo "<br />fees_order ALREADY EXISTS FOR: $order_id (skipping)";
       echo "<br />================================================";
-      $missed orders++;
+      $missed_orders++;
       continue;
     }
 
@@ -116,7 +116,7 @@ dsm(array('fees_order' => $fees_order));
   }
 
   echo "<br />Created fees_order entries for $n orders";
-  echo "<br />Skipped fees_order entries for $missed orders";
+  echo "<br />Skipped fees_order entries for $missed_orders";
   echo "<br />Created fees_order entries $fees_order_n";
 
   return ob_get_clean();
