@@ -21,12 +21,22 @@ function create_fees_order_callback() {
   $missed_orders = 0;
   $fees_order_n = 0;
 
+  if (empty($_REQUEST['orders'])) {
+    echo "<br />NO orders";
+    return ob_get_clean();
+  }
+
   $orders = explode(',', $_REQUEST['orders']);
 dsm(array('orders' => $orders));
 
   foreach ($orders as $order_id) {
     $uc_orders = db_fetch_object(db_query("SELECT * FROM {uc_orders} WHERE order_id=%d", $order_id));
 dsm(array('uc_orders' => $uc_orders));
+
+    if (!$uc_orders) {
+      echo "<br />Order $order_id DOES NOT EXIST... STOPPING";
+      return ob_get_clean();
+    }
 
     if (db_fetch_object(db_query("SELECT * FROM {fees_order} WHERE order_id=%d", $order_id))) {
       echo "<br />fees_order ALREADY EXISTS FOR: $order_id (skipping)";
