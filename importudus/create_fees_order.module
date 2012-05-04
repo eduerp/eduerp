@@ -21,7 +21,7 @@ function create_fees_order_callback() {
   $missed_orders = 0;
   $fees_order_n = 0;
 
-  $orders = $_REQUEST['orders'];
+  $orders = explode(',', $_REQUEST['orders']);
 
   foreach ($orders as $order_id) {
     $uc_orders = db_fetch_object(db_query("SELECT * FROM {uc_orders} WHERE order_id=%d", $order_id));
