@@ -38,7 +38,8 @@ dsm(array('uc_orders' => $uc_orders));
       return ob_get_clean();
     }
 
-    if (db_fetch_object(db_query("SELECT * FROM {fees_order} WHERE order_id=%d", $order_id))) {
+    if ($x = db_fetch_object(db_query("SELECT * FROM {fees_order} WHERE order_id=%d", $order_id))) {
+dsm(array('fees_order' => $x));
       echo "<br />fees_order ALREADY EXISTS FOR: $order_id (skipping)";
       echo "<br />================================================";
       $missed_orders++;
