@@ -1,5 +1,7 @@
 <?php
-// Header for listcourses View 20100228
+/**
+ * Header for listcourses View 20100228
+ */
 
 global $user;
 

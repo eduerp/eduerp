@@ -1,5 +1,7 @@
 <?php
-// Footer for gpa_details View 20100304
+/**
+ * Footer for gpa_details View 20100304
+ */
 
 global $base_url;
 

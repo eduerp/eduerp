@@ -1,0 +1,130 @@
+<?php
+
+function create_fees_order_menu() {
+
+$items['create_fees_order/create'] = array(
+    'title'=>'Create Fees Report Entries',
+    'page callback' => 'create_fees_order_callback',
+    'access callback' => TRUE,
+//    'access arguments' => array('administer users'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+function create_fees_order_callback() {
+  ob_start();
+
+  $n = 0;
+  $missed_orders = 0;
+  $fees_order_n = 0;
+
+  if (empty($_REQUEST['orders'])) {
+    echo "<br />NO orders";
+    return ob_get_clean();
+  }
+
+  $orders = explode(',', $_REQUEST['orders']);
+
+  foreach ($orders as $order_id) {
+    $uc_orders = db_fetch_object(db_query("SELECT * FROM {uc_orders} WHERE order_id=%d", $order_id));
+
+    if (!$uc_orders) {
+      echo "<br />Order $order_id DOES NOT EXIST... STOPPING";
+      return ob_get_clean();
+    }
+
+    if (db_fetch_object(db_query("SELECT * FROM {fees_order} WHERE order_id=%d", $order_id))) {
+      echo "<br />fees_order ALREADY EXISTS FOR: $order_id (skipping)";
+      echo "<br />================================================";
+      $missed_orders++;
+      continue;
+    }
+
+    $uid = $uc_orders->uid;
+
+    $student_user = user_load(array('uid' => $uid));
+
+    $student_profile = new UserProfile($uid);
+
+    $studentname = '';
+    if (!empty($student_profile->profile_first_name) && !empty($student_profile->profile_last_name)) {
+      $middle = '';
+      if (!empty($student_profile->profile_middle_name)) $middle = ' ' . $student_profile->profile_middle_name;
+      $studentname = "{$student_profile->profile_last_name}, {$student_profile->profile_first_name}{$middle}";
+    }
+
+    $profile_items = uc_eduerp_fees_get_profile_items($uid);
+
+    $rs = db_query("SELECT * FROM {uc_order_products} WHERE order_id=%d", $order_id);
+    while ($uc_order_products = db_fetch_object($rs)) {
+      $data = unserialize($uc_order_products->data);
+
+      $fees_order = array();
+      $fees_order['product_nid'] = $uc_order_products->nid;
+
+      $feeStudentOption = get_fee_items($uid);
+
+      $fees_order['nid'] = $data['nid'];
+      $fees_order['type'] = 'fees';
+      $fees_order['cart_item_id'] = 0;
+      $fees_order['title'] = $uc_order_products->title;
+      $fees_order['price'] = $uc_order_products->price;
+      $fees_order['nationality'] = $data['nationality'];
+      $fees_order['programme'] =  $data['programme'];
+      $fees_order['level_name'] = student_next_level($student_user->uid, variable_get('eduerp_current_session', ''));
+      $fees_order['session'] = $data['session'];
+      $fees_order['late_registration_date'] = 2145913199;
+      $fees_order['late_registration_amount'] = 0.00000;
+      $fees_order['late_registration_nid'] = NULL;
+      $fees_order['late_registration_description'] = NULL;
+      $fees_order['uid'] = $uid;
+      $fees_order['jambno'] = $student_user->name;
+      $fees_order['fullnames'] = $studentname;
+      $fees_order['institution'] = 1;
+      $fees_order['status'] = 'pending';
+      $fees_order['order_id'] = $order_id;
+      $fees_order['scholarship'] = 0;
+      $fees_order['allow_instalment'] = 0;
+      $fees_order['hostel_nid'] = NULL;
+      $fees_order['hostel_type'] = 'hostel';
+
+      $fees_order['attributes'] = $data['attributes']['Fee Structure'][0];
+      $fees_order['module'] = 'uc_product';
+
+      $fees_order['college'] = $data['college'];
+      $fees_order['course'] = $data['course'];
+
+      $fees_order['original_amount'] = $uc_order_products->price;
+      $fees_order['scholarship_type'] = 'None';
+      $fees_order['sponsor'] = 'None';
+
+      if (!empty($fees_order['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $fees_order['attributes'], $matches)) {
+        $fees_order['fees_format'] = $matches[0];
+      }
+      else {
+        unset($fees_order['fees_format']);
+      }
+
+      unset($fees_order['expiry_date']); // We want it to be NULL until payment marked received by call-back (this will be the date payment was received)
+      $fees_order['email'] = ' '; // We want it to be ' ' until payment marked received by call-back (this will be the EduPay username that marked the payment as received)
+
+      $fees_order['status'] = 'pending';
+
+      drupal_write_record('fees_order', $fees_order);
+      echo "<br />&nbsp;&nbsp;order_id: $order_id... $uc_order_products->title";
+      $fees_order_n++;
+    }
+    echo "<br />================================================";
+    $n++;
+  }
+
+  echo "<br />Created fees_order entries for $n orders";
+  echo "<br />Skipped fees_order entries for $missed_orders orders";
+  echo "<br />Created fees_order entries $fees_order_n";
+
+  return ob_get_clean();
+}
+?>

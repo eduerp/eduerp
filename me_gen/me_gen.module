@@ -1,11 +1,18 @@
 <?php
 
-// The modules file will essentially contain hook implementations
-// for actions that need to be performed that are institution
-// specific
+/**
+ * The modules file will essentially contain hook implementations for actions that need to be performed that are institution specific
+ */
 
 /**
- * Implementation of hook_matno()
+ * Implementation of hook_matno() to generate Student Matriculation Number and e-mail based on Institution (University) specific data
+ *
+ * @uses gen_veritas_style_matnum()
+ * @uses gen_udusok_style_matnum()
+ * @param int $studUID
+ * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
+ * @param bool $dont_change_matno, TRUE if Staff have decided (in UI) not to change Matriculation Number when changing a particular Student's Programme
+ * @return array of new Mat Number and e-mail
  */
 function me_gen_matno($studUID, $formerProgID = 0, $dont_change_matno = NULL) {
   //get the institution's choice of mat num
@@ -31,6 +38,18 @@ function me_gen_matno($studUID, $formerProgID = 0, $dont_change_matno = NULL) {
 }
 
 
+/**
+ * Generate a particular style of Student Matriculation Number and e-mail based on Institution specific data
+ *
+ * @uses programme_types()
+ * @uses me_gen_send_change_email()
+ * @param int $formatID
+ * @param int $serialTypeID
+ * @param int $studUID
+ * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
+ * @param bool $dont_change_matno, TRUE if Staff have decided (in UI) not to change Matriculation Number when changing a particular Student's Programme
+ * @return array of new Mat Number and e-mail
+ */
 function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProgID = 0, $dont_change_matno = NULL) {
   /**
   This style of matno does not have separators
@@ -194,6 +213,13 @@ function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProg
 }
 
 
+/**
+ * Send an e-mail to a Student indicating Programme has been changed with details
+ *
+ * @param int $student_id
+ * @param string $matNumber
+ * @param string $email
+ */
 function me_gen_send_change_email($student_id, $matNumber, $email) {
   global $user;
   $user_profile = new UserProfile($student_id);
@@ -232,6 +258,15 @@ function me_gen_send_change_email($student_id, $matNumber, $email) {
 }
 
 
+/**
+ * Generate a particular style of Student Matriculation Number and e-mail based on Institution specific data. This has NOT been kept up to date!
+ *
+ * @param int $formatID
+ * @param int $serialTypeID
+ * @param int $studUID
+ * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
+ * @return array of new Mat Number and e-mail
+ */
 function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerProgID=0){
  /**
   This style of matno have separators
@@ -346,9 +381,14 @@ function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerPro
 }
 
 
-//update mat_num_faculty_serial and email_faculty_subdomain_description tables via hook
+/**
+ * Implementation of hook_updFacultyInfo() to update 'mat_num_faculty_serial' and 'email_faculty_subdomain_description' tables for a Session
+ *
+ * @param int $facNID 'college' CCK Drupal node nid
+ * @param string $sessionName
+ * @param string $facSubDomain
+ */
 function me_gen_updFacultyInfo($facNID, $sessionName, $facSubDomain){
-
   //create entry for mat num gen
   //check if the nid exists
   $sql = "SELECT faculty_nid FROM mat_num_faculty_serial WHERE faculty_nid=%d AND session_name='%s'";
@@ -387,6 +427,14 @@ function me_gen_updFacultyInfo($facNID, $sessionName, $facSubDomain){
 }
 
 
+/**
+ * Generate Student e-mail based on Institution specific data
+ *
+ * @param int $studUID
+ * @param string $matNum
+ * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
+ * @return string
+ */
 function me_gen_email($studUID, $matNum, $formerProgID=0){
   //get the institution choice
 
@@ -508,9 +556,12 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
 }
 
 
+/**
+ * Implementation of hook_createsession() to update our tables once the Session changes
+ *
+ * @param string $sessioname
+ */
 function me_gen_createsession($sessioname){
-  //once the session changes, we should update our tables
-
   //get all facultites
   $sql = "SELECT nid AS faculty_nid, field_college_email_subdomain_value AS faculty_subdomain
   	FROM {content_type_college} ";

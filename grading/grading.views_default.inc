@@ -1,10 +1,8 @@
 <?php
 /**
- * Implementation of hook_views_default_views().
+ * Implementation of hook_views_default_views(), walk through the files in the views directory including the files and creating the views.
  */
 function grading_views_default_views() {
-	// walk through the files in the views directory
-	// including the files and creating the views
 	$path = dirname(__FILE__) . "/views/";
 	$views = array();
 

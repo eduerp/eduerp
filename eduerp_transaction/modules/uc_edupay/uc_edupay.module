@@ -1,17 +1,15 @@
 <?php
 /**
- * @author Kayode Odeyemi (dreyemi@gmail.com)
+ * Allows payment via EduPay
  *
- * @file
- * Allows payment via edupay.
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 
-
 module_load_include('inc', 'uc_edupay', 'includes/uc_edupay_rules_default');
+
 /**
-*
-* Implements hook_menu
-*/
+ * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved
+ */
 function uc_edupay_menu() {
   $items = array();
   $items['admin/settings/eduerp/transaction/edupay'] = array(
@@ -27,6 +25,13 @@ function uc_edupay_menu() {
 }
 
 
+/**
+ * Handles 'admin/settings/eduerp/transaction/edupay' menu, Form to configure settings for EduPay Communication
+ *
+ * @uses uc_edupay_config_form_validate()
+ * @uses uc_edupay_config_form_submit()
+ * @return array Drupal Form
+ */
 function uc_edupay_config_form($form_state) {
   $form['uc_edupay_config'] = array(
     '#type' => 'fieldset',
@@ -131,6 +136,9 @@ function uc_edupay_config_form($form_state) {
 }
 
 
+/**
+ * validate hook for {@link uc_edupay_config_form()}
+ */
 function uc_edupay_config_form_validate($form, &$form_state) {
   if(isset($form_state['values']['token_url'])) {
     if(!valid_url($form_state['values']['token_url'], TRUE)) {
@@ -151,6 +159,9 @@ function uc_edupay_config_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for {@link uc_edupay_config_form()}
+ */
 function uc_edupay_config_form_submit($form, &$form_state) {
   variable_set('uc_edupay_transaction_url', $form_state['values']['uc_edupay_transaction_url']);
   variable_set('uc_edupay_username', $form_state['values']['uc_edupay_username']);
@@ -183,9 +194,9 @@ function uc_edupay_config_form_submit($form, &$form_state) {
 /**
  * Implements hook_form_alter()
  *
- * @param <type> $form
- * @param <type> $form_state
- * @param <type> $form_id
+ * @param array $form
+ * @param array $form_state
+ * @param string $form_id
  *
  * @author Kayode odeyemi (dreyemi@gmail.com)
  */
@@ -213,6 +224,7 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
+
 /**
  * Implements hook_tapir_table_alter
  */
@@ -230,6 +242,7 @@ function uc_edupay_tapir_table_alter(&$table, $table_id) {
   }
 }
 
+
 /**
  * Implements hook_cart_fees_type
  */
@@ -241,14 +254,9 @@ function uc_edupay_cart_fees_type() {
   return $types;
 }
 
+
 /**
- * implements hook_cart_item
- *
- *
- * @param
- *  - $item is a call to uc_get_cart_contents()
- *
- * modified by Alan
+ * implements hook_cart_item, adds text to an item which has a Scholarship
  */
 function uc_edupay_cart_item($op, &$item){
   switch($op) {
@@ -265,6 +273,10 @@ function uc_edupay_cart_item($op, &$item){
   }
 }
 
+
+/**
+ * implements hook_uc_price_handler, add uc_edupay_fees_price_alter() and uc_edupay_fees_price_handler_format() as callbacks
+ */
 function uc_edupay_uc_price_handler() {
   return array(
     'alter' => array(
@@ -280,9 +292,9 @@ function uc_edupay_uc_price_handler() {
   );
 }
 
+
 /**
- * Callback to modify the price of an item in cart
- *
+ * Callback to set Price to zero for an item which has a Scholarship
  */
 function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
   $items = uc_cart_get_contents();
@@ -297,17 +309,21 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
 }
 
 
+/**
+ * Callback, not needed?
+ */
 function uc_edupay_fees_price_handler_format($price, $options) {
 }
+
+
 /**
- * A hook to mark a fee item as an instalment
+ * Not used
  *
- * A fee item is recognized as full or instalment if it contains the word
- * "Full Amount", "Instalment1" or "Instalment2" in its description
+ * @deprecated
  */
 function uc_eduerp_fees_instalment() {
-
 }
+
 
 /**
  * Implements hook_theme()
@@ -326,10 +342,9 @@ function uc_edupay_theme(){
   );
 }
 
+
 /**
  * Themes the cart item title
- *
- * @todo To be rethemed during theming
  */
 function theme_eduerp_fees_cart_title($title, $text, $context = NULL) {
   if($context == 'scholarship') {
@@ -342,40 +357,41 @@ function theme_eduerp_fees_cart_title($title, $text, $context = NULL) {
   return $output;
 }
 
+
+/**
+ * Themes the Price Symbol
+ */
 function theme_eduerp_fees_price_symbol($item) {
   $output = "<span><strikethrough>N<strikethrough></span>" + $item;
   return $output;
 }
 
+
 /**
- * Detailed override of uc_price for modifying cart
- * price of an item
+ * Not used
  *
- * @todo Load the price of each item in cart
+ * @deprecated
  */
 function uc_edupay_load_price(){
 }
 
+
 /**
- * Implements hook_cart_pane
- *
- * Override the cart pane. Add/remove/edit the cart pane
+ * Implements hook_cart_pane, not needed?
  */
 function uc_edupay_cart_pane($items) {
-
 }
 
+
 /**
- * Implements hook_product_description
- *
- * @param $product
- *  This is same as the form object that is available
- *  in uc_cart_view_form
+ * Implements hook_product_description, not needed?
  */
 function uc_edupay_product_description($product) {
 }
+
+
 /**
- * Implements hook_payment_method
+ * Implements hook_payment_method()
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -395,10 +411,9 @@ function uc_edupay_payment_method() {
   return $methods;
 }
 
+
 /**
  * Adds edupay to ubercart payment settings form
- * @param <type> $op
- * @param <type> $arg1
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -423,10 +438,11 @@ function uc_payment_method_edupay($op, &$arg1) {
 
 
 /**
- * Generates invoice
- * @param <type> $form_state
- * @param <type> $order
+ * Generates Invoice
  *
+ * @param array $form_state
+ * @param stdClass $order
+ * @return array Drupal Form
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_invoice_form($form_state, $order) {
@@ -469,10 +485,7 @@ function uc_edupay_invoice_form($form_state, $order) {
 
 
 /**
- * Process invoice based on form_state order values.
- * This will be relevant if invoice processing is handled by FAPI
- * @param <type> $form
- * @param <type> $form_state
+ * submit hook for 'uc_edupay_invoice', is this used?
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -489,12 +502,11 @@ function uc_edupay_invoice_submit($form, &$form_state) {
 
 
 /**
- * Retrieves order items and passes it to uc_edupay_service_add
+ * Retrieves order items and passes it to uc_edupay_service_add, is this used?
  *
- * @param <type> $form_state
- * @param <type> $order
+ * @param array $form_state
+ * @param stdClass $order
  * @return $form array
- *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_form($form_state, $order) {
@@ -524,14 +536,10 @@ function uc_edupay_form($form_state, $order) {
 
 
 /**
- * Ajaxify the button to generate the invoice
- * Implementation of hook_ajax_types
- * @see @link http://drupal.org/project/ajax
- * @param $types Assoc
- * @return Bool
+ * Implementation of hook_ajax_types(), Ajaxify the button to generate the invoice, Not used?
  *
+ * @link http://drupal.org/project/ajax
  * @deprecated
- *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_ajax_types(&$types) {
@@ -539,6 +547,7 @@ function uc_edupay_ajax_types(&$types) {
   $types[$id] = t('Edupay: Generate Invoice');
   return TRUE;
 }
+
 
 /**
  * Implementation of hook_ctools_plugin_api().
@@ -551,12 +560,10 @@ function uc_edupay_ctools_plugin_api($module, $api) {
 
 
 /**
- * Queue request to EduPay (picked up by cron)
+ * Send HTTP request to EduPay (or if this failes Queue for later handling by cron), (if Total is Zero do not do HTTP request)
  *
- * @param $order
- *  The order in the cart order is already
- *  passed by reference from hook_order
- *
+ * @uses _uc_edupay_fees_order_items()
+ * @param stdClass $order
  */
 function _uc_edupay_process_order_request($order) {
   global $user;
@@ -652,6 +659,9 @@ function _uc_edupay_process_order_request($order) {
 }
 
 
+/**
+ * Implementation of hook_cron(), pick up queued requests and try to send HTTP request again
+ */
 function uc_edupay_cron() {
   $queue_items = db_query("SELECT * FROM {cron_edupay_send_queue}"); // Was LIMIT 100 (500 did not work properly?)
   while ($queue_item = db_fetch_object($queue_items)) {
@@ -673,9 +683,13 @@ function uc_edupay_cron() {
 
 
 /**
- * Implementation of hook_order().
- * This is called before uc_checkout_pane_eduerp_fees
+ * Implementation of hook_order() (UberCart), called when an order is created... 'new' & 'save' are called in quick succession from uc_cart_checkout_form_validate()
  *
+ * <p>'new' sends a HTTP request to EduPay.</p>
+ * <p>'save' writes a 'fees_order' table entry and redirects to 'cart/checkout/complete'.</p>
+ * @uses _uc_edupay_process_order_request()
+ * @uses student_next_level()
+ * @uses uc_edupay_save()
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function uc_edupay_order($op, &$arg1, $arg2) {
@@ -813,9 +827,10 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 
 
 /**
- * Save a product to an order.
+ * Write a 'fees_order' table entry for the Fees Report
  *
- * This is a replica of uc_order_product_save
+ * @param int $order_id
+ * @param array $product
  */
 function uc_edupay_save($order_id, $product) {
 
@@ -856,7 +871,10 @@ function uc_edupay_save($order_id, $product) {
 
 
 /**
- * Retrieve items from fees_order
+ * Retrieve items from fees_order table, used by Handlers for Fees Report View
+ *
+ * @param string $field
+ * @return array
  */
 function uc_edupay_fees_order_get_item($field) {
   // lookup the field in the schema if it exists
@@ -875,8 +893,11 @@ function uc_edupay_fees_order_get_item($field) {
   return $object;
 }
 
+
 /**
  * Implementation of hook_token_values(). (token.module)
+ *
+ * @uses get_late_registration_info()
  */
 function uc_edupay_token_values($type, $object = NULL) {
   $values = array();
@@ -934,7 +955,6 @@ function uc_edupay_token_list($type = 'all') {
 
 /**
  * Implements hook_checkout_pane
- *
  */
 /*
 function uc_edupay_checkout_pane() {
@@ -955,14 +975,7 @@ function uc_edupay_checkout_pane() {
 */
 
 /**
- * A single callback to display all fees in the cart
- * in a generic checkout pane.
- *
- * @param
- *   - $op: Operations
- *  - $arg1: contains order information
- *  - $arg2
- *
+ * A single callback to display all fees in the cart in a generic checkout pane, not used?
  */
 function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   global $user;
@@ -1032,14 +1045,9 @@ function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
   }
 }
 
+
 /**
- * Passing $contents by reference here won't work
- * because of a PHP bug. Occurs only in php 5.3.1+
- *
- * @see
- *  - http://stackoverflow.com/questions/2045875/pass-by-reference-problem-with-php-5-3-1
- *  - http://bugs.php.net/bug.php?id=50394
- *
+ * theme the Cart Review Table
  */
 function theme_eduerp_cart_review_table($contents) {
   $contents = uc_cart_get_contents();
@@ -1074,11 +1082,10 @@ function theme_eduerp_cart_review_table($contents) {
 
   return theme('table', $header, $rows, array('class' => 'cart-review'));
 }
+
+
 /**
- *
- * @todo Make a hook of this
- *
- * @todo Pass institution, scholarship, student name and JAMB number to products
+ * Get Cart contents and reorganise as an array (this should be simplified)
  */
 function _uc_edupay_fees_order_items($order) {
   $zz = uc_cart_get_contents();
@@ -1148,7 +1155,6 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship_type' => $value['data']['scholarship_type'],
         'sponsor' => $value['data']['sponsor'],
       );
-      // @todo: go through drupal_alter once we have a hook of this function
 
       $all[] = $hostel['hostel'];
     }
@@ -1169,12 +1175,14 @@ function uc_edupay_form_views_exposed_form_alter(&$form, $form_state) {
   }
 }
 
+
 /**
  * Implements hook_uc_invoice_templates().
  */
 function uc_edupay_uc_invoice_templates() {
   return array('student', 'test');
 }
+
 
 /**
  * Implements hook_theme_registry_alter().
@@ -1184,8 +1192,9 @@ function uc_edupay_theme_registry_alter(&$theme_registry) {
  $theme_registry['uc_order']['theme paths'][] = drupal_get_path('module', 'uc_edupay');
 }
 
+
 /**
- * Preparatory stuff for the Ubercart invoice template.
+ * Preparatory stuff for the Ubercart invoice template
  */
 function uc_edupay_preprocess_uc_order(&$vars) {
   $invoice_vars = array();
@@ -1243,8 +1252,9 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $vars['invoice_title'] = t('Invoice');
 }
 
+
 /**
- * Implementation of hook_views_api().
+ * Implementation of hook_views_api(), register view API information so include files can be loaded
  */
 function uc_edupay_views_api() {
   return array(

@@ -1,9 +1,22 @@
 <?php
-// computed.inc Alan Barrett 20090724
-// Grade calculations
-// Some of these calculations get rerun a number of times when a mark is changed, be very careful about trying to optimise as it may cause bugs
-// ... as the sequence of events is quite complex involving editablefields & computed fields.
+/**
+ * computed.inc Grade calculations Alan Barrett 20090724
+ *
+ * <p>Some of these calculations get rerun a number of times when a mark is changed, be very careful about trying to optimise as it may cause bugs
+ * as the sequence of events is quite complex involving editablefields & computed fields.</p>
+ */
 
+/**
+ * Calculate the total score for Student in a Course
+ *
+ * @param int $exam Exam score
+ * @param int $ca1 Continuous Assesment 1 score
+ * @param int $ca2 Continuous Assesment 2 score
+ * @param int $ca3 Continuous Assesment 3 score
+ * @param int $ca4 Continuous Assesment 4 score
+ * @param int $course_instance_nid Drupal Node nid for Course Instance
+ * @return int
+ */
 function calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid) {
   static $repeatbycinid = array(); // Cache
 
@@ -29,6 +42,23 @@ function calctotal($exam, $ca1, $ca2, $ca3, $ca4, $course_instance_nid) {
 }
 
 
+/**
+ * Calculate the total score for Student in a Course or '-' if it is not ready yet
+ *
+ * <p>This is called for the computed field "field_total_score" in the student_grades CCK.</p>
+ * <p>And also from the patched editablefields.module to be used in the patched editablefields.js to set the value in the HTML.</p>
+ * @param int $exam Exam score
+ * @param int $ca1 Continuous Assesment 1 score
+ * @param int $ca2 Continuous Assesment 2 score
+ * @param int $ca3 Continuous Assesment 3 score
+ * @param int $ca4 Continuous Assesment 4 score
+ * @param int $uid Not used
+ * @param int $course_instance_nid Drupal Node nid for Course Instance
+ * @param int $examscorelocked Not used
+ * @param int $calc_type Not used
+ * @param string $field_name Field Name
+ * @return string
+ */
 function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
@@ -37,6 +67,22 @@ function grade_total($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 }
 
 
+/**
+ * Calculate the Grade Point for Student in a Course or '-' if it is not ready yet
+ *
+ * <p>This is called for the computed field "field_gradepoint" in the student_grades CCK.</p>
+ * @param int $exam Exam score
+ * @param int $ca1 Continuous Assesment 1 score
+ * @param int $ca2 Continuous Assesment 2 score
+ * @param int $ca3 Continuous Assesment 3 score
+ * @param int $ca4 Continuous Assesment 4 score
+ * @param int $uid Student Drupal User uid
+ * @param int $course_instance_nid Drupal Node nid for Course Instance
+ * @param int $examscorelocked Locked Value
+ * @param int $calc_type Calculation Type
+ * @param string $field_name Field Name
+ * @return string
+ */
 function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
@@ -64,6 +110,23 @@ function grade_gradepoint($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_
 }
 
 
+/**
+ * Calculate the Grade for Student in a Course or '-' if it is not ready yet
+ *
+ * <p>This is called for the computed field "field_grade" in the student_grades CCK.</p>
+ * <p>And also from the patched editablefields.module to be used in the patched editablefields.js to set the value in the HTML.</p>
+ * @param int $exam Exam score
+ * @param int $ca1 Continuous Assesment 1 score
+ * @param int $ca2 Continuous Assesment 2 score
+ * @param int $ca3 Continuous Assesment 3 score
+ * @param int $ca4 Continuous Assesment 4 score
+ * @param int $uid Student Drupal User uid
+ * @param int $course_instance_nid Drupal Node nid for Course Instance
+ * @param int $examscorelocked Locked Value
+ * @param int $calc_type Calculation Type
+ * @param string $field_name Field Name
+ * @return string
+ */
 function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name = NULL) {
 
   if ((!isset($field_name) || !($field_name === 'field_exam_score')) &&  ($exam == 0)) return '-';
@@ -85,6 +148,21 @@ function grade_grade($exam, $ca1, $ca2, $ca3, $ca4, $uid, $course_instance_nid, 
 }
 
 
+/**
+ * Update the Student's Grade and other data
+ *
+ * <p>Update the Grade Point and Grade for this Student for the Course.</p>
+ * <p>If a "Grade Editor" has edited after approval, then do the following...</p>
+ * <p>Set the student visible scores etc. to the updated values</p>
+ * <p>Update GPA, cGPA and other data.</p>
+ * <p>Create an Approval Record.</p>
+ * @param int $gp Grade Point
+ * @param int $uid Student Drupal User uid
+ * @param int $course_instance_nid Drupal Node nid for Course Instance
+ * @param int $examscorelocked Locked Value
+ * @param int $calc_type Calculation Type
+ * @param string $field_name Field Name
+ */
 function updatestudentgpa($gp, $uid, $course_instance_nid, $examscorelocked, $calc_type, $field_name = NULL) {
   global $user;
   global $base_url;

@@ -1,5 +1,7 @@
 <?php
-// student_footer.inc Footer for student View 20111004
+/**
+ * Footer for student View 20111004
+ */
 
 global $user;
 

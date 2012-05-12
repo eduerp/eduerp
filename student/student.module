@@ -1,4 +1,8 @@
 <?php
+
+/**
+ * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved.
+ */
 function student_menu() {
 
   $items['student/clearance/post'] = array(
@@ -45,10 +49,20 @@ function student_menu() {
   return $items;
 }
 
+
+/**
+ * Implementation of hook_perm(), to tell permissions system what to display on the permissions page for student.module
+ *
+ * <p>'access cart items' does not seem to be used.</p>
+ */
 function student_perm() {
   return array('student clearance', 'student course',  'view my grades', 'access cart items');
 }
 
+
+/**
+ * Allow a Student to select courses for Semesters
+ */
 class courseselectionsclass {
   public $form = array();
 
@@ -64,6 +78,9 @@ class courseselectionsclass {
 
   private $scriptforpage;
 
+  /**
+   * Constructor, in particular find all passed courses for this student and init JS string
+   */
   function __construct() {
     global $user;
 
@@ -90,6 +107,11 @@ class courseselectionsclass {
     $this->failedcodes = array();
   }
 
+  /**
+   * Determine if the Student is Blocked from taking a Course
+   * @param string $prerequisite_codes of comma delimited Course Codes that are prerequisites for a Course
+   * @return string|bool with Code that is blocking this Course or FALSE
+   */
   private function blockingprerequisites($prerequisite_codes) {
     $prerequisite_codes = explode(',', strtolower($prerequisite_codes));
     foreach ($prerequisite_codes as $prerequisite_code) {
@@ -106,6 +128,12 @@ class courseselectionsclass {
     return FALSE;
   }
 
+  /**
+   * Add checkbox(s) and JS to allow Student to choose Courses for a Semester (core courses are mandatory)
+   *
+   * <p>Made assumption that core course are run only once per semester, otherwise would have to make their selection un greyed</p>
+   * @param int $semester
+   */
   public function addformelementsforsemester($semester) {
     global $user_profile;
 
@@ -198,11 +226,13 @@ class courseselectionsclass {
         '#prefix' => '<tr><td>',
         '#suffix' => "</td><td>{$row->course_title}</td><td>" . check_markup($row->course_description, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->credit_load}</td><td>" . check_markup($row->timetable, FILTER_FORMAT_DEFAULT, FALSE) . "</td><td>{$row->level}</td><td>" . check_markup($row->field_prerequisite_value, FILTER_FORMAT_DEFAULT, FALSE) . "{$block}</td></tr>"
       );
-
-      // ... Made assumption that core course are run only once per semester, otherwise would have to make their selection ungreyed
     }
   }
 
+  /**
+   * Add (mandatory) checkbox(s) for any failed (and not since passed) courses that are being run
+   * @param int $semester
+   */
   public function addformelementsforfailedcoursesforsemester($semester) {
     global $user;
     global $user_profile;
@@ -328,6 +358,10 @@ class courseselectionsclass {
     }
   }
 
+  /**
+   * Add JS and form elements for calculated Credit Load
+   * @param int $semester
+   */
   public function addformelementsforloadcounter($semester) {
     global $user_profile;
 
@@ -369,6 +403,13 @@ class courseselectionsclass {
     $this->form['add_a_break'] = array('#value' => '<br />');
   }
 
+  /**
+   * Add JS for a checkbox to adjust Credit Load
+   * @param int $course_instance
+   * @param int $semester
+   * @param int $semester_for_totals may be different from $semester if Credit Loads from two Semesters are to be aggregated for the whole Session
+   * @param int $credit_load for this Course Instance
+   */
   private function addscriptforcheckbox($course_instance, $semester, $semester_for_totals, $credit_load) {
     $this->scriptforpage .= "$(\"#edit-chosencourses{$semester}-{$course_instance}\").click(function() {
       selected_load = parseInt($(\"#selected_load{$semester_for_totals}\").text());
@@ -398,6 +439,9 @@ class courseselectionsclass {
     });";
   }
 
+  /**
+   * Complete the form and add JS string to page
+   */
   public function finishform() {
     $this->form['#currentlevelcis'] = $this->currentlevelcis;
     $this->form['#failedcodes'] = $this->failedcodes;
@@ -418,8 +462,25 @@ class courseselectionsclass {
 // (*) TAKE OUT 'header', FALSE, FALSE WHEN IT WORKS
   }
 }
+
+
 /**
- * perform student clearance
+ * Perform Student Clearance and/or mark Student as Verified or Not Cleared
+ *
+ * @see modules/eduerp/student/theme/views-view-table--student-clearance--page-1.tpl.php
+ * <p>The above file contains a theme for the 'student_clearance' Drupal View. It has an explicit (non-Drupal) POST to 'student/clearance/post' which is handled by this function.</p>
+ * <p>This function does...</p>
+ * <p>Create/Update the Student's 'student_clearance' CCK.</p>
+ * <p>Create a 'clearance_agreement' CCK.</p>
+ * <p>Create a 'student_record' CCK.</p>
+ * <p>Create/Update the Student's 'program' CCK.</p>
+ * <p>Set Matriculation Number and create e-mail address for Student.</p>
+ * <p>Change role of the student from Applicant to Student.</p>
+ * <p>e-mail the Student.</p>
+ * @uses record_cleared()
+ * @uses _perform_clearance()
+ * @uses student_log_clearance()
+ * @return string $output HTML to display including Student's Clearance Agreement
  */
 function student_clearance() {
   global $user;
@@ -558,7 +619,17 @@ function student_clearance() {
 }
 
 
-// Bundle of actions to be performed on clearance
+/**
+ * Actions to be performed on Student Clearance
+ *
+ * <p>Create/Update the Student's 'program' CCK.</p>
+ * <p>Set Matriculation Number and create e-mail address for Student.</p>
+ * <p>Change role of the student from Applicant to Student.</p>
+ * <p>e-mail the Student.</p>
+ * @uses create_student_program()
+ * @uses set_matriculation_number()
+ * @uses eduerp_set_role()
+ */
 function _perform_clearance($student_id) {
   global $user;
 
@@ -605,6 +676,9 @@ function _perform_clearance($student_id) {
 }
 
 
+/**
+ * Record a Student Clearance or Not Cleared in a 'student_record' CCK
+ */
 function record_cleared($student_id, $action, $reason = NULL) {
   global $user;
 
@@ -637,11 +711,12 @@ function record_cleared($student_id, $action, $reason = NULL) {
 
 
 /**
- * Logs clearance information
- * @global  $user
- * @param <type> $student_id
- * @param <type> $clearance_date
- * @param  $user
+ * Log Student Clearance information
+ *
+ * @param int $student_id
+ * @param string $clearance_date
+ * @param int $user
+ * @global $user
  */
 function student_log_clearance($student_id, $clearance_date, $user) {
   global $user;
@@ -657,6 +732,14 @@ function student_log_clearance($student_id, $clearance_date, $user) {
 }
 
 
+/**
+ * Set Matriculation Number and create e-mail address for Student
+ *
+ * @param int $student_id
+ * @param int $formerProgID if non-zero this is a 'program' CCK Drupal Node nid that the Student is changing from
+ * @param bool $dont_change_matno TRUE if the Matriculation Number should not be changed (so nothing will be done)
+ * @uses me_gen_matno()
+ */
 function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_matno = NULL) {
   // Generate the matriculation number for this student
   $results = module_invoke_all('matno', $student_id, $formerProgID, $dont_change_matno);
@@ -674,16 +757,13 @@ function set_matriculation_number($student_id, $formerProgID = 0, $dont_change_m
     $student_profile->save();
 
     db_query("INSERT INTO {debug_clearance_matno} SET matno=%d, first_choice=%d, uid=%d, timest=%d, type=%d", $matno, $student_profile->profile_first_choice, $student_id, time(), 1); //ab Debug Instumentation
-
   }
 }
 
 
 /**
-  these functions below define a custom field and field widget that enables
-  the student profile content type to store subject/grade pairs as one field
-  in the content type.
-*/
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field_info() {
   return array(
     'exam_record' => array(
@@ -693,6 +773,10 @@ function student_field_info() {
   );
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field($op, &$node, $field, &$items, $teaser, $page) {
   switch ($op) {
     case 'view':
@@ -707,6 +791,10 @@ function student_field($op, &$node, $field, &$items, $teaser, $page) {
   }
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field_settings($op, $field) {
   switch ($op) {
     case 'form':
@@ -751,6 +839,10 @@ function student_field_settings($op, $field) {
   }
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_field_formatter_info() {
   return array(
     'default' => array(
@@ -761,6 +853,10 @@ function student_field_formatter_info() {
   );
 }
 
+
+/**
+ * Implementation of hook_theme()
+ */
 function student_theme() {
   $theme_path = drupal_get_path('module', 'student') . DIRECTORY_SEPARATOR . 'theme';
 
@@ -783,13 +879,12 @@ function student_theme() {
   );
 
   $custom = array_merge($custom, _module_views_templates($theme_path));
-  //dsm(student_clearance_node_load($student_id));
   return $custom;
 }
 
+
 /**
- * helper function to expose the templates in the module's theme folder for rendering
- * views
+ * Helper function to expose the templates in the module's theme folder for rendering views
  */
 function _module_views_templates($templates_path) {
   $templates = array();
@@ -815,10 +910,9 @@ function _module_views_templates($templates_path) {
   return $templates;
 }
 
+
 /**
- * Theme function for theme_student_field_uncleared
- *
- * Renders student_field_uncleared checkbox
+ * Theme function for theme_student_field_uncleared, renders student_field_uncleared checkbox
  * @see student_theme()
  */
 function theme_student_field_uncleared() {
@@ -833,11 +927,11 @@ function theme_student_field_uncleared() {
   return theme('checkbox', $element);
 }
 
+
 /**
- * Theme function for theme_student_field_uncleared_reasons
- *
- * Renders student_field_uncleared_reasons
+ * Theme function for theme_student_field_uncleared_reasons, renders student_field_uncleared_reasons
  * @see student_theme()
+ * @uses student_uncleared_get_reasons()
  */
 function theme_student_field_uncleared_reasons() {
   $options = student_uncleared_get_reasons();
@@ -854,10 +948,9 @@ function theme_student_field_uncleared_reasons() {
   return theme('select', $element);
 }
 
+
 /**
- * Theme function for theme_student_field_deferred
- *
- * Renders student_field_deferred checkbox
+ * Theme function for theme_student_field_deferred, renders student_field_deferred checkbox
  * @see student_theme()
  */
 function theme_student_field_deferred() {
@@ -872,8 +965,9 @@ function theme_student_field_deferred() {
   return theme('checkbox', $element);
 }
 
+
 /**
- * Get data to populate uncleared clearance
+ * Get reasons for which a Student may be "Not Cleared"
  * @return array
  */
 function student_uncleared_get_reasons() {
@@ -899,10 +993,9 @@ function student_uncleared_get_reasons() {
   return $allowed_values;
 }
 
+
 /**
- * A simple wrapper to call node_load for student_clearance
- * content type.
- *
+ * A simple wrapper to call node_load for 'student_clearance' CCK
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 function student_clearance_node_load($student_id) {
@@ -920,14 +1013,26 @@ function student_clearance_node_load($student_id) {
   return $student_clearance;
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function theme_student_formatter_default($element) {
   return theme('student_field', $element);
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function theme_student_field($element) {
   return ($element['#item']['subject'] != "" && $element['#item']['grade'] != "") ? sprintf("%s - %s", $element['#item']['subject'], $element['#item']['grade']) : "";
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_content_is_empty($item, $field) {
   if (empty($item['subject']) || empty($item['grade'])) {
     return TRUE;
@@ -935,6 +1040,10 @@ function student_content_is_empty($item, $field) {
   return FALSE;
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ */
 function student_widget_info() {
   return array(
     'exam_record_exam_record' => array(
@@ -947,6 +1056,12 @@ function student_widget_info() {
   );
 }
 
+
+/**
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ *
+ * @uses _student_content_allowed_values()
+ */
 function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   $element = array();
   $element['subject'] = array(
@@ -974,9 +1089,11 @@ function student_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   return $element;
 }
 
+
 /**
- * adapted from the cck content_allowed_values to support
- * multiple section allowed_values
+ * Part of defining a custom field and field widget that enables the student_profile CCK to store subject/grade pairs as one field in the CCK
+ *
+ * <p>Adapted from the CCK content_allowed_values to support multiple section allowed_values</p>
  */
 function _student_content_allowed_values($field, $section, $flatten = TRUE) {
   static $allowed_values;
@@ -1009,6 +1126,10 @@ function _student_content_allowed_values($field, $section, $flatten = TRUE) {
   return $allowed_values[$cid];
 }
 
+
+/**
+ * Implementation of hook_form_alter(), change 'student_clearance' View Button text and Stop 'Applicant'/'Student' from changing their e-mail
+ */
 function student_form_alter(&$form, $form_state, $form_id) {
   global $user;
 
@@ -1030,13 +1151,12 @@ function student_form_alter(&$form, $form_state, $form_id) {
   }
 }
 
+
 /**
- * Gets the current student being cleared from the
- * current rendered view. We prefer not not call views_get_view
- * here to improve performance
+ * Get the current student being cleared from the current rendered view
  *
- * @param <type> $view
- * @return <type>
+ * <p>We prefer not not call views_get_view here to improve performance.</p>
+ * @return int
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -1049,9 +1169,10 @@ function student_views_get_current_student() {
   $student_id = $view[0]->users_uid;
   return $student_id;
 }
+
+
 /**
- * Implementing the hook_views_post_render to mutate the student_clearance
- * so as to enable appending the clearance form
+ * Implementation of hook_views_post_render(), mutate the View 'student_clearance' so as to enable appending the clearance form
  */
 function student_views_post_render(&$view, &$output, &$cache) {
   if ($view->name == "student_clearance") {
@@ -1094,6 +1215,12 @@ function student_views_post_render(&$view, &$output, &$cache) {
 }
 
 
+/**
+ * Implementation of hook_nodeapi(), perform Validation for CCK 'profile', 'student_profile' & 'staff_profile' and special Pre-Save handling for 'student_profile'
+ *
+ * <p>In student_profile, field_profile_level_name is initially set based on the Student's Programme and Mode of Entry.</p>
+ * <p>Also field_profile_yearofentry, field_profile_reg_session & field_profile_reg_semester are initialised and protected from being overwritten</p>
+ */
 function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
   if ($node->type == 'profile') {
     if ($op == 'validate') {
@@ -1205,6 +1332,9 @@ function student_nodeapi(&$node, $op, $a3=null, $a4=null) {
 }
 
 
+/**
+ * Implementation of hook_views_api(), register view API information so include files can be loaded.
+ */
 function student_views_api() {
   return array(
     'api' => 2,
@@ -1213,13 +1343,14 @@ function student_views_api() {
 }
 
 
+/**
+ * Find the new Level a Student will be entering into when they first register courses
+ *
+ * @param int $uid Student's Drupal uid
+ * @param string $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
+ * @return string|bool FALSE, if they are not eligible to register for the program because they have graduated or left the university; Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
+ */
 function student_next_level($uid, $session) {
-  // This takes the student uid and also the session they are going to pay for and returns...
-  //  FALSE, if they are not eligible to register for the program because they have graduated or left the university.
-  //  Otherwise it returns a string of the level they will be entering into when they first register courses (they are not necessarily at that level yet).
-
-  // $session is the session they are paying for (it is most likely variable_get('eduerp_current_session', '') unless you allow payments before the session has started)
-
   $user_profile = new UserProfile($uid);
 
   $gotonextlevel = TRUE;
@@ -1259,6 +1390,13 @@ function student_next_level($uid, $session) {
 }
 
 
+/**
+ * Has a Student paid sufficient to be allowed Register Courses for the current Session?
+ *
+ * @uses get_fee_items()
+ * @param int $uid Student's Drupal uid
+ * @return bool
+ */
 function student_meets_fee_requirements($uid) {
 
   $fees = get_fee_items($uid);
@@ -1283,6 +1421,19 @@ function student_meets_fee_requirements($uid) {
 }
 
 
+/**
+ * Form to allow a Student to select courses for one or both Semesters, if the student has paid set their new Level, Session and Semester
+ *
+ * @uses student_course_form_validate()
+ * @uses student_course_form_submit()
+ * @uses student_meets_fee_requirements()
+ * @uses courseselectionsclass::addformelementsforsemester()
+ * @uses courseselectionsclass::addformelementsforfailedcoursesforsemester()
+ * @uses courseselectionsclass::add_a_break()
+ * @uses courseselectionsclass::addformelementsforloadcounter()
+ * @uses courseselectionsclass::finishform()
+ * @uses courseselectionsclass::$form
+ */
 function student_course_form(&$obj) {
   global $user;
   global $user_profile;
@@ -1382,6 +1533,9 @@ function student_course_form(&$obj) {
 }
 
 
+/**
+ * validate hook for {@link student_course_form()}
+ */
 function student_course_form_validate($form, &$form_state) {
   global $user;
   $user_profile = new UserProfile($user->uid);
@@ -1523,6 +1677,12 @@ function student_course_form_validate($form, &$form_state) {
 }
 
 
+/**
+ * submit hook for {@link student_course_form()}, create/update 'student_gpa' (contains GPA) and 'student_grades' (Grades for a Course Instance) CCKs
+ * @uses create_student_gpa()
+ * @uses delete_student_grades()
+ * @uses create_student_grades()
+ */
 function student_course_form_submit($form, &$form_state) {
   global $user;
   $user_profile = new UserProfile($user->uid);
@@ -1565,11 +1725,26 @@ function student_course_form_submit($form, &$form_state) {
 }
 
 
+/**
+ * Go to 'listcourses' View for Student
+ */
 function student_courses() {
   drupal_goto('listcourses');
 }
 
 
+/**
+ * Create/update 'student_gpa' (contains GPA) CCK
+ *
+ * @param stdClass $student_user Drupal account for Student
+ * @param UserProfile $user_profile
+ * @param string $studentname
+ * @param int $student_program Drupal node nid for 'program' CCK
+ * @param string $session
+ * @param int $semester
+ * @param int $creditload
+ * @return int Drupal node nid for 'student_gpa' CCK
+ */
 function create_student_gpa($student_user, $user_profile, $studentname, $student_program, $session, $semester, $creditload) {
   // Check if there is an existing student_gpa, must avoid a duplicate
   $sql = "SELECT gpa.nid AS student_gpa FROM {content_type_student_gpa} gpa
@@ -1608,6 +1783,16 @@ function create_student_gpa($student_user, $user_profile, $studentname, $student
 }
 
 
+/**
+ * Create 'student_grades' (Student's Grades for a Course Instance) CCK
+ *
+ * @param stdClass $student_user Drupal account for Student
+ * @param stdClass $course_instance
+ * @param int $student_gpa Drupal node nid for 'student_gpa' CCK
+ * @param string $studentname
+ * @param int $student_program Drupal node nid for 'program' CCK
+ * @param int $program_type to set Grade Calculation Type
+ */
 function create_student_grades($student_user, $course_instance, $student_gpa, $studentname, $program_type) {
 
   // student_grades CCK
@@ -1701,6 +1886,13 @@ function create_student_grades($student_user, $course_instance, $student_gpa, $s
 }
 
 
+/**
+ * Delete all 'student_grades' CCKs for this Session and Semester
+ *
+ * @param int $uid Drupal uid for Student
+ * @param string $session
+ * @param int $semester
+ */
 function delete_student_grades($uid, $session, $semester) {
   $sql = "SELECT sg.nid
     FROM {content_type_student_grades} sg, {content_type_course_instance} ci
@@ -1735,6 +1927,11 @@ function delete_student_grades($uid, $session, $semester) {
 }
 
 
+/**
+ * Create/update 'student_program' (contains cGPA) CCK
+ *
+ * @param int $uid Drupal uid for Student
+ */
 function create_student_program($uid) {
   $user_profile = new UserProfile($uid);
 
@@ -1777,6 +1974,16 @@ function create_student_program($uid) {
 }
 
 
+/**
+ * Change a Student to a different Programme and/or different Level
+ *
+ * @uses create_student_program()
+ * @uses set_matriculation_number()
+ * @param stdClass $user Drupal account for Student
+ * @param int $first_choice Drupal node nid for new 'program' CCK
+ * @param string $level new Level
+ * @param bool $dont_change_matno TRUE if the Matriculation Number should not be changed (so nothing will be done)
+ */
 function change_student_program(&$user, $first_choice, $level, $dont_change_matno) {
   $user_profile = new UserProfile($user->uid);
   $formerProgID = $user_profile->profile_first_choice;
@@ -1789,11 +1996,13 @@ function change_student_program(&$user, $first_choice, $level, $dont_change_matn
   set_matriculation_number($user->uid, $formerProgID, $dont_change_matno);
 }
 
+
 /**
  * Loads a complete user profile of the student.
  *
- * @param $student_id
- *  - Current student
+ * @uses eduerp_has_role()
+ * @param $student_id Drupal uid
+ * @return UserProfile
  *
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
@@ -1808,7 +2017,18 @@ function student_load_student_profile($student_id) {
   }
 }
 
-//Israel's functions starts here
+
+/**
+ * Reserve a Hostel Place for a Student
+ *
+ * @uses is_allocation_existing()
+ * @uses hostel_allocation_show_allocated_room()
+ * @uses is_reservation_existing()
+ * @uses hostel_allocation_show_reserved_room()
+ * @uses hostel_allocation_direct_room_reservation()
+ * @global int $EDUERPstudentInitiated set to indicate Student initiated reservation
+ * @return string of HTML
+ */
 function student_hostel_reservation(){
   global $user, $EDUERPstudentInitiated;
 
@@ -1850,9 +2070,13 @@ function student_hostel_reservation(){
   return ob_get_clean();
 }
 
-//Israel's functions ends here
 
-
+/**
+ * Implementation of hook_user(), make newly inserted user with role 'anonymous user' an 'Applicant'
+ *
+ * @uses eduerp_has_role()
+ * @uses eduerp_add_role()
+ */
 function student_user($op, &$edit, &$account, $category = NULL) {
   global $user;
   if ($op == 'insert' && eduerp_has_role($user, 'anonymous user')) {
@@ -1862,11 +2086,20 @@ function student_user($op, &$edit, &$account, $category = NULL) {
 }
 
 
+/**
+ * Implementation of hook_init(), Add student.js JS to all pages (ideally should be only added to specific pages)
+ */
 function student_init() {
   drupal_add_js(drupal_get_path('module', 'student') .'/student.js');
 }
 
 
+/**
+ * Instantiate a student
+ *
+ * @param int $student_uid Drupal uid
+ * @return student
+ */
 function student_new_student($student_uid) {
   student_include('student');
   $student = new student($student_uid);
@@ -1875,6 +2108,11 @@ function student_new_student($student_uid) {
 }
 
 
+/**
+ * Require a file from includes folder
+ *
+ * @param string $file
+ */
 function student_include($file) {
   static $used = array();
   if (!isset($used[$file])) {

@@ -1,10 +1,9 @@
 <?php
 
 /**
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- *
- * @file
  * Ubercart integration of EduERP fees
+ *
+ * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 
 define('EDUERP_FEES_NORMAL', 'fees');
@@ -17,6 +16,9 @@ define('FEES_FIRST_INSTALMENT', 'Instalment1');
 define('FEES_SECOND_INSTALMENT', 'Instalment2');
 
 
+/**
+ * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved
+ */
 function uc_eduerp_fees_menu() {
   $items['edupay/callback'] = array(
     'title' => 'Process EduPay Callback',
@@ -36,6 +38,9 @@ function uc_eduerp_fees_menu() {
 }
 
 
+/**
+ * Disable UberCart Orders Tab for Users
+ */
 function uc_eduerp_fees_menu_alter(&$items) {
   $items['user/%user/orders'] = MENU_CALLBACK;
   unset($items['user/%user/orders']);
@@ -43,8 +48,9 @@ function uc_eduerp_fees_menu_alter(&$items) {
 
 
 /**
- * Handle Call Back from EduPay
- *
+ * Handles 'edupay/callback' menu callback to handle POST from EduPay Server to indicate Payment Received or Cancelled for an Invoice, returning JSON packet to EduPay
+ * @uses hostel_allocation_allocate_bedspace()
+ * @uses hostel_allocation_revoke_expired_reservation()
  */
 function uc_eduerp_fees_update_fees() {
   $order_id = $_POST['order_id'];
@@ -137,6 +143,12 @@ function uc_eduerp_fees_update_fees() {
 }
 
 
+/**
+ * Return HTML for Display of Fees that a Student is due to Pay (to be used for Scholarship authorisation purposes), also add Student data
+ *
+ * @uses show_cart_for_student()
+ * @return string HTML
+ */
 function display_cart_for_scholarship() {
   global $user;
 
@@ -179,6 +191,11 @@ function display_cart_for_scholarship() {
 }
 
 
+/**
+ * Return HTML for Display of School Fees that a Student is due to Pay (to be used for Scholarship authorisation purposes)
+ *
+ * @return string HTML
+ */
 function show_cart_for_student() {
   $subtotal = 0;
 
@@ -226,11 +243,9 @@ function show_cart_for_student() {
 
 
 /**
- * Rebuild the fees items based on order state
- * of payment_received or pending
+ * Rebuild the fees items based on order state of payment_received or pending (Not Used)
  *
  * @deprecated
- * Not used
  */
 function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys = TRUE) {
   foreach($fees as $fee) {
@@ -255,9 +270,13 @@ function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys
   return ($preserve_keys === TRUE) ? $fees : array_shift($fees);
 }
 
+
 /**
- * returns fees object based on order status of pending
- * and payment_received
+ * Remove any 'pending' or 'payment_received' Fees for a Student so that they only pay for newly added Fee items for the current Session
+ *
+ * @param int $student_id
+ * @param array $fee_items
+ * @return array
  */
 function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
   if(is_null($student_id)) return FALSE;
@@ -312,7 +331,11 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
 }
 
 
-// Not Used
+/**
+ * Not used
+ *
+ * @deprecated
+ */
 function user_has_completed_order_items($student_id) {
   $status_paid = FEES_PAID;
   $status_pending = FEES_PENDING;
@@ -321,11 +344,25 @@ function user_has_completed_order_items($student_id) {
   return (db_affected_rows() > 0)? TRUE : FALSE;
  }
 
+
 /**
- * Pay fees menu callback
+ * Handles 'user/%/fees/pay'/Pay fees menu for a Student to start the Fees Payment process
  *
- * @return
- *   - Drupal form
+ * <p>Find the Fees Setup for a Student and generate a list of Fees due (including any Hostel Payment).</p>
+ * <p>Ensure the Student is eligible to Pay Fees.</p>
+ * <p>Remove any pending or paid fees.</p>
+ * <p>Generate a form which stores all this fee data.</p>
+ * <p>Allow the Student to deselect the Hostel Payment for now.</p>
+ * @uses uc_eduerp_fees_pay_fees_form_submit()
+ * @uses uc_eduerp_fees_eduerp_fees()
+ * @uses is_fee_setup_existing_for_student()
+ * @uses student_clearance_performed()
+ * @uses student_next_level()
+ * @uses uc_eduerp_fees_completed_order_items()
+ * @uses is_reservation_existing()
+ * @param array $form_state
+ * @param int $student_id This Parameter is generated when module setup at admin/build/modules is saved and is always wrong (it is the user who enabled the module)!
+ * @return array Drupal Form
  */
 function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   global $user;
@@ -344,6 +381,7 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
 
+  // Should really be a call to uc_eduerp_fees_eduerp_fees(), no need for a hook
   if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
     $fees = $fees_items;
   }
@@ -490,6 +528,12 @@ function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
 }
 
 
+/**
+ * submit hook for {@link uc_eduerp_fees_pay_fees_form()} to parse the Form data, empty the UberCart Shopping Cart, add items to the Cart and go to UberCart Checkout
+ *
+ * @uses is_scholarship_authorisation_existing()
+ * @uses uc_eduerp_fees_get_profile_items()
+ */
 function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   $student_id = $form_state['values']['uid'];
 
@@ -575,7 +619,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         }
 
         // get_fee_items reports 2 states of is_scholarship_applicable
-        // @see staff_school_fees_create_modify_fee_item_form
+        // @see staff_school_fees_create_modify_fee_item_form()
         // 1: Yes - Scholarship is applicable
         // 2: No - Scholarship is not applicable
         if (!empty($product[$key]['is_scholarship_applicable']) && $product[$key]['is_scholarship_applicable'] == '1' && is_scholarship_authorisation_existing($student_id, variable_get('eduerp_current_session', ''))) {
@@ -633,18 +677,13 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
 
 /**
- * Implementation of hook_eduerp_fees
+ * Implementation of hook_eduerp_fees() to reorganise Fees array
  *
- * Fees with all necessary setup information included
- * Describes the fees structure.
- *
- * @return
- *   - $fees: The Fees object including it's type, setup
- *
- * @todo
- *   - Write a fees plugin to define custom fees type
- *   - Introduce a 'callback' key to store in db this fees structure for
- *  every module that implements it
+ * <p>Should really be a called as uc_eduerp_fees_eduerp_fees(), no need for call as hook: "module_invoke('uc_eduerp_fees', 'eduerp_fees')".</p>
+ * <p>In fact whole array should be flattened and simplified when it is first generated.</p>
+ * @uses student_load_student_profile()
+ * @param array $fees
+ * @return array
  */
 function uc_eduerp_fees_eduerp_fees($fees = array()) {
   global $user;
@@ -684,7 +723,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       'fullnames' => $fullnames,
       'institution' => 1
     );
-    // Late registration added by Alan
+
     $fees_item['options']['late_registration']['last_registration_date'] = intval(strtotime($fees_item['options']['late_registration']['last_registration_date']));
 
     // hostel
@@ -721,10 +760,10 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
 }
 
 /**
- * Hook to define fees_structure
+ * Hook to define fees_structure, Don't think this is used, remove?
  *
  * @param $fees
- *   - The fees
+ * @deprecated
  */
 function uc_eduerp_fees_eduerp_fees_hook($fees) {
   foreach (module_implements('eduerp_fees') as $module) {
@@ -741,19 +780,20 @@ function uc_eduerp_fees_eduerp_fees_hook($fees) {
 }
 
 
+/**
+ * Not used, remove?
+ *
+ * @deprecated
+ */
 function uc_eduerp_fees_invoice_regenerate($order_id) {
   return _uc_eduerp_fees_invoice_rebuild($order_id);
 }
 
 
 /**
- * load the invoice view (pdf_invoice)
- * views_get_view (get it from default)
- * reload the invoice at user's profile page
- * clear the cache
+ * Not used, remove?
  *
- * Things to change on the invoice
- *  - print status as Unpaid
+ * @deprecated
  */
 function _uc_eduerp_fees_invoice_load($order_id) {
   $view = views_get_view_result('pdf_invoice', 'pdf_1', $order_id);
@@ -761,18 +801,24 @@ function _uc_eduerp_fees_invoice_load($order_id) {
 }
 
 
+/**
+ * Not used, remove?
+ *
+ * @deprecated
+ */
 function _uc_eduerp_fees_invoice_rebuild($order_id) {
   return _uc_eduerp_fees_invoice_load($order_id);
 }
 
 
 /**
- * Implements hook_form_ID_alter
+ * Implements hook_form_ID_alter, not used, remove?
  *
- * Bug: this form alter is getting called before the check
+ * <p>Bug: this form alter is getting called before the check
  * for is_reservation_existing. The implication of this is that
  * the hostel form gets removed before a check for whether hostel
- * exists or not.
+ * exists or not.</p>
+ * @deprecated
  */
 function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) {
   // Remove hostel if no reservation exists
@@ -784,7 +830,7 @@ function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) 
 
 
 /**
- * Implementation of hook_views_api().
+ * Implementation of hook_views_api(), register view API information so include files can be loaded
  */
 function uc_eduerp_fees_views_api() {
   return array(
@@ -795,7 +841,10 @@ function uc_eduerp_fees_views_api() {
 
 
 /**
- * Get student profile items related to fees
+ * Get Student Profile items related to Fees
+ *
+ * @param int $uid
+ * @return array
  */
 function uc_eduerp_fees_get_profile_items($uid) {
   $student_profile = content_profile_load('student_profile', $uid);
