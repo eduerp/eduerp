@@ -6610,7 +6610,7 @@ function get_report_current_gradepoints($session, $programme_nid, $level) {
 function get_report_current_courses($session, $programme_nid, $level) {
   $sql = "SELECT
       sg.field_mat_no_uid AS uid,
-      GROUP_CONCAT(DISTINCT CONCAT(c.field_code_value, ' -', sg.field_credit_load_sg_value, '-', sg.field_grade_value) ORDER BY c.field_code_value SEPARATOR ', ') AS courses
+      GROUP_CONCAT(DISTINCT CONCAT(c.field_code_value, '-', sg.field_credit_load_sg_value, '-', sg.field_grade_value) ORDER BY c.field_code_value SEPARATOR ', ') AS courses
     FROM
       {content_type_student_grades} sg,
       {content_type_course_instance} ci,
