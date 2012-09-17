@@ -6022,12 +6022,16 @@ function  get_progress_qualification_details() {
 /**
  * Find cGPA etc. for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_students_CGPA($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
         sp.field_student_ref_sp_uid AS uid,
         u.name AS mat,
@@ -6047,12 +6051,7 @@ function get_students_CGPA($session, $programme_nid, $level) {
       INNER JOIN {content_type_program} p
       INNER JOIN {users} u ON sp.field_student_ref_sp_uid=u.uid
       WHERE
-        sp.field_student_ref_sp_uid IN (
-          SELECT nspro0.uid
-          FROM {node} nspro0
-          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
-          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
-        ) AND
+        sp.field_student_ref_sp_uid IN ($ids) AND
         sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
         sp.field_program_ref_sp_nid=p.nid
       ORDER BY student_name";
@@ -6064,12 +6063,16 @@ function get_students_CGPA($session, $programme_nid, $level) {
 /**
  * Find GPAs etc. for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_students_GPA($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
         gpa.field_student_ref_gpa_uid AS uid,
         gpa.field_gpa_value,
@@ -6084,12 +6087,7 @@ function get_students_GPA($session, $programme_nid, $level) {
       INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
       INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
       WHERE
-        gpa.field_student_ref_gpa_uid IN (
-          SELECT nspro0.uid
-          FROM {node} nspro0
-          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
-          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
-        ) AND
+        gpa.field_student_ref_gpa_uid IN ($ids) AND
         gpa.field_program_ref_gpa_nid=spro.field_profile_first_choice_nid
       ORDER BY student_name, gpa.field_level_name_gpa_value, gpa.field_sess_name_gpa_value, gpa.field_semester_name_gpa_value";
     $result = db_query($sql, $programme_nid, $session, $level);
