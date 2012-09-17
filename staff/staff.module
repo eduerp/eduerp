@@ -6578,7 +6578,7 @@ function get_report_current_gradepoints($session, $programme_nid, $level) {
   $sql = "SELECT
       gpa.field_student_ref_gpa_uid AS uid,
       SUM(gpa.field_credit_load_completed_value) AS credit_load_completed,
-      SUM(gpa.field_gptotal_value) AS gptotal
+      SUM(IF(gpa.field_gptotal_value='-', 0, gpa.field_gptotal_value)) AS gptotal
     FROM {content_type_student_gpa} gpa
     INNER JOIN {node} npro ON gpa.field_student_ref_gpa_uid=npro.uid AND npro.type='profile'
     INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
