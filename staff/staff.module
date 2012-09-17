@@ -5849,7 +5849,7 @@ function display_progress_towards_qualification(&$result) {
  * Return HTML for Student Progress towards Graduation for a Session/Programme/Level
  *
  * @uses get_students_CGPA()
- * @uses get_students_GPA
+ * @uses get_students_GPA()
  * @uses get_cumulative_list_of_failed_courses()
  * @uses staff_student_action_form()
  * @global int $eduerp_uid
@@ -6098,16 +6098,52 @@ function get_students_GPA($session, $programme_nid, $level) {
 
 
 /**
+ * Return list of Drupal User ids for each Student in Session/Programme/Level
+ *
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return string of comma separated Drupal User IDs (or '-1')
+ */
+function get_id_list_for_students_in_programme($session, $programme_nid, $level) {
+  $sql = "
+    SELECT GROUP_CONCAT(nspro.uid) AS ids
+    FROM {node} nspro
+    INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+    WHERE nspro.type='student_profile' AND spro.field_profile_first_choice_nid='%s' AND spro.field_profile_reg_session_value='%s' AND spro.field_profile_level_name_value='%s'";
+  $result = db_query($sql, $programme_nid, $session, $level);
+  if ($row = db_fetch_object($result)) {
+    if (!empty($row->ids) {
+      $ids = $row->ids;
+echo "$ids!!!!!!!!!!!!!";
+    }
+    else {
+echo 'empty!!!!!!!!!!!!!';
+      $ids = '-1';
+    }
+  }
+  else {
+    $ids = '-1';
+  }
+  return $ids;
+}
+
+
+/**
  * Find any Failed (and not since passed) Courses for each Student in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_cumulative_list_of_failed_courses($session, $programme_nid, $level) {
-    // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
-    $sql = "SELECT
+  // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "SELECT
         failedcourses.uid,
         failedcourses.failedlist,
         CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key
@@ -6130,12 +6166,7 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
               {node} nspro,
               {content_type_student_profile} spro
             WHERE
-              sg.field_mat_no_uid IN (
-                SELECT nspro8.uid
-                FROM {node} nspro8
-                INNER JOIN {content_type_student_profile} spro8 ON nspro8.vid=spro8.vid
-                WHERE nspro8.type='student_profile' AND spro8.field_profile_first_choice_nid='%s' AND spro8.field_profile_reg_session_value='%s' AND spro8.field_profile_level_name_value='%s'
-              ) AND
+              sg.field_mat_no_uid IN ($ids) AND
               sg.field_course_instance_nid=ci.nid AND
               sg.field_examscorelocked_value>0 AND
               sg.field_dropped_value=0 AND
@@ -6159,12 +6190,7 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
               {node} nspro0,
               {content_type_student_profile} spro0
             WHERE
-              sg0.field_mat_no_uid IN (
-                SELECT nspro9.uid
-                FROM {node} nspro9
-                INNER JOIN {content_type_student_profile} spro9 ON nspro9.vid=spro9.vid
-                WHERE nspro9.type='student_profile' AND spro9.field_profile_first_choice_nid='%s' AND spro9.field_profile_reg_session_value='%s' AND spro9.field_profile_level_name_value='%s'
-              ) AND
+              sg0.field_mat_no_uid IN ($ids) AND
               sg0.field_course_instance_nid=ci0.nid AND
               sg0.field_examscorelocked_value>0 AND
               sg0.field_dropped_value=0 AND
@@ -6187,7 +6213,7 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
       INNER JOIN {node} npro ON failedcourses.uid=npro.uid AND npro.type='profile'
       INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
       ORDER BY student_name";
-    $result = db_query($sql, $programme_nid, $session, $level, $programme_nid, $session, $level);
+  $result = db_query($sql);
   return $result;
 }
 
@@ -6412,12 +6438,16 @@ function get_gradesreport_details() {
 /**
  * Find cGPA for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_report_CGPA($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
         sp.field_student_ref_sp_uid AS uid,
         u.name AS mat,
@@ -6438,16 +6468,11 @@ function get_report_CGPA($session, $programme_nid, $level) {
       INNER JOIN {content_type_program} p
       INNER JOIN {users} u ON sp.field_student_ref_sp_uid=u.uid
       WHERE
-        sp.field_student_ref_sp_uid IN (
-          SELECT nspro0.uid
-          FROM {node} nspro0
-          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
-          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
-        ) AND
+        sp.field_student_ref_sp_uid IN ($ids) AND
         sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
         sp.field_program_ref_sp_nid=p.nid
       ORDER BY u.name";
-  $result = db_query($sql, $programme_nid, $session, $level);
+  $result = db_query($sql);
   return $result;
 }
 
@@ -6455,6 +6480,7 @@ function get_report_CGPA($session, $programme_nid, $level) {
 /**
  * Find cGPAs for Students for all sessions up to PREVIOUS Session (but not current one) for Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
@@ -6473,6 +6499,9 @@ function get_report_previous_CGPA($session, $programme_nid, $level) {
     Note: using a session parameter different from the current session is not very relevant except for those students who have left the university
       or alternatively at the start of the session before the students have registered courses
   */
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "
     SELECT
       cgpatoset.gradepoints,
@@ -6507,12 +6536,7 @@ function get_report_previous_CGPA($session, $programme_nid, $level) {
             {node} nspro,
             {content_type_student_profile} spro
           WHERE
-            sg.field_mat_no_uid IN (
-              SELECT nsproa.uid
-              FROM {node} nsproa
-              INNER JOIN {content_type_student_profile} sproa ON nsproa.vid=sproa.vid
-              WHERE nsproa.type='student_profile' AND sproa.field_profile_first_choice_nid='%s' AND sproa.field_profile_reg_session_value='%s' AND sproa.field_profile_level_name_value='%s'
-            ) AND
+            sg.field_mat_no_uid IN ($ids) AND
             sg.field_course_instance_nid=ci.nid AND
             sg.field_examscorelocked_value>0 AND
             sg.field_dropped_value=0 AND
@@ -6537,12 +6561,7 @@ function get_report_previous_CGPA($session, $programme_nid, $level) {
             {node} nspro0,
             {content_type_student_profile} spro0
           WHERE
-            sg0.field_mat_no_uid IN (
-              SELECT nsprob.uid
-              FROM {node} nsprob
-              INNER JOIN {content_type_student_profile} sprob ON nsprob.vid=sprob.vid
-              WHERE nsprob.type='student_profile' AND sprob.field_profile_first_choice_nid='%s' AND sprob.field_profile_reg_session_value='%s' AND sprob.field_profile_level_name_value='%s'
-            ) AND
+            sg0.field_mat_no_uid IN ($ids) AND
             sg0.field_course_instance_nid=ci0.nid AND
             sg0.field_examscorelocked_value>0 AND
             sg0.field_dropped_value=0 AND
@@ -6561,7 +6580,7 @@ function get_report_previous_CGPA($session, $programme_nid, $level) {
           exams.field_mat_no_uid=most_recent_exam.field_mat_no_uid
         GROUP BY exams.field_mat_no_uid
       ) AS cgpatoset";
-  $result = db_query($sql, $programme_nid, $session, $level, $session, $programme_nid, $session, $level, $session);
+  $result = db_query($sql, $session, $session);
   return $result;
 }
 
@@ -6569,12 +6588,16 @@ function get_report_previous_CGPA($session, $programme_nid, $level) {
 /**
  * Find Units and Grade Points for whole Session for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_report_current_gradepoints($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
       gpa.field_student_ref_gpa_uid AS uid,
       SUM(gpa.field_credit_load_completed_value) AS credit_load_completed,
@@ -6585,16 +6608,11 @@ function get_report_current_gradepoints($session, $programme_nid, $level) {
     INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
     INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
     WHERE
-      gpa.field_student_ref_gpa_uid IN (
-        SELECT nspro0.uid
-        FROM {node} nspro0
-        INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
-        WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
-      ) AND
+      gpa.field_student_ref_gpa_uid IN ($ids) AND
       gpa.field_program_ref_gpa_nid=spro.field_profile_first_choice_nid AND
       gpa.field_sess_name_gpa_value='%s'
     GROUP BY gpa.field_student_ref_gpa_uid";
-  $result = db_query($sql, $programme_nid, $session, $level, $session);
+  $result = db_query($sql, $session);
   return $result;
 }
 
@@ -6602,12 +6620,16 @@ function get_report_current_gradepoints($session, $programme_nid, $level) {
 /**
  * Find Courses for whole Session for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_report_current_courses($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
       sg.field_mat_no_uid AS uid,
       GROUP_CONCAT(DISTINCT CONCAT(c.field_code_value, '-', sg.field_credit_load_sg_value, '-', sg.field_grade_value) ORDER BY c.field_code_value SEPARATOR ', ') AS courses
@@ -6619,12 +6641,7 @@ function get_report_current_courses($session, $programme_nid, $level) {
       {node} nspro,
       {content_type_student_profile} spro
     WHERE
-      sg.field_mat_no_uid IN (
-        SELECT nspro8.uid
-        FROM {node} nspro8
-        INNER JOIN {content_type_student_profile} spro8 ON nspro8.vid=spro8.vid
-        WHERE nspro8.type='student_profile' AND spro8.field_profile_first_choice_nid='%s' AND spro8.field_profile_reg_session_value='%s' AND spro8.field_profile_level_name_value='%s'
-      ) AND
+      sg.field_mat_no_uid IN ($ids) AND
       sg.field_course_instance_nid=ci.nid AND
       sg.field_examscorelocked_value>0 AND
       sg.field_dropped_value=0 AND
@@ -6636,7 +6653,7 @@ function get_report_current_courses($session, $programme_nid, $level) {
       nspro.type='student_profile' AND
       nspro.vid=spro.vid
     GROUP BY sg.field_mat_no_uid";
-  $result = db_query($sql, $programme_nid, $session, $level, $session);
+  $result = db_query($sql, $session);
   return $result;
 }
 
