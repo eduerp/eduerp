@@ -591,7 +591,8 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     else {
       $ids = '-1';
     }
-echo "IDS $ids";//ab
+echo "SQL $sql <br />";//ab
+echo "IDS $ids <br />";//ab
 
     // Set the GPA for all students in this view
     $sql = "UPDATE
@@ -636,6 +637,7 @@ echo "IDS $ids";//ab
       gpa.field_student_ref_gpa_uid=gpatoset.uid AND
       gpa.field_sess_name_gpa_value='%s' $semesterwheregpa";
     db_query($sql, $session, $session);
+echo "SQL $sql <br />";//ab
 
     // Set the cGPA for all students in this view
     // ... Finds the grade for the most recent sitting of each course
@@ -724,6 +726,7 @@ echo "IDS $ids";//ab
       nspro1.type='student_profile' AND
       nspro1.vid=spro1.vid";
     db_query($sql);
+echo "SQL $sql <br />";//ab
     cache_clear_all('content:', content_cache_tablename(), TRUE);
   }
 
