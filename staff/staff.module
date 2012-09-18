@@ -5688,39 +5688,40 @@ function staff_student_progress_qualification() {
   $eduerp_levels = course_levels();
   $eduerp_sessions = get_all_sessions();
   $eduerp_programmes = programme();
+
   $str = "
   <br /><hr /><br />
-
   <font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Graduation</b></font><br /><br />
   <br /><hr /><br />";
 
-    $str .= "<b>Student Progress Towards Graduation</b> - Please fill the form as appropriate<br /><br />";
-    $str .= drupal_get_form('show_progress_qualification_form');
+  $str .= "<b>Student Progress Towards Graduation</b> - Please fill the form as appropriate<br /><br />";
+  $str .= drupal_get_form('show_progress_qualification_form');
 
   if (isset($_SESSION['eduerp_qualification'])) {
     //get faculty and department info of the programme
-   $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
+    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Grade Editor', 'Registrar', 'Vice-Chancellor')) ||
-     staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) ||
-     staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
+    if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Grade Editor', 'Registrar', 'Vice-Chancellor')) ||
+      staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) ||
+      staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
 
-    $eduerp_programmeName = $eduerp_programmes[$_SESSION['eduerp_qualification']['programme_nid']];
+      $eduerp_programmeName = $eduerp_programmes[$_SESSION['eduerp_qualification']['programme_nid']];
 
       $str .= "<br /><hr /><br />
       Students' Progress Towards Graduation for <b>Session: ". $eduerp_sessions[$_SESSION['eduerp_qualification']['session']] ."</b> |  <b>Programme: ". $eduerp_programmeName ."</b>  |  <b>Student current level: ". $eduerp_levels[$_SESSION['eduerp_qualification']['level']] ."</b>
       <br /><br />
       <div id='assigned_courses'>";
       $str .= get_progress_qualification_details();
-
       $str .= "
       </div>";
-  }
-   else {
+    }
+    else {
      drupal_set_message(Error_Types(127), 'error');
     }
   }
+
   echo $str;
+
   unset($_SESSION['eduerp_return_msg']);
   return ob_get_clean();
 }
