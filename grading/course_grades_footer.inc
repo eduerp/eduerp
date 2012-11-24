@@ -516,25 +516,25 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
   if ($semester === 'All') {
     $semesterwhere    = '';
     $semesterwherea   = '';
-    $semesterwhereb   = '';
+    //$semesterwhereb   = '';
     $semesterwheregpa = '';
   }
   else {
     $semesterwhere    = 'AND ci.field_semester_name_value=' . (int)$semester;
     $semesterwherea   = 'AND cia.field_semester_name_value=' . (int)$semester;
-    $semesterwhereb   = 'AND cib.field_semester_name_value=' . (int)$semester;
+    //$semesterwhereb   = 'AND cib.field_semester_name_value=' . (int)$semester;
     $semesterwheregpa = 'AND gpa.field_semester_name_gpa_value=' . (int)$semester;
   }
 
   if ($location === 'All') {
     $locationwhere  = '';
     $locationwherea = '';
-    $locationwhereb = '';
+    //$locationwhereb = '';
   }
   else {
     $locationwhere  = 'AND ci.field_location_value=' . (int)$location;
     $locationwherea = 'AND cia.field_location_value=' . (int)$location;
-    $locationwhereb = 'AND cib.field_location_value=' . (int)$location;
+    //$locationwhereb = 'AND cib.field_location_value=' . (int)$location;
   }
 
   // Don't allow an exam score approved by the VC to be changed
@@ -566,6 +566,32 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
   cache_clear_all('content:', content_cache_tablename(), TRUE);
 
   if ($fieldtoapprove === 'field_examscorelocked_value') {
+
+    // Find the Student Drupal IDs (these have been optimised out from subqueries in GPA & cGPA(2) UPDATES because MySQL is performing very very badly (thinking they are correlated)
+    $sql = "
+      SELECT GROUP_CONCAT(sga.field_mat_no_uid) AS ids
+      FROM
+        {content_type_student_grades} sga,
+        {content_type_course_instance} cia,
+        {content_type_course} ca
+      WHERE
+        sga.field_course_instance_nid=cia.nid AND
+        cia.field_course_id_nid=ca.nid AND
+        cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
+        ca.field_code_value='%s'";
+    $result = db_query($sql, $session, $coursecode);
+    if ($row_ids = db_fetch_object($result)) {
+      if (!empty($row_ids->ids)) {
+        $ids = $row_ids->ids;
+      }
+      else {
+        $ids = '-1';
+      }
+    }
+    else {
+      $ids = '-1';
+    }
+
     // Set the GPA for all students in this view
     $sql = "UPDATE
       {content_type_student_gpa} gpa,
@@ -588,18 +614,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             {content_type_course_instance} ci,
             {content_type_course} c
           WHERE
-            sg.field_mat_no_uid IN (
-              SELECT sga.field_mat_no_uid
-              FROM
-                {content_type_student_grades} sga,
-                {content_type_course_instance} cia,
-                {content_type_course} ca
-              WHERE
-                sga.field_course_instance_nid=cia.nid AND
-                cia.field_course_id_nid=ca.nid AND
-                cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
-                ca.field_code_value='%s'
-            ) AND
+            sg.field_mat_no_uid IN ($ids) AND
             sg.field_course_instance_nid=ci.nid AND
             sg.field_examscorelocked_value>0 AND
             sg.field_dropped_value=0 AND
@@ -619,7 +634,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
     WHERE
       gpa.field_student_ref_gpa_uid=gpatoset.uid AND
       gpa.field_sess_name_gpa_value='%s' $semesterwheregpa";
-    db_query($sql, $session, $coursecode, $session, $session);
+    db_query($sql, $session, $session);
 
     // Set the cGPA for all students in this view
     // ... Finds the grade for the most recent sitting of each course
@@ -652,18 +667,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             {node} nspro,
             {content_type_student_profile} spro
           WHERE
-            sg.field_mat_no_uid IN (
-              SELECT sga.field_mat_no_uid
-              FROM
-                {content_type_student_grades} sga,
-                {content_type_course_instance} cia,
-                {content_type_course} ca
-              WHERE
-                sga.field_course_instance_nid=cia.nid AND
-                cia.field_course_id_nid=ca.nid AND
-                cia.field_sess_name_value='%s' $semesterwherea $locationwherea AND
-                ca.field_code_value='%s'
-            ) AND
+            sg.field_mat_no_uid IN ($ids) AND
             sg.field_course_instance_nid=ci.nid AND
             sg.field_examscorelocked_value>0 AND
             sg.field_dropped_value=0 AND
@@ -687,18 +691,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
             {node} nspro0,
             {content_type_student_profile} spro0
           WHERE
-            sg0.field_mat_no_uid IN (
-              SELECT sgb.field_mat_no_uid
-              FROM
-                {content_type_student_grades} sgb,
-                {content_type_course_instance} cib,
-                {content_type_course} cb
-              WHERE
-                sgb.field_course_instance_nid=cib.nid AND
-                cib.field_course_id_nid=cb.nid AND
-                cib.field_sess_name_value='%s' $semesterwhereb $locationwhereb AND
-                cb.field_code_value='%s'
-            ) AND
+            sg0.field_mat_no_uid IN ($ids) AND
             sg0.field_course_instance_nid=ci0.nid AND
             sg0.field_examscorelocked_value>0 AND
             sg0.field_dropped_value=0 AND
@@ -729,7 +722,7 @@ function approve_grades_lecturer_form_submit($form, &$form_state) {
       nspro1.uid=cgpatoset.uid AND
       nspro1.type='student_profile' AND
       nspro1.vid=spro1.vid";
-    db_query($sql, $session, $coursecode, $session, $coursecode);
+    db_query($sql);
     cache_clear_all('content:', content_cache_tablename(), TRUE);
   }
 

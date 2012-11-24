@@ -98,6 +98,13 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['staff/gradesreport']=array(
+    'title' => t('Grades Report'),
+    'page callback' => 'staff_gradesreport',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+
   $items['staff/unregstudents']=array(
     'title'=>'List of Students who have Not Registered for a Semester',
     'page callback' => 'staff_unregistered_students',
@@ -1537,6 +1544,9 @@ function semester_admin() {
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/studentprogress') . '">Student Progress towards Graduation</a>';
+  echo '<br /><br /><hr /><br />';
+
+  echo '<a href="' . url('staff/gradesreport') . '">' . t('Grades Report') . '</a>';
   echo '<br /><br /><hr /><br />';
 
   echo '<a href="' . url('staff/unregstudents') . '">List of Students who have Not Registered for a Semester</a>';
@@ -5667,6 +5677,7 @@ function historical_course_list($programme_nid) {
  * @global array $eduerp_programmes
  * @global string $eduerp_programmeName
  * @global string $_SESSION['eduerp_return_msg']
+ * @global string $_SESSION['eduerp_qualification']
  * @return string HTML
  */
 function staff_student_progress_qualification() {
@@ -5676,37 +5687,43 @@ function staff_student_progress_qualification() {
 
   $eduerp_levels = course_levels();
   $eduerp_sessions = get_all_sessions();
-  $eduerp_programmes = get_programmes(0, true);
+  $eduerp_programmes = programme();
+  $eduerp_programmes_for_name = get_programmes(0, true);
+
   $str = "
   <br /><hr /><br />
 
   <font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;Student Progress towards Graduation</b></font><br /><br />
   <br /><hr /><br />";
-  //get faculty and department info of the programme
-   $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
 
-  if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Grade Editor', 'Registrar', 'Vice-Chancellor')) ||
-     staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) ||
-     staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
+  $str .= "<b>Student Progress Towards Graduation</b> - Please fill the form as appropriate<br /><br />";
+  $str .= drupal_get_form('show_progress_qualification_form');
 
-    $str .= "<b>Student Progress Towards Graduation</b> - Please fill the form as appropriate<br /><br />";
-    $str .= drupal_get_form('show_progress_qualification_form');
-    $eduerp_programmeName = $eduerp_programmes[$_SESSION['eduerp_qualification']['programme_nid']];
-    if (isset($_SESSION['eduerp_qualification'])) {
+  if (isset($_SESSION['eduerp_qualification'])) {
+    //get faculty and department info of the programme
+    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_qualification']['programme_nid']));
+
+    if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Grade Editor', 'Registrar', 'Vice-Chancellor')) ||
+      staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) ||
+      staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
+
+      $eduerp_programmeName = $eduerp_programmes_for_name[$_SESSION['eduerp_qualification']['programme_nid']];
+
       $str .= "<br /><hr /><br />
       Students' Progress Towards Graduation for <b>Session: ". $eduerp_sessions[$_SESSION['eduerp_qualification']['session']] ."</b> |  <b>Programme: ". $eduerp_programmeName ."</b>  |  <b>Student current level: ". $eduerp_levels[$_SESSION['eduerp_qualification']['level']] ."</b>
       <br /><br />
       <div id='assigned_courses'>";
       $str .= get_progress_qualification_details();
-
       $str .= "
       </div>";
     }
-  }
-   else {
+    else {
      drupal_set_message(Error_Types(127), 'error');
     }
+  }
+
   echo $str;
+
   unset($_SESSION['eduerp_return_msg']);
   return ob_get_clean();
 }
@@ -5747,7 +5764,7 @@ function show_progress_qualification_form() {
   if ($_SESSION['eduerp_qualification']) $form['level']['#default_value'] = $_SESSION['eduerp_qualification']['level'];
 
   $form['submit'] = array(
-      '#value' => 'Check Now',
+      '#value' => 'Get Report',
       '#type' => 'submit'
     );
   return $form;
@@ -5838,7 +5855,7 @@ function display_progress_towards_qualification(&$result) {
  * Return HTML for Student Progress towards Graduation for a Session/Programme/Level
  *
  * @uses get_students_CGPA()
- * @uses get_students_GPA
+ * @uses get_students_GPA()
  * @uses get_cumulative_list_of_failed_courses()
  * @uses staff_student_action_form()
  * @global int $eduerp_uid
@@ -6011,12 +6028,16 @@ function  get_progress_qualification_details() {
 /**
  * Find cGPA etc. for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_students_CGPA($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
         sp.field_student_ref_sp_uid AS uid,
         u.name AS mat,
@@ -6036,12 +6057,7 @@ function get_students_CGPA($session, $programme_nid, $level) {
       INNER JOIN {content_type_program} p
       INNER JOIN {users} u ON sp.field_student_ref_sp_uid=u.uid
       WHERE
-        sp.field_student_ref_sp_uid IN (
-          SELECT nspro0.uid
-          FROM {node} nspro0
-          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
-          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
-        ) AND
+        sp.field_student_ref_sp_uid IN ($ids) AND
         sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
         sp.field_program_ref_sp_nid=p.nid
       ORDER BY student_name";
@@ -6053,12 +6069,16 @@ function get_students_CGPA($session, $programme_nid, $level) {
 /**
  * Find GPAs etc. for Students in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_students_GPA($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
   $sql = "SELECT
         gpa.field_student_ref_gpa_uid AS uid,
         gpa.field_gpa_value,
@@ -6073,12 +6093,7 @@ function get_students_GPA($session, $programme_nid, $level) {
       INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
       INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
       WHERE
-        gpa.field_student_ref_gpa_uid IN (
-          SELECT nspro0.uid
-          FROM {node} nspro0
-          INNER JOIN {content_type_student_profile} spro0 ON nspro0.vid=spro0.vid
-          WHERE nspro0.type='student_profile' AND spro0.field_profile_first_choice_nid='%s' AND spro0.field_profile_reg_session_value='%s' AND spro0.field_profile_level_name_value='%s'
-        ) AND
+        gpa.field_student_ref_gpa_uid IN ($ids) AND
         gpa.field_program_ref_gpa_nid=spro.field_profile_first_choice_nid
       ORDER BY student_name, gpa.field_level_name_gpa_value, gpa.field_sess_name_gpa_value, gpa.field_semester_name_gpa_value";
     $result = db_query($sql, $programme_nid, $session, $level);
@@ -6087,16 +6102,50 @@ function get_students_GPA($session, $programme_nid, $level) {
 
 
 /**
+ * Return list of Drupal User ids for each Student in Session/Programme/Level
+ *
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return string of comma separated Drupal User IDs (or '-1')
+ */
+function get_id_list_for_students_in_programme($session, $programme_nid, $level) {
+  $sql = "
+    SELECT GROUP_CONCAT(nspro.uid) AS ids
+    FROM {node} nspro
+    INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+    WHERE nspro.type='student_profile' AND spro.field_profile_first_choice_nid='%s' AND spro.field_profile_reg_session_value='%s' AND spro.field_profile_level_name_value='%s'";
+  $result = db_query($sql, $programme_nid, $session, $level);
+  if ($row = db_fetch_object($result)) {
+    if (!empty($row->ids)) {
+      $ids = $row->ids;
+    }
+    else {
+      $ids = '-1';
+    }
+  }
+  else {
+    $ids = '-1';
+  }
+  return $ids;
+}
+
+
+/**
  * Find any Failed (and not since passed) Courses for each Student in Session/Programme/Level
  *
+ * @uses get_id_list_for_students_in_programme()
  * @param string $session
  * @param int $programme_nid 'program' CCK Drupal node nid
  * @param string $level
  * @return mysqli_result
  */
 function get_cumulative_list_of_failed_courses($session, $programme_nid, $level) {
-    // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
-    $sql = "SELECT
+  // failedcourses sub-query below borrows from similar query in student.module & course_grades_footer.inc
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "SELECT
         failedcourses.uid,
         failedcourses.failedlist,
         CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key
@@ -6119,12 +6168,7 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
               {node} nspro,
               {content_type_student_profile} spro
             WHERE
-              sg.field_mat_no_uid IN (
-                SELECT nspro8.uid
-                FROM {node} nspro8
-                INNER JOIN {content_type_student_profile} spro8 ON nspro8.vid=spro8.vid
-                WHERE nspro8.type='student_profile' AND spro8.field_profile_first_choice_nid='%s' AND spro8.field_profile_reg_session_value='%s' AND spro8.field_profile_level_name_value='%s'
-              ) AND
+              sg.field_mat_no_uid IN ($ids) AND
               sg.field_course_instance_nid=ci.nid AND
               sg.field_examscorelocked_value>0 AND
               sg.field_dropped_value=0 AND
@@ -6148,12 +6192,7 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
               {node} nspro0,
               {content_type_student_profile} spro0
             WHERE
-              sg0.field_mat_no_uid IN (
-                SELECT nspro9.uid
-                FROM {node} nspro9
-                INNER JOIN {content_type_student_profile} spro9 ON nspro9.vid=spro9.vid
-                WHERE nspro9.type='student_profile' AND spro9.field_profile_first_choice_nid='%s' AND spro9.field_profile_reg_session_value='%s' AND spro9.field_profile_level_name_value='%s'
-              ) AND
+              sg0.field_mat_no_uid IN ($ids) AND
               sg0.field_course_instance_nid=ci0.nid AND
               sg0.field_examscorelocked_value>0 AND
               sg0.field_dropped_value=0 AND
@@ -6176,7 +6215,447 @@ function get_cumulative_list_of_failed_courses($session, $programme_nid, $level)
       INNER JOIN {node} npro ON failedcourses.uid=npro.uid AND npro.type='profile'
       INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
       ORDER BY student_name";
-    $result = db_query($sql, $programme_nid, $session, $level, $programme_nid, $session, $level);
+  $result = db_query($sql);
+  return $result;
+}
+
+
+/**
+ * Handles 'staff/gradesreport' menu to Display Grades Report for a Programme (cGPAs this & previous session and courses this session)
+ *
+ * @uses course_levels()
+ * @uses get_all_sessions()
+ * @uses get_programmes()
+ * @uses staff_has_eduerp_role()
+ * @uses show_gradesreport_form()
+ * @uses get_gradesreport_details()
+ * @global array $eduerp_gradesreport_levels
+ * @global array $eduerp_gradesreport_sessions
+ * @global array $eduerp_gradesreport_programmes
+ * @global string $_SESSION['eduerp_gradesreport']
+ * @return string HTML
+ */
+function staff_gradesreport() {
+  global $eduerp_gradesreport_levels, $eduerp_gradesreport_sessions, $eduerp_gradesreport_programmes, $user;
+  ob_start();
+
+  $eduerp_gradesreport_levels = course_levels();
+  $eduerp_gradesreport_sessions = get_all_sessions();
+  $eduerp_gradesreport_programmes = programme();
+  $str = "<hr /><font size = '1px'><a href = '". url('staff/semester') ."'>" . t('Semester Administration') . "</a>&nbsp; &raquo; &nbsp;" . t('Grades Report') . "</b></font><br /><hr /><br />";
+
+  $str .= '<b>';
+  $str .= variable_get('eduerp_institution_current', '') . '<br /><br />';
+  $str .= t('Grades Report for Senate Standing Committee on Examinations') . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . format_date(time()) . '<br /><br />';
+
+  if (isset($_SESSION['eduerp_gradesreport'])) {
+    //get faculty and department info of the programme
+    $progInfo = db_fetch_object(get_programmes($_SESSION['eduerp_gradesreport']['programme_nid']));
+    $str .=  t('Faculty') . ": $progInfo->faculty_name<br />";
+    $str .=  t('Department') . ": $progInfo->department_name";
+  }
+  $str .= '</b>';
+
+  $str .= drupal_get_form('show_gradesreport_form');
+
+  if (isset($_SESSION['eduerp_gradesreport'])) {
+    if (staff_has_eduerp_role($user->uid, 0, 0, array('University Examination Viewer', 'University Grade Editor', 'Registrar', 'Vice-Chancellor')) ||
+      staff_has_eduerp_role($user->uid, $progInfo->department_nid, 0, array('Department Examination Officer', 'Department Grade Editor', 'Head of Department')) ||
+      staff_has_eduerp_role($user->uid, 0, $progInfo->faculty_nid, array('Faculty Examination Officer', 'Faculty Grade Editor', 'Dean of Faculty'))) {
+
+      $str .= "<br /><div id='assigned_courses'>";
+
+      $str .= get_gradesreport_details();
+
+      $str .= '</div>';
+    }
+    else {
+      drupal_set_message(Error_Types(127), 'error');
+    }
+  }
+  echo $str;
+
+  return ob_get_clean();
+}
+
+
+/**
+ * Form to Select Session/Programme/Level in order to Display Student Progress towards Graduation
+ *
+ * @uses show_gradesreport_form_submit()
+ * @global array $eduerp_gradesreport_levels
+ * @global array $eduerp_gradesreport_sessions
+ * @global array $eduerp_gradesreport_programmes
+ * @return array Drupal Form
+ */
+function show_gradesreport_form() {
+  global $eduerp_gradesreport_levels, $eduerp_gradesreport_sessions, $eduerp_gradesreport_programmes;
+  $form['#title'] = t('Grades Report');
+
+  $form['session'] = array(
+    '#type' => 'select',
+    '#options' => $eduerp_gradesreport_sessions,
+    '#required' => TRUE,
+    '#title' => t('Session'));
+  if ($_SESSION['eduerp_gradesreport']) $form['session']['#default_value'] = $_SESSION['eduerp_gradesreport']['session'];
+
+  $form['programme_nid'] = array(
+    '#type' => 'select',
+    '#options' => $eduerp_gradesreport_programmes,
+    '#required' => TRUE,
+    '#title' => t('Programme Name'));
+  if ($_SESSION['eduerp_gradesreport']) $form['programme_nid']['#default_value'] = $_SESSION['eduerp_gradesreport']['programme_nid'];
+
+  $form['level'] = array(
+    '#type' => 'select',
+    '#options' => $eduerp_gradesreport_levels,
+    '#required' => TRUE,
+    '#title' => t('Level'));
+  if ($_SESSION['eduerp_gradesreport']) $form['level']['#default_value'] = $_SESSION['eduerp_gradesreport']['level'];
+
+  $form['submit'] = array(
+      '#value' => t('Get Report'),
+      '#type' => 'submit'
+    );
+  return $form;
+}
+
+
+function show_gradesreport_form_validate($form, &$form_state) {
+  ;
+}
+
+
+/**
+ * submit hook for {@link show_gradesreport_form()}
+ *
+ * @global array $_SESSION['eduerp_gradesreport']
+ */
+function show_gradesreport_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  $_SESSION['eduerp_gradesreport']['session'] = $values['session'];
+  $_SESSION['eduerp_gradesreport']['programme_nid'] = $values['programme_nid'];
+  $_SESSION['eduerp_gradesreport']['level'] = $values['level'];
+}
+
+
+/**
+ * Return HTML for Grade Report for a Session/Programme/Level
+ *
+ * @uses get_report_CGPA()
+ * @uses get_report_previous_CGPA()
+ * @uses get_report_current_gradepoints()
+ * @uses get_report_current_courses()
+ * @uses get_cumulative_list_of_failed_courses()
+ * @global int $eduerp_gradesreport_programme_nid
+ * @global array $_SESSION['eduerp_gradesreport']
+ * @return string HTML
+ */
+function get_gradesreport_details() {
+  global $eduerp_gradesreport_programme_nid;
+
+  $eduerp_gradesreport_programme_nid = $_SESSION['eduerp_gradesreport']['programme_nid'];
+  $session = $_SESSION['eduerp_gradesreport']['session'];
+  $level = $_SESSION['eduerp_gradesreport']['level'];
+
+  $display_items = array();
+
+  $cgpa = get_report_CGPA($session, $eduerp_gradesreport_programme_nid, $level);
+  while ($f = db_fetch_object($cgpa)) {
+    $display_items[$f->uid]['mat'] = $f->mat;
+    $display_items[$f->uid]['student_name'] = $f->student_name;
+    $display_items[$f->uid]['field_credit_load_completed_sp_value'] = $f->field_credit_load_completed_sp_value;
+    $display_items[$f->uid]['field_gptotal_sp_value'] = $f->field_gptotal_sp_value;
+    $display_items[$f->uid]['field_cgpa_sp_value'] = $f->field_cgpa_sp_value;
+  }
+
+  $last_cgpa = get_report_previous_CGPA($session, $eduerp_gradesreport_programme_nid, $level);
+  while ($f = db_fetch_object($last_cgpa)) {
+    $display_items[$f->uid]['last_cgpa'] = $f->cgpa;
+  }
+
+  $gp = get_report_current_gradepoints($session, $eduerp_gradesreport_programme_nid, $level);
+  while ($f = db_fetch_object($gp)) {
+    $display_items[$f->uid]['credit_load_completed'] = $f->credit_load_completed;
+    $display_items[$f->uid]['gptotal'] = $f->gptotal;
+    $display_items[$f->uid]['verify_exists'] = $f->uid;
+  }
+
+  $courses = get_report_current_courses($session, $eduerp_gradesreport_programme_nid, $level);
+  while ($f = db_fetch_object($courses)) {
+    $display_items[$f->uid]['courses'] = $f->courses;
+  }
+
+  $failed_courses = get_cumulative_list_of_failed_courses($session, $eduerp_gradesreport_programme_nid, $level);
+  while ($f = db_fetch_object($failed_courses)) {
+    if (empty($f->failedlist)) $display_items[$f->uid]['failedlist'] = '';
+    else $display_items[$f->uid]['failedlist'] = t('Failed') . ': ' . $f->failedlist;
+  }
+
+  $html = '';
+  if(!empty($display_items)) {
+    $html .= '
+      <table border=1>
+        <tr>
+          <th>#</th>
+          <th>' . t('Adm. No.') . '</th>
+          <th>' . t('Name') . '</th>
+          <th>' . t('Courses') . '</th>
+          <th>' . t('Units TS') . '</th>
+          <th>' . t('Units TD') . '</th>
+          <th>' . t('GP TS') . '</th>
+          <th>' . t('GP TD') . '</th>
+          <th>' . t('cGPA LS') . '</th>
+          <th>' . t('cGPA TD') . '</th>
+          <th>' . t('Remarks') . '</th>
+       </tr>';
+
+    $i = 1;
+    foreach($display_items as $display_item) {
+      if (empty($display_item['verify_exists'])) continue; // If no GPA for Student they have not have proceeded to pay and register courses
+
+      $html .= '<tr>';
+      $html .= '<td>' . $i++ . '</td>';
+      $html .= '<td>' . $display_item['mat'] . '</td>';
+      $html .= '<td>' . $display_item['student_name'] . '</td>';
+      $html .= '<td>' . $display_item['courses'] . '</td>';
+      $html .= '<td>' . $display_item['credit_load_completed'] . '</td>';
+      $html .= '<td>' . $display_item['field_credit_load_completed_sp_value'] . '</td>';
+      $html .= '<td>' . $display_item['gptotal'] . '</td>';
+      $html .= '<td>' . $display_item['field_gptotal_sp_value'] . '</td>';
+      $html .= '<td>' . $display_item['last_cgpa'] . '</td>';
+      $html .= '<td>' . $display_item['field_cgpa_sp_value'] . '</td>';
+      $html .= '<td>' . $display_item['failedlist'] . '</td>';
+      $html .= '</tr>';
+    }
+    $html .= '</table>';
+  }
+  else {
+    drupal_set_message(Error_Types(106), 'error');
+  }
+  return $html;
+}
+
+
+/**
+ * Find cGPA for Students in Session/Programme/Level
+ *
+ * @uses get_id_list_for_students_in_programme()
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return mysqli_result
+ */
+function get_report_CGPA($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "SELECT
+        sp.field_student_ref_sp_uid AS uid,
+        u.name AS mat,
+        sp.field_cgpa_sp_value,
+        sp.field_credit_load_completed_sp_value,
+        sp.field_gptotal_sp_value,
+        p.field_min_credit_load_program_value,
+        SUBSTRING(spro.field_profile_reg_session_value, 1, 4) - spro.field_profile_yearofentry_value + 1 AS elapsed_years,
+        p.field_duration_value,
+        p.field_max_duration_value,
+        CONCAT(pro.field_profile_last_name_value, ', ', pro.field_profile_first_name_value, ' ', IFNULL(pro.field_profile_middle_name_value, '')) AS student_name, pro.nid student_key,
+        spro.field_profile_mode_of_entry_value
+      FROM {content_type_student_program} sp
+      INNER JOIN {node} npro ON sp.field_student_ref_sp_uid=npro.uid AND npro.type='profile'
+      INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+      INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
+      INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+      INNER JOIN {content_type_program} p
+      INNER JOIN {users} u ON sp.field_student_ref_sp_uid=u.uid
+      WHERE
+        sp.field_student_ref_sp_uid IN ($ids) AND
+        sp.field_program_ref_sp_nid=spro.field_profile_first_choice_nid AND
+        sp.field_program_ref_sp_nid=p.nid
+      ORDER BY u.name";
+  $result = db_query($sql);
+  return $result;
+}
+
+
+/**
+ * Find cGPAs for Students for all sessions up to PREVIOUS Session (but not current one) for Session/Programme/Level
+ *
+ * @uses get_id_list_for_students_in_programme()
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return mysqli_result
+ */
+function get_report_previous_CGPA($session, $programme_nid, $level) {
+  /*
+    Similar to (derived from) UPDATE Query for
+      sp.field_gptotal_sp_value,
+      sp.field_credit_load_completed_sp_value,
+      sp.field_cgpa_sp_value,
+    in approve_grades_lecturer_form_submit() in course_grades_footer.inc.
+    Uses a different set of uid(s)
+    Could be simplified somewhat but kept the same as that as much as possible
+
+    Note: using a session parameter different from the current session is not very relevant except for those students who have left the university
+      or alternatively at the start of the session before the students have registered courses
+  */
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "
+    SELECT
+      cgpatoset.gradepoints,
+      cgpatoset.totalload,
+      IF(cgpatoset.calc_type=3,
+        IF(cgpatoset.allpassed=0, '-', 'Pass'),
+        FORMAT(IF(cgpatoset.totalload=0, 0, cgpatoset.gradepoints/cgpatoset.totalload), 2)
+      ) AS cgpa,
+      cgpatoset.uid
+    FROM
+      (
+        SELECT
+          exams.field_mat_no_uid AS uid,
+          MAX(exams.field_calc_type_value) AS calc_type,
+          SUM(exams.gradepoint*exams.credit_load) AS gradepoints,
+          MIN(exams.gradepoint) AS allpassed,
+          SUM(exams.credit_load) AS totalload
+        FROM (
+          SELECT DISTINCT
+            IF(sg.field_gradepoint_value='-', 0, sg.field_gradepoint_value) AS gradepoint,
+            sg.field_mat_no_uid,
+            sg.field_calc_type_value,
+            CONCAT(ci.field_sess_name_value, ci.field_semester_name_value, sg.nid) AS sess_sem,
+            c.field_code_value,
+            sg.field_credit_load_sg_value AS credit_load,
+            c.field_creditload_value AS old_credit_load
+          FROM
+            {content_type_student_grades} sg,
+            {content_type_course_instance} ci,
+            {content_type_course} c,
+            {program_course} pc,
+            {node} nspro,
+            {content_type_student_profile} spro
+          WHERE
+            sg.field_mat_no_uid IN ($ids) AND
+            sg.field_course_instance_nid=ci.nid AND
+            sg.field_examscorelocked_value>0 AND
+            sg.field_dropped_value=0 AND
+            ci.field_course_id_nid=c.nid AND
+            ci.field_course_id_nid=pc.course_id AND
+            pc.programme_id=spro.field_profile_first_choice_nid AND
+            nspro.uid=sg.field_mat_no_uid AND
+            nspro.type='student_profile' AND
+            nspro.vid=spro.vid AND
+            ci.field_sess_name_value<'%s'
+          ) AS exams
+        JOIN (
+          SELECT
+            sg0.field_mat_no_uid,
+            MAX(CONCAT(ci0.field_sess_name_value, ci0.field_semester_name_value, sg0.nid)) AS sess_sem0,
+            c0.field_code_value
+          FROM
+            {content_type_student_grades} sg0,
+            {content_type_course_instance} ci0,
+            {content_type_course} c0,
+            {program_course} pc0,
+            {node} nspro0,
+            {content_type_student_profile} spro0
+          WHERE
+            sg0.field_mat_no_uid IN ($ids) AND
+            sg0.field_course_instance_nid=ci0.nid AND
+            sg0.field_examscorelocked_value>0 AND
+            sg0.field_dropped_value=0 AND
+            ci0.field_course_id_nid=c0.nid AND
+            ci0.field_course_id_nid=pc0.course_id AND
+            pc0.programme_id=spro0.field_profile_first_choice_nid AND
+            nspro0.uid=sg0.field_mat_no_uid AND
+            nspro0.type='student_profile' AND
+            nspro0.vid=spro0.vid AND
+            ci0.field_sess_name_value<'%s'
+          GROUP BY c0.field_code_value, sg0.field_mat_no_uid
+          ) AS most_recent_exam
+        ON
+          exams.field_code_value=most_recent_exam.field_code_value AND
+          exams.sess_sem=most_recent_exam.sess_sem0 AND
+          exams.field_mat_no_uid=most_recent_exam.field_mat_no_uid
+        GROUP BY exams.field_mat_no_uid
+      ) AS cgpatoset";
+  $result = db_query($sql, $session, $session);
+  return $result;
+}
+
+
+/**
+ * Find Units and Grade Points for whole Session for Students in Session/Programme/Level
+ *
+ * @uses get_id_list_for_students_in_programme()
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return mysqli_result
+ */
+function get_report_current_gradepoints($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "SELECT
+      gpa.field_student_ref_gpa_uid AS uid,
+      SUM(gpa.field_credit_load_completed_value) AS credit_load_completed,
+      SUM(IF(gpa.field_gptotal_value='-', 0, gpa.field_gptotal_value)) AS gptotal
+    FROM {content_type_student_gpa} gpa
+    INNER JOIN {node} npro ON gpa.field_student_ref_gpa_uid=npro.uid AND npro.type='profile'
+    INNER JOIN {content_type_profile} pro ON npro.vid=pro.vid
+    INNER JOIN {node} nspro ON npro.uid=nspro.uid AND nspro.type='student_profile'
+    INNER JOIN {content_type_student_profile} spro ON nspro.vid=spro.vid
+    WHERE
+      gpa.field_student_ref_gpa_uid IN ($ids) AND
+      gpa.field_program_ref_gpa_nid=spro.field_profile_first_choice_nid AND
+      gpa.field_sess_name_gpa_value='%s'
+    GROUP BY gpa.field_student_ref_gpa_uid";
+  $result = db_query($sql, $session);
+  return $result;
+}
+
+
+/**
+ * Find Courses for whole Session for Students in Session/Programme/Level
+ *
+ * @uses get_id_list_for_students_in_programme()
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return mysqli_result
+ */
+function get_report_current_courses($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "SELECT
+      sg.field_mat_no_uid AS uid,
+      GROUP_CONCAT(DISTINCT CONCAT(c.field_code_value, '-', sg.field_credit_load_sg_value, '-', sg.field_grade_value) ORDER BY c.field_code_value SEPARATOR ', ') AS courses
+    FROM
+      {content_type_student_grades} sg,
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {program_course} pc,
+      {node} nspro,
+      {content_type_student_profile} spro
+    WHERE
+      sg.field_mat_no_uid IN ($ids) AND
+      sg.field_course_instance_nid=ci.nid AND
+      sg.field_examscorelocked_value>0 AND
+      sg.field_dropped_value=0 AND
+      ci.field_course_id_nid=c.nid AND
+      ci.field_course_id_nid=pc.course_id AND
+      ci.field_sess_name_value='%s' AND
+      pc.programme_id=spro.field_profile_first_choice_nid AND
+      nspro.uid=sg.field_mat_no_uid AND
+      nspro.type='student_profile' AND
+      nspro.vid=spro.vid
+    GROUP BY sg.field_mat_no_uid";
+  $result = db_query($sql, $session);
   return $result;
 }
 
