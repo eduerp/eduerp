@@ -7,8 +7,8 @@
 /**
  * Implementation of hook_matno() to generate Student Matriculation Number and e-mail based on Institution (University) specific data
  *
- * @uses gen_veritas_style_matnum()
- * @uses gen_udusok_style_matnum()
+ * @uses gen_style_1_user_names()
+ * @uses gen_style_2_user_names()
  * @param int $studUID
  * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
  * @param bool $dont_change_matno, TRUE if Staff have decided (in UI) not to change Matriculation Number when changing a particular Student's Programme
@@ -24,12 +24,12 @@ function me_gen_matno($studUID, $formerProgID = 0, $dont_change_matno = NULL) {
   $instChoice = db_fetch_object($rs);
 
   switch($instChoice->mat_num_format){
-    case '1': //veritas style
-      return gen_veritas_style_matnum($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $formerProgID);
+    case '1':
+      return gen_style_1_user_names($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $formerProgID);
     break;
 
-    case '2': //udusok style
-      return gen_udusok_style_matnum($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $formerProgID, $dont_change_matno);
+    case '2':
+      return gen_style_2_user_names($instChoice->mat_num_format, $instChoice->mat_num_serial_type, $studUID, $formerProgID, $dont_change_matno);
     break;
 
     default:
@@ -50,7 +50,7 @@ function me_gen_matno($studUID, $formerProgID = 0, $dont_change_matno = NULL) {
  * @param bool $dont_change_matno, TRUE if Staff have decided (in UI) not to change Matriculation Number when changing a particular Student's Programme
  * @return array of new Mat Number and e-mail
  */
-function gen_udusok_style_matnum($formatID, $serialTypeID, $studUID, $formerProgID = 0, $dont_change_matno = NULL) {
+function gen_style_2_user_names($formatID, $serialTypeID, $studUID, $formerProgID = 0, $dont_change_matno = NULL) {
   /**
   This style of matno does not have separators
   example: 0611406096,  0621406096.
@@ -267,7 +267,7 @@ function me_gen_send_change_email($student_id, $matNumber, $email) {
  * @param int $formerProgID 'program' CCK Drupal node nid if this is a change of Programme (or 0)
  * @return array of new Mat Number and e-mail
  */
-function gen_veritas_style_matnum($formatID, $serialTypeID, $studUID, $formerProgID=0){
+function gen_style_1_user_names($formatID, $serialTypeID, $studUID, $formerProgID=0){
  /**
   This style of matno have separators
   example: VUG-PHY-09-003
@@ -495,12 +495,12 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
   //lets get the user part of the email
 
   switch($instChoice->email_user_format){
-    case '1'://udusok userpart style - [last_name][last 2 digits of session_name][student_serial]
+    case '1': // [last_name][last 2 digits of session_name][student_serial]
       $userPart = ($student_profile->profile_last_name . substr(variable_get('eduerp_current_session', ''), 2, 2) . substr($matNum, -3, 3));
 
     break;
 
-    case '2'://veritas userpart style - matriculation number
+    case '2':
       $userPart =  $matNum;
 
     break;
@@ -545,7 +545,7 @@ function me_gen_email($studUID, $matNum, $formerProgID=0){
       watchdog('zimbra', 'Zimbra account for %name was renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail));
     }
     else {
-      user_save($student, array('mail' => $userEmail)); // Do it anyway because the error is not for real on mis.udusok.edu.ng
+      user_save($student, array('mail' => $userEmail)); // Do it anyway because the error is not for real on some installations
       watchdog('zimbra', 'Zimbra account for %name was not renamed to %name_new.', array('%name' => $oldUserEmail, '%name_new' => $userEmail), WATCHDOG_ERROR);
       //drupal_set_message(t('Zimbra e-mail account for %name was not renamed to %name_new. Please contact site administrator.', array('%name' => $oldUserEmail, '%name_new' => $userEmail)), 'error');
     }
