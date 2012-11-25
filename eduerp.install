@@ -166,6 +166,12 @@ function eduerp_enable() {
   foreach ($perms as $role => $permissions) {
     permissions_grant_permissions($role, $permissions);
   }
+
+  $result = db_query('SELECT * FROM course_grade_weightings');
+  if (db_affected_rows($result) <= 0) {
+    // Default marking scheme, the install instructions indicate how to change this
+    db_query('INSERT INTO {course_grade_weightings} VALUES (0, 2, 0, 20, 20, 0, 0, 60, 0, 0, 0, 0, 0)');
+  }
 }
 
 
