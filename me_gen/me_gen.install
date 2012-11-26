@@ -63,10 +63,12 @@ function me_gen_enable() {
 	  KEY `email_domain_format_id` (`email_domain_format_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8
  ");
-  db_query('TRUNCATE TABLE email_institution_choice');
-  // This defaults the system to a single e-mail domain for all students (1) and indicates that the e-mail name is taken from Matriculation Number (2)
-  // (Other configurations have not been fully tested)
-  db_query("INSERT INTO `email_institution_choice` (`email_domain_format_id`, `email_user_format_id`) VALUES (1, 2)");
+  $result = db_query('SELECT * FROM email_institution_choice');
+  if (db_affected_rows($result) <= 0) {
+    // This defaults the system to a single e-mail domain for all students (1) and indicates that the e-mail name is taken from Matriculation Number (2)
+    // (Other configurations have not been fully tested)
+    db_query("INSERT INTO `email_institution_choice` (`email_domain_format_id`, `email_user_format_id`) VALUES (1, 2)");
+  }
 
   //email_user_formats
   db_query("
@@ -143,10 +145,12 @@ function me_gen_enable() {
 	  KEY `mat_num_format_id` (`mat_num_format_id`,`mat_num_serial_gen_type_id`)
 	) ENGINE=InnoDB DEFAULT CHARSET=utf8 "
   );
-  // This defaults the Matriculation Number format
-  // (Other configurations have not been fully tested)
-  db_query('TRUNCATE TABLE mat_num_institution_choice');
-  db_query("INSERT INTO `mat_num_institution_choice` (`mat_num_format_id`, `mat_num_serial_gen_type_id`) VALUES (2, 2)");
+  $result = db_query('SELECT * FROM mat_num_institution_choice');
+  if (db_affected_rows($result) <= 0) {
+    // This defaults the Matriculation Number format
+    // (Other configurations have not been fully tested)
+    db_query("INSERT INTO `mat_num_institution_choice` (`mat_num_format_id`, `mat_num_serial_gen_type_id`) VALUES (2, 2)");
+  }
 
   //mat_num_serial_gen_types
   db_query("
