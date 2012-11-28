@@ -307,3 +307,11 @@ class UserProfile {
     }
   }
 }
+
+
+/**
+ * Implementation of hook_update_projects_alter(), called to remove the custom editablefields module from the update list
+ */
+function eduerp_update_projects_alter(&$projects) {
+  unset($projects['editablefields']); // Hide a site-specific module from the list.
+}
