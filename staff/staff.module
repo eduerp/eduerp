@@ -6345,6 +6345,7 @@ function show_gradesreport_form_submit($form, &$form_state) {
  * @uses get_report_previous_CGPA()
  * @uses get_report_current_gradepoints()
  * @uses get_report_current_courses()
+ * @uses get_report_current_courses_grades_not_submitted()
  * @uses get_cumulative_list_of_failed_courses()
  * @global int $eduerp_gradesreport_programme_nid
  * @global array $_SESSION['eduerp_gradesreport']
@@ -6383,6 +6384,11 @@ function get_gradesreport_details() {
   $courses = get_report_current_courses($session, $eduerp_gradesreport_programme_nid, $level);
   while ($f = db_fetch_object($courses)) {
     $display_items[$f->uid]['courses'] = $f->courses;
+  }
+
+  $courses_not_submitted = get_report_current_courses_grades_not_submitted($session, $eduerp_gradesreport_programme_nid, $level);
+  while ($f = db_fetch_object($courses_not_submitted)) {
+    $display_items[$f->uid]['courses_not_submitted'] = $f->courses_not_submitted;
   }
 
   $failed_courses = get_cumulative_list_of_failed_courses($session, $eduerp_gradesreport_programme_nid, $level);
@@ -6424,7 +6430,12 @@ function get_gradesreport_details() {
       $html .= '<td>' . $display_item['field_gptotal_sp_value'] . '</td>';
       $html .= '<td>' . $display_item['last_cgpa'] . '</td>';
       $html .= '<td>' . $display_item['field_cgpa_sp_value'] . '</td>';
-      $html .= '<td>' . $display_item['failedlist'] . '</td>';
+      $not_submitted = '';
+      if (!empty($display_item['courses_not_submitted'])) {
+        if (!empty($display_item['failedlist'])) $not_submitted = '<br />';
+        $not_submitted .= t('Not Submitted by Lecturer') . ': ' . $display_item['courses_not_submitted'];
+      }
+      $html .= '<td>' . $display_item['failedlist'] . $not_submitted . '</td>';
       $html .= '</tr>';
     }
     $html .= '</table>';
@@ -6645,6 +6656,47 @@ function get_report_current_courses($session, $programme_nid, $level) {
       sg.field_mat_no_uid IN ($ids) AND
       sg.field_course_instance_nid=ci.nid AND
       sg.field_examscorelocked_value>0 AND
+      sg.field_dropped_value=0 AND
+      ci.field_course_id_nid=c.nid AND
+      ci.field_course_id_nid=pc.course_id AND
+      ci.field_sess_name_value='%s' AND
+      pc.programme_id=spro.field_profile_first_choice_nid AND
+      nspro.uid=sg.field_mat_no_uid AND
+      nspro.type='student_profile' AND
+      nspro.vid=spro.vid
+    GROUP BY sg.field_mat_no_uid";
+  $result = db_query($sql, $session);
+  return $result;
+}
+
+
+/**
+ * Find Courses for whole Session for Students in Session/Programme/Level which have not had their grades submitted by lecturer
+ *
+ * @uses get_id_list_for_students_in_programme()
+ * @param string $session
+ * @param int $programme_nid 'program' CCK Drupal node nid
+ * @param string $level
+ * @return mysqli_result
+ */
+function get_report_current_courses_grades_not_submitted($session, $programme_nid, $level) {
+
+  $ids = get_id_list_for_students_in_programme($session, $programme_nid, $level);
+
+  $sql = "SELECT
+      sg.field_mat_no_uid AS uid,
+      GROUP_CONCAT(DISTINCT c.field_code_value ORDER BY c.field_code_value SEPARATOR ', ') AS courses_not_submitted
+    FROM
+      {content_type_student_grades} sg,
+      {content_type_course_instance} ci,
+      {content_type_course} c,
+      {program_course} pc,
+      {node} nspro,
+      {content_type_student_profile} spro
+    WHERE
+      sg.field_mat_no_uid IN ($ids) AND
+      sg.field_course_instance_nid=ci.nid AND
+      sg.field_examscorelocked_value=0 AND
       sg.field_dropped_value=0 AND
       ci.field_course_id_nid=c.nid AND
       ci.field_course_id_nid=pc.course_id AND
