@@ -6241,10 +6241,11 @@ function staff_gradesreport() {
   $eduerp_gradesreport_levels = course_levels();
   $eduerp_gradesreport_sessions = get_all_sessions();
   $eduerp_gradesreport_programmes = programme();
-  $str = "<hr /><font size = '1px'><a href = '". url('staff/semester') ."'>" . t('Semester Administration') . "</a>&nbsp; &raquo; &nbsp;" . t('Grades Report') . "</b></font><br /><hr /><br />";
+  //$str = "<hr /><font size = '1px'><a href = '". url('staff/semester') ."'>" . t('Semester Administration') . "</a>&nbsp; &raquo; &nbsp;" . t('Grades Report') . "</b></font><br /><hr /><br />";
+  $str = ''; // Avoid extra decoration on report
 
-  $str .= '<b>';
-  $str .= variable_get('eduerp_institution_current', '') . '<br /><br />';
+  $str .= '<b><h2>';
+  $str .= variable_get('eduerp_institution_current', '') . '</h2><br /><br />';
   $str .= t('Grades Report for Senate Standing Committee on Examinations') . "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;" . format_date(time()) . '<br /><br />';
 
   if (isset($_SESSION['eduerp_gradesreport'])) {
