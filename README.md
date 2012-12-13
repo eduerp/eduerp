@@ -1,4 +1,4 @@
-EduERP is open source student and staff adminstration software for educational institutions that caters admissions, clearance, course registration,  grading, exams processing and transcripts.   It comes with plugins for creating and synchronizing user accounts on e-mail servers, payment administration, HR management and a flexible reporting system.
+EduERP is open source student and staff adminstration software for educational institutions that caters for admissions, clearance, course registration,  grading, exams processing and transcripts.   It comes with plugins for creating and synchronizing user accounts on e-mail servers, payment administration, HR management and a flexible reporting system.
 
 Electronic payment is provided via [EduPAY](http://www.edupay.com.ng), which enables a completely cashless environment and accepts transactions via multiple channels including bank branches, mobile money, ATM, POS and Internet banking.
 
