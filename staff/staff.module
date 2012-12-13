@@ -231,6 +231,13 @@ function staff_menu() {
     'type' => MENU_CALLBACK,
   );
 
+  $items['staff/listopenprogrammes'] = array(
+    'title' => 'list of Programmes (& Level) currently Open for Course Registrations this Semester',
+    'page callback' => 'listopenprogrammes',
+    'access arguments' => array('staff register course'),
+    'type' => MENU_CALLBACK,
+  );
+
   return $items;
 }
 
@@ -1703,7 +1710,6 @@ function open_close_student_registration_form_submit($form, &$form_state) {
  * Form to Open or Close Student Course Registrations for particular Programmes or All
  *
  * @uses open_close_student_course_registration_form_submit()
- * @uses listofopenprogrammes()
  * @uses staff_has_eduerp_role()
  * @uses selectlistofprogrammestoopen()
  * @uses selectlistofprogrammestoclose()
@@ -1712,7 +1718,7 @@ function open_close_student_registration_form_submit($form, &$form_state) {
 function open_close_student_course_registration_form($form_state) {
   global $user;
 
-  $form['top'] = array('#value' => 'Here are the Programmes (& Level) currenly Open for Course Registrations this Semester: ' . listofopenprogrammes());
+  $form['top'] = array('#value' => '<a href="' . url('staff/listopenprogrammes') . '">Click here for a list of Programmes (& Level) currently Open for Course Registrations this Semester</a>');
 
   if (staff_has_eduerp_role($user->uid, 0, 0, array('Registrar'))) {
 
@@ -1747,6 +1753,25 @@ function open_close_student_course_registration_form($form_state) {
 
 
 /**
+ * Handles 'staff/listopenprogrammes' menu to List Programmes (& Level) currently Open for Course Registrations this Semester
+ *
+ * @uses listofopenprogrammes()
+ * @return string HTML
+ */
+function listopenprogrammes() {
+  ob_start();
+  echo '<br /><hr /><br />';
+  $navi = "<font size = '1px'><a href = '". url('staff/semester') ."'>Semester Administration</a>&nbsp; &raquo; &nbsp;list of Programmes (& Level) currently Open for Course Registrations this Semester</font><br />";
+  $navi .= '<br /><hr /><br />';
+  echo $navi;
+
+  echo listofopenprogrammes();
+
+  return ob_get_clean();
+}
+
+
+/**
  * Find Open Programmes(Level) for current Semester
  *
  * @return string
@@ -1762,8 +1787,8 @@ function listofopenprogrammes() {
   while ($row = db_fetch_object($rows)) {
     $names[] = $row->name;
   }
-  if (empty($names)) return 'None';
-  return implode('; ', $names);
+  if (empty($names)) return 'There are no Open Programmes.';
+  return implode('<br />', $names);
 }
 
 
