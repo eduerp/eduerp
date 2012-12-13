@@ -9,7 +9,7 @@ Commits RSS feed: https://github.com/eduerp/eduerp/commits/master.atom
 Issue tracker: https://github.com/eduerp/eduerp/issues  
 User manual: https://github.com/eduerp/eduerp/wiki  
 Frequently Asked Questions: http://eduerp.org.ng/FAQ  
-Mailing list: https://lists.eko-konnect.net.ng/listinfo/eduerp-users  
+Mailing list: http://lists.eko-konnect.net.ng/listinfo/eduerp-users  
 Mailing list RSS feed: http://rss.gmane.org  
 Twitter: @edu_erp  
 Demos: 
