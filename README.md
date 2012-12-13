@@ -2,7 +2,7 @@ EduERP is open source student and staff adminstration software for educational i
 
 Electronic payment is provided via EduPAY, a payment gateway that enables a completely cashless environment and accepts transactions via multiple channels including bank branches, mobile money, ATM, POS and Internet banking.
 
-Links  
+**Links**  
 Homepage: http://eduerp.org.ng  
 Download: [.tar.gz](https://github.com/eduerp/eduerp/tarball/master) or [.zip](https://github.com/eduerp/eduerp/zipball/master)  
 Commits RSS feed: https://github.com/eduerp/eduerp/commits/master.atom  
