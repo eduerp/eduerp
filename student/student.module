@@ -46,6 +46,16 @@ function student_menu() {
     'weight' => -26,
   );
 
+  $items['student/payfees'] = array(
+    'title' => t('Pay fees'),
+    'description' => t('Pay all type of fees'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_eduerp_fees_pay_fees'),
+    'access arguments' => array('student course'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => -24,
+  );
+
   return $items;
 }
 
@@ -1526,7 +1536,7 @@ function student_course_form(&$obj) {
   }
   else {
     drupal_set_message('You must pay your fees before course registration!');
-    drupal_goto("user/$user->uid/fees/pay");
+    drupal_goto('student/payfees');
   }
 
   return $courseselections->form;

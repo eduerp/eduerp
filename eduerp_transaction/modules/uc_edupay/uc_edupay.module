@@ -702,7 +702,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         $cc = uc_cart_get_contents();
         if (empty($cc)) {
           drupal_set_message('There is nothing in the cart, please start again.', 'error');
-          drupal_goto("user/$user->uid/fees/pay");
+          drupal_goto('student/payfees');
         }
 
         // Second, the Student may be clicking Submit multiple times, if so stop now
@@ -713,7 +713,7 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         if ($r = db_fetch_object($rs)) {
           //dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
           drupal_set_message('You seem to have clicked on "Send Fee Details for Processing" more than once, but you can select your invoice below (or if it is not below, click "Pay Fees" again).', 'error');
-          drupal_goto("user/$user->uid/fees/pay");
+          drupal_goto('student/payfees');
         }
 
         _uc_edupay_process_order_request($arg1);

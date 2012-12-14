@@ -1,25 +1,2 @@
 <?php
-/**
- * @author Kayode Odeyemi
- */
-
-
-/**
- * Implementation of hook_menu()
- */
-function eduerp_transaction_menu() {
-    global $user;
-    $uid = $user->uid;
-    $items = array();
-    if(module_exists('uc_eduerp_fees')) {
-      $items['user/%/fees/pay'] = array(
-        'title' => t('Pay fees'),
-        'description' => t('Pay all type of fees'),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('uc_eduerp_fees_pay_fees', $uid),
-        'access arguments' => array('student course'),
-        'type' => MENU_CALLBACK
-      );
-    }
-    return $items;
-}
+?>

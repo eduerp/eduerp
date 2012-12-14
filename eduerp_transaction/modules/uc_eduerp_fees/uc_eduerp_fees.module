@@ -346,7 +346,7 @@ function user_has_completed_order_items($student_id) {
 
 
 /**
- * Handles 'user/%/fees/pay'/Pay fees menu for a Student to start the Fees Payment process
+ * Handles 'student/payfees'/Pay fees menu for a Student to start the Fees Payment process
  *
  * <p>Find the Fees Setup for a Student and generate a list of Fees due (including any Hostel Payment).</p>
  * <p>Ensure the Student is eligible to Pay Fees.</p>
@@ -364,7 +364,7 @@ function user_has_completed_order_items($student_id) {
  * @param int $student_id This Parameter is generated when module setup at admin/build/modules is saved and is always wrong (it is the user who enabled the module)!
  * @return array Drupal Form
  */
-function uc_eduerp_fees_pay_fees(&$form_state, $student_id) {
+function uc_eduerp_fees_pay_fees(&$form_state) {
   global $user;
   $student_id = $user->uid;
 
@@ -543,7 +543,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   if ($r->semaphore_value != 1) {
     // Semaphore is locked so redirect
     drupal_set_message('You seem to have clicked on "Pay Fees" more than once, please wait 10 seconds and click "Pay Fees" again once only).', 'error');
-    drupal_goto("user/$student_id/fees/pay");
+    drupal_goto('student/payfees');
   }
 
   $values = array();
