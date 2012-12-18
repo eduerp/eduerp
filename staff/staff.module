@@ -12644,6 +12644,7 @@ function load_existing_fee_structure($forCombo=true){
   	 'setup_total_amount', 'setup_date', 'program_name', 'level_name',  'nationality_name', 'fee_structure_name',
   	   'fee_structure_class_name', 'setup_level');
   $prvNID = 0; $prvProgNID = null; $prvLevelName = '';
+  $return = array();
   foreach($feeSetup as $p => $h){
     if(! isset($prvProgNID) || $prvProgNID != $h['program_nid'] || ($prvProgNID == $h['program_nid'] && $prvLevelName != $h['setup_level'])){
       $prvNID = $h['nid'];
