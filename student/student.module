@@ -1550,7 +1550,8 @@ function student_course_form_validate($form, &$form_state) {
   global $user;
   $user_profile = new UserProfile($user->uid);
 
-  $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
+  if (empty($form_state['values']['chosencourses1'])) $course_instances1 = array();
+  else $course_instances1 = array_keys($form_state['values']['chosencourses1'], TRUE);
   if (empty($form_state['values']['chosencourses2'])) $course_instances2 = array();
   else $course_instances2 = array_keys($form_state['values']['chosencourses2'], TRUE);
 
