@@ -242,34 +242,6 @@ function show_cart_for_student() {
 }
 
 
-/**
- * Rebuild the fees items based on order state of payment_received or pending (Not Used)
- *
- * @deprecated
- */
-function _uc_eduerp_fees_rebuild_fees_processed($fees, $paid_nid, $preserve_keys = TRUE) {
-  foreach($fees as $fee) {
-    if($fee['type'] == 'fees') {
-      foreach($fee['item'] as $key => $value){
-        //$paid_fees_items[$fee['item']['product_nid']];
-        if($paid_nid == $fee['item'][$key]['product_nid']) {
-          unset($fee['item'][$key]);
-          //if all fees items have been paid for
-          if(is_null($fee['item'])){
-            unset($fees['fees']);
-          }
-        }
-      }
-    }
-    if($fee['type'] == 'hostel') {
-      if($paid_nid == $fee['item']['product_nid']) {
-        unset($fees['hostel']);
-      }
-    }
-  }
-  return ($preserve_keys === TRUE) ? $fees : array_shift($fees);
-}
-
 
 /**
  * Remove any 'pending' or 'payment_received' Fees for a Student so that they only pay for newly added Fee items for the current Session
@@ -757,75 +729,6 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
     'extras' => array()
   );
   return $fees;
-}
-
-/**
- * Hook to define fees_structure, Don't think this is used, remove?
- *
- * @param $fees
- * @deprecated
- */
-function uc_eduerp_fees_eduerp_fees_hook($fees) {
-  foreach (module_implements('eduerp_fees') as $module) {
-    $function = $module . '_eduerp_fees';
-    $result = $function($fees);
-    if (isset($result) && is_array($result)) {
-      $return = array_merge($return, $result);
-    }
-    else if (isset($result)) {
-      $return[] = $result;
-    }
-  }
-  return $return;
-}
-
-
-/**
- * Not used, remove?
- *
- * @deprecated
- */
-function uc_eduerp_fees_invoice_regenerate($order_id) {
-  return _uc_eduerp_fees_invoice_rebuild($order_id);
-}
-
-
-/**
- * Not used, remove?
- *
- * @deprecated
- */
-function _uc_eduerp_fees_invoice_load($order_id) {
-  $view = views_get_view_result('pdf_invoice', 'pdf_1', $order_id);
-  $view[0]->uc_orders_order_status = 'canceled';
-}
-
-
-/**
- * Not used, remove?
- *
- * @deprecated
- */
-function _uc_eduerp_fees_invoice_rebuild($order_id) {
-  return _uc_eduerp_fees_invoice_load($order_id);
-}
-
-
-/**
- * Implements hook_form_ID_alter, not used, remove?
- *
- * <p>Bug: this form alter is getting called before the check
- * for is_reservation_existing. The implication of this is that
- * the hostel form gets removed before a check for whether hostel
- * exists or not.</p>
- * @deprecated
- */
-function uc_eduerp_fees_form_uc_eduerp_fees_pay_fees_alter(&$form, $form_state) {
-  // Remove hostel if no reservation exists
-  if(!is_reservation_existing($form['uid']['#value'])) {
-    // unsets from screen, doesn't get removed from from array
-    //unset($form['eduerp_fees']['hostel']);
-  }
 }
 
 

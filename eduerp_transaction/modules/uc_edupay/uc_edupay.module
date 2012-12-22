@@ -5,7 +5,6 @@
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
 
-module_load_include('inc', 'uc_edupay', 'includes/uc_edupay_rules_default');
 
 /**
  * Implementation of hook_menu(), called to generate menus when module setup at admin/build/modules is saved
@@ -207,20 +206,6 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
           $form['panes']['payment']['payment_method']['#default_value'] = 'edupay';
       }
       break;
-
-    case 'uc_cart_checkout_review_form':
-      $order_id = intval($_SESSION['cart_order']);
-      if($order_id > 0) {
-        $order = uc_order_load($order_id);
-
-        if ($order->payment_method == 'edupay') {
-          $form['#prefix'] = '<table id="edupay-review-table"><tr><td>';
-          $form['#suffix'] = '<td>' . drupal_get_form('uc_edupay_invoice_form', $order) . '</td></td></tr></table>';
-        }
-      }
-      break;
-    case 'uc_cart_view_form':
-      break;
   }
 }
 
@@ -310,18 +295,9 @@ function uc_edupay_fees_price_alter(&$price_info, &$context, &$options) {
 
 
 /**
- * Callback, not needed?
+ * Callback
  */
 function uc_edupay_fees_price_handler_format($price, $options) {
-}
-
-
-/**
- * Not used
- *
- * @deprecated
- */
-function uc_eduerp_fees_instalment() {
 }
 
 
@@ -364,29 +340,6 @@ function theme_eduerp_fees_cart_title($title, $text, $context = NULL) {
 function theme_eduerp_fees_price_symbol($item) {
   $output = "<span><strikethrough>N<strikethrough></span>" + $item;
   return $output;
-}
-
-
-/**
- * Not used
- *
- * @deprecated
- */
-function uc_edupay_load_price(){
-}
-
-
-/**
- * Implements hook_cart_pane, not needed?
- */
-function uc_edupay_cart_pane($items) {
-}
-
-
-/**
- * Implements hook_product_description, not needed?
- */
-function uc_edupay_product_description($product) {
 }
 
 
@@ -434,118 +387,6 @@ function uc_payment_method_edupay($op, &$arg1) {
     case 'cart-review': // display json output response here
     case 'order-view': // display receipt to student here
   }
-}
-
-
-/**
- * Generates Invoice
- *
- * @param array $form_state
- * @param stdClass $order
- * @return array Drupal Form
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function uc_edupay_invoice_form($form_state, $order) {
-
-  $form['pdflink'] = array(
-    '#type' => 'hidden',
-    '#value' => 'invoice/pdf/' . $order->order_id,
-  );
-
-  // store returned js value in this hidden field
-  $form['do_pdfinvoice'] = array(
-    '#type' => 'hidden',
-  );
-
-  $form['hidden_order'] = array(
-      '#type' => 'hidden',
-      '#value' => $order,
-  );
-  // Generate invoice
-  // Allow invoice to be emailed to user
-  $form['invoice'] = array();
-
-  drupal_add_js(drupal_get_path('module', 'uc_edupay') .'/uc_edupay.js');
-
-      $invoice_form_settings = array(
-        'pdflink' => $form['pdflink']['#value'],
-      );
-
-      //add the variable that contains the link to drupal_add_js
-      //stores $invoice_form_settings into js setting
-      drupal_add_js(array('uc_edupay' => $invoice_form_settings), 'setting');
-
-  $form['invoice']['gen_invoice'] = array(
-    //'#value' => '<div>' . l(t('Save Invoice'), "#", array('attributes' => array('class' => 'invoice-submit'))) . '</div>'
-    '#value' => '<div>' . '<a href="javascript:void" class="invoice-submit">Save Invoice</a></div>'
-  );
-
-  return $form;
-}
-
-
-/**
- * submit hook for 'uc_edupay_invoice', is this used?
- *
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function uc_edupay_invoice_submit($form, &$form_state) {
-  switch ($form_state['values']['op']) {
-    case t('Save Invoice'):
-      if (isset($form_state['values']['gen_invoice'])) {
-        $form_state['storage']['pdflink'] = $form_state['values']['pdflink'];
-        return TRUE;
-      }
-      break;
-  }
-}
-
-
-/**
- * Retrieves order items and passes it to uc_edupay_service_add, is this used?
- *
- * @param array $form_state
- * @param stdClass $order
- * @return $form array
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function uc_edupay_form($form_state, $order) {
-
-  if(!isset($edupay_data)) {
-    $edupay_data = $order->data->edupay_data;
-  }
-
-  $unserialized = unserialize($edupay_data);
-
-  if(!isset($order))
-
-  $data = array(
-    'transaction_id' => $edupay_data['transaction_id'],
-    'total' => uc_price($order->order_total, $context, $options),
-    'cart_order_id' => $order->order_id,
-    'pay_method' => isset($order->payment_method) ? $order->payment_method : 'edupay',
-  );
-
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Submit Order')
-  );
-
-  return $form;
-}
-
-
-/**
- * Implementation of hook_ajax_types(), Ajaxify the button to generate the invoice, Not used?
- *
- * @link http://drupal.org/project/ajax
- * @deprecated
- * @author Kayode Odeyemi (dreyemi@gmail.com)
- */
-function uc_edupay_ajax_types(&$types) {
-  $id = 'uc_edupay_invoice_form';
-  $types[$id] = t('Edupay: Generate Invoice');
-  return TRUE;
 }
 
 
@@ -950,99 +791,6 @@ function uc_edupay_token_list($type = 'all') {
     $tokens['order']['tcrg'] = t('Bank Transaction Charge');
   }
   return $tokens;
-}
-
-
-/**
- * Implements hook_checkout_pane
- */
-/*
-function uc_edupay_checkout_pane() {
-  $items = uc_cart_get_contents();
-  foreach($items as $fee) {
-    $panes[$fee->title] = array(
-      'id' => $fee->cart_item_id, //pass in here the fee attribute
-      'callback' => 'uc_checkout_pane_eduerp_fees',
-      'title' => $fee->title,
-      'desc' => t('Below shows the fee items in your cart @title payment.', array('@title' => $fee->title)),
-      'weight' => 8,
-      'process' => TRUE,
-      'collapsible' => TRUE,
-    );
-  }
-  return $panes;
-}
-*/
-
-/**
- * A single callback to display all fees in the cart in a generic checkout pane, not used?
- */
-function uc_checkout_pane_eduerp_fees($op, &$arg1, $arg2){
-  global $user;
-  $zz = uc_cart_get_contents();
-  foreach($zz as $z){
-    $items[] = get_object_vars($z);
-  }
-  switch ($op) {
-    case 'view':
-      // if item in the cart is of type fees
-      // for each on the items and display them in fees pane
-      $description = array();
-      $x = array();
-      foreach($items as $key => $fee){
-        $item[$key] = $fee;
-      }
-      foreach($item as $key => $value) {
-        $types[] = $value['data']['type'];
-        $titles[$key] = $value['title'];
-        $nid[$key] = $value['nid'];
-        $cart_item_id[$key] = $value['cart_item_id'];
-        $programme[$key] = $value['data']['programme'];
-        $level[$key] = $value['data']['level_name'];
-        $amount[$key] = $value['price'];
-        $session[$key] = $value['data']['session'];
-
-        // @todo put $all array only for type fees
-        // Get only the stuffs we need by nid
-        $all[] = array(
-          $nid[$key] = array(
-            'nid' => $value['nid'],
-            'type' => $value['data']['type'],
-            'title' => $value['title'],
-            'amount' => $value['price'],
-            'programme' => $value['data']['programme'],
-            'level' => $value['data']['level_name'],
-            'session' => $value['data']['session'],
-            'nationality' => $value['data']['nationality'],
-            'cart_item_id' => $value['cart_item_id'],
-          )
-        );
-      }
-      foreach($all as $value) {
-        foreach($value as $key => $order_item) {
-          $description[$key] = $order_item['title'];
-          $contents[$key] = array(
-            '#type' => 'fieldset',
-            //'#title' => $description[$key],
-            //'#description' => $description[$key],
-            //'#value' => $contents
-          );
-          $contents[$key]['data'] = array(
-            //'#type' => 'markup',
-            '#value' => theme('eduerp_cart_review_table', $order_item)
-          );
-          $x[] = array(
-            'description' => t('Content title is %title', array('%title' => $description[$key])),
-            'contents' => $contents[$key]
-          );
-        }
-      }
-      foreach($x as $fees_pane) {
-        return $fees_pane;
-      }
-    case 'review':
-    case 'process':
-  }
 }
 
 
