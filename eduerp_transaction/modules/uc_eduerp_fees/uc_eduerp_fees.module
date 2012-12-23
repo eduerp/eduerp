@@ -352,9 +352,7 @@ function uc_eduerp_fees_pay_fees(&$form_state) {
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
 
-  if($fees_items = uc_eduerp_fees_eduerp_fees()) {
-    $fees = $fees_items;
-  }
+  $fees = uc_eduerp_fees_eduerp_fees();
 
   // Check if the current user has an existing fees setup
   if(!is_fee_setup_existing_for_student($student_id)) {
@@ -624,15 +622,6 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     if(!empty($product)){
       uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
       $added = TRUE;
-      $fees = array(
-        'title' => '',
-        'type' => $options['type'],
-        'description' => $product[$key]['item_description'],
-        'nid' => $product[$key]['product_nid'],
-        'uid' => $cartId,
-        'extras' => serialize($product[$key]['extras']),
-        'options' => serialize($options)
-      );
     }else {
       drupal_set_message(t('Sorry, you are not eligible to pay fees. Please contact bursary'), 'error');
       watchdog('fees', t('Fees insertion into cart failed on @uid', array('@uid' => $cartId)));
