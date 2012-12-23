@@ -533,7 +533,7 @@ function uc_edupay_cron() {
  * @uses uc_edupay_save()
  * @author Kayode Odeyemi (dreyemi@gmail.com)
  */
-function uc_edupay_order($op, &$arg1, $arg2) {
+function uc_edupay_order($op, &$order) {
   global $user;
     switch ($op) {
       // Called when an order is created... 'new' & 'save' are called in quick sucession from uc_cart_checkout_form_validate()
@@ -549,22 +549,22 @@ function uc_edupay_order($op, &$arg1, $arg2) {
         // Second, the Student may be clicking Submit multiple times, if so stop now
         // Drupal HTTP timeout is 30 seconds... so need to allow at least that long (i.e. 50 seconds)
         $now = time();
-        $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $user->uid, $arg1->order_id, $now - 50);
-        //dsm(array('uid' => $user->uid, 'order_id' => $arg1->order_id, 'now' => $now));//ab
+        $rs = db_query("SELECT order_id, created FROM {uc_orders} WHERE uid=%d AND order_id!=%d AND created>%d", $user->uid, $order->order_id, $now - 50);
+        //dsm(array('uid' => $user->uid, 'order_id' => $order->order_id, 'now' => $now));//ab
         if ($r = db_fetch_object($rs)) {
           //dsm(array('created' => $r->created, 'other order_id' => $r->order_id));//ab
           drupal_set_message('You seem to have clicked on "Send Fee Details for Processing" more than once, but you can select your invoice below (or if it is not below, click "Pay Fees" again).', 'error');
           drupal_goto('student/payfees');
         }
 
-        _uc_edupay_process_order_request($arg1);
+        _uc_edupay_process_order_request($order);
         break;
 
         // Occurs when Submit Order is clicked
         // However for EduERP we skip 'submit' and go directly to cart/checkout/complete "uc_cart_checkout_complete()" from 'save'
         case 'submit':
 
-          if ($arg1->payment_method == 'edupay') {
+          if ($order->payment_method == 'edupay') {
 
             // if the order is successful, empty the cart and invalidate SESSION variables
             if(isset($_SESSION['edupay_transaction_accepted'])){
@@ -577,76 +577,76 @@ function uc_edupay_order($op, &$arg1, $arg2) {
           break;
 
         case 'save':
-          if ($arg1->payment_method == 'edupay') {
+          if ($order->payment_method == 'edupay') {
 
-            db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($_SESSION['eduerp_fees_order']), $arg1->order_id);
+            db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($_SESSION['eduerp_fees_order']), $order->order_id);
 
             if ($_SESSION['edupay_total_amount_zero']) {
-              db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $arg1->order_id);
+              db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $order->order_id);
             }
             else {
               // Do this because redirect to 'cart/checkout/complete' (uses HTTP header) might not happen
-              db_query("UPDATE {uc_orders} set order_status = 'pending' WHERE order_id = %d", $arg1->order_id);
+              db_query("UPDATE {uc_orders} set order_status = 'pending' WHERE order_id = %d", $order->order_id);
             }
 
             $level_name = student_next_level($user->uid, variable_get('eduerp_current_session', ''));
 
-            $fees = $arg1->products;
-            $field = array();
-            $fields = array();
-            foreach ($fees as $key => $product) {
-              $fields = $product->data;
-              $field['type'] = $fields['type'];
-              $field['nid'] = $fields['nid'];
-              $field['nationality'] = $fields['nationality'];
-              $field['programme'] = $fields['programme'];
-              $field['level_name'] = $level_name;
-              $field['scholarship'] = $fields['scholarship'];
-              $field['allow_instalment'] = $fields['allow_instalment'];
-              $field['session'] = $fields['session'];
-              if(array_key_exists('late_registration', $fields) && !is_null($fields['late_registration'])) {
+            $order_products = $order->products;
+            $fees_order_record = array();
+            $product_data = array();
+            foreach ($order_products as $key => $product) {
+              $product_data = $product->data;
+              $fees_order_record['type'] = $product_data['type'];
+              $fees_order_record['nid'] = $product_data['nid'];
+              $fees_order_record['nationality'] = $product_data['nationality'];
+              $fees_order_record['programme'] = $product_data['programme'];
+              $fees_order_record['level_name'] = $level_name;
+              $fees_order_record['scholarship'] = $product_data['scholarship'];
+              $fees_order_record['allow_instalment'] = $product_data['allow_instalment'];
+              $fees_order_record['session'] = $product_data['session'];
+              if(array_key_exists('late_registration', $product_data) && !is_null($product_data['late_registration'])) {
                 list(
-                  $field['late_registration_date'],
-                  $field['late_registration_amount'],
-                  $field['late_registration_nid'],
-                  $field['late_registration_description'],
-                  ) = array_values($fields['late_registration']);
+                  $fees_order_record['late_registration_date'],
+                  $fees_order_record['late_registration_amount'],
+                  $fees_order_record['late_registration_nid'],
+                  $fees_order_record['late_registration_description'],
+                  ) = array_values($product_data['late_registration']);
               }
-              if(array_key_exists('hostel', $fields) && !is_null($fields['hostel'])) {
+              if(array_key_exists('hostel', $product_data) && !is_null($product_data['hostel'])) {
                 list(
-                  $field['hostel_nid'],
-                  $field['hostel_type'],
-                  $field['expiry_date'],
-                  ) = array_values($fields['hostel']);
+                  $fees_order_record['hostel_nid'],
+                  $fees_order_record['hostel_type'],
+                  $fees_order_record['expiry_date'],
+                  ) = array_values($product_data['hostel']);
               }
-              if(array_key_exists('attributes', $fields) && !is_null($fields['attributes'])) {
-                $field['attributes'] = $fields['attributes']['Fee Structure'][0];
+              if(array_key_exists('attributes', $product_data) && !is_null($product_data['attributes'])) {
+                $fees_order_record['attributes'] = $product_data['attributes']['Fee Structure'][0];
               }
               else {
-                unset($field['attributes']);
+                unset($fees_order_record['attributes']);
               }
-              $field['jambno'] = $fields['jambno'];
-              $field['fullnames'] = $fields['fullnames'];
-              $field['institution'] = $fields['institution'];
-              $field['module'] = $fields['module'];
-              $field['cart_item_id'] = $product->cart_item_id;
-              $field['title'] = $product->title;
-              $field['price'] = $product->price;
-              $field['status'] = $arg1->order_status;
-              $field['email'] = $arg1->primary_email;
-              $field['order_id'] = $product->order_id;
-              $field['uid'] = $arg1->uid;
-              $field['product_nid'] = $product->nid;
+              $fees_order_record['jambno'] = $product_data['jambno'];
+              $fees_order_record['fullnames'] = $product_data['fullnames'];
+              $fees_order_record['institution'] = $product_data['institution'];
+              $fees_order_record['module'] = $product_data['module'];
+              $fees_order_record['cart_item_id'] = $product->cart_item_id;
+              $fees_order_record['title'] = $product->title;
+              $fees_order_record['price'] = $product->price;
+              $fees_order_record['status'] = $order->order_status;
+              $fees_order_record['email'] = $order->primary_email;
+              $fees_order_record['order_id'] = $product->order_id;
+              $fees_order_record['uid'] = $order->uid;
+              $fees_order_record['product_nid'] = $product->nid;
 
-              unset($fields['has_scholarship']);
+              unset($product_data['has_scholarship']);
 
-              $field['course'] = $fields['course'];
-              $field['college'] = $fields['college'];
-              $field['original_amount'] = $fields['original_amount'];
-              $field['scholarship_type'] = $fields['scholarship_type'];
-              $field['sponsor'] = $fields['sponsor'];
+              $fees_order_record['course'] = $product_data['course'];
+              $fees_order_record['college'] = $product_data['college'];
+              $fees_order_record['original_amount'] = $product_data['original_amount'];
+              $fees_order_record['scholarship_type'] = $product_data['scholarship_type'];
+              $fees_order_record['sponsor'] = $product_data['sponsor'];
 
-              uc_edupay_save($arg1->order_id, $field);
+              uc_edupay_save($order->order_id, $fees_order_record);
             }
 
             uc_cart_empty(uc_cart_get_id()); // Do this because redirect to 'cart/checkout/complete' (uses HTTP header) might not happen
@@ -671,28 +671,28 @@ function uc_edupay_order($op, &$arg1, $arg2) {
  * Write a 'fees_order' table entry for the Fees Report
  *
  * @param int $order_id
- * @param array $product
+ * @param array $fees_order_record
  */
-function uc_edupay_save($order_id, $product) {
+function uc_edupay_save($order_id, $fees_order_record) {
 
-  if (!empty($product['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $product['attributes'], $matches)) {
-    $product['fees_format'] = $matches[0];
+  if (!empty($fees_order_record['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $fees_order_record['attributes'], $matches)) {
+    $fees_order_record['fees_format'] = $matches[0];
   }
   else {
-    unset($product['fees_format']);
+    unset($fees_order_record['fees_format']);
   }
 
-  unset($product['expiry_date']); // We want it to be NULL until payment marked received by call-back (this will be the date payment was received)
-  $product['email'] = ' '; // We want it to be ' ' until payment marked received by call-back (this will be the EduPay username that marked the payment as received)
+  unset($fees_order_record['expiry_date']); // We want it to be NULL until payment marked received by call-back (this will be the date payment was received)
+  $fees_order_record['email'] = ' '; // We want it to be ' ' until payment marked received by call-back (this will be the EduPay username that marked the payment as received)
 
   if ($_SESSION['edupay_total_amount_zero']) {
-    $product['status'] = 'payment_received';
+    $fees_order_record['status'] = 'payment_received';
   }
   else {
-    $product['status'] = 'pending';
+    $fees_order_record['status'] = 'pending';
   }
 
-  drupal_write_record('fees_order', $product);
+  drupal_write_record('fees_order', $fees_order_record);
 }
 
 
