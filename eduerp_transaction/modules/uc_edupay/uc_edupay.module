@@ -818,26 +818,18 @@ function theme_eduerp_cart_review_table($contents) {
 
 
 /**
- * Get Cart contents and reorganise as an array (this should be simplified)
+ * Get Cart contents and reorganise as an array of products (each an array with required keys)
  */
 function _uc_edupay_fees_order_items($order) {
   $zz = uc_cart_get_contents();
   foreach($zz as $z){
     $items[] = get_object_vars($z);
   }
-  $data = array();
-  $description = array();
-  foreach($items as $key => $fee){
-    $item[$key] = $fee;
-    $data[$key] = $fee['data'];
-    $description[$key] = $fee['title'];
-  }
-  $types = array();
-  foreach($item as $key => $value) {
-    $types[] = $value['data']['type'];
+
+  foreach($items as $key => $value) {
 
     if($value['data']['type'] == EDUERP_FEES_NORMAL) {
-      $nid[$key] = array(
+      $product = array(
         'nid' => $value['nid'],
         'type' => $value['data']['type'],
         'cart_item_id' => $value['cart_item_id'],
@@ -860,13 +852,12 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship_type' => $value['data']['scholarship_type'],
         'sponsor' => $value['data']['sponsor'],
       );
-      $products[] = $nid[$key];
+      $products[] = $product;
     }
 
     if($value['data']['type'] == EDUERP_FEES_HOSTEL) {
-      $hostel['hostel'] = array(
+      $product = array(
         'nid' => $value['nid'],
-        //'type' => $value['data']['type'], // get from the array
         'type' => EDUERP_FEES_HOSTEL,
         'cart_item_id' => $value['cart_item_id'],
         'title' => $value['title'],
@@ -889,7 +880,7 @@ function _uc_edupay_fees_order_items($order) {
         'sponsor' => $value['data']['sponsor'],
       );
 
-      $products[] = $hostel['hostel'];
+      $products[] = $product;
     }
   }
 
