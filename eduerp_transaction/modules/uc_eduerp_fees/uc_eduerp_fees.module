@@ -569,16 +569,16 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   uc_cart_empty($student_id);
 
   $added = FALSE;
-  foreach($cart_items as $product_item){
+  foreach ($cart_items as $product_item) {
     $cart_item = $product_item;
 
-    foreach($product_item['item'] as $key => $fees_values) {
+    foreach ($product_item['item'] as $key => $fees_values) {
       $product[$key] = $fees_values;
       $cartId = uc_cart_get_id();
       $nid = $product[$key]['product_nid'];
 
-      if($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
-        if(array_key_exists('attribute_id', $product[$key])){
+      if ($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
+        if (array_key_exists('attribute_id', $product[$key])) {
           $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']), 'attribute_id' => $product[$key]['attribute_id'], 'option_id' => $product[$key]['option_id']);
           $options = $cart_item['options'] + $product_attribute;
         }
@@ -598,7 +598,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         }
       }
 
-      if($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
+      if ($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
         $options = $cart_item['options'];
       }
 
@@ -619,16 +619,17 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         $options[$k] = $v;
       }
 
-    if(!empty($product)){
-      uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
-      $added = TRUE;
-    }else {
-      drupal_set_message(t('Sorry, you are not eligible to pay fees. Please contact bursary'), 'error');
-      watchdog('fees', t('Fees insertion into cart failed on @uid', array('@uid' => $cartId)));
-    }
+      if (!empty($product)) {
+        uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+        $added = TRUE;
+      }
+      else {
+        drupal_set_message(t('Sorry, you are not eligible to pay fees. Please contact bursary'), 'error');
+        watchdog('fees', t('Fees insertion into cart failed on @uid', array('@uid' => $cartId)));
+      }
     }
   }
-  if($added){
+  if ($added) {
     unset($_SESSION['cart_order']);
     drupal_goto('cart/checkout');
   }
