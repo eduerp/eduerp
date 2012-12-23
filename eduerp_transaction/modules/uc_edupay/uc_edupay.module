@@ -676,11 +676,9 @@ function uc_edupay_order($op, &$arg1, $arg2) {
 function uc_edupay_save($order_id, $product) {
 
   if (!empty($product['attributes']) && preg_match('/Full Amount|Instalment1|Instalment2/', $product['attributes'], $matches)) {
-    $format_sql = "AND fees_format='" . $matches[0] . "'";
     $product['fees_format'] = $matches[0];
   }
   else {
-    $format_sql = '';
     unset($product['fees_format']);
   }
 
@@ -695,19 +693,6 @@ function uc_edupay_save($order_id, $product) {
   }
 
   drupal_write_record('fees_order', $product);
-  return; // Always do insert so we keep a permanent record
-
-  if ($result = db_fetch_object(db_query("SELECT fees_order_id from {fees_order} WHERE product_nid=%d AND nid=%d AND uid=%d AND session='%s' $format_sql", $product['product_nid'], $product['nid'], $product['uid'], variable_get('eduerp_current_session', '')))) {
-    // This is for the same student with the same product_nid and attribute options (based on the Fee Structure nid & fees_format) in the same session
-    // ... so it is OK to overwrite a 'canceled' fees_order item
-    // (it has to be 'canceled' because uc_eduerp_fees_completed_order_items() would have removed any 'payment_received' or 'pending' items from get_fee_items())
-    $product['fees_order_id'] = $result->fees_order_id;
-    drupal_write_record('fees_order', $product, 'fees_order_id');
-  }
-  else {
-    // do an insert
-    drupal_write_record('fees_order', $product);
-  }
 }
 
 
@@ -773,6 +758,7 @@ function uc_edupay_token_values($type, $object = NULL) {
   }
   return $values;
 }
+
 
 /**
  * Implementation of hook_token_list(). (token.module)
