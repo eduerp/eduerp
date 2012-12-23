@@ -333,7 +333,6 @@ function user_has_completed_order_items($student_id) {
  * @uses uc_eduerp_fees_completed_order_items()
  * @uses is_reservation_existing()
  * @param array $form_state
- * @param int $student_id This Parameter is generated when module setup at admin/build/modules is saved and is always wrong (it is the user who enabled the module)!
  * @return array Drupal Form
  */
 function uc_eduerp_fees_pay_fees(&$form_state) {
@@ -353,8 +352,7 @@ function uc_eduerp_fees_pay_fees(&$form_state) {
   module_load_include('inc', 'student', 'student.rules');
   $form = array();
 
-  // Should really be a call to uc_eduerp_fees_eduerp_fees(), no need for a hook
-  if($fees_items = module_invoke('uc_eduerp_fees', 'eduerp_fees')) {
+  if($fees_items = uc_eduerp_fees_eduerp_fees()) {
     $fees = $fees_items;
   }
 
@@ -649,10 +647,8 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
 
 /**
- * Implementation of hook_eduerp_fees() to reorganise Fees array
+ * Get all fee items due including those that might have been paid or are pending
  *
- * <p>Should really be a called as uc_eduerp_fees_eduerp_fees(), no need for call as hook: "module_invoke('uc_eduerp_fees', 'eduerp_fees')".</p>
- * <p>In fact whole array should be flattened and simplified when it is first generated.</p>
  * @uses student_load_student_profile()
  * @param array $fees
  * @return array
@@ -663,7 +659,6 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
   $type = '';
   $uid = user_load($user->uid);
 
-  static $fees_item;
   $fees_item = get_fee_items($uid->uid);
   if(!empty($fees_item)){
     // Fees
