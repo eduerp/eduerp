@@ -423,15 +423,14 @@ function _uc_edupay_process_order_request($order) {
   $result = db_query($sql, $student_profile->profile_first_choice);
   $row = db_fetch_object($result);
 
-  $order->products = _uc_edupay_fees_order_items($order);
-  $products = $order->products;
-  $_SESSION['eduerp_fees_order'] = $products['fees'];
+  $products = _uc_edupay_fees_order_items($order);
+  $_SESSION['eduerp_fees_order'] = $products;
 
   $first = TRUE;
   $fees = array();
 
   $total_amount = 0.0;
-  foreach($products['fees'] as $product) {
+  foreach($products as $product) {
     $total_amount += $product['amount'];
 
     if ($first) {
@@ -591,7 +590,7 @@ function uc_edupay_order($op, &$order) {
 
             $level_name = student_next_level($user->uid, variable_get('eduerp_current_session', ''));
 
-            $order_products = $order->products;
+            $order_products = $order->products; // These have come from 'cart_contents' in uc_cart_checkout_form_validate() just after uc_order_new() & 'new' hook has completed
             $fees_order_record = array();
             $product_data = array();
             foreach ($order_products as $key => $product) {
@@ -861,7 +860,7 @@ function _uc_edupay_fees_order_items($order) {
         'scholarship_type' => $value['data']['scholarship_type'],
         'sponsor' => $value['data']['sponsor'],
       );
-      $all[] = $nid[$key];
+      $products[] = $nid[$key];
     }
 
     if($value['data']['type'] == EDUERP_FEES_HOSTEL) {
@@ -890,11 +889,9 @@ function _uc_edupay_fees_order_items($order) {
         'sponsor' => $value['data']['sponsor'],
       );
 
-      $all[] = $hostel['hostel'];
+      $products[] = $hostel['hostel'];
     }
   }
-
-  $products[EDUERP_FEES_NORMAL] = $all; // Treat all items as 'fees'
 
   return $products;
 }
