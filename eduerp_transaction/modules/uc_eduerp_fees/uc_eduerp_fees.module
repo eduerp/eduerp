@@ -650,16 +650,14 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
  * Get all fee items due including those that might have been paid or are pending
  *
  * @uses student_load_student_profile()
- * @param array $fees
  * @return array
  */
-function uc_eduerp_fees_eduerp_fees($fees = array()) {
+function uc_eduerp_fees_eduerp_fees() {
   global $user;
 
-  $type = '';
-  $uid = user_load($user->uid);
+  $fees = array();
 
-  $fees_item = get_fee_items($uid->uid);
+  $fees_item = get_fee_items($user->uid);
   if(!empty($fees_item)){
     // Fees
     $fees_item['item'] = $fees_item['fee_item_details'];
@@ -668,7 +666,7 @@ function uc_eduerp_fees_eduerp_fees($fees = array()) {
       $fees_item['item'][$key]['extras'] = array();
     }
 
-    $profile = student_load_student_profile($uid->uid);
+    $profile = student_load_student_profile($user->uid);
     $fullnames = '';
     if (!empty($profile->profile_first_name) && !empty($profile->profile_last_name)) {
       $middle = '';
