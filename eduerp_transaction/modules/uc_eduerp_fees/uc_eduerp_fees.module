@@ -304,20 +304,6 @@ function uc_eduerp_fees_completed_order_items($student_id, $fee_items) {
 
 
 /**
- * Not used
- *
- * @deprecated
- */
-function user_has_completed_order_items($student_id) {
-  $status_paid = FEES_PAID;
-  $status_pending = FEES_PENDING;
-  $result = db_query("SELECT order_id, data FROM {uc_orders} WHERE uid = %d and order_status IN ('%s', '%s') and data IS NOT NULL", $student_id, $status_paid, $status_pending);
-  //db_affected_rows is unreliable. see: http://api.drupal.org/api/drupal/includes--database.pgsql.inc/function/db_affected_rows/6
-  return (db_affected_rows() > 0)? TRUE : FALSE;
- }
-
-
-/**
  * Handles 'student/payfees'/Pay fees menu for a Student to start the Fees Payment process
  *
  * <p>Find the Fees Setup for a Student and generate a list of Fees due (including any Hostel Payment).</p>
@@ -569,17 +555,14 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
   uc_cart_empty($student_id);
 
   $added = FALSE;
-  foreach ($cart_items as $product_item) {
-    $cart_item = $product_item;
+  foreach ($cart_items as $cart_item) {
 
-    foreach ($product_item['item'] as $key => $fees_values) {
-      $product[$key] = $fees_values;
+    foreach ($cart_item['item'] as $product) {
       $cartId = uc_cart_get_id();
-      $nid = $product[$key]['product_nid'];
 
       if ($cart_item['options']['type'] == EDUERP_FEES_NORMAL) {
-        if (array_key_exists('attribute_id', $product[$key])) {
-          $product_attribute = array('attributes' => array($product[$key]['attribute_id'] => $product[$key]['option_id']), 'attribute_id' => $product[$key]['attribute_id'], 'option_id' => $product[$key]['option_id']);
+        if (array_key_exists('attribute_id', $product)) {
+          $product_attribute = array('attributes' => array($product['attribute_id'] => $product['option_id']), 'attribute_id' => $product['attribute_id'], 'option_id' => $product['option_id']);
           $options = $cart_item['options'] + $product_attribute;
         }
         else {
@@ -590,7 +573,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
         // @see staff_school_fees_create_modify_fee_item_form()
         // 1: Yes - Scholarship is applicable
         // 2: No - Scholarship is not applicable
-        if (!empty($product[$key]['is_scholarship_applicable']) && $product[$key]['is_scholarship_applicable'] == '1' && is_scholarship_authorisation_existing($student_id, variable_get('eduerp_current_session', ''))) {
+        if (!empty($product['is_scholarship_applicable']) && $product['is_scholarship_applicable'] == '1' && is_scholarship_authorisation_existing($student_id, variable_get('eduerp_current_session', ''))) {
           $options['has_scholarship'] = '1'; // Yes
         }
         else {
@@ -603,15 +586,15 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       }
 
       $options['transaction_token'] = $transaction_token;
-      $options['original_amount'] = $product[$key]['amount'];
+      $options['original_amount'] = $product['amount'];
 
       if ($cart_item['options']['type'] == EDUERP_FEES_HOSTEL) {
         $options['scholarship_type'] = 'None';
         $options['sponsor'] = 'None';
       }
       else {
-        $options['scholarship_type'] = $product[$key]['scholarship_type'];
-        $options['sponsor'] = $product[$key]['sponsor'];
+        $options['scholarship_type'] = $product['scholarship_type'];
+        $options['sponsor'] = $product['sponsor'];
       }
 
       $profile_items = uc_eduerp_fees_get_profile_items($cartId);
@@ -620,7 +603,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       }
 
       if (!empty($product)) {
-        uc_cart_add_item($product[$key]['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
+        uc_cart_add_item($product['product_nid'], 1, $options, $cartId, $msg = TRUE, $check_redirect = TRUE, $rebuild = TRUE);
         $added = TRUE;
       }
       else {

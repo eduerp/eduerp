@@ -579,6 +579,9 @@ function uc_edupay_order($op, &$order) {
           if ($order->payment_method == 'edupay') {
 
             db_query("UPDATE {uc_orders} SET data = '%s' WHERE order_id = %d", serialize($_SESSION['eduerp_fees_order']), $order->order_id);
+            // The above data field is used in uc_edupay_preprocess_uc_order() for the Invoice ('type', 'programme', 'fullnames', 'timeout')
+            // It is also used in uc_edupay_token_values() for the same items for use in the page displayed on drupal_goto('cart/checkout/complete')
+            // In both cases there is probably a much cleaner way of doing this.
 
             if ($_SESSION['edupay_total_amount_zero']) {
               db_query("UPDATE {uc_orders} set order_status = 'payment_received' WHERE order_id = %d", $order->order_id);
