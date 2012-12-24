@@ -390,7 +390,7 @@ function uc_eduerp_fees_pay_fees(&$form_state) {
 
   if (!empty($fees['fees']['fee_products_array'])) {
 
-    foreach ($fees['fees']['fee_products_array'] $key as $product) {
+    foreach ($fees['fees']['fee_products_array'] as $key => $product) {
       $form['eduerp_fees']["fees_$key"] = array(
         '#type' => 'checkbox',
         '#title' => strip_tags($product['item_description']),
@@ -474,7 +474,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
       $options['sponsor'] = $product['sponsor'];
 
       $profile_items = uc_eduerp_fees_get_profile_items($student_id);
-      foreach($profile_items as $k => $v) {
+      foreach ($profile_items as $k => $v) {
         $options[$k] = $v;
       }
 
@@ -501,7 +501,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
     $options['sponsor'] = 'None';
 
     $profile_items = uc_eduerp_fees_get_profile_items($student_id);
-    foreach($profile_items as $k => $v) {
+    foreach ($profile_items as $k => $v) {
       $options[$k] = $v;
     }
 
@@ -537,7 +537,7 @@ function uc_eduerp_fees_eduerp_fees() {
 
     $fee_items['fee_products_array'] = $fee_items['fee_item_details'];
 
-    foreach($fee_items['fee_products_array'] as $key => $value) {
+    foreach ($fee_items['fee_products_array'] as $key => $value) {
       $description[$key] = $value['item_description'];
     }
 

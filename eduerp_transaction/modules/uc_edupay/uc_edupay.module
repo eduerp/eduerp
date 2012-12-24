@@ -216,10 +216,10 @@ function uc_edupay_form_alter(&$form, &$form_state, $form_id) {
 function uc_edupay_tapir_table_alter(&$table, $table_id) {
   if($table_id == 'uc_cart_view_table') {
     // hook_cart_fees_type
-    foreach(module_implements('cart_fees_type') as $module) {
+    foreach (module_implements('cart_fees_type') as $module) {
       $types = module_invoke($module, 'cart_fees_type');
     }
-    foreach($types as $type){
+    foreach ($types as $type){
       if($type == 'fees') {
         $table['#columns']['remove']['access'] = FALSE;
       }
@@ -233,7 +233,7 @@ function uc_edupay_tapir_table_alter(&$table, $table_id) {
  */
 function uc_edupay_cart_fees_type() {
   $cart_items = uc_cart_get_contents();
-  foreach($cart_items as $key => $value) {
+  foreach ($cart_items as $key => $value) {
     $types[$key] = $value->data['type'];
   }
   return $types;
@@ -430,7 +430,7 @@ function _uc_edupay_process_order_request($order) {
   $fees = array();
 
   $total_amount = 0.0;
-  foreach($products as $product) {
+  foreach ($products as $product) {
     $total_amount += $product['amount'];
 
     if ($first) {
@@ -733,7 +733,7 @@ function uc_edupay_token_values($type, $object = NULL) {
     case 'order':
       $order = $object;
       $student_profile = content_profile_load('student_profile', $order->uid);
-      foreach($order->data as $key => $value) {
+      foreach ($order->data as $key => $value) {
         if($value['type'] == EDUERP_FEES_NORMAL) {
           $programme[] = $value['programme'];
         }
@@ -787,7 +787,7 @@ function uc_edupay_token_list($type = 'all') {
  */
 function theme_eduerp_cart_review_table($contents) {
   $contents = uc_cart_get_contents();
-  foreach($contents as $content) {
+  foreach ($contents as $content) {
    //if($content->data['type'] == 'fees'){
      $rows[] = array(
         array('data' => $content->nid, 'class' => 'price'),
@@ -825,11 +825,11 @@ function theme_eduerp_cart_review_table($contents) {
  */
 function _uc_edupay_fees_order_items($order) {
   $zz = uc_cart_get_contents();
-  foreach($zz as $z){
+  foreach ($zz as $z){
     $items[] = get_object_vars($z);
   }
 
-  foreach($items as $key => $value) {
+  foreach ($items as $key => $value) {
 
     if($value['data']['type'] == EDUERP_FEES_NORMAL) {
       $product = array(
@@ -928,7 +928,7 @@ function uc_edupay_preprocess_uc_order(&$vars) {
   $student_uid = $vars['order_uid'];
   $student_profile = content_profile_load('student_profile', $student_uid);
 
-  foreach($vars['order']->data as $key => $value) {
+  foreach ($vars['order']->data as $key => $value) {
     if($value['type'] == EDUERP_FEES_NORMAL) {
       $programme[] = $value['programme'];
     }
