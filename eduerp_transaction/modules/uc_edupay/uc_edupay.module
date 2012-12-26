@@ -623,7 +623,8 @@ dsm(array('order_products' => $order_products));//ab
                   ) = array_values($product_data['hostel']);
               }
               if(array_key_exists('attributes', $product_data) && !is_null($product_data['attributes'])) {
-                $fees_order_record['attributes'] = $product_data['attributes']['Fee Structure'][0];
+                $temp = $product_data['attributes']['Fee Structure'];
+                $fees_order_record['attributes'] = array_shift($temp); // First element
               }
               else {
                 unset($fees_order_record['attributes']);
