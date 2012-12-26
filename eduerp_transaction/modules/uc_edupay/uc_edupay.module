@@ -477,7 +477,7 @@ function _uc_edupay_process_order_request($order) {
 
 dsm(array('order' => $order_parm, 'fees' => $fees, 'callback_url' => $callback_url, 'callback_data' => $callback_data));//ab
 if (FALSE) {//ab}
-  if ($total_amount > 0.0) {
+//ab  if ($total_amount > 0.0) {
     $_SESSION['edupay_total_amount_zero'] = FALSE;
 
     // Try to send POST immediately, if this does not work, we will queue
@@ -594,6 +594,7 @@ function uc_edupay_order($op, &$order) {
             $level_name = student_next_level($user->uid, variable_get('eduerp_current_session', ''));
 
             $order_products = $order->products; // These have come from 'cart_contents' in uc_cart_checkout_form_validate() just after uc_order_new() & 'new' hook has completed
+dsm(array('order_products' => $order_products));//ab
             $fees_order_record = array();
             $product_data = array();
             foreach ($order_products as $key => $product) {
