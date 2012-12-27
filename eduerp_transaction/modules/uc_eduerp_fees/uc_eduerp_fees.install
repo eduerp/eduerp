@@ -1,102 +1,14 @@
-<?php 
+<?php
 
-function uc_eduerp_fees_schema() {
-  $schema['fees'] = array(
-  'description' => t('TODO: please describe this table!'),
-  'fields' => array(
-    'fee_id' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'serial',
-      'not null' => TRUE,
-    ),
-    'title' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'varchar',
-      'length' => '255',
-      'not null' => FALSE,
-    ),
-    'type' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'varchar',
-      'length' => '32',
-      'not null' => TRUE,
-    ),
-    'description' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'varchar',
-      'length' => '255',
-      'not null' => TRUE,
-    ),
-    'nid' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'int',
-      'not null' => TRUE,
-    ),
-    'uid' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'int',
-      'not null' => TRUE,
-    ),
-    'extras' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'text',
-      'not null' => FALSE,
-    ),
-    'options' => array(
-      'description' => t('TODO: please describe this field!'),
-      'type' => 'text',
-      'not null' => FALSE,
-    ),
-  ),
-  'primary key' => array('fee_id'),
-  'unique keys' => array(
-    'nid' => array('nid')
-  ),
-  'indexes' => array(
-    'fees_index' => array('nid', 'uid'),
-  ),
-);
-  return $schema;
-}
-
+/**
+ * Implements hook_install
+ */
 function uc_eduerp_fees_install() {
-  drupal_install_schema('uc_eduerp_fees');
 }
+
+
 /**
  * Implements hook_uninstall
- * 
- * 
- */ 
+ */
 function uc_eduerp_fees_uninstall() {
-  // Drop my tables.
-  //drupal_uninstall_schema('uc_eduerp_fees');
-}
-
-/**
- * Database updates consist of 3 parts:
-
-    1 digit for Drupal core compatibility
-    1 digit for your module's major release version (e.g. is this the 5.x-1.* (1) or 5.x-2.* (2) series of your module?)
-    2 digits for sequential counting starting with 00
-
-The 2nd digit should be 0 for initial porting of your module to a new Drupal core API.
-
-Examples:
-
-    mymodule_update_5200()
-
-        This is the first update to get the database ready to run mymodule 5.x-2.*.
-    mymodule_update_6000()
-        This is the required update for mymodule to run with Drupal core API 6.x.
-    mymodule_update_6100()
-        This is the first update to get the database ready to run mymodule 6.x-1.*.
-    mymodule_update_6200()
-        This is the first update to get the database ready to run mymodule 6.x-2.*. Users can directly update from 5.x-2.* to 6.x-2.* and they get all 60XX and 62XX updates, but not 61XX updates, because those reside in the 6.x-1.x branch only.
- * 
- * 
- */ 
-function uc_eduerp_fees_update_6100() {
-  /*$ret = array();
-  db_drop_index($ret, 'fees', 'nid');
-  return $ret;*/
 }
