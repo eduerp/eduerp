@@ -339,7 +339,7 @@ function uc_eduerp_fees_pay_fees(&$form_state) {
   $form = array();
 
   $fees = uc_eduerp_fees_eduerp_fees();
-dsm(array('fees' => $fees));//ab
+
   // Check if the current user has an existing fees setup
   if(!is_fee_setup_existing_for_student($student_id)) {
     drupal_set_message(t("Sorry, you don't have a valid fees setup. Please contact bursary"), 'error');
@@ -447,7 +447,7 @@ function uc_eduerp_fees_pay_fees_form_submit($form, &$form_state) {
 
   $added = FALSE;
   $fees = $form['#fees'];
-dsm(array('fees' => $fees));//ab
+
   if (!empty($fees['fees']['fee_products_array'])) {
     $standard_fees_options = $fees['fees']['options'];
 
@@ -456,7 +456,6 @@ dsm(array('fees' => $fees));//ab
       if (array_key_exists('attribute_id', $product)) {
         $product_attribute = array('attributes' => array($product['attribute_id'] => $product['option_id']), 'attribute_id' => $product['attribute_id'], 'option_id' => $product['option_id']);
         $options = $standard_fees_options + $product_attribute;
-dsm(array('product_attribute' => $product_attribute, 'standard_fees_options' => $standard_fees_options, 'options' => $options));
       }
       else {
         $options = $standard_fees_options;
