@@ -3,10 +3,9 @@ $view = new view;
 $view->name = 'student_records';
 $view->description = 'Student Records';
 $view->tag = '';
-$view->view_php = '';
 $view->base_table = 'node';
-$view->is_cacheable = FALSE;
-$view->api_version = 2;
+$view->core = 0;
+$view->api_version = '2';
 $view->disabled = FALSE; /* Edit this to true to make a default view disabled initially */
 $handler = $view->new_display('default', 'Defaults', 'default');
 $handler->override_option('relationships', array(
@@ -386,10 +385,8 @@ $handler->override_option('filters', array(
   ),
 ));
 $handler->override_option('access', array(
-  'type' => 'role',
-  'role' => array(
-    '4' => 4,
-  ),
+  'type' => 'perm',
+  'perm' => 'audit approvals',
 ));
 $handler->override_option('cache', array(
   'type' => 'none',
