@@ -176,13 +176,13 @@ function student_clearance_strongarm() {
   $strongarm->api_version = 1;
   $strongarm->name = 'eduerp_agreement';
   $strongarm->value = '
-<p>USMANU DANFODIYO UNIVERSITY</p>
-<p>P.M.B. 2346, SOKOTO, NIGERIA</p>
+<p>EduERP UNIVERSITY</p>
+<p>P.O. Box 67, LAGOS, NIGERIA</p>
 <p>OFFICE OF THE REGISTRAR</p>
 <p>Date: [site-date-timestamp-raw]</p>
 <p>Name of Candidate: [field_profile_first_name-raw] [field_profile_middle_name-raw] [field_profile_last_name-raw]</p>
-<p>2011/2012 SESSION CONFIRMATION OF ADMISSION</p>
-<p>This is to confirm that the above named has been offered Provisional admission into the Usmanu Danfodiyo University, Sokoto in 2011/2012 Academic Session.</p>
+<p>2012/2013 SESSION CONFIRMATION OF ADMISSION</p>
+<p>This is to confirm that the above named has been offered Provisional admission into the EduERP University, Lagos in 2012/2013 Academic Session.</p>
 <p>The Candidate has been admitted to read: [programme] [level] level in the Faculty/College of [faculty]. His/her admission number is [matric_number]. Faculties and Departments are requested to note and register the Candidate accordingly subject to the candidate&#39;s acceptance of the undertaking below.</p>
 <p>Thank you</p>
 <p>&nbsp;</p>
