@@ -1,0 +1,155 @@
+#!/bin/bash
+
+drush -y en contact path php search trigger upload ajax_load jquery_update content computed_field content_copy content_permissions editablefields fieldgroup filefield imagefield optionwidgets text nodereference number userreference advanced_help autoload auto_nodetitle ckeditor form_panel glossary pathauto skinr token_actions transliteration ctools bulk_export strongarm content_profile content_profile_registration schema date_api date date_timezone devel imageapi imageapi_gd imageapi_imagemagick imagecache imagecache_ui dbtuner print print_pdf print_mail rules rules_admin services views views_append views_customfield views_export views_view_field views_pdf views_ui views_watchdog eduerp staff student features student_clearance student_registration grading hostel_allocation me_gen ca uc_order uc_store uc_product uc_cart uc_attribute uc_catalog uc_payment uc_reports uc_roles uc_views uc_views_attribute uc_views_marketing uc_cart_links uc_product_kit uc_stock uc_edupay uc_eduerp_fees zimbra views_data_export mimemail views_pdf_mimemail uc_rules devel fusion_starter
+
+#In http://domain.edu.ng/admin/store/settings/checkout/edit/panes
+#Remove (deselect):
+#  Order comments
+#  Billing information
+#Then reorder remaining as follows:
+#  Cart Contents
+#  Payment method
+#  Customer Information
+#  Delivery information
+#and Save
+#... This is the equivalent...
+drush vset --yes --exact uc_pane_cart_enabled 1
+drush vset --yes --exact uc_pane_cart_weight 1
+drush vset --yes --exact uc_pane_payment_enabled 1
+drush vset --yes --exact uc_pane_payment_weight 2
+drush vset --yes --exact uc_pane_customer_enabled 1
+drush vset --yes --exact uc_pane_customer_weight 3
+drush vset --yes --exact uc_pane_delivery_enabled 1
+drush vset --yes --exact uc_pane_delivery_weight 4
+drush vset --yes --exact uc_pane_billing_enabled 0
+drush vset --yes --exact uc_pane_billing_weight 5
+drush vset --yes --exact uc_pane_comments_enabled 0
+drush vset --yes --exact uc_pane_comments_weight 6
+
+#In http://domain.edu.ng/admin/store/settings/cart/edit/panes
+#Remove (deselect):
+#  Default cart form
+#and Save
+#... This is the equivalent...
+drush vset --yes --exact uc_cap_cart_form_enabled 0
+
+#In http://domain.edu.ng/admin/store/settings/orders/edit/basic
+#Set "On-site invoice template" to "student"
+#... This is the equivalent...
+drush vset --yes --exact uc_cust_order_invoice_template student
+
+#In http://domain.edu.ng/admin/settings/strongarm
+#All the ones with a storage of "In code" should be selected and saved to the database.
+# These are all supposed to be set in sites/all/modules/eduerp/eduerp_transaction/modules/uc_edupay/uc_edupay.strongarm.inc,
+# but are not, for some reason in at least two demo sites.
+#... This is the equivalent...
+#
+drush vset --yes --exact uc_edupay_payment_method 1
+#
+# 'uc_pane_billing_enabled' done above
+#
+drush vset --yes --exact uc_price_caching 0
+#
+drush vset --yes --exact uc_price_format_callback uc_store_price_handler_format
+#
+#Array
+#(
+#    [uc_store] => Array
+#        (
+#            [enabled] => 1
+#            [weight] => -10
+#        )
+#
+#    [uc_edupay] => Array
+#        (
+#            [enabled] => 1
+#            [weight] => -9
+#        )
+#
+#)
+drush sql-query "REPLACE INTO variable VALUES ('uc_price_handler_config', 'a:2:{s:8:\"uc_store\";a:2:{s:7:\"enabled\";i:1;s:6:\"weight\";s:3:\"-10\";}s:9:\"uc_edupay\";a:2:{s:7:\"enabled\";i:1;s:6:\"weight\";s:2:\"-9\";}}')"
+#
+drush vset --yes --exact uc_msg_continue_shopping "<a href=\"[site-url]\">Return to the front page.</a>"
+#
+drush vset --yes --exact uc_msg_continue_shopping_format 1
+#
+drush sql-query "REPLACE INTO variable VALUES ('uc_msg_order_existing_user', 's:295:\"Thank you for shopping at [store-name]. Your current order has been attached to the account we found matching your e-mail address.\n\n<a href=\"/user\">Login</a> to view your current order status and order history. Remember to login when you make your next purchase for a faster checkout experience\!\";')"
+#
+drush vset --yes --exact uc_msg_order_existing_user_format 1
+#
+#This requires too many escapes to be other than a direct copy of hex
+drush sql-query "REPLACE INTO variable VALUES ('uc_msg_order_logged_in', X'733A313933333A223C703E596F757220506179204665652070726F63657373206973206E6F7720636F6D706C65746564206F6E20746869732073797374656D2E20596F757220696E766F69636520686173206265656E2073656E7420746F20796F757220652D6D61696C2061646472657373205B6F726465722D656D61696C5D2E20596F752063616E20616C736F207072696E74206120636F7079206F6620796F757220696E766F696365206279203C3F7068700A0A2475726C203D2075726C2827757365722F27202E205B6F726465722D7569645D202E20272F6F726465722F27202E205B6F726465722D69645D202E20272F696E766F6963652F7072696E7427293B0A2020202064727570616C5F6164645F6A73282266756E6374696F6E206F70656E5F696E766F6963652829207B2077696E646F772E6F70656E28272475726C272C2027222E20742827496E766F6963652729202E22272C2027746F6F6C6261723D302C7363726F6C6C626172733D312C6C6F636174696F6E3D302C7374617475736261723D302C6D656E756261723D302C726573697A61626C653D312C77696474683D3630302C6865696768743D3438302C6C6566743D35302C746F703D353027293B207D222C2027696E6C696E6527293B0A2020202024636F6E74656E7473203D20273C6120687265663D222322206F6E636C69636B3D226F70656E5F696E766F69636528293B223E270A2020202020202020202020202020202E2075635F73746F72655F6765745F69636F6E282766696C653A7072696E742729202E2720270A2020202020202020202020202020202E20742827636C69636B696E6720686572652E2729202E273C2F613E273B0A20202020246F7574707574202E3D20273C64697620636C6173733D226F726465722D70616E65223E272E2024636F6E74656E7473202E273C2F6469763E273B0A202020207072696E7420246F75747075743B0A0A3F3E3C2F703E0A0A3C703E596F75206D7573742070726F6365656420746F20616E79206F662074686520666F6C6C6F77696E672062616E6B7320746F2070617920796F757220696E766F6963653A205B62616E6B2D6C6973742D7261775D2E3C2F703E0A0A3C703E596F75206D7573742070726573656E742074686520696E766F696365206F722070726F7669646520796F757220696E766F696365206E756D62657220285B696E766F6963652D6E756D6265725D2920746F20706179206174207468652062616E6B2E3C2F703E0A0A3C3F7068700A2474696D656F7574203D205B74696D656F75742D7261775D3B0A246C6174655F726567697374726174696F6E5F64617465203D20275B6C6174655F726567697374726174696F6E5F646174655D273B0A0A24636F6E74656E74203D207428273C703E5061796D656E74206D757374206265206D616465206F6E206F72206265666F726520406C6174655F726567697374726174696F6E5F646174652E205468652062616E6B2063616E6E6F7420616363657074207061796D656E74206166746572207468617420646174652E3C2F703E272C2061727261792827406C6174655F726567697374726174696F6E5F6461746527203D3E20246C6174655F726567697374726174696F6E5F6461746529293B0A0A24636F6E74656E74202E3D207428223C703E496620796F7520646F206E6F74206D616B65207061796D656E74206279207468617420646174652C20796F752077696C6C206861766520746F20636F6D65206261636B20746F20746869732073797374656D20746F2067656E65726174652061206E657720696E766F69636520776869636820796F752063616E207468656E2074616B6520746F207468652062616E6B2E2054686973206E657720696E766F696365206D617920696E20736F6D652063697263756D7374616E63657320636F6E7461696E2061204C617465205061796D656E742046656520284E474E20406C6174655F726567697374726174696F6E5F666565292E3C2F703E222C2061727261792827406C6174655F726567697374726174696F6E5F66656527203D3E205B6C6174655F726567697374726174696F6E5F6665655D29293B0A0A6966282474696D656F7574203C203231343539313331393929207B0A7072696E742024636F6E74656E743B0A7D0A3F3E0A0A3C703E4166746572207061796D656E74206F6620796F7572206665657320616C6C6F77203120776F726B696E672064617920666F72207468652073797374656D20746F2062652075706461746564207769746820636F6E6669726D6174696F6E206F6620796F7572207061796D656E7420616674657220776869636820796F752077696C6C2062652061626C6520746F2070726F63656564207769746820796F7572206F6E6C696E6520636F7572736520726567697374726174696F6E20287468697320646F6573206E6F74206170706C79206966207468697320696E766F696365206F6E6C7920636F6E7461696E73206120486F7374656C207061796D656E74292E3C2F703E0A0A3C703E506C65617365206E6F746520616E206164646974696F6E616C205B746372675D207472616E73616374696F6E20636861726765206D7573742062652070616964207768656E20706179696E6720796F757220666565732E3C2F703E223B')"
+#
+drush vset --yes --exact uc_msg_order_logged_in_format 3
+#
+#This requires too many escapes to be other than a direct copy of hex
+drush sql-query "REPLACE INTO variable VALUES ('uc_msg_order_new_user', X'733A3239383A225468616E6B20796F7520666F722073686F7070696E67206174205B73746F72652D6E616D655D2E2041206E6577206163636F756E7420686173206265656E206372656174656420666F7220796F752068657265207468617420796F75206D61792075736520746F207669657720796F75722063757272656E74206F72646572207374617475732E0A0A3C6120687265663D222F75736572223E4C6F67696E3C2F613E20746F20796F7572206E6577206163636F756E74207573696E672074686520666F6C6C6F77696E6720696E666F726D6174696F6E3A0A0A3C7374726F6E673E557365726E616D653A3C2F7374726F6E673E20216E65775F757365726E616D650A3C7374726F6E673E50617373776F72643A3C2F7374726F6E673E20216E65775F70617373776F7264223B')"
+#
+drush vset --yes --exact uc_msg_order_new_user_format 1
+#
+drush vset --yes --exact uc_msg_order_submit "Your order is complete! Your order number is [order-id]."
+#
+drush vset --yes --exact uc_msg_order_submit_format 1
+#
+# 'uc_cust_order_invoice_template' done above
+#
+drush vset --yes --exact uc_cust_view_order_invoices 1
+
+#In http://domain.edu.ng/admin/settings/date-time/formats
+#"Medium date format" must be like: 28. November 2012 - 15:46
+drush vset --yes --exact date_format_medium "j. F Y - G:i"
+
+#In http://domain.edu.ng/admin/content/node-type/profile/profile
+#Had to do this (even though most of these seemed to be in exported CCK, there seems to be some sort of Drupal bug):
+#SELECT Automatically generate the title and hide the title field
+#Set Body Field Label to empty
+#Set NOT promoted to front page
+#Attachments Disabled
+#Comments Disabled
+#Had to set "Use this content type as a content profile for users"
+#(It did pick up the fields etc. correctly!)
+#And in http://domain.edu.ng/admin/content/node-type/student-profile/profile
+#Had to do this (even though most of these seemed to be in exported CCK):
+#SELECT Automatically generate the title and hide the title field
+#Had to set "Use this content type as a content profile for users"
+#... This is the equivalent (staff added for consistency)...
+drush vset --yes --exact ant_profile 1
+drush vset --yes --exact ant_student_profile 1
+drush vset --yes --exact ant_staff_profile 1
+#
+drush sql-query "UPDATE node_type SET has_body=0, body_label='', custom=1, modified=1, locked=0, orig_type='profile' WHERE type='profile'"
+drush sql-query "UPDATE node_type SET has_body=0, body_label='', custom=0, modified=1, locked=1, orig_type='student_profile' WHERE type='student_profile'"
+drush sql-query "UPDATE node_type SET has_body=0, body_label='', custom=1, modified=1, locked=0, orig_type='' WHERE type='staff_profile'"
+#
+drush sql-query "REPLACE INTO variable VALUES ('node_options_profile', 'a:1:{i:0;s:6:\"status\";}')"
+drush sql-query "REPLACE INTO variable VALUES ('node_options_student_profile', 'a:1:{i:0;s:6:\"status\";}')"
+drush sql-query "REPLACE INTO variable VALUES ('node_options_staff_profile', 'a:1:{i:0;s:6:\"status\";}')"
+#
+drush sql-query "REPLACE INTO variable VALUES ('content_profile_profile', 'a:8:{s:6:\"weight\";s:1:\"0\";s:12:\"user_display\";s:4:\"full\";s:9:\"edit_link\";i:0;s:8:\"edit_tab\";s:3:\"sub\";s:8:\"add_link\";i:1;s:16:\"registration_use\";i:1;s:21:\"admin_user_create_use\";i:1;s:17:\"registration_hide\";a:0:{}}')"
+drush sql-query "REPLACE INTO variable VALUES ('content_profile_student_profile', 'a:8:{s:6:\"weight\";s:1:\"1\";s:12:\"user_display\";s:4:\"full\";s:9:\"edit_link\";i:0;s:8:\"edit_tab\";s:3:\"sub\";s:8:\"add_link\";i:1;s:16:\"registration_use\";i:1;s:21:\"admin_user_create_use\";i:0;s:17:\"registration_hide\";a:0:{}}')"
+drush sql-query "REPLACE INTO variable VALUES ('content_profile_staff_profile', 'a:8:{s:6:\"weight\";s:1:\"2\";s:12:\"user_display\";s:4:\"full\";s:9:\"edit_link\";i:0;s:8:\"edit_tab\";s:3:\"sub\";s:8:\"add_link\";i:1;s:16:\"registration_use\";i:0;s:21:\"admin_user_create_use\";i:1;s:17:\"registration_hide\";a:0:{}}')"
+#
+drush vset --yes --exact upload_profile 0
+drush vset --yes --exact upload_student_profile 0
+drush vset --yes --exact upload_staff_profile 0
+#
+drush vset --yes --exact comment_profile 0
+drush vset --yes --exact comment_student_profile 0
+drush vset --yes --exact comment_staff_profile 0
+#
+drush vset --yes --exact content_profile_use_profile 1
+drush vset --yes --exact content_profile_use_student_profile 1
+drush vset --yes --exact content_profile_use_staff_profile 1
+
+#  The FPDI library requires to install the FPDI template file to incoporate with TCPDF
+cp sites/all/libraries/fpdf_tpl/fpdf_tpl.php sites/all/libraries/fpdi/fpdf_tpl.php
+
+# Set Fusion Starter as default theme
+drush vset theme_default fusion_starter
+
+# Add EduERP logo
+wget -O sites/all/themes/fusion/fusion_starter/logo.png http://eduerp.org.ng/eduerp.logo
+#
+# Clear Cache
+drush cc all
+
