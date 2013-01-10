@@ -9,4 +9,4 @@ Installation and Config Guidelines: https://github.com/eduerp/eduerp/wiki
 Frequently Asked Questions: http://eduerp.org.ng/FAQ  
 Mailing list: http://lists.eko-konnect.org.ng/mailman/listinfo/eduerp-users  
 Twitter: [@edu_erp](https://twitter.com/edu_erp)  
-Demo: 
+Demo: http://eduerp.org.ng/demo
