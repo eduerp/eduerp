@@ -304,7 +304,7 @@ function permissions_create_role($role_name) {
   // Look up the role to see if it exists already
   $role = permissions_get_role($role_name);
   if(!$role) {
-    db_query("INSERT INTO {role} VALUES('', '%s')", $role_name);
+    db_query("INSERT INTO {role} VALUES(NULL, '%s')", $role_name);
     $role = permissions_get_role($role_name);
     if($role->rid > 0) {
       return $role;
